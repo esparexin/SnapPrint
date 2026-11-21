@@ -86,4 +86,23 @@ export async function ensureIndexes(db: Db): Promise<void> {
     { key: { userId: 1, status: 1 }, name: 'idx_operator_session_user_status' },
     { key: { expiresAt: 1 }, expireAfterSeconds: 0, name: 'ttl_operator_session_expiry' },
   ]);
+
+  // 7. Orders collection: studio queue ordering, unique order ID, and idempotency
+  await db.collection('orders').createIndexes([
+    { key: { studioId: 1, createdAt: -1 }, name: 'idx_order_studio_created' },
+    { key: { studioId: 1, orderId: 1 }, unique: true, name: 'uid_order_studio_id' },
+    { key: { studioId: 1, idempotencyKey: 1 }, unique: true, name: 'uid_order_studio_idempotency' },
+  ]);
+
+  // 8. Payments collection: studio order payment history and unique payment ID
+  await db.collection('payments').createIndexes([
+    { key: { studioId: 1, orderId: 1, createdAt: 1 }, name: 'idx_payment_studio_order_created' },
+    { key: { studioId: 1, paymentId: 1 }, unique: true, name: 'uid_payment_studio_id' },
+    { key: { gatewayOrderId: 1 }, sparse: true, name: 'idx_payment_gateway_order' },
+  ]);
+
+  // 9. Webhook events collection: unique eventId for idempotent replay prevention
+  await db
+    .collection('webhook_events')
+    .createIndexes([{ key: { eventId: 1 }, unique: true, name: 'uid_webhook_event_id' }]);
 }

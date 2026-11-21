@@ -62,5 +62,23 @@ describe('Database Indexes & Connection State', () => {
     expect(createdIndexes['user_memberships']).toBeDefined();
     expect(createdIndexes['qr_sessions']).toBeDefined();
     expect(createdIndexes['photo_assets']).toBeDefined();
+
+    // Verify orders, payments, and webhook_events indexes
+    expect(createdIndexes['orders']).toBeDefined();
+    expect(createdIndexes['orders']).toContainEqual({
+      key: { studioId: 1, createdAt: -1 },
+      name: 'idx_order_studio_created',
+    });
+    expect(createdIndexes['payments']).toBeDefined();
+    expect(createdIndexes['payments']).toContainEqual({
+      key: { studioId: 1, orderId: 1, createdAt: 1 },
+      name: 'idx_payment_studio_order_created',
+    });
+    expect(createdIndexes['webhook_events']).toBeDefined();
+    expect(createdIndexes['webhook_events']).toContainEqual({
+      key: { eventId: 1 },
+      unique: true,
+      name: 'uid_webhook_event_id',
+    });
   });
 });

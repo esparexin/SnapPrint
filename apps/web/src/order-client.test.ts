@@ -127,4 +127,22 @@ describe('Order & Quotation Client', () => {
     const updated = await updateOperatorOrderStatus('std_koramangala', 'ord_123', 'processing');
     expect(updated.status).toBe('processing');
   });
+
+  it('constructs operator document download URL and supports status query filtering', async () => {
+    const { getOperatorDocumentDownloadUrl } = await import('./order-client.js');
+    const downloadUrl = getOperatorDocumentDownloadUrl('std_1', 'ord_2', 'asset_3');
+    expect(downloadUrl).toContain('/studios/std_1/orders/ord_2/documents/asset_3/download');
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ orders: [], totalCount: 0 }),
+    });
+
+    await fetchOperatorOrderQueue('std_1', 'processing');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/studios/std_1/orders?status=processing'),
+      expect.anything()
+    );
+  });
 });

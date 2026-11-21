@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { OrderPaymentStatus, OrderRecord, OrderStatus } from '@snapprint/contracts';
+import { getOperatorDocumentDownloadUrl } from '../../src/order-client';
+import { OrderQueueActions } from './order-queue-actions';
 
 interface OrderQueueItemProps {
   order: OrderRecord;
@@ -10,30 +12,32 @@ interface OrderQueueItemProps {
   onRecordPayment?: (order: OrderRecord) => void;
 }
 
+const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
+  submitted: { bg: '#f1f5f9', text: '#475569' },
+  processing: { bg: '#e0f2fe', text: '#0369a1' },
+  ready: { bg: '#fef3c7', text: '#92400e' },
+  completed: { bg: '#dcfce7', text: '#166534' },
+  cancelled: { bg: '#fee2e2', text: '#991b1b' },
+};
+
+const paymentColors: Record<OrderPaymentStatus, { bg: string; text: string }> = {
+  PAID: { bg: '#dcfce7', text: '#166534' },
+  PARTIALLY_PAID: { bg: '#e0f2fe', text: '#0369a1' },
+  UNPAID: { bg: '#fee2e2', text: '#991b1b' },
+  PAYMENT_FAILED: { bg: '#fef2f2', text: '#b91c1c' },
+};
+
 export function OrderQueueItem({
   order,
   updating,
   onStatusChange,
   onRecordPayment,
 }: OrderQueueItemProps) {
-  const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
-    submitted: { bg: '#f1f5f9', text: '#475569' },
-    processing: { bg: '#e0f2fe', text: '#0369a1' },
-    ready: { bg: '#fef3c7', text: '#92400e' },
-    completed: { bg: '#dcfce7', text: '#166534' },
-    cancelled: { bg: '#fee2e2', text: '#991b1b' },
-  };
-
-  const paymentColors: Record<OrderPaymentStatus, { bg: string; text: string }> = {
-    PAID: { bg: '#dcfce7', text: '#166534' },
-    PARTIALLY_PAID: { bg: '#e0f2fe', text: '#0369a1' },
-    UNPAID: { bg: '#fee2e2', text: '#991b1b' },
-    PAYMENT_FAILED: { bg: '#fef2f2', text: '#b91c1c' },
-  };
-
   const paymentStatus = order.paymentStatus ?? 'UNPAID';
   const statusBadge = statusColors[order.status] || statusColors.submitted;
   const paymentBadge = paymentColors[paymentStatus] || paymentColors.UNPAID;
+  const lastEvent =
+    order.events && order.events.length > 0 ? order.events[order.events.length - 1] : null;
 
   return (
     <div
@@ -41,7 +45,7 @@ export function OrderQueueItem({
         border: '1px solid #e2e8f0',
         borderRadius: '8px',
         padding: '16px',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fff',
       }}
     >
       <div
@@ -50,6 +54,8 @@ export function OrderQueueItem({
           justifyContent: 'space-between',
           alignItems: 'flex-start',
           marginBottom: '10px',
+          flexWrap: 'wrap',
+          gap: '8px',
         }}
       >
         <div>
@@ -64,8 +70,7 @@ export function OrderQueueItem({
             </span>
           )}
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            Submitted {new Date(order.createdAt).toLocaleTimeString()} · {order.totalSheets} total
-            sheets
+            Submitted {new Date(order.createdAt).toLocaleTimeString()} · {order.totalSheets} sheets
           </div>
         </div>
 
@@ -111,22 +116,68 @@ export function OrderQueueItem({
             style={{
               display: 'flex',
               justifyContent: 'space-between',
+              alignItems: 'center',
               fontSize: '12px',
-              marginBottom: '4px',
+              marginBottom: '6px',
+              flexWrap: 'wrap',
+              gap: '4px',
             }}
           >
-            <span>
-              <strong>{item.filename}</strong> — {item.paperSize.toUpperCase()},{' '}
-              {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
-              {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'}, {item.sheetsCount} sheets ×{' '}
-              {item.copies} copies
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '100%' }}>
+              <span
+                style={{
+                  maxWidth: '180px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-block',
+                }}
+                title={item.filename}
+              >
+                <strong>{item.filename}</strong>
+              </span>
+              <span style={{ color: '#475569' }}>
+                — {item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
+                {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'}, {item.sheetsCount} sh ×{' '}
+                {item.copies}
+              </span>
             </span>
-            <span style={{ fontWeight: 600 }}>₹{(item.subtotalMinor / 100).toFixed(2)}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 600 }}>₹{(item.subtotalMinor / 100).toFixed(2)}</span>
+              <a
+                href={getOperatorDocumentDownloadUrl(order.studioId, order.orderId, item.assetId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  color: '#0284c7',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '32px',
+                }}
+              >
+                📄 View/Print
+              </a>
+            </span>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '10px',
+        }}
+      >
         <div>
           <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
             Total: ₹{(order.totalAmountMinor / 100).toFixed(2)}
@@ -140,87 +191,29 @@ export function OrderQueueItem({
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {paymentStatus !== 'PAID' && onRecordPayment && (
-            <button
-              type="button"
-              onClick={() => onRecordPayment(order)}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#16a34a',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              💰 Record Payment
-            </button>
-          )}
-
-          {order.status === 'submitted' && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(order.orderId, 'processing')}
-              disabled={updating}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#0284c7',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              🖨️ Start Printing
-            </button>
-          )}
-
-          {order.status === 'processing' && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(order.orderId, 'ready')}
-              disabled={updating}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#d97706',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              📦 Mark Ready
-            </button>
-          )}
-
-          {order.status === 'ready' && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(order.orderId, 'completed')}
-              disabled={updating}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#15803d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              ✅ Complete Order
-            </button>
-          )}
-        </div>
+        <OrderQueueActions
+          order={order}
+          updating={updating}
+          onStatusChange={onStatusChange}
+          onRecordPayment={onRecordPayment}
+        />
       </div>
+
+      {lastEvent && (
+        <div
+          style={{
+            marginTop: '10px',
+            paddingTop: '8px',
+            borderTop: '1px solid #f1f5f9',
+            fontSize: '11px',
+            color: '#64748b',
+          }}
+        >
+          ℹ️ Last update: <strong>{lastEvent.toStatus.toUpperCase()}</strong> by{' '}
+          {lastEvent.operatorName || lastEvent.operatorUserId || 'operator'} at{' '}
+          {new Date(lastEvent.timestamp).toLocaleTimeString()}
+        </div>
+      )}
     </div>
   );
 }

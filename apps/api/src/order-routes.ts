@@ -18,10 +18,12 @@ import {
   findOrderByStudioAndIdempotency,
 } from './repositories/order.repository.js';
 import { findPhotoAssetById } from './repositories/photo-asset.repository.js';
+import { StorageService } from './storage/storage-service.js';
 
 export interface OrderRouteOptions {
   db?: Db;
   config?: AppConfig;
+  storage?: StorageService;
 }
 
 export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, opts) => {
@@ -29,7 +31,7 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
   const getEffectiveDb = (): Db => opts?.db ?? getDb();
 
   // Register operator queue routes
-  await app.register(operatorOrderRoutes, { db: opts?.db });
+  await app.register(operatorOrderRoutes, { db: opts?.db, storage: opts?.storage });
 
   // 1. Calculate Authoritative Quote
   app.post<{ Params: { slug: string; sessionId: string } }>(

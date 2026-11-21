@@ -128,5 +128,36 @@ describe('Document Print & Xerox Contracts', () => {
       updatedAt: new Date().toISOString(),
     });
     expect(orderRecord.success).toBe(true);
+    if (orderRecord.success) {
+      expect(orderRecord.data.events).toEqual([]);
+    }
+  });
+
+  it('validates order audit events and status update payloads', () => {
+    const event = {
+      eventId: 'evt_123456',
+      fromStatus: 'submitted',
+      toStatus: 'processing',
+      operatorUserId: 'usr_operator1',
+      operatorName: 'Operator One',
+      timestamp: new Date().toISOString(),
+      reason: 'Printing started at desk 2',
+    };
+    const orderWithEvent = OrderRecordSchema.safeParse({
+      orderId: 'ord_1234567890abcdef123',
+      orderNumber: 'ORD-1002',
+      studioId: 'std_koramangala',
+      sessionId: 'sess_1234567890abcdef',
+      idempotencyKey: 'idem_87654321',
+      items: [],
+      totalSheets: 0,
+      totalAmountMinor: 0,
+      currency: 'INR',
+      status: 'processing',
+      events: [event],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    expect(orderWithEvent.success).toBe(true);
   });
 });

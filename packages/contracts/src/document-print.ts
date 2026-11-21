@@ -85,6 +85,17 @@ export const OrderSubmissionRequestSchema = z.object({
 });
 export type OrderSubmissionRequest = z.infer<typeof OrderSubmissionRequestSchema>;
 
+export const OrderAuditEventSchema = z.object({
+  eventId: z.string().min(1).max(128),
+  fromStatus: OrderStatusSchema,
+  toStatus: OrderStatusSchema,
+  operatorUserId: z.string().min(1).max(128).optional(),
+  operatorName: z.string().optional(),
+  timestamp: z.string().datetime(),
+  reason: z.string().max(500).optional(),
+});
+export type OrderAuditEvent = z.infer<typeof OrderAuditEventSchema>;
+
 export const OrderRecordSchema = z.object({
   orderId: z.string().min(16).max(128),
   orderNumber: z.string().min(3).max(32),
@@ -101,15 +112,23 @@ export const OrderRecordSchema = z.object({
   status: OrderStatusSchema,
   paidAmountMinor: z.number().int().nonnegative().default(0).optional(),
   paymentStatus: OrderPaymentStatusSchema.default('UNPAID').optional(),
+  events: z.array(OrderAuditEventSchema).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
 export type OrderRecord = z.infer<typeof OrderRecordSchema>;
+export type OrderRecordInput = z.input<typeof OrderRecordSchema>;
 
 export const OrderStatusUpdateRequestSchema = z.object({
   status: OrderStatusSchema,
+  notes: z.string().max(500).optional(),
 });
 export type OrderStatusUpdateRequest = z.infer<typeof OrderStatusUpdateRequestSchema>;
+
+export const OrderCancellationRequestSchema = z.object({
+  reason: z.string().min(1).max(500),
+});
+export type OrderCancellationRequest = z.infer<typeof OrderCancellationRequestSchema>;
 
 export const OrderListResponseSchema = z.object({
   orders: z.array(OrderRecordSchema),
