@@ -1,24 +1,81 @@
 import fastify from 'fastify';
+import cors from '@fastify/cors';
+import fastifyCookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
+import { assetRoutes } from './asset-routes.js';
+import { authRoutes } from './auth.js';
 import { loadConfig } from './config.js';
 import { closeDb, connectDb } from './db.js';
 import { handleApiError } from './error-handler.js';
 import { healthRoutes } from './health.js';
+import { orderRoutes } from './order-routes.js';
+import { paymentRoutes } from './payment-routes.js';
+import { operatorPaymentRoutes } from './payment-routes-operator.js';
+import { publicRoutes } from './public-routes.js';
 import { sessionPlugin } from './plugins/session.js';
 import { tenantPlugin } from './plugins/tenant.js';
+import { studioRoutes } from './studio-routes.js';
+import { webhookRoutes } from './webhook-routes.js';
 
 const config = loadConfig();
 
 const app = fastify({
+  trustProxy: config.trustProxy,
   logger: {
     level: config.logLevel,
+    redact: [
+      'req.headers.authorization',
+      'req.headers["x-session-token"]',
+      'req.headers["x-api-key"]',
+      'req.headers.cookie',
+    ],
   },
 });
 
 app.setErrorHandler(handleApiError);
 
+app.register(cors, {
+  origin: config.corsAllowedOrigins.split(',').map((origin) => origin.trim()),
+  credentials: true,
+});
+
+app.register(rateLimit, {
+  max: config.rateLimitMax,
+  timeWindow: config.rateLimitTimeWindow,
+  allowList: (req) => {
+    return req.url === '/health' || req.url === '/ready';
+  },
+  errorResponseBuilder: (_req, context) => ({
+    statusCode: 429,
+    code: 'RATE_LIMIT_EXCEEDED',
+    message: `Rate limit exceeded. Maximum ${context.max} requests per ${context.after}. Please try again later.`,
+  }),
+});
+
+app.register(fastifyCookie, {
+  secret: config.cookieSecret,
+  hook: 'onRequest',
+});
+
+app.register(multipart, {
+  limits: {
+    fileSize: 50 * 1024 * 1024,
+    files: 1,
+  },
+});
+
 app.register(tenantPlugin);
 app.register(sessionPlugin, { sessionSecret: config.sessionSecret });
 app.register(healthRoutes);
+app.register(authRoutes);
+app.register(studioRoutes);
+app.register(publicRoutes);
+app.register(assetRoutes);
+app.register(orderRoutes);
+app.register(paymentRoutes);
+app.register(operatorPaymentRoutes);
+app.register(webhookRoutes);
 
 const signals = ['SIGINT', 'SIGTERM'] as const;
 

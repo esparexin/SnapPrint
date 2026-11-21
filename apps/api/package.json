@@ -11,6 +11,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/cors": "^11.4.3",
+    "@fastify/multipart": "^10.1.9",
+    "@fastify/rate-limit": "^11.2.2",
     "@snapprint/contracts": "workspace:*",
     "@snapprint/domain": "workspace:*",
     "fastify": "^5.2.0",

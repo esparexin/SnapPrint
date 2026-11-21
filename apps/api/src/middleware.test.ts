@@ -80,6 +80,26 @@ describe('Fastify Tenant and Customer Session Middleware', () => {
       expect(res.statusCode).toBe(400);
       expect(res.json().code).toBe('MISSING_TENANT_ID');
     });
+
+    it('rejects conflicting x-studio-id header and studioId param with 400', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/studio/studio-alpha/public',
+        headers: { 'x-studio-id': 'studio-beta' },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('TENANT_ID_CONFLICT');
+    });
+
+    it('accepts matching x-studio-id header and studioId param', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/studio/studio-alpha/public',
+        headers: { 'x-studio-id': 'studio-alpha' },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ studioId: 'studio-alpha' });
+    });
   });
 
   describe('Customer Session Middleware (requireCustomerSession)', () => {
