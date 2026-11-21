@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { PhotoAssetSchema, UploadLimits } from './assets.js';
+import {
+  PhotoAssetListResponseSchema,
+  PhotoAssetSchema,
+  UploadIntentRequestSchema,
+  UploadIntentResponseSchema,
+  UploadLimits,
+} from './assets.js';
 
 describe('Assets & Upload Contracts', () => {
   it('validates supported image formats', () => {
@@ -44,5 +50,28 @@ describe('Assets & Upload Contracts', () => {
       createdAt: new Date().toISOString(),
     };
     expect(PhotoAssetSchema.safeParse(asset).success).toBe(false);
+  });
+
+  it('validates upload intent request and response schemas', () => {
+    const request = {
+      filename: 'vacation.png',
+      fileSizeBytes: 2048576,
+      mimeType: 'image/png',
+    };
+    expect(UploadIntentRequestSchema.safeParse(request).success).toBe(true);
+
+    const response = {
+      assetId: 'asset_1234567890123456',
+      storageKey: 'studios/std_1/sessions/sess_1/asset_1/vacation.png',
+      uploadUrl: '/public/studios/s1/sessions/sess_1/assets/upload',
+      expiresAt: new Date().toISOString(),
+    };
+    expect(UploadIntentResponseSchema.safeParse(response).success).toBe(true);
+
+    const list = {
+      assets: [],
+      totalCount: 0,
+    };
+    expect(PhotoAssetListResponseSchema.safeParse(list).success).toBe(true);
   });
 });

@@ -4,4 +4,6 @@ export * from './tenant.js';
 export * from './identity.js';
 export * from './session.js';
 export * from './assets.js';
+export * from './document-print.js';
+export * from './payment.js';
 export { z, ZodError } from 'zod';

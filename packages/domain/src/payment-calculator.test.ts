@@ -1,0 +1,88 @@
+import { describe, expect, it } from 'vitest';
+import { deriveOrderPaymentStatus, validatePaymentAttempt } from './payment-calculator.js';
+
+describe('Payment Calculator', () => {
+  describe('deriveOrderPaymentStatus', () => {
+    it('returns UNPAID when no payments exist', () => {
+      const summary = deriveOrderPaymentStatus(500, []);
+      expect(summary.paidAmountMinor).toBe(0);
+      expect(summary.paymentStatus).toBe('UNPAID');
+    });
+
+    it('returns PAYMENT_FAILED when only failed payments exist', () => {
+      const summary = deriveOrderPaymentStatus(500, [{ status: 'FAILED', amountMinor: 500 }]);
+      expect(summary.paidAmountMinor).toBe(0);
+      expect(summary.paymentStatus).toBe('PAYMENT_FAILED');
+    });
+
+    it('returns PARTIALLY_PAID when paid amount is less than total', () => {
+      const summary = deriveOrderPaymentStatus(1000, [
+        { status: 'SUCCEEDED', amountMinor: 400 },
+        { status: 'FAILED', amountMinor: 600 },
+      ]);
+      expect(summary.paidAmountMinor).toBe(400);
+      expect(summary.paymentStatus).toBe('PARTIALLY_PAID');
+    });
+
+    it('returns PAID when paid amount equals total amount', () => {
+      const summary = deriveOrderPaymentStatus(1000, [
+        { status: 'SUCCEEDED', amountMinor: 600 },
+        { status: 'SUCCEEDED', amountMinor: 400 },
+      ]);
+      expect(summary.paidAmountMinor).toBe(1000);
+      expect(summary.paymentStatus).toBe('PAID');
+    });
+
+    it('returns PAID when paid amount exceeds total amount', () => {
+      const summary = deriveOrderPaymentStatus(500, [{ status: 'SUCCEEDED', amountMinor: 600 }]);
+      expect(summary.paidAmountMinor).toBe(600);
+      expect(summary.paymentStatus).toBe('PAID');
+    });
+  });
+
+  describe('validatePaymentAttempt', () => {
+    it('allows valid payment attempt for remaining balance', () => {
+      const validation = validatePaymentAttempt(
+        { totalAmountMinor: 1000, paidAmountMinor: 400, paymentStatus: 'PARTIALLY_PAID' },
+        600
+      );
+      expect(validation.valid).toBe(true);
+      expect(validation.remainingMinor).toBe(600);
+    });
+
+    it('rejects attempt if order is already PAID', () => {
+      const validation = validatePaymentAttempt(
+        { totalAmountMinor: 1000, paidAmountMinor: 1000, paymentStatus: 'PAID' },
+        100
+      );
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('ORDER_ALREADY_PAID');
+    });
+
+    it('rejects negative or zero attempt amounts', () => {
+      const validationZero = validatePaymentAttempt(
+        { totalAmountMinor: 500, paidAmountMinor: 0, paymentStatus: 'UNPAID' },
+        0
+      );
+      expect(validationZero.valid).toBe(false);
+      expect(validationZero.error).toBe('INVALID_AMOUNT');
+
+      const validationNeg = validatePaymentAttempt(
+        { totalAmountMinor: 500, paidAmountMinor: 0, paymentStatus: 'UNPAID' },
+        -50
+      );
+      expect(validationNeg.valid).toBe(false);
+      expect(validationNeg.error).toBe('INVALID_AMOUNT');
+    });
+
+    it('rejects attempt exceeding remaining balance', () => {
+      const validation = validatePaymentAttempt(
+        { totalAmountMinor: 1000, paidAmountMinor: 700, paymentStatus: 'PARTIALLY_PAID' },
+        350
+      );
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('AMOUNT_EXCEEDS_REMAINING');
+      expect(validation.remainingMinor).toBe(300);
+    });
+  });
+});

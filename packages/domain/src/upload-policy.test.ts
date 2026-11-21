@@ -11,14 +11,23 @@ describe('Upload Policy Logic', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('rejects unsupported mime types', () => {
+  it('allows valid PDF document within size and count limits', () => {
     const result = validateUploadRequest({
       mimeType: 'application/pdf',
+      fileSizeBytes: 10 * 1024 * 1024,
+      currentSessionFilesCount: 0,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects unsupported mime types', () => {
+    const result = validateUploadRequest({
+      mimeType: 'application/x-msdownload',
       fileSizeBytes: 1024,
       currentSessionFilesCount: 0,
     });
     expect(result.ok).toBe(false);
-    expect(result.error).toContain('Unsupported image format');
+    expect(result.error).toContain('Unsupported format');
   });
 
   it('rejects files exceeding size limit', () => {

@@ -1,20 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from './config.js';
+import { INSECURE_DEV_COOKIE_SECRET, INSECURE_DEV_SESSION_SECRET, loadConfig } from './config.js';
 
 describe('API Configuration', () => {
-  it('loads valid configuration with defaults', () => {
-    const config = loadConfig({});
+  it('loads valid configuration with defaults in development', () => {
+    const config = loadConfig({ NODE_ENV: 'development' });
     expect(config.port).toBe(3001);
     expect(config.host).toBe('127.0.0.1');
     expect(config.nodeEnv).toBe('development');
     expect(config.mongoDbName).toBe('snapprint');
     expect(config.logLevel).toBe('info');
-    expect(config.mongoUri).toBeUndefined();
-    expect(config.sessionSecret).toBeDefined();
-    expect(config.sessionSecret.length).toBeGreaterThanOrEqual(32);
+    expect(config.sessionSecret).toBe(INSECURE_DEV_SESSION_SECRET);
+    expect(config.cookieSecret).toBe(INSECURE_DEV_COOKIE_SECRET);
+    expect(config.corsAllowedOrigins).toBe('http://localhost:3000,http://127.0.0.1:3000');
+    expect(config.trustProxy).toBe(false);
+    expect(config.cookieSecure).toBe(false);
+    expect(config.rateLimitMax).toBe(100);
+    expect(config.rateLimitTimeWindow).toBe('1 minute');
   });
 
-  it('loads custom environment variables', () => {
+  it('loads custom environment variables in production with strong secrets', () => {
     const config = loadConfig({
       PORT: '8080',
       HOST: '0.0.0.0',
@@ -22,7 +26,13 @@ describe('API Configuration', () => {
       MONGODB_URI: 'mongodb://localhost:27017',
       MONGODB_DB_NAME: 'custom_db',
       LOG_LEVEL: 'warn',
-      SESSION_SECRET: 'custom-production-secret-key-at-least-32-chars-long!',
+      SESSION_SECRET: 'a-very-strong-production-session-secret-key-64chars-long!!!!!!!',
+      COOKIE_SECRET: 'a-very-strong-production-cookie-secret-key-64chars-long!!!!!!!',
+      CORS_ALLOWED_ORIGINS: 'https://app.snapprint.com,https://admin.snapprint.com',
+      TRUST_PROXY: 'true',
+      COOKIE_SECURE: 'true',
+      RATE_LIMIT_MAX: '50',
+      RATE_LIMIT_TIME_WINDOW: '30 seconds',
     });
     expect(config.port).toBe(8080);
     expect(config.host).toBe('0.0.0.0');
@@ -30,10 +40,79 @@ describe('API Configuration', () => {
     expect(config.mongoUri).toBe('mongodb://localhost:27017');
     expect(config.mongoDbName).toBe('custom_db');
     expect(config.logLevel).toBe('warn');
-    expect(config.sessionSecret).toBe('custom-production-secret-key-at-least-32-chars-long!');
+    expect(config.sessionSecret).toBe(
+      'a-very-strong-production-session-secret-key-64chars-long!!!!!!!'
+    );
+    expect(config.cookieSecret).toBe(
+      'a-very-strong-production-cookie-secret-key-64chars-long!!!!!!!'
+    );
+    expect(config.corsAllowedOrigins).toBe('https://app.snapprint.com,https://admin.snapprint.com');
+    expect(config.trustProxy).toBe(true);
+    expect(config.cookieSecure).toBe(true);
+    expect(config.rateLimitMax).toBe(50);
+    expect(config.rateLimitTimeWindow).toBe('30 seconds');
   });
 
-  it('throws on invalid configuration', () => {
+  it('rejects default insecure session secret in production mode without leaking secret value', () => {
+    expect(() =>
+      loadConfig({
+        NODE_ENV: 'production',
+        MONGODB_URI: 'mongodb://localhost:27017',
+        COOKIE_SECRET: 'a-very-strong-production-cookie-secret-key-64chars-long!!!!!!!',
+      })
+    ).toThrowError(
+      'sessionSecret: Production environment requires a strong, non-default SESSION_SECRET (minimum 32 characters)'
+    );
+
+    // Verify the error message does not contain the default secret value
+    try {
+      loadConfig({ NODE_ENV: 'production' });
+    } catch (err: unknown) {
+      const msg = (err as Error).message;
+      expect(msg).not.toContain(INSECURE_DEV_SESSION_SECRET);
+      expect(msg).not.toContain(INSECURE_DEV_COOKIE_SECRET);
+    }
+  });
+
+  it('rejects default insecure cookie secret in production mode without leaking secret value', () => {
+    expect(() =>
+      loadConfig({
+        NODE_ENV: 'production',
+        MONGODB_URI: 'mongodb://localhost:27017',
+        SESSION_SECRET: 'a-very-strong-production-session-secret-key-64chars-long!!!!!!!',
+      })
+    ).toThrowError(
+      'cookieSecret: Production environment requires a strong, non-default COOKIE_SECRET (minimum 32 characters)'
+    );
+  });
+
+  it('rejects missing MONGODB_URI in production mode', () => {
+    expect(() =>
+      loadConfig({
+        NODE_ENV: 'production',
+        SESSION_SECRET: 'a-very-strong-production-session-secret-key-64chars-long!!!!!!!',
+        COOKIE_SECRET: 'a-very-strong-production-cookie-secret-key-64chars-long!!!!!!!',
+      })
+    ).toThrowError('mongoUri: Production environment requires a valid MONGODB_URI');
+  });
+
+  it('throws when session secret is shorter than 32 characters', () => {
+    expect(() =>
+      loadConfig({
+        SESSION_SECRET: 'short-secret-1234',
+      })
+    ).toThrow('Invalid application configuration');
+  });
+
+  it('throws when cookie secret is shorter than 32 characters', () => {
+    expect(() =>
+      loadConfig({
+        COOKIE_SECRET: 'short-cookie-1234',
+      })
+    ).toThrow('Invalid application configuration');
+  });
+
+  it('throws on invalid port number', () => {
     expect(() =>
       loadConfig({
         PORT: '-1',
@@ -41,11 +120,46 @@ describe('API Configuration', () => {
     ).toThrow('Invalid application configuration');
   });
 
-  it('throws on session secret too short', () => {
+  it('defaults cookieSecure to true in production when not explicitly specified', () => {
+    const config = loadConfig({
+      NODE_ENV: 'production',
+      MONGODB_URI: 'mongodb://localhost:27017',
+      SESSION_SECRET: 'a-very-strong-production-session-secret-key-64chars-long!!!!!!!',
+      COOKIE_SECRET: 'a-very-strong-production-cookie-secret-key-64chars-long!!!!!!!',
+    });
+    expect(config.cookieSecure).toBe(true);
+  });
+
+  it('rejects insecure cookieSecure=false override in production mode', () => {
     expect(() =>
       loadConfig({
-        SESSION_SECRET: 'too-short',
+        NODE_ENV: 'production',
+        MONGODB_URI: 'mongodb://localhost:27017',
+        SESSION_SECRET: 'a-very-strong-production-session-secret-key-64chars-long!!!!!!!',
+        COOKIE_SECRET: 'a-very-strong-production-cookie-secret-key-64chars-long!!!!!!!',
+        COOKIE_SECURE: 'false',
       })
-    ).toThrow('Invalid application configuration');
+    ).toThrowError(
+      'cookieSecure: Production environment requires COOKIE_SECURE to be true; insecure overrides (false) are disallowed'
+    );
+  });
+
+  it('allows cookieSecure to be explicitly set to true or false in development mode', () => {
+    const devTrue = loadConfig({
+      NODE_ENV: 'development',
+      COOKIE_SECURE: 'true',
+    });
+    expect(devTrue.cookieSecure).toBe(true);
+
+    const devFalse = loadConfig({
+      NODE_ENV: 'development',
+      COOKIE_SECURE: 'false',
+    });
+    expect(devFalse.cookieSecure).toBe(false);
+
+    const devUnset = loadConfig({
+      NODE_ENV: 'development',
+    });
+    expect(devUnset.cookieSecure).toBe(false);
   });
 });

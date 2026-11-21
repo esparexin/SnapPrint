@@ -1,0 +1,150 @@
+import { Db } from 'mongodb';
+import { UserMembershipDocument } from './repositories/membership.repository.js';
+import { OperatorSessionDocument } from './repositories/operator-session.repository.js';
+import { OrderDocument } from './repositories/order.repository.js';
+import { PaymentDocument } from './repositories/payment.repository.js';
+import { PhotoAssetDocument } from './repositories/photo-asset.repository.js';
+import { QrSessionDocument } from './repositories/session.repository.js';
+import { StudioDocument } from './repositories/studio.repository.js';
+import { UserDocument } from './repositories/user.repository.js';
+import { WebhookEventDocument } from './repositories/webhook.repository.js';
+
+export interface MockCollections {
+  users: UserDocument[];
+  sessions: OperatorSessionDocument[];
+  qrSessions: QrSessionDocument[];
+  photoAssets: PhotoAssetDocument[];
+  memberships: UserMembershipDocument[];
+  studios: StudioDocument[];
+  orders: OrderDocument[];
+  payments: PaymentDocument[];
+  webhookEvents: WebhookEventDocument[];
+}
+
+function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
+  for (const [k, v] of Object.entries(filter)) {
+    if (v === undefined) continue;
+    if (typeof v === 'object' && v !== null) {
+      const obj = v as Record<string, unknown>;
+      if ('$in' in obj && Array.isArray(obj.$in)) {
+        if (!obj.$in.includes(item[k])) return false;
+        continue;
+      }
+      if ('$gt' in obj) {
+        const itemTime =
+          item[k] instanceof Date ? item[k].getTime() : new Date(item[k] as string).getTime();
+        const targetTime =
+          obj.$gt instanceof Date ? obj.$gt.getTime() : new Date(obj.$gt as string).getTime();
+        if (Number.isNaN(itemTime) || Number.isNaN(targetTime) || !(itemTime > targetTime))
+          return false;
+        continue;
+      }
+    }
+    if (item[k] !== v) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function createMockDb(): { db: Db } & MockCollections {
+  const users: UserDocument[] = [];
+  const sessions: OperatorSessionDocument[] = [];
+  const qrSessions: QrSessionDocument[] = [];
+  const photoAssets: PhotoAssetDocument[] = [];
+  const memberships: UserMembershipDocument[] = [];
+  const studios: StudioDocument[] = [];
+  const orders: OrderDocument[] = [];
+  const payments: PaymentDocument[] = [];
+  const webhookEvents: WebhookEventDocument[] = [];
+
+  const store: Record<string, Record<string, unknown>[]> = {
+    users: users as unknown as Record<string, unknown>[],
+    operator_sessions: sessions as unknown as Record<string, unknown>[],
+    qr_sessions: qrSessions as unknown as Record<string, unknown>[],
+    photo_assets: photoAssets as unknown as Record<string, unknown>[],
+    user_memberships: memberships as unknown as Record<string, unknown>[],
+    studios: studios as unknown as Record<string, unknown>[],
+    orders: orders as unknown as Record<string, unknown>[],
+    payments: payments as unknown as Record<string, unknown>[],
+    webhook_events: webhookEvents as unknown as Record<string, unknown>[],
+  };
+
+  const db = {
+    collection: (name: string) => {
+      const list = store[name] || [];
+      return {
+        async insertOne(doc: unknown) {
+          const item = { ...(doc as Record<string, unknown>) };
+          list.push(item);
+          const id = (item.id ||
+            item.sessionId ||
+            item.orderId ||
+            item.paymentId ||
+            item.eventId) as string;
+          return { acknowledged: true, insertedId: id };
+        },
+        async findOne(filter: Record<string, unknown>) {
+          return list.find((i) => matchDoc(i, filter)) ?? null;
+        },
+        async updateOne(
+          filter: Record<string, unknown>,
+          update: { $set?: Record<string, unknown>; $inc?: Record<string, number> }
+        ) {
+          const item = list.find((i) => matchDoc(i, filter));
+          if (!item) return { matchedCount: 0, modifiedCount: 0 };
+          if (update.$set) Object.assign(item, update.$set);
+          if (update.$inc) {
+            for (const [k, v] of Object.entries(update.$inc)) {
+              item[k] = ((item[k] as number) ?? 0) + v;
+            }
+          }
+          return { matchedCount: 1, modifiedCount: 1 };
+        },
+        async findOneAndUpdate(
+          filter: Record<string, unknown>,
+          update: { $set?: Record<string, unknown> }
+        ) {
+          const item = list.find((i) => matchDoc(i, filter));
+          if (!item) return null;
+          if (update.$set) Object.assign(item, update.$set);
+          return { ...item };
+        },
+        find(filter: Record<string, unknown>) {
+          const matched = list.filter((i) => matchDoc(i, filter));
+          const cursor = {
+            sort: () => cursor,
+            limit: (n?: number) => {
+              if (n !== undefined) matched.splice(n);
+              return cursor;
+            },
+            toArray: async () => matched.map((i) => ({ ...i })),
+          };
+          return cursor;
+        },
+        async countDocuments(filter: Record<string, unknown>) {
+          return list.filter((i) => matchDoc(i, filter)).length;
+        },
+        async deleteOne(filter: Record<string, unknown>) {
+          const idx = list.findIndex((i) => matchDoc(i, filter));
+          if (idx === -1) return { deletedCount: 0 };
+          list.splice(idx, 1);
+          return { deletedCount: 1 };
+        },
+      };
+    },
+  } as unknown as Db;
+
+  return {
+    db,
+    users,
+    sessions,
+    qrSessions,
+    photoAssets,
+    memberships,
+    studios,
+    orders,
+    payments,
+    webhookEvents,
+  };
+}

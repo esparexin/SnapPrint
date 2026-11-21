@@ -20,3 +20,10 @@ export const CreateQrSessionRequestSchema = z.object({
 });
 
 export type CreateQrSessionRequest = z.infer<typeof CreateQrSessionRequestSchema>;
+
+export const CustomerSessionResponseSchema = z.object({
+  session: CustomerQrSessionSchema,
+  token: z.string().min(1),
+});
+
+export type CustomerSessionResponse = z.infer<typeof CustomerSessionResponseSchema>;
