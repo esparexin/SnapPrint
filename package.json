@@ -1,0 +1,31 @@
+{
+  "name": "@snapprint/root",
+  "private": true,
+  "description": "SnapPrint — multi-tenant photo printing shop SaaS (engineering foundation)",
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "build": "pnpm -r run build",
+    "start": "pnpm --filter web start",
+    "start:api": "pnpm --filter api start",
+    "test": "vitest run",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write ."
+  },
+  "devDependencies": {
+    "typescript": "~5.8.0",
+    "eslint": "~9.15.0",
+    "@eslint/js": "~9.15.0",
+    "typescript-eslint": "~8.15.0",
+    "prettier": "~3.4.0",
+    "vitest": "~3.0.0",
+    "tsx": "~4.19.0"
+  }
+}
