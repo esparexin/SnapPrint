@@ -15,6 +15,6 @@
       }
     ]
   },
-  "include": ["app", "globals.css", "next.config.ts", ".next/types/**/*.ts"],
+  "include": ["app", "src", "globals.css", "next.config.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules", ".next"]
 }

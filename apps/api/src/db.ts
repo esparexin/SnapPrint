@@ -73,4 +73,17 @@ export async function ensureIndexes(db: Db): Promise<void> {
     { key: { assetId: 1 }, unique: true, name: 'uid_asset_id' },
     { key: { studioId: 1, sessionId: 1 }, name: 'idx_asset_studio_session' },
   ]);
+
+  // 5. Users collection: unique ID and unique normalized email
+  await db.collection('users').createIndexes([
+    { key: { id: 1 }, unique: true, name: 'uid_user_id' },
+    { key: { email: 1 }, unique: true, name: 'uid_user_email' },
+  ]);
+
+  // 6. Operator sessions collection: unique session ID, user-status scoping, and TTL auto-cleanup
+  await db.collection('operator_sessions').createIndexes([
+    { key: { sessionId: 1 }, unique: true, name: 'uid_operator_session_id' },
+    { key: { userId: 1, status: 1 }, name: 'idx_operator_session_user_status' },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0, name: 'ttl_operator_session_expiry' },
+  ]);
 }

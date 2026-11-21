@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { StudioIdSchema, StudioSchema, StudioSettingsSchema } from './tenant.js';
+import {
+  PublicStudioSchema,
+  StudioIdSchema,
+  StudioSchema,
+  StudioSettingsSchema,
+} from './tenant.js';
 
 describe('Tenant Contracts', () => {
   it('validates valid studio ids', () => {
@@ -38,5 +43,23 @@ describe('Tenant Contracts', () => {
       updatedAt: now,
     };
     expect(StudioSchema.safeParse(studio).success).toBe(true);
+  });
+
+  it('validates public studio contract without internal settings exposure', () => {
+    const publicStudio = {
+      id: 'studio_abc',
+      slug: 'studio-abc',
+      name: 'ABC Photo Prints',
+      status: 'active',
+      currency: 'INR',
+      contactPhone: '+919876543210',
+      contactEmail: 'contact@abc.in',
+    };
+    expect(PublicStudioSchema.safeParse(publicStudio).success).toBe(true);
+
+    // Invalid slug with uppercase or special characters
+    expect(PublicStudioSchema.safeParse({ ...publicStudio, slug: 'Invalid_Slug!' }).success).toBe(
+      false
+    );
   });
 });

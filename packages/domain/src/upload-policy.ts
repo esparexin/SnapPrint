@@ -1,4 +1,4 @@
-import { AllowedImageMimeTypes, UploadLimits } from '@snapprint/contracts';
+import { AllowedMimeTypes, UploadLimits } from '@snapprint/contracts';
 
 export interface UploadValidationInput {
   mimeType: string;
@@ -12,14 +12,14 @@ export interface UploadValidationResult {
 }
 
 /**
- * Validates a photo upload against strict file type, size, and count limits.
+ * Validates a document/photo upload against strict file type, size, and count limits.
  */
 export function validateUploadRequest(input: UploadValidationInput): UploadValidationResult {
-  const allowed = (AllowedImageMimeTypes as readonly string[]).includes(input.mimeType);
+  const allowed = (AllowedMimeTypes as readonly string[]).includes(input.mimeType);
   if (!allowed) {
     return {
       ok: false,
-      error: `Unsupported image format '${input.mimeType}'. Allowed formats: ${AllowedImageMimeTypes.join(', ')}`,
+      error: `Unsupported format '${input.mimeType}'. Allowed formats: ${AllowedMimeTypes.join(', ')}`,
     };
   }
 
