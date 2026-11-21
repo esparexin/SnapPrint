@@ -1,0 +1,171 @@
+'use client';
+
+import React, { useState } from 'react';
+import { OrderRecord } from '@snapprint/contracts';
+import { CustomerPaymentCard } from './customer-payment-card';
+
+interface OrderConfirmationViewProps {
+  order: OrderRecord;
+  studioName: string;
+  slug?: string;
+  sessionToken?: string;
+  onNewOrder: () => void;
+}
+
+export function OrderConfirmationView({
+  order: initialOrder,
+  studioName,
+  slug,
+  sessionToken,
+  onNewOrder,
+}: OrderConfirmationViewProps) {
+  const [order, setOrder] = useState<OrderRecord>(initialOrder);
+
+  return (
+    <div
+      style={{
+        padding: '32px 20px',
+        backgroundColor: '#ffffff',
+        border: '1px solid #bbf7d0',
+        borderRadius: '16px',
+        textAlign: 'center',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+      }}
+    >
+      <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+      <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>
+        Print Job Submitted Successfully!
+      </h2>
+      <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 20px' }}>
+        Your documents have been received by <strong>{studioName}</strong>.
+      </p>
+
+      {/* Order Reference Box */}
+      <div
+        style={{
+          display: 'inline-block',
+          padding: '16px 32px',
+          backgroundColor: '#f0fdf4',
+          border: '2px dashed #86efac',
+          borderRadius: '12px',
+          marginBottom: '24px',
+        }}
+      >
+        <div style={{ fontSize: '12px', fontWeight: 700, color: '#166534', letterSpacing: '1px' }}>
+          YOUR ORDER NUMBER
+        </div>
+        <div style={{ fontSize: '28px', fontWeight: 900, color: '#15803d', marginTop: '4px' }}>
+          {order.orderNumber}
+        </div>
+        <div style={{ fontSize: '13px', color: '#166534', marginTop: '4px' }}>
+          Status: <strong>Submitted ({order.status})</strong>
+        </div>
+      </div>
+
+      {/* Payment Action Card */}
+      {slug && (
+        <CustomerPaymentCard
+          order={order}
+          slug={slug}
+          sessionToken={sessionToken}
+          onPaymentSuccess={() => {
+            setOrder((prev) => ({
+              ...prev,
+              paymentStatus: 'PAID',
+              paidAmountMinor: prev.totalAmountMinor,
+            }));
+          }}
+        />
+      )}
+
+      {/* Manifest Summary */}
+      <div
+        style={{
+          textAlign: 'left',
+          backgroundColor: '#f8fafc',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '24px',
+        }}
+      >
+        <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '10px' }}>
+          Print Settings Manifest:
+        </div>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {order.items.map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '13px',
+                borderBottom: '1px solid #e2e8f0',
+                paddingBottom: '6px',
+              }}
+            >
+              <div>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>{item.filename}</span>
+                <span style={{ color: '#64748b', marginLeft: '6px' }}>
+                  ({item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
+                  {item.sides === 'double_sided' ? 'Duplex' : 'Single-sided'}, {item.sheetsCount}{' '}
+                  sheets × {item.copies})
+                </span>
+              </div>
+              <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                ₹{(item.subtotalMinor / 100).toFixed(2)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '12px',
+            paddingTop: '8px',
+            fontWeight: 800,
+            fontSize: '15px',
+            color: '#0f172a',
+          }}
+        >
+          <span>Total Amount:</span>
+          <span style={{ color: '#0284c7' }}>₹{(order.totalAmountMinor / 100).toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          padding: '14px',
+          backgroundColor: '#eff6ff',
+          borderRadius: '8px',
+          fontSize: '13px',
+          color: '#1e40af',
+          marginBottom: '24px',
+          lineHeight: 1.5,
+        }}
+      >
+        📍 <strong>Counter Pickup:</strong> Please show Order <strong>{order.orderNumber}</strong>{' '}
+        at the shop counter. The operator will print and package your documents.
+      </div>
+
+      <button
+        type="button"
+        onClick={onNewOrder}
+        style={{
+          padding: '10px 20px',
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        ➕ Print Another Document
+      </button>
+    </div>
+  );
+}
