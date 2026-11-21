@@ -5,8 +5,12 @@ build
 .next
 out
 *.tsbuildinfo
-*.env
+.env
 .env.*
+.env.local
+*.env
+!.env.example
+!*.env.example
 npm-debug.log*
 pnpm-debug.log*
 .vercel

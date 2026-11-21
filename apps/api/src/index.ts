@@ -1,13 +1,13 @@
 import fastify from 'fastify';
+import { loadConfig } from './config.js';
+import { closeDb, connectDb } from './db.js';
 import { healthRoutes } from './health.js';
 
-const PORT = Number(process.env.PORT) || 3001;
-const HOST = process.env.HOST || '127.0.0.1';
+const config = loadConfig();
 
 const app = fastify({
   logger: {
-    level:
-      (process.env.LOG_LEVEL as 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace') || 'info',
+    level: config.logLevel,
   },
 });
 
@@ -24,8 +24,16 @@ const signals = ['SIGINT', 'SIGTERM'] as const;
 
 async function start() {
   try {
-    await app.listen({ port: PORT, host: HOST });
-    app.log.info({ port: PORT, host: HOST }, 'snapprint api started');
+    if (config.mongoUri) {
+      app.log.info({ db: config.mongoDbName }, 'connecting to mongodb...');
+      await connectDb(config.mongoUri, config.mongoDbName);
+      app.log.info('mongodb connected and indexes ensured');
+    } else {
+      app.log.warn('MONGODB_URI not provided; starting without persistent database connection');
+    }
+
+    await app.listen({ port: config.port, host: config.host });
+    app.log.info({ port: config.port, host: config.host }, 'snapprint api started');
   } catch (error) {
     app.log.error(error, 'failed to start api');
     process.exit(1);
@@ -37,6 +45,7 @@ for (const signal of signals) {
     app.log.info({ signal }, 'shutting down');
     try {
       await app.close();
+      await closeDb();
     } catch (error) {
       app.log.error(error, 'error during shutdown');
       process.exit(1);

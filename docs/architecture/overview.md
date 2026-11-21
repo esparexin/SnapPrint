@@ -41,3 +41,13 @@
 - Supported image MIME types: `image/jpeg`, `image/png`, `image/webp`, `image/heic`.
 - Hard per-file limit: 50MB; session limit: 50 assets.
 - Asset storage keys are isolated per studio and session. Customer photos are private and access-controlled through short-lived signed URLs.
+
+## Phase 4 — Data Persistence Boundaries (MongoDB Atlas)
+
+- **Database Engine**: MongoDB Atlas managed document database, accessed via official `mongodb` driver (see `docs/decisions/0001-database-persistence-mongodb-atlas.md`).
+- **Core Collections & Indexes**:
+  - `studios`: Indexed by `id` (unique) and `slug` (unique).
+  - `user_memberships`: Compound unique index on `{ userId: 1, studioId: 1 }`.
+  - `qr_sessions`: Indexed by `sessionId` (unique) and `studioId`. Automated TTL index on `expiresAt` (`expireAfterSeconds: 0`) purges expired sessions.
+  - `photo_assets`: Indexed by `assetId` (unique) and `{ studioId: 1, sessionId: 1 }`.
+- **Health & Readiness**: `/ready` route performs an active database ping before reporting readiness.
