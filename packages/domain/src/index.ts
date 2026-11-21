@@ -12,4 +12,5 @@ export * from './print-pricing.js';
 export * from './print-geometry.js';
 export * from './payment-calculator.js';
 export * from './print-authorization.js';
+export * from './order-state-machine.js';
 export * from './signature-verification.js';

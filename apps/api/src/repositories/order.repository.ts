@@ -1,7 +1,9 @@
 import { Db } from 'mongodb';
 import {
+  OrderAuditEvent,
   OrderPaymentStatus,
   OrderRecord,
+  OrderRecordInput,
   OrderRecordSchema,
   OrderStatus,
 } from '@snapprint/contracts';
@@ -24,6 +26,7 @@ export interface OrderDocument {
   status: OrderStatus;
   paidAmountMinor?: number;
   paymentStatus?: OrderPaymentStatus;
+  events?: unknown[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +48,7 @@ export function toOrderContract(doc: OrderDocument): OrderRecord {
     status: doc.status,
     paidAmountMinor: doc.paidAmountMinor ?? 0,
     paymentStatus: doc.paymentStatus ?? 'UNPAID',
+    events: Array.isArray(doc.events) ? doc.events : [],
     createdAt:
       doc.createdAt instanceof Date
         ? doc.createdAt.toISOString()
@@ -56,7 +60,7 @@ export function toOrderContract(doc: OrderDocument): OrderRecord {
   });
 }
 
-export async function createOrderRecord(db: Db, order: OrderRecord): Promise<OrderRecord> {
+export async function createOrderRecord(db: Db, order: OrderRecordInput): Promise<OrderRecord> {
   const parsed = OrderRecordSchema.parse(order);
   const createdDate = new Date(parsed.createdAt);
   const updatedDate = new Date(parsed.updatedAt);
@@ -77,6 +81,7 @@ export async function createOrderRecord(db: Db, order: OrderRecord): Promise<Ord
     status: parsed.status,
     paidAmountMinor: parsed.paidAmountMinor ?? 0,
     paymentStatus: parsed.paymentStatus ?? 'UNPAID',
+    events: parsed.events ?? [],
     createdAt: Number.isNaN(createdDate.getTime()) ? new Date() : createdDate,
     updatedAt: Number.isNaN(updatedDate.getTime()) ? new Date() : updatedDate,
   };
@@ -119,14 +124,25 @@ export async function findOrderBySessionAndId(
   return doc ? toOrderContract(doc) : null;
 }
 
+export interface ListOrdersOptions {
+  status?: OrderStatus;
+  limit?: number;
+}
+
 export async function listOrdersByStudio(
   db: Db,
   studioId: string,
-  limit = 50
+  opts?: ListOrdersOptions | number
 ): Promise<OrderRecord[]> {
+  const limit = typeof opts === 'number' ? opts : (opts?.limit ?? 50);
+  const filter: Record<string, unknown> = { studioId };
+  if (typeof opts === 'object' && opts?.status) {
+    filter.status = opts.status;
+  }
+
   const docs = await db
     .collection<OrderDocument>(ORDERS_COLLECTION)
-    .find({ studioId }, { projection: { _id: 0 } })
+    .find(filter, { projection: { _id: 0 } })
     .sort({ createdAt: -1 })
     .limit(Math.min(limit, 100))
     .toArray();
@@ -137,16 +153,23 @@ export async function updateOrderStatus(
   db: Db,
   studioId: string,
   orderId: string,
-  status: OrderStatus
+  status: OrderStatus,
+  event?: OrderAuditEvent
 ): Promise<OrderRecord | null> {
   const now = new Date();
+  const updateOps: { $set: Record<string, unknown>; $push?: Record<string, unknown> } = {
+    $set: { status, updatedAt: now },
+  };
+  if (event) {
+    updateOps.$push = { events: event };
+  }
+
   const result = await db
     .collection<OrderDocument>(ORDERS_COLLECTION)
-    .findOneAndUpdate(
-      { studioId, orderId },
-      { $set: { status, updatedAt: now } },
-      { returnDocument: 'after', projection: { _id: 0 } }
-    );
+    .findOneAndUpdate({ studioId, orderId }, updateOps, {
+      returnDocument: 'after',
+      projection: { _id: 0 },
+    });
   return result ? toOrderContract(result) : null;
 }
 

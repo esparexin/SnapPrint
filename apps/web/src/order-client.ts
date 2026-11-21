@@ -106,8 +106,12 @@ export async function fetchOrderDetails(
   return OrderRecordSchema.parse(data);
 }
 
-export async function fetchOperatorOrderQueue(studioId: string): Promise<OrderListResponse> {
-  const url = `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders`;
+export async function fetchOperatorOrderQueue(
+  studioId: string,
+  status?: OrderStatus
+): Promise<OrderListResponse> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  const url = `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders${query}`;
   const res = await fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -125,17 +129,26 @@ export async function fetchOperatorOrderQueue(studioId: string): Promise<OrderLi
   return OrderListResponseSchema.parse(data);
 }
 
+export function getOperatorDocumentDownloadUrl(
+  studioId: string,
+  orderId: string,
+  assetId: string
+): string {
+  return `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders/${encodeURIComponent(orderId)}/documents/${encodeURIComponent(assetId)}/download`;
+}
+
 export async function updateOperatorOrderStatus(
   studioId: string,
   orderId: string,
-  status: OrderStatus
+  status: OrderStatus,
+  notes?: string
 ): Promise<OrderRecord> {
   const url = `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders/${encodeURIComponent(orderId)}/status`;
   const res = await fetch(url, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, notes }),
   });
 
   const data = await res.json().catch(() => null);

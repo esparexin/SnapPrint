@@ -53,7 +53,7 @@ export async function createTestApp(
   await app.register(studioRoutes, { db: mock.db });
   await app.register(publicRoutes, { db: mock.db, config: testConfig });
   await app.register(assetRoutes, { db: mock.db, config: testConfig, storage });
-  await app.register(orderRoutes, { db: mock.db, config: testConfig });
+  await app.register(orderRoutes, { db: mock.db, config: testConfig, storage });
   await app.register(paymentRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(operatorPaymentRoutes, { db: mock.db });
   await app.register(webhookRoutes, { db: mock.db, config: testConfig, gateway });

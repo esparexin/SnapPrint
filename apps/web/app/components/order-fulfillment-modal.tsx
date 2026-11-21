@@ -22,12 +22,16 @@ export function OrderFulfillmentModal({
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [paymentOrder, setPaymentOrder] = useState<OrderRecord | null>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
 
   async function loadOrders() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchOperatorOrderQueue(studioId);
+      const res = await fetchOperatorOrderQueue(
+        studioId,
+        statusFilter === 'all' ? undefined : statusFilter
+      );
       setOrders(res.orders);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load order queue');
@@ -38,7 +42,7 @@ export function OrderFulfillmentModal({
 
   useEffect(() => {
     loadOrders();
-  }, [studioId]);
+  }, [studioId, statusFilter]);
 
   async function handleStatusChange(orderId: string, newStatus: OrderStatus) {
     setUpdatingId(orderId);
@@ -139,6 +143,39 @@ export function OrderFulfillmentModal({
               ✕
             </button>
           </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '6px',
+            padding: '10px 20px',
+            borderBottom: '1px solid #e2e8f0',
+            backgroundColor: '#f8fafc',
+            overflowX: 'auto',
+            flexWrap: 'wrap',
+          }}
+        >
+          {(['all', 'submitted', 'processing', 'ready', 'completed'] as const).map((st) => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setStatusFilter(st)}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '16px',
+                fontSize: '12px',
+                fontWeight: 600,
+                border: '1px solid',
+                borderColor: statusFilter === st ? '#0284c7' : '#cbd5e1',
+                backgroundColor: statusFilter === st ? '#e0f2fe' : '#ffffff',
+                color: statusFilter === st ? '#0369a1' : '#475569',
+                cursor: 'pointer',
+              }}
+            >
+              {st === 'all' ? 'All Orders' : st.charAt(0).toUpperCase() + st.slice(1)}
+            </button>
+          ))}
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>

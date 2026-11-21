@@ -103,11 +103,20 @@ export function createMockDb(): { db: Db } & MockCollections {
         },
         async findOneAndUpdate(
           filter: Record<string, unknown>,
-          update: { $set?: Record<string, unknown> }
+          update: {
+            $set?: Record<string, unknown>;
+            $push?: Record<string, unknown>;
+          }
         ) {
           const item = list.find((i) => matchDoc(i, filter));
           if (!item) return null;
           if (update.$set) Object.assign(item, update.$set);
+          if (update.$push) {
+            for (const [k, v] of Object.entries(update.$push)) {
+              if (!Array.isArray(item[k])) item[k] = [];
+              (item[k] as unknown[]).push(v);
+            }
+          }
           return { ...item };
         },
         find(filter: Record<string, unknown>) {
