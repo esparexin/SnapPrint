@@ -15,6 +15,10 @@ const ConfigSchema = z.object({
   mongoUri: z.string().min(1).optional(),
   mongoDbName: z.string().min(1).default('snapprint'),
   logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  sessionSecret: z
+    .string()
+    .min(32)
+    .default('dev-insecure-session-secret-must-be-at-least-32-chars-long!'),
 });
 
 export type AppConfig = z.infer<typeof ConfigSchema>;
@@ -27,6 +31,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mongoUri: env.MONGODB_URI,
     mongoDbName: env.MONGODB_DB_NAME,
     logLevel: env.LOG_LEVEL,
+    sessionSecret: env.SESSION_SECRET,
   });
 
   if (!result.success) {

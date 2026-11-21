@@ -10,6 +10,8 @@ describe('API Configuration', () => {
     expect(config.mongoDbName).toBe('snapprint');
     expect(config.logLevel).toBe('info');
     expect(config.mongoUri).toBeUndefined();
+    expect(config.sessionSecret).toBeDefined();
+    expect(config.sessionSecret.length).toBeGreaterThanOrEqual(32);
   });
 
   it('loads custom environment variables', () => {
@@ -20,6 +22,7 @@ describe('API Configuration', () => {
       MONGODB_URI: 'mongodb://localhost:27017',
       MONGODB_DB_NAME: 'custom_db',
       LOG_LEVEL: 'warn',
+      SESSION_SECRET: 'custom-production-secret-key-at-least-32-chars-long!',
     });
     expect(config.port).toBe(8080);
     expect(config.host).toBe('0.0.0.0');
@@ -27,12 +30,21 @@ describe('API Configuration', () => {
     expect(config.mongoUri).toBe('mongodb://localhost:27017');
     expect(config.mongoDbName).toBe('custom_db');
     expect(config.logLevel).toBe('warn');
+    expect(config.sessionSecret).toBe('custom-production-secret-key-at-least-32-chars-long!');
   });
 
   it('throws on invalid configuration', () => {
     expect(() =>
       loadConfig({
         PORT: '-1',
+      })
+    ).toThrow('Invalid application configuration');
+  });
+
+  it('throws on session secret too short', () => {
+    expect(() =>
+      loadConfig({
+        SESSION_SECRET: 'too-short',
       })
     ).toThrow('Invalid application configuration');
   });

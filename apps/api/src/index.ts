@@ -1,7 +1,10 @@
 import fastify from 'fastify';
 import { loadConfig } from './config.js';
 import { closeDb, connectDb } from './db.js';
+import { handleApiError } from './error-handler.js';
 import { healthRoutes } from './health.js';
+import { sessionPlugin } from './plugins/session.js';
+import { tenantPlugin } from './plugins/tenant.js';
 
 const config = loadConfig();
 
@@ -11,14 +14,11 @@ const app = fastify({
   },
 });
 
-app.register(healthRoutes);
+app.setErrorHandler(handleApiError);
 
-app.setErrorHandler((error, request, reply) => {
-  const err = error as { statusCode?: number; message?: string };
-  app.log.error(err);
-  const statusCode = err.statusCode || 500;
-  reply.status(statusCode).send({ error: 'internal server error' });
-});
+app.register(tenantPlugin);
+app.register(sessionPlugin, { sessionSecret: config.sessionSecret });
+app.register(healthRoutes);
 
 const signals = ['SIGINT', 'SIGTERM'] as const;
 
