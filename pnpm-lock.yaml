@@ -79,6 +79,10 @@ importers:
         version: 5.8.3
 
   packages/domain:
+    dependencies:
+      '@snapprint/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       typescript:
         specifier: ~5.8.0
