@@ -17,7 +17,10 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint .",
     "format": "prettier --check .",
-    "format:write": "prettier --write ."
+    "format:write": "prettier --write .",
+    "check:file-sizes": "tsx scripts/check-file-sizes.ts",
+    "check:architecture": "tsx scripts/check-architecture-boundaries.ts",
+    "security:audit": "pnpm audit --audit-level=critical --prod"
   },
   "devDependencies": {
     "typescript": "~5.8.0",

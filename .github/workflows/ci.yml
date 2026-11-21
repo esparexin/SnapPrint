@@ -1,0 +1,282 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------
+  # Install + lockfile integrity
+  # Verifies pnpm install works with the frozen lockfile (no drift).
+  # ------------------------------------------------------------------
+  install:
+    name: Install & lockfile integrity
+    runs-on: ubuntu-latest
+    outputs:
+      node-version: ${{ steps.node.outputs.node-version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        id: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify lockfile is committed
+        run: |
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "ERROR: pnpm-lock.yaml is missing. Commit the lockfile." >&2
+            exit 1
+          fi
+
+  # ------------------------------------------------------------------
+  # Formatting
+  # ------------------------------------------------------------------
+  format:
+    name: Format (Prettier)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format
+
+  # ------------------------------------------------------------------
+  # Lint
+  # ------------------------------------------------------------------
+  lint:
+    name: Lint (ESLint)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+  # ------------------------------------------------------------------
+  # TypeScript strict typecheck (all workspaces)
+  # ------------------------------------------------------------------
+  typecheck:
+    name: Typecheck (TypeScript strict)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run strict TypeScript check
+        run: pnpm typecheck
+
+  # ------------------------------------------------------------------
+  # Unit tests
+  # ------------------------------------------------------------------
+  test:
+    name: Tests (Vitest)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm test
+
+  # ------------------------------------------------------------------
+  # Builds (web + api + shared packages)
+  # ------------------------------------------------------------------
+  build:
+    name: Build (Next.js, Fastify, shared packages)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run production builds
+        run: pnpm build
+
+  # ------------------------------------------------------------------
+  # Source-file size regression (250-line maximum)
+  # ------------------------------------------------------------------
+  file-sizes:
+    name: Source-file size (250-line max)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Enforce 250-line source-file maximum
+        run: pnpm check:file-sizes
+
+  # ------------------------------------------------------------------
+  # Architecture boundaries (SSOT + domain independence)
+  # ------------------------------------------------------------------
+  architecture:
+    name: Architecture boundaries
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify SSOT and domain boundaries
+        run: pnpm check:architecture
+
+  # ------------------------------------------------------------------
+  # Security: dependency audit + secret pattern scan
+  # ------------------------------------------------------------------
+  security:
+    name: Security (audit + secrets)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run dependency vulnerability audit
+        run: pnpm security:audit
+
+      - name: Scan for leaked secrets
+        run: |
+          PATTERNS='sk_live_|sk_test_|rk_live_|AKIA[0-9A-Z]{16}|aws_access_key_id|AWS_SECRET_ACCESS_KEY|github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9_]{36,}'
+          MATCHES=$(git ls-files -z | xargs -0 grep -I -n -E "$PATTERNS" 2>/dev/null || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Possible leaked secrets detected:" >&2
+            echo "$MATCHES" >&2
+            exit 1
+          fi
+          echo "No leaked secrets detected."
