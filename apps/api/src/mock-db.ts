@@ -154,7 +154,20 @@ export function createMockDb(): { db: Db } & MockCollections {
         find(filter: Record<string, unknown>) {
           const matched = list.filter((i) => matchDoc(i, filter));
           const cursor = {
-            sort: () => cursor,
+            sort: (spec?: Record<string, 1 | -1>) => {
+              if (spec) {
+                const [key, dir] = Object.entries(spec)[0] ?? [];
+                if (key) {
+                  matched.sort((a, b) => {
+                    const av = a[key] instanceof Date ? (a[key] as Date).getTime() : a[key];
+                    const bv = b[key] instanceof Date ? (b[key] as Date).getTime() : b[key];
+                    if (av === bv) return 0;
+                    return (av > bv ? 1 : -1) * (dir === -1 ? -1 : 1);
+                  });
+                }
+              }
+              return cursor;
+            },
             limit: (n?: number) => {
               if (n !== undefined) matched.splice(n);
               return cursor;

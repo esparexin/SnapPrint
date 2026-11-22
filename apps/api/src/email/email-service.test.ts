@@ -102,6 +102,15 @@ describe('Email Service & Delivery Adapters', () => {
     } as AppConfig;
     const zeptoService = createEmailService(prodConfig);
     expect(zeptoService).toBeInstanceOf(ZeptoMailEmailService);
+
+    const prodMissingToken = {
+      nodeEnv: 'production',
+      zeptoMailFromEmail: 'noreply@snapprint.in',
+      zeptoMailFromName: 'SnapPrint',
+    } as AppConfig;
+    expect(() => createEmailService(prodMissingToken)).toThrow(
+      'ZeptoMail configuration missing in production: ZEPTOMAIL_API_TOKEN must be configured.'
+    );
   });
 
   it('email templates render code, expiry time, and plain-text fallback', () => {

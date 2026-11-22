@@ -20,6 +20,7 @@ import {
   consumeOtpAtomically,
   createOtpRecord,
   findActiveOtp,
+  invalidatePendingOtps,
   recordFailedAttempt,
 } from './repositories/otp.repository.js';
 import { findUserDocumentByEmail, toPublicUser } from './repositories/user.repository.js';
@@ -40,78 +41,94 @@ export const authLoginOtpRoutes: FastifyPluginAsync<AuthLoginOtpRouteOptions> = 
     opts?.emailService ?? createEmailService(getEffectiveConfig());
 
   // POST /auth/login/otp/request - Dispatches login OTP with timing defense against enumeration
-  app.post('/auth/login/otp/request', async (request, reply) => {
-    const config = getEffectiveConfig();
-    if (!validateOrigin(request.headers.origin, config.corsAllowedOrigins)) {
-      return reply.status(403).send({
-        statusCode: 403,
-        code: 'CSRF_ORIGIN_MISMATCH',
-        message: 'Cross-origin authentication request forbidden',
+  app.post(
+    '/auth/login/otp/request',
+    {
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: '1 minute',
+        },
+      },
+    },
+    async (request, reply) => {
+      const config = getEffectiveConfig();
+      if (!validateOrigin(request.headers.origin, config.corsAllowedOrigins)) {
+        return reply.status(403).send({
+          statusCode: 403,
+          code: 'CSRF_ORIGIN_MISMATCH',
+          message: 'Cross-origin authentication request forbidden',
+        });
+      }
+
+      const parseResult = RequestOwnerLoginOtpRequestSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid login request payload',
+          issues: parseResult.error.issues,
+        });
+      }
+
+      const db = getEffectiveDb();
+      const normalizedEmail = parseResult.data.email.trim().toLowerCase();
+      const user = await findUserDocumentByEmail(db, normalizedEmail);
+
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const genericResponse = OtpDispatchResponseSchema.parse({
+        success: true,
+        email: normalizedEmail,
+        intent: 'owner_login',
+        expiresAt,
+        resendCooldownSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
+        retryAfterSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
       });
-    }
 
-    const parseResult = RequestOwnerLoginOtpRequestSchema.safeParse(request.body);
-    if (!parseResult.success) {
-      return reply.status(400).send({
-        statusCode: 400,
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid login request payload',
-        issues: parseResult.error.issues,
+      // Timing defense: if user doesn't exist or is not active, return generic success without email
+      if (!user || user.status !== 'active') {
+        return reply.status(200).send(genericResponse);
+      }
+
+      const cooldown = await checkResendCooldown(db, normalizedEmail, 'owner_login');
+      if (!cooldown.canResend) {
+        return reply.status(429).send({
+          statusCode: 429,
+          code: 'COOLDOWN_ACTIVE',
+          message: `Please wait ${cooldown.remainingCooldownSeconds} seconds before requesting a new code.`,
+          retryAfterSeconds: cooldown.remainingCooldownSeconds,
+        });
+      }
+
+      const code = generateSecureOtp();
+      const verifier = hashOtpVerifier(code);
+      const otpId = `otp_${randomBytes(12).toString('hex')}`;
+
+      await createOtpRecord(db, {
+        id: otpId,
+        email: normalizedEmail,
+        intent: 'owner_login',
+        verifier,
+        expiresAt: new Date(expiresAt),
       });
-    }
 
-    const db = getEffectiveDb();
-    const normalizedEmail = parseResult.data.email.trim().toLowerCase();
-    const user = await findUserDocumentByEmail(db, normalizedEmail);
+      const emailService = getEffectiveEmail();
+      const emailContent = renderLoginOtpEmail(code, 15);
+      try {
+        await emailService.sendEmail({
+          to: { email: normalizedEmail, name: user.name },
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text,
+        });
+      } catch (err) {
+        await invalidatePendingOtps(db, normalizedEmail, 'owner_login');
+        throw err;
+      }
 
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const genericResponse = OtpDispatchResponseSchema.parse({
-      success: true,
-      email: normalizedEmail,
-      intent: 'owner_login',
-      expiresAt,
-      resendCooldownSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
-      retryAfterSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
-    });
-
-    // Timing defense: if user doesn't exist or is not active, return generic success without email
-    if (!user || user.status !== 'active') {
       return reply.status(200).send(genericResponse);
     }
-
-    const cooldown = await checkResendCooldown(db, normalizedEmail, 'owner_login');
-    if (!cooldown.canResend) {
-      return reply.status(429).send({
-        statusCode: 429,
-        code: 'COOLDOWN_ACTIVE',
-        message: `Please wait ${cooldown.remainingCooldownSeconds} seconds before requesting a new code.`,
-        retryAfterSeconds: cooldown.remainingCooldownSeconds,
-      });
-    }
-
-    const code = generateSecureOtp();
-    const verifier = hashOtpVerifier(code);
-    const otpId = `otp_${randomBytes(12).toString('hex')}`;
-
-    await createOtpRecord(db, {
-      id: otpId,
-      email: normalizedEmail,
-      intent: 'owner_login',
-      verifier,
-      expiresAt: new Date(expiresAt),
-    });
-
-    const emailService = getEffectiveEmail();
-    const emailContent = renderLoginOtpEmail(code, 15);
-    await emailService.sendEmail({
-      to: { email: normalizedEmail, name: user.name },
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
-    });
-
-    return reply.status(200).send(genericResponse);
-  });
+  );
 
   // POST /auth/login/otp/verify - Verifies login OTP and issues operator session cookie
   app.post('/auth/login/otp/verify', async (request, reply) => {

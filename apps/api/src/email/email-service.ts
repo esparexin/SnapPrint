@@ -95,5 +95,10 @@ export function createEmailService(config: AppConfig): EmailService {
       config.zeptoMailBounceAddress
     );
   }
+  if (config.nodeEnv === 'production') {
+    throw new Error(
+      'ZeptoMail configuration missing in production: ZEPTOMAIL_API_TOKEN must be configured.'
+    );
+  }
   return new MemoryEmailService();
 }
