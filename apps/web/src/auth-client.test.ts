@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { AuthResponse } from '@snapprint/contracts';
-import { AuthApiError, fetchCurrentUser, loginOperator, logoutOperator } from './auth-client.js';
+import {
+  AuthApiError,
+  fetchCurrentUser,
+  loginOperator,
+  logoutOperator,
+  requestOwnerLoginOtp,
+  requestOwnerRegistrationOtp,
+  verifyOwnerLoginOtp,
+  verifyOwnerRegistrationOtp,
+} from './auth-client.js';
 
 describe('Frontend Authentication API Client', () => {
   const sampleAuth: AuthResponse = {
@@ -146,5 +155,63 @@ describe('Frontend Authentication API Client', () => {
     await expect(logoutOperator(mockFetch as unknown as typeof fetch)).rejects.toThrow(
       'Internal server error'
     );
+  });
+
+  it('requestOwnerRegistrationOtp and verifyOwnerRegistrationOtp handle registration handshake', async () => {
+    const mockDispatch = {
+      success: true,
+      email: 'owner@studio.com',
+      intent: 'owner_registration',
+      expiresAt: '2026-11-22T12:00:00.000Z',
+      resendCooldownSeconds: 60,
+      retryAfterSeconds: 60,
+    };
+    const fetchDispatch = async () => new Response(JSON.stringify(mockDispatch), { status: 200 });
+
+    const dispatchRes = await requestOwnerRegistrationOtp(
+      {
+        name: 'Owner',
+        email: 'owner@studio.com',
+        phone: '+919876543210',
+        termsVersion: '2026.1',
+        privacyVersion: '2026.1',
+      },
+      fetchDispatch as unknown as typeof fetch
+    );
+    expect(dispatchRes.success).toBe(true);
+
+    const fetchVerify = async () => new Response(JSON.stringify(sampleAuth), { status: 201 });
+
+    const verifyRes = await verifyOwnerRegistrationOtp(
+      { email: 'owner@studio.com', code: '123456' },
+      fetchVerify as unknown as typeof fetch
+    );
+    expect(verifyRes.user.email).toBe('operator@studio.com');
+  });
+
+  it('requestOwnerLoginOtp and verifyOwnerLoginOtp handle login handshake', async () => {
+    const mockDispatch = {
+      success: true,
+      email: 'owner@studio.com',
+      intent: 'owner_login',
+      expiresAt: '2026-11-22T12:00:00.000Z',
+      resendCooldownSeconds: 60,
+      retryAfterSeconds: 60,
+    };
+    const fetchDispatch = async () => new Response(JSON.stringify(mockDispatch), { status: 200 });
+
+    const dispatchRes = await requestOwnerLoginOtp(
+      { email: 'owner@studio.com' },
+      fetchDispatch as unknown as typeof fetch
+    );
+    expect(dispatchRes.intent).toBe('owner_login');
+
+    const fetchVerify = async () => new Response(JSON.stringify(sampleAuth), { status: 200 });
+
+    const verifyRes = await verifyOwnerLoginOtp(
+      { email: 'owner@studio.com', code: '654321' },
+      fetchVerify as unknown as typeof fetch
+    );
+    expect(verifyRes.user.id).toBe('user_operator_1');
   });
 });

@@ -1,4 +1,7 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { FastifyReply } from 'fastify';
+import { Db } from 'mongodb';
+import { createOperatorSession } from './repositories/operator-session.repository.js';
 
 export const OPERATOR_COOKIE_NAME_PROD = '__Host-snapprint_op';
 export const OPERATOR_COOKIE_NAME_DEV = 'snapprint_op';
@@ -72,4 +75,39 @@ export function validateOrigin(
   } catch {
     return false;
   }
+}
+
+/**
+ * Creates an operator session in the database and sets the session cookie on the Fastify reply.
+ */
+export async function issueOperatorSessionCookie(
+  db: Db,
+  reply: FastifyReply,
+  userId: string,
+  cookieSecure: boolean
+): Promise<{ rawToken: string; expiresAt: Date }> {
+  const rawToken = randomBytes(32).toString('hex');
+  const sessionId = hashSessionToken(rawToken);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + OPERATOR_SESSION_TTL_HOURS * 3600 * 1000);
+
+  await createOperatorSession(db, {
+    sessionId,
+    userId,
+    status: 'active',
+    createdAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    lastActiveAt: now.toISOString(),
+  });
+
+  const cookieName = getOperatorCookieName(cookieSecure);
+  reply.setCookie(cookieName, rawToken, {
+    path: '/',
+    httpOnly: true,
+    secure: cookieSecure,
+    sameSite: 'strict',
+    expires: expiresAt,
+  });
+
+  return { rawToken, expiresAt };
 }

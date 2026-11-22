@@ -143,7 +143,7 @@ describe('OTP Persistence Repository', () => {
     expect(initial.canResend).toBe(true);
     expect(initial.remainingCooldownSeconds).toBe(0);
 
-    await createOtpRecord(
+    const createdRecord = await createOtpRecord(
       db,
       makeSampleRecord({ email: 'owner@example.com', intent: 'owner_registration' })
     );
@@ -152,7 +152,7 @@ describe('OTP Persistence Repository', () => {
       db,
       'owner@example.com',
       'owner_registration',
-      new Date(now.getTime() + 10000)
+      new Date(createdRecord.lastSentAt.getTime() + 10000)
     );
     expect(immediate.canResend).toBe(false);
     expect(immediate.remainingCooldownSeconds).toBeGreaterThan(0);
@@ -162,7 +162,7 @@ describe('OTP Persistence Repository', () => {
       db,
       'owner@example.com',
       'owner_registration',
-      new Date(now.getTime() + 70000)
+      new Date(createdRecord.lastSentAt.getTime() + 70000)
     );
     expect(elapsed.canResend).toBe(true);
     expect(elapsed.remainingCooldownSeconds).toBe(0);

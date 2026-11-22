@@ -4,9 +4,12 @@ import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import { assetRoutes } from './asset-routes.js';
+import { authLoginOtpRoutes } from './auth-login-otp-routes.js';
+import { authRegistrationRoutes } from './auth-registration-routes.js';
 import { authRoutes } from './auth.js';
 import { loadConfig } from './config.js';
 import { closeDb, connectDb } from './db.js';
+import { createEmailService } from './email/email-service.js';
 import { handleApiError } from './error-handler.js';
 import { healthRoutes } from './health.js';
 import { orderRoutes } from './order-routes.js';
@@ -19,6 +22,7 @@ import { studioRoutes } from './studio-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 
 const config = loadConfig();
+const emailService = createEmailService(config);
 
 const app = fastify({
   trustProxy: config.trustProxy,
@@ -69,6 +73,8 @@ app.register(tenantPlugin);
 app.register(sessionPlugin, { sessionSecret: config.sessionSecret });
 app.register(healthRoutes);
 app.register(authRoutes);
+app.register(authRegistrationRoutes, { emailService });
+app.register(authLoginOtpRoutes, { emailService });
 app.register(studioRoutes);
 app.register(publicRoutes);
 app.register(assetRoutes);

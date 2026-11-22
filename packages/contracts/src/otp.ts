@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { EmailSchema } from './identity.js';
 
 export const OTP_LENGTH = 6;
+export const DEFAULT_RESEND_COOLDOWN_SECONDS = 60;
 export const CURRENT_TERMS_VERSION = '2026.1';
 export const CURRENT_PRIVACY_POLICY_VERSION = '2026.1';
 
@@ -70,6 +71,33 @@ export const RequestOtpResponseSchema = z.object({
 });
 
 export type RequestOtpResponse = z.infer<typeof RequestOtpResponseSchema>;
+
+export const VerifyOwnerRegistrationOtpRequestSchema = z.object({
+  email: EmailSchema,
+  code: OtpCodeSchema,
+});
+
+export type VerifyOwnerRegistrationOtpRequest = z.infer<
+  typeof VerifyOwnerRegistrationOtpRequestSchema
+>;
+
+export const VerifyOwnerLoginOtpRequestSchema = z.object({
+  email: EmailSchema,
+  code: OtpCodeSchema,
+});
+
+export type VerifyOwnerLoginOtpRequest = z.infer<typeof VerifyOwnerLoginOtpRequestSchema>;
+
+export const OtpDispatchResponseSchema = z.object({
+  success: z.boolean(),
+  email: EmailSchema,
+  intent: OtpIntentSchema,
+  expiresAt: z.string().datetime(),
+  resendCooldownSeconds: z.number().int().min(0),
+  retryAfterSeconds: z.number().int().min(0),
+});
+
+export type OtpDispatchResponse = z.infer<typeof OtpDispatchResponseSchema>;
 
 export const OtpVerificationStatusSchema = z.enum([
   'verified',

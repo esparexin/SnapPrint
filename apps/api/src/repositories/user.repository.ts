@@ -35,12 +35,12 @@ export const CreateUserInputSchema = z.object({
   id: UserIdSchema,
   email: EmailSchema,
   name: z.string().trim().min(1).max(120),
-  passwordHash: z.string().min(1).optional(),
-  phone: PhoneNumberSchema.optional(),
-  termsAcceptedVersion: z.string().trim().min(1).max(32).optional(),
-  termsAcceptedAt: z.string().datetime().optional(),
-  privacyPolicyAcceptedVersion: z.string().trim().min(1).max(32).optional(),
-  privacyPolicyAcceptedAt: z.string().datetime().optional(),
+  passwordHash: z.string().min(1).nullable().optional(),
+  phone: PhoneNumberSchema.nullable().optional(),
+  termsAcceptedVersion: z.string().trim().min(1).max(32).nullable().optional(),
+  termsAcceptedAt: z.string().datetime().nullable().optional(),
+  privacyPolicyAcceptedVersion: z.string().trim().min(1).max(32).nullable().optional(),
+  privacyPolicyAcceptedAt: z.string().datetime().nullable().optional(),
   status: UserStatusSchema.optional().default('active'),
 });
 
