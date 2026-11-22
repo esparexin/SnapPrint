@@ -71,6 +71,20 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
   return true;
 }
 
+function compareSortValues(left: unknown, right: unknown): number {
+  const a = left instanceof Date ? left.getTime() : left;
+  const b = right instanceof Date ? right.getTime() : right;
+
+  if (a === b || (a == null && b == null)) return 0;
+  if (a == null) return -1;
+  if (b == null) return 1;
+  if (typeof a === 'number' && typeof b === 'number') return a < b ? -1 : 1;
+  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : 1;
+  if (typeof a === 'boolean' && typeof b === 'boolean') return a ? 1 : -1;
+
+  throw new TypeError('Mock database sort values must have matching scalar types');
+}
+
 export function createMockDb(): { db: Db } & MockCollections {
   const users: UserDocument[] = [];
   const sessions: OperatorSessionDocument[] = [];
@@ -159,10 +173,7 @@ export function createMockDb(): { db: Db } & MockCollections {
                 const [key, dir] = Object.entries(spec)[0] ?? [];
                 if (key) {
                   matched.sort((a, b) => {
-                    const av = a[key] instanceof Date ? (a[key] as Date).getTime() : a[key];
-                    const bv = b[key] instanceof Date ? (b[key] as Date).getTime() : b[key];
-                    if (av === bv) return 0;
-                    return (av > bv ? 1 : -1) * (dir === -1 ? -1 : 1);
+                    return compareSortValues(a[key], b[key]) * (dir === -1 ? -1 : 1);
                   });
                 }
               }
