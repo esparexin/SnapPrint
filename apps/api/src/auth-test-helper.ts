@@ -71,6 +71,7 @@ export async function createTestApp(
     orders: mock.orders,
     payments: mock.payments,
     webhookEvents: mock.webhookEvents,
+    emailOtps: mock.emailOtps,
     storage,
     gateway,
   };

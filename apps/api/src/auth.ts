@@ -97,8 +97,7 @@ export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (app, opts
 
       if (isLocked) {
         if (!user.lockoutUntil) {
-          const lockUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
-          await recordFailedLogin(db, user.id, lockUntil);
+          await recordFailedLogin(db, user.id, new Date(Date.now() + LOCKOUT_DURATION_MS));
         }
         await verifyPassword(parseResult.data.password, DUMMY_SCRYPT_HASH);
         request.log.info({ userId: user.id }, 'Operator login rejected: account locked');
@@ -110,8 +109,14 @@ export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (app, opts
         await verifyPassword(parseResult.data.password, DUMMY_SCRYPT_HASH);
         request.log.info(
           { userId: user.id, status: user.status },
-          'Operator login rejected: account not active'
+          'Operator login rejected: inactive'
         );
+        return sendInvalidCredentials();
+      }
+
+      // Passwordless defense: if account has no password, perform dummy scrypt verification
+      if (!user.passwordHash) {
+        await verifyPassword(parseResult.data.password, DUMMY_SCRYPT_HASH);
         return sendInvalidCredentials();
       }
 

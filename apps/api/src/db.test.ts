@@ -80,5 +80,23 @@ describe('Database Indexes & Connection State', () => {
       unique: true,
       name: 'uid_webhook_event_id',
     });
+
+    // Verify email_otps indexes
+    expect(createdIndexes['email_otps']).toBeDefined();
+    expect(createdIndexes['email_otps']).toHaveLength(3);
+    expect(createdIndexes['email_otps']).toContainEqual({
+      key: { id: 1 },
+      unique: true,
+      name: 'uid_email_otp_id',
+    });
+    expect(createdIndexes['email_otps']).toContainEqual({
+      key: { email: 1, intent: 1, status: 1 },
+      name: 'idx_email_otp_email_intent_status',
+    });
+    expect(createdIndexes['email_otps']).toContainEqual({
+      key: { expiresAt: 1 },
+      expireAfterSeconds: 0,
+      name: 'ttl_email_otp_expiry',
+    });
   });
 });
