@@ -44,7 +44,12 @@ export const UserSchema = z.object({
   id: UserIdSchema,
   email: EmailSchema,
   name: z.string().trim().min(1).max(120),
+  phone: z.string().optional(),
   status: UserStatusSchema,
+  termsAcceptedVersion: z.string().optional(),
+  termsAcceptedAt: z.string().datetime().optional(),
+  privacyPolicyAcceptedVersion: z.string().optional(),
+  privacyPolicyAcceptedAt: z.string().datetime().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -52,7 +57,7 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 
 export const UserWithPasswordHashSchema = UserSchema.extend({
-  passwordHash: z.string().min(1),
+  passwordHash: z.string().min(1).nullable().optional(),
 });
 
 export type UserWithPasswordHash = z.infer<typeof UserWithPasswordHashSchema>;

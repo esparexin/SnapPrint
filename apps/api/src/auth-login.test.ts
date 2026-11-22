@@ -1,22 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { hashPassword } from '@snapprint/domain';
 import { createTestApp } from './auth-test-helper.js';
+import { UserDocument } from './repositories/user.repository.js';
+
+function mockUser(overrides: Partial<UserDocument> = {}): UserDocument {
+  return {
+    id: 'user_01h8abc1234567890123456789',
+    email: 'jane@example.com',
+    name: 'Jane Operator',
+    passwordHash: null,
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
 
 describe('Operator Login Route & Credentials Validation', () => {
   it('POST /auth/login successfully authenticates valid credentials, sets cookie and returns public user', async () => {
     const { app, users, memberships } = await createTestApp();
     const hash = await hashPassword('CorrectPassword123!');
 
-    users.push({
-      id: 'user_01h8abc1234567890123456789',
-      email: 'jane@example.com',
-      name: 'Jane Operator',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
+    users.push(mockUser({ passwordHash: hash }));
     memberships.push({
       userId: 'user_01h8abc1234567890123456789',
       studioId: 'studio_alpha',
@@ -52,16 +57,7 @@ describe('Operator Login Route & Credentials Validation', () => {
     const { app, users } = await createTestApp();
     const hash = await hashPassword('CorrectPassword123!');
 
-    users.push({
-      id: 'user_01h8abc1234567890123456789',
-      email: 'jane@example.com',
-      name: 'Jane Operator',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      failedLoginAttempts: 0,
-    });
+    users.push(mockUser({ passwordHash: hash, failedLoginAttempts: 0 }));
 
     const res = await app.inject({
       method: 'POST',
@@ -74,6 +70,22 @@ describe('Operator Login Route & Credentials Validation', () => {
     expect(body.code).toBe('INVALID_CREDENTIALS');
     expect(users[0].failedLoginAttempts).toBe(1);
 
+    await app.close();
+  });
+
+  it('POST /auth/login returns generic 401 for passwordless accounts without timing leak', async () => {
+    const { app, users } = await createTestApp();
+
+    users.push(mockUser({ email: 'owner@example.com', name: 'Passwordless Owner' }));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email: 'owner@example.com', password: 'AnyPassword123!' },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).code).toBe('INVALID_CREDENTIALS');
     await app.close();
   });
 
@@ -97,16 +109,7 @@ describe('Operator Login Route & Credentials Validation', () => {
     const { app, users } = await createTestApp();
     const hash = await hashPassword('CorrectPassword123!');
 
-    users.push({
-      id: 'user_01h8abc1234567890123456789',
-      email: 'jane@example.com',
-      name: 'Jane Operator',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      failedLoginAttempts: 4,
-    });
+    users.push(mockUser({ passwordHash: hash, failedLoginAttempts: 4 }));
 
     const res1 = await app.inject({
       method: 'POST',
@@ -131,15 +134,14 @@ describe('Operator Login Route & Credentials Validation', () => {
     const { app, users } = await createTestApp();
     const hash = await hashPassword('CorrectPassword123!');
 
-    users.push({
-      id: 'user_01h8abc1234567890123456789',
-      email: 'suspended@example.com',
-      name: 'Suspended Operator',
-      passwordHash: hash,
-      status: 'suspended',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    users.push(
+      mockUser({
+        email: 'suspended@example.com',
+        name: 'Suspended Operator',
+        passwordHash: hash,
+        status: 'suspended',
+      })
+    );
 
     const res = await app.inject({
       method: 'POST',
@@ -156,17 +158,15 @@ describe('Operator Login Route & Credentials Validation', () => {
     const { app, users } = await createTestApp();
     const hash = await hashPassword('CorrectPassword123!');
 
-    users.push({
-      id: 'user_01h8abc1234567890123456789',
-      email: 'race@example.com',
-      name: 'Race Operator',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      failedLoginAttempts: 5,
-      lockoutUntil: null,
-    });
+    users.push(
+      mockUser({
+        email: 'race@example.com',
+        name: 'Race Operator',
+        passwordHash: hash,
+        failedLoginAttempts: 5,
+        lockoutUntil: null,
+      })
+    );
 
     const res = await app.inject({
       method: 'POST',
@@ -184,15 +184,7 @@ describe('Operator Login Route & Credentials Validation', () => {
     const { app, users } = await createTestApp({ cookieSecure: true });
     const hash = await hashPassword('CorrectPassword123!');
 
-    users.push({
-      id: 'user_01h8abc1234567890123456789',
-      email: 'prod@example.com',
-      name: 'Prod Operator',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    users.push(mockUser({ email: 'prod@example.com', name: 'Prod Operator', passwordHash: hash }));
 
     const res = await app.inject({
       method: 'POST',

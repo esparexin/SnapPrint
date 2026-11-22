@@ -2,8 +2,11 @@ import fastify, { FastifyInstance } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import { assetRoutes } from './asset-routes.js';
+import { authLoginOtpRoutes } from './auth-login-otp-routes.js';
+import { authRegistrationRoutes } from './auth-registration-routes.js';
 import { authRoutes } from './auth.js';
 import { AppConfig } from './config.js';
+import { MemoryEmailService } from './email/email-service.js';
 import { createMockDb, MockCollections } from './mock-db.js';
 import { orderRoutes } from './order-routes.js';
 import { MockPaymentGatewayService, PaymentGatewayService } from './payment/gateway-service.js';
@@ -19,6 +22,7 @@ export interface TestAuthContext extends MockCollections {
   db: ReturnType<typeof createMockDb>['db'];
   storage: StorageService;
   gateway: PaymentGatewayService;
+  emailService: MemoryEmailService;
 }
 
 export async function createTestApp(
@@ -28,6 +32,7 @@ export async function createTestApp(
   const mock = createMockDb();
   const storage = new MemoryStorageService();
   const gateway = gatewayOverride ?? new MockPaymentGatewayService();
+  const emailService = new MemoryEmailService();
 
   const testConfig: AppConfig = {
     port: 3001,
@@ -43,6 +48,8 @@ export async function createTestApp(
     cookieSecure: false,
     rateLimitMax: 100,
     rateLimitTimeWindow: '1 minute',
+    zeptoMailFromEmail: 'noreply@snapprint.in',
+    zeptoMailFromName: 'SnapPrint',
     ...configOverrides,
   };
 
@@ -50,6 +57,8 @@ export async function createTestApp(
   await app.register(fastifyCookie, { secret: testConfig.cookieSecret });
   await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
   await app.register(authRoutes, { db: mock.db, config: testConfig });
+  await app.register(authRegistrationRoutes, { db: mock.db, config: testConfig, emailService });
+  await app.register(authLoginOtpRoutes, { db: mock.db, config: testConfig, emailService });
   await app.register(studioRoutes, { db: mock.db });
   await app.register(publicRoutes, { db: mock.db, config: testConfig });
   await app.register(assetRoutes, { db: mock.db, config: testConfig, storage });
@@ -71,7 +80,9 @@ export async function createTestApp(
     orders: mock.orders,
     payments: mock.payments,
     webhookEvents: mock.webhookEvents,
+    emailOtps: mock.emailOtps,
     storage,
     gateway,
+    emailService,
   };
 }

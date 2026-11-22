@@ -1,6 +1,7 @@
 import { Db } from 'mongodb';
 import { UserMembershipDocument } from './repositories/membership.repository.js';
 import { OperatorSessionDocument } from './repositories/operator-session.repository.js';
+import { EmailOtpDocument } from './repositories/otp.repository.js';
 import { OrderDocument } from './repositories/order.repository.js';
 import { PaymentDocument } from './repositories/payment.repository.js';
 import { PhotoAssetDocument } from './repositories/photo-asset.repository.js';
@@ -19,6 +20,7 @@ export interface MockCollections {
   orders: OrderDocument[];
   payments: PaymentDocument[];
   webhookEvents: WebhookEventDocument[];
+  emailOtps: EmailOtpDocument[];
 }
 
 function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
@@ -39,12 +41,48 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
           return false;
         continue;
       }
+      if ('$lt' in obj) {
+        const itemVal = item[k];
+        const targetVal = obj.$lt;
+        if (itemVal instanceof Date || targetVal instanceof Date) {
+          const itemTime =
+            itemVal instanceof Date ? itemVal.getTime() : new Date(itemVal as string).getTime();
+          const targetTime =
+            targetVal instanceof Date
+              ? targetVal.getTime()
+              : new Date(targetVal as string).getTime();
+          if (Number.isNaN(itemTime) || Number.isNaN(targetTime) || !(itemTime < targetTime))
+            return false;
+        } else {
+          if (
+            typeof itemVal !== 'number' ||
+            typeof targetVal !== 'number' ||
+            !(itemVal < targetVal)
+          )
+            return false;
+        }
+        continue;
+      }
     }
     if (item[k] !== v) {
       return false;
     }
   }
   return true;
+}
+
+function compareSortValues(left: unknown, right: unknown): number {
+  const a = left instanceof Date ? left.getTime() : left;
+  const b = right instanceof Date ? right.getTime() : right;
+
+  if (a === b || (a == null && b == null)) return 0;
+  if (a == null) return -1;
+  if (b == null) return 1;
+  if (typeof a === 'number' && typeof b === 'number') return a < b ? -1 : 1;
+  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : 1;
+  if (typeof a === 'boolean' && typeof b === 'boolean') return a ? 1 : -1;
+
+  throw new TypeError('Mock database sort values must have matching scalar types');
 }
 
 export function createMockDb(): { db: Db } & MockCollections {
@@ -57,6 +95,7 @@ export function createMockDb(): { db: Db } & MockCollections {
   const orders: OrderDocument[] = [];
   const payments: PaymentDocument[] = [];
   const webhookEvents: WebhookEventDocument[] = [];
+  const emailOtps: EmailOtpDocument[] = [];
 
   const store: Record<string, Record<string, unknown>[]> = {
     users: users as unknown as Record<string, unknown>[],
@@ -68,6 +107,7 @@ export function createMockDb(): { db: Db } & MockCollections {
     orders: orders as unknown as Record<string, unknown>[],
     payments: payments as unknown as Record<string, unknown>[],
     webhook_events: webhookEvents as unknown as Record<string, unknown>[],
+    email_otps: emailOtps as unknown as Record<string, unknown>[],
   };
 
   const db = {
@@ -105,12 +145,18 @@ export function createMockDb(): { db: Db } & MockCollections {
           filter: Record<string, unknown>,
           update: {
             $set?: Record<string, unknown>;
+            $inc?: Record<string, number>;
             $push?: Record<string, unknown>;
           }
         ) {
           const item = list.find((i) => matchDoc(i, filter));
           if (!item) return null;
           if (update.$set) Object.assign(item, update.$set);
+          if (update.$inc) {
+            for (const [k, v] of Object.entries(update.$inc)) {
+              item[k] = ((item[k] as number) ?? 0) + v;
+            }
+          }
           if (update.$push) {
             for (const [k, v] of Object.entries(update.$push)) {
               if (!Array.isArray(item[k])) item[k] = [];
@@ -122,7 +168,17 @@ export function createMockDb(): { db: Db } & MockCollections {
         find(filter: Record<string, unknown>) {
           const matched = list.filter((i) => matchDoc(i, filter));
           const cursor = {
-            sort: () => cursor,
+            sort: (spec?: Record<string, 1 | -1>) => {
+              if (spec) {
+                const [key, dir] = Object.entries(spec)[0] ?? [];
+                if (key) {
+                  matched.sort((a, b) => {
+                    return compareSortValues(a[key], b[key]) * (dir === -1 ? -1 : 1);
+                  });
+                }
+              }
+              return cursor;
+            },
             limit: (n?: number) => {
               if (n !== undefined) matched.splice(n);
               return cursor;
@@ -140,6 +196,19 @@ export function createMockDb(): { db: Db } & MockCollections {
           list.splice(idx, 1);
           return { deletedCount: 1 };
         },
+        async updateMany(
+          filter: Record<string, unknown>,
+          update: { $set?: Record<string, unknown> }
+        ) {
+          const matched = list.filter((i) => matchDoc(i, filter));
+          for (const item of matched) {
+            if (update.$set) Object.assign(item, update.$set);
+          }
+          return { matchedCount: matched.length, modifiedCount: matched.length };
+        },
+        async createIndexes() {
+          return [];
+        },
       };
     },
   } as unknown as Db;
@@ -155,5 +224,6 @@ export function createMockDb(): { db: Db } & MockCollections {
     orders,
     payments,
     webhookEvents,
+    emailOtps,
   };
 }

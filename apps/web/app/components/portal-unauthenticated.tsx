@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { LoginForm } from './login-form';
+import { OwnerLoginOtpForm } from './owner-login-otp-form';
+import { OwnerRegisterForm } from './owner-register-form';
 
 interface PortalUnauthenticatedProps {
   errorBanner: string | null;
@@ -10,13 +12,15 @@ interface PortalUnauthenticatedProps {
 }
 
 export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthenticatedProps) {
+  const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
+
   return (
     <div>
       {errorBanner && (
         <div
           role="alert"
           style={{
-            maxWidth: '400px',
+            maxWidth: '420px',
             margin: '1rem auto',
             padding: '0.75rem',
             background: '#fef2f2',
@@ -29,7 +33,56 @@ export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthen
           {errorBanner}
         </div>
       )}
-      <LoginForm onSuccess={onSuccess} />
+
+      {authMode === 'register' ? (
+        <OwnerRegisterForm onSuccess={onSuccess} onSwitchToLogin={() => setAuthMode('email_otp')} />
+      ) : authMode === 'password' ? (
+        <div>
+          <LoginForm onSuccess={onSuccess} />
+          <div
+            style={{
+              maxWidth: '400px',
+              margin: '0.5rem auto',
+              textAlign: 'center',
+              fontSize: '0.8125rem',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setAuthMode('email_otp')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#2563eb',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              Owner Email OTP Sign In
+            </button>
+            {' · '}
+            <button
+              type="button"
+              onClick={() => setAuthMode('register')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#2563eb',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              Register Studio
+            </button>
+          </div>
+        </div>
+      ) : (
+        <OwnerLoginOtpForm
+          onSuccess={onSuccess}
+          onSwitchToPasswordLogin={() => setAuthMode('password')}
+          onSwitchToRegister={() => setAuthMode('register')}
+        />
+      )}
     </div>
   );
 }

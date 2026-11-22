@@ -57,6 +57,10 @@ const ConfigSchema = z
     razorpayKeyId: z.string().optional(),
     razorpayKeySecret: z.string().optional(),
     razorpayWebhookSecret: z.string().optional(),
+    zeptoMailApiToken: z.string().optional(),
+    zeptoMailBounceAddress: z.string().optional(),
+    zeptoMailFromEmail: z.string().default('noreply@snapprint.in'),
+    zeptoMailFromName: z.string().default('SnapPrint'),
   })
   .superRefine((data, ctx) => {
     if (data.nodeEnv === 'production') {
@@ -114,6 +118,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     razorpayKeyId: env.RAZORPAY_KEY_ID,
     razorpayKeySecret: env.RAZORPAY_KEY_SECRET,
     razorpayWebhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+    zeptoMailApiToken: env.ZEPTOMAIL_API_TOKEN,
+    zeptoMailBounceAddress: env.ZEPTOMAIL_BOUNCE_ADDRESS,
+    zeptoMailFromEmail: env.ZEPTOMAIL_FROM_EMAIL || 'noreply@snapprint.in',
+    zeptoMailFromName: env.ZEPTOMAIL_FROM_NAME || 'SnapPrint',
   });
 
   if (!result.success) {

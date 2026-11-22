@@ -105,4 +105,11 @@ export async function ensureIndexes(db: Db): Promise<void> {
   await db
     .collection('webhook_events')
     .createIndexes([{ key: { eventId: 1 }, unique: true, name: 'uid_webhook_event_id' }]);
+
+  // 10. Email OTPs collection: unique ID, active lookup, and auto-cleanup TTL
+  await db.collection('email_otps').createIndexes([
+    { key: { id: 1 }, unique: true, name: 'uid_email_otp_id' },
+    { key: { email: 1, intent: 1, status: 1 }, name: 'idx_email_otp_email_intent_status' },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0, name: 'ttl_email_otp_expiry' },
+  ]);
 }

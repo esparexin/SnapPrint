@@ -3,6 +3,16 @@ import {
   AuthResponseSchema,
   LoginRequest,
   LoginRequestSchema,
+  OtpDispatchResponse,
+  OtpDispatchResponseSchema,
+  RequestOwnerLoginOtpRequest,
+  RequestOwnerLoginOtpRequestSchema,
+  RequestOwnerRegistrationOtpRequest,
+  RequestOwnerRegistrationOtpRequestSchema,
+  VerifyOwnerLoginOtpRequest,
+  VerifyOwnerLoginOtpRequestSchema,
+  VerifyOwnerRegistrationOtpRequest,
+  VerifyOwnerRegistrationOtpRequestSchema,
 } from '@snapprint/contracts';
 
 export function getApiBaseUrl(): string {
@@ -23,11 +33,42 @@ export class AuthApiError extends Error {
   }
 }
 
-/**
- * Hydrates current authenticated operator session from GET /auth/me.
- * Sends credentials (HttpOnly cookie) and parses verified AuthResponse.
- * Returns null if user is unauthenticated or session has expired.
- */
+async function postAuthJson<T>(
+  endpoint: string,
+  body: unknown,
+  schema: { parse: (val: unknown) => T },
+  customFetch: typeof fetch = fetch
+): Promise<T> {
+  const baseUrl = getApiBaseUrl();
+  let res: Response;
+  try {
+    res = await customFetch(`${baseUrl}${endpoint}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new AuthApiError(
+      'Network failure: unable to connect to authentication server',
+      0,
+      'NETWORK_ERROR'
+    );
+  }
+
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    const code = payload?.code || 'AUTH_ERROR';
+    const message = payload?.message || `Request failed with status ${res.status}`;
+    throw new AuthApiError(message, res.status, code);
+  }
+
+  return schema.parse(payload);
+}
+
 export async function fetchCurrentUser(
   customFetch: typeof fetch = fetch
 ): Promise<AuthResponse | null> {
@@ -36,9 +77,7 @@ export async function fetchCurrentUser(
     const res = await customFetch(`${baseUrl}/auth/me`, {
       method: 'GET',
       credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
+      headers: { Accept: 'application/json' },
     });
 
     if (res.status === 401 || res.status === 403) {
@@ -61,50 +100,46 @@ export async function fetchCurrentUser(
   }
 }
 
-/**
- * Authenticates operator with credentials using POST /auth/login.
- * Fastify sets HttpOnly session cookie on response.
- */
 export async function loginOperator(
   credentials: LoginRequest,
   customFetch: typeof fetch = fetch
 ): Promise<AuthResponse> {
   const validated = LoginRequestSchema.parse(credentials);
-  const baseUrl = getApiBaseUrl();
-
-  let res: Response;
-  try {
-    res = await customFetch(`${baseUrl}/auth/login`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(validated),
-    });
-  } catch {
-    throw new AuthApiError(
-      'Network failure: unable to connect to authentication server',
-      0,
-      'NETWORK_ERROR'
-    );
-  }
-
-  const payload = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const code = payload?.code || 'AUTH_FAILED';
-    const message = payload?.message || 'Authentication failed. Please try again.';
-    throw new AuthApiError(message, res.status, code);
-  }
-
-  return AuthResponseSchema.parse(payload);
+  return postAuthJson('/auth/login', validated, AuthResponseSchema, customFetch);
 }
 
-/**
- * Revokes operator session on server using POST /auth/logout and clears cookie.
- */
+export async function requestOwnerRegistrationOtp(
+  data: RequestOwnerRegistrationOtpRequest,
+  customFetch: typeof fetch = fetch
+): Promise<OtpDispatchResponse> {
+  const validated = RequestOwnerRegistrationOtpRequestSchema.parse(data);
+  return postAuthJson('/auth/register', validated, OtpDispatchResponseSchema, customFetch);
+}
+
+export async function verifyOwnerRegistrationOtp(
+  data: VerifyOwnerRegistrationOtpRequest,
+  customFetch: typeof fetch = fetch
+): Promise<AuthResponse> {
+  const validated = VerifyOwnerRegistrationOtpRequestSchema.parse(data);
+  return postAuthJson('/auth/register/verify', validated, AuthResponseSchema, customFetch);
+}
+
+export async function requestOwnerLoginOtp(
+  data: RequestOwnerLoginOtpRequest,
+  customFetch: typeof fetch = fetch
+): Promise<OtpDispatchResponse> {
+  const validated = RequestOwnerLoginOtpRequestSchema.parse(data);
+  return postAuthJson('/auth/login/otp/request', validated, OtpDispatchResponseSchema, customFetch);
+}
+
+export async function verifyOwnerLoginOtp(
+  data: VerifyOwnerLoginOtpRequest,
+  customFetch: typeof fetch = fetch
+): Promise<AuthResponse> {
+  const validated = VerifyOwnerLoginOtpRequestSchema.parse(data);
+  return postAuthJson('/auth/login/otp/verify', validated, AuthResponseSchema, customFetch);
+}
+
 export async function logoutOperator(customFetch: typeof fetch = fetch): Promise<void> {
   const baseUrl = getApiBaseUrl();
   let res: Response;
@@ -112,9 +147,7 @@ export async function logoutOperator(customFetch: typeof fetch = fetch): Promise
     res = await customFetch(`${baseUrl}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
+      headers: { Accept: 'application/json' },
     });
   } catch {
     throw new AuthApiError(
