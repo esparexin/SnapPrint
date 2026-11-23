@@ -44,11 +44,11 @@ describe('Shop Onboarding Schemas (@snapprint/contracts)', () => {
   });
 
   describe('ShopCapabilitiesConfigSchema', () => {
-    it('applies default autoPrintMaxPages of 30', () => {
+    it('applies default autoPrintMaxPages of 30 and A4 paper size', () => {
       const parsed = ShopCapabilitiesConfigSchema.parse({});
       expect(parsed.autoPrintMaxPages).toBe(30);
       expect(parsed.isAutoPrintEnabled).toBe(true);
-      expect(parsed.supportedPaperSizes).toContain('A4');
+      expect(parsed.supportedPaperSizes).toEqual(['A4']);
     });
 
     it('enforces bounds for autoPrintMaxPages (1 to 500)', () => {

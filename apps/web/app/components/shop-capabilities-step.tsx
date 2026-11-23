@@ -11,7 +11,7 @@ import {
 type PaperSize = 'A4' | 'A3' | 'A5' | 'legal' | 'letter';
 
 const SIZES: { id: PaperSize; label: string }[] = [
-  { id: 'A4', label: 'A4' },
+  { id: 'A4', label: 'A4 (Default)' },
   { id: 'A3', label: 'A3' },
   { id: 'A5', label: 'A5' },
   { id: 'legal', label: 'Legal' },
@@ -115,9 +115,13 @@ export function ShopCapabilitiesStep({
       </div>
 
       <div>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.25rem' }}>
           Supported Paper Sizes
         </h3>
+        <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0 0 0.5rem' }}>
+          A4 is enabled by default as the primary print standard. At least one paper size must
+          remain selected.
+        </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           {SIZES.map((size) => (
             <label
