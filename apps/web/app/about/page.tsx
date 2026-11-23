@@ -32,7 +32,7 @@ export default function AboutPage() {
           style={{
             maxWidth: '1100px',
             margin: '0 auto',
-            padding: '1rem 1.5rem',
+            padding: '0.85rem 1.5rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -46,8 +46,8 @@ export default function AboutPage() {
               src="/brand/snapprint-icon.png"
               alt="SnapPrint"
               style={{
-                width: '32px',
-                height: '32px',
+                width: '30px',
+                height: '30px',
                 borderRadius: '8px',
                 display: 'block',
                 objectFit: 'contain',
@@ -65,17 +65,17 @@ export default function AboutPage() {
             </span>
           </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
             <Link
               href="/"
               style={{
-                fontSize: '0.875rem',
+                fontSize: '0.9rem',
                 fontWeight: 600,
                 color: '#475569',
                 textDecoration: 'none',
               }}
             >
-              ← Back to Home
+              Home
             </Link>
             <Link
               href="/?action=register"
@@ -96,25 +96,8 @@ export default function AboutPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
+      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '3.5rem 1.5rem 5rem' }}>
         <section style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.35rem 0.9rem',
-              borderRadius: '99px',
-              backgroundColor: '#e0f2fe',
-              color: '#0369a1',
-              fontSize: '0.825rem',
-              fontWeight: 700,
-              marginBottom: '1.25rem',
-              letterSpacing: '0.02em',
-            }}
-          >
-            PALNADU PRINT NETWORK
-          </div>
           <h1
             style={{
               fontSize: 'clamp(2rem, 4vw, 3rem)',
@@ -122,6 +105,7 @@ export default function AboutPage() {
               letterSpacing: '-0.035em',
               margin: '0 0 1rem',
               lineHeight: 1.15,
+              color: '#0f172a',
             }}
           >
             Digital Xerox & Cloud Print Network
@@ -130,7 +114,7 @@ export default function AboutPage() {
             style={{
               maxWidth: '680px',
               margin: '0 auto',
-              fontSize: '1.1rem',
+              fontSize: '1.08rem',
               color: '#475569',
               lineHeight: 1.6,
             }}
@@ -192,7 +176,7 @@ export default function AboutPage() {
         style={{
           borderTop: '1px solid #e2e8f0',
           backgroundColor: '#ffffff',
-          padding: '1.75rem 1.5rem',
+          padding: '1.5rem 1.5rem',
         }}
       >
         <div
@@ -206,10 +190,18 @@ export default function AboutPage() {
             color: '#64748b',
           }}
         >
-          <span>© 2026 Palnadu.dev • Multi-Tenant Print Network</span>
-          <Link href="/" style={{ color: '#0284c7', fontWeight: 600, textDecoration: 'none' }}>
-            SnapPrint Home
-          </Link>
+          <span>© 2026 Palnadu.dev</span>
+          <div style={{ display: 'flex', gap: '1.25rem' }}>
+            <Link href="/" style={{ color: '#64748b', textDecoration: 'none' }}>
+              Home
+            </Link>
+            <Link
+              href="/?action=register"
+              style={{ color: '#0284c7', fontWeight: 600, textDecoration: 'none' }}
+            >
+              Register
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

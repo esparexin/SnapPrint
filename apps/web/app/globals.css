@@ -20,12 +20,28 @@ html {
   scroll-behavior: smooth;
 }
 
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+a,
+button,
+input,
+textarea {
+  font-family: var(--font-family);
+}
+
 body {
   margin: 0;
   padding: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-family);
   line-height: 1.5;
   min-height: 100vh;
   letter-spacing: -0.012em;
