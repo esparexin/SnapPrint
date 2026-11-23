@@ -1,5 +1,9 @@
 import { Db } from 'mongodb';
 import {
+  ShopCapabilitiesConfig,
+  ShopLocation,
+  ShopPaymentSettings,
+  ShopWorkingHours,
   Studio,
   StudioIdSchema,
   StudioNameSchema,
@@ -20,6 +24,14 @@ export interface StudioDocument {
   name: string;
   status: StudioStatus;
   settings: StudioSettings;
+  ownerUserId?: string;
+  tagline?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  location?: ShopLocation;
+  workingHours?: ShopWorkingHours;
+  capabilities?: ShopCapabilitiesConfig;
+  payment?: ShopPaymentSettings;
   createdAt: Date;
   updatedAt: Date;
 }
