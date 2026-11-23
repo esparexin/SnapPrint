@@ -8,6 +8,7 @@ import { ModuleCards } from './module-cards';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalUnauthenticated } from './portal-unauthenticated';
+import { ShopSetupWizard } from './shop-setup-wizard';
 import { StudioQrModal } from './studio-qr-modal';
 import { StudioSelector } from './studio-selector';
 
@@ -19,6 +20,7 @@ export function OperatorPortal() {
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showOrdersModal, setShowOrdersModal] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -155,6 +157,7 @@ export function OperatorPortal() {
           uiState={authState.uiState}
           selectedStudioId={selectedStudioId}
           onResetStudio={() => setSelectedStudioId(null)}
+          onOpenWizard={() => setShowSetupModal(true)}
         />
       )}
 
@@ -175,6 +178,7 @@ export function OperatorPortal() {
               can={authState.can}
               onOpenQrModal={() => setShowQrModal(true)}
               onOpenOrdersModal={() => setShowOrdersModal(true)}
+              onOpenSetupModal={() => setShowSetupModal(true)}
             />
           </section>
 
@@ -196,6 +200,37 @@ export function OperatorPortal() {
               onClose={() => setShowOrdersModal(false)}
             />
           )}
+        </div>
+      )}
+
+      {showSetupModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            zIndex: 50,
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ maxWidth: '620px', width: '100%', margin: 'auto' }}>
+            <ShopSetupWizard
+              initialStudio={
+                authState.selectedStudioId ? { id: authState.selectedStudioId } : undefined
+              }
+              onComplete={async (saved) => {
+                setShowSetupModal(false);
+                const fresh = await fetchCurrentUser().catch(() => null);
+                if (fresh) setAuth(fresh);
+                if (saved?.id) setSelectedStudioId(saved.id);
+              }}
+              onCancel={() => setShowSetupModal(false)}
+            />
+          </div>
         </div>
       )}
     </div>

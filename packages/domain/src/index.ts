@@ -15,3 +15,4 @@ export * from './print-authorization.js';
 export * from './order-state-machine.js';
 export * from './signature-verification.js';
 export * from './otp.js';
+export * from './shop-lifecycle.js';

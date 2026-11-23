@@ -11,7 +11,13 @@ export const StudioIdSchema = z
 
 export type StudioId = z.infer<typeof StudioIdSchema>;
 
-export const StudioStatusSchema = z.enum(['onboarding', 'active', 'suspended', 'closed']);
+export const StudioStatusSchema = z.enum([
+  'onboarding',
+  'pending_review',
+  'active',
+  'suspended',
+  'closed',
+]);
 
 export type StudioStatus = z.infer<typeof StudioStatusSchema>;
 
@@ -57,6 +63,14 @@ export const StudioSchema = z.object({
 
 export type Studio = z.infer<typeof StudioSchema>;
 
+export const PublicPaymentSettingsSchema = z.object({
+  enableCounterPayment: z.boolean().default(true),
+  enableOnlinePayment: z.boolean().default(false),
+  isRazorpayConfirmed: z.boolean().default(false),
+});
+
+export type PublicPaymentSettings = z.infer<typeof PublicPaymentSettingsSchema>;
+
 export const PublicStudioSchema = z.object({
   id: StudioIdSchema,
   slug: StudioSlugSchema,
@@ -65,6 +79,7 @@ export const PublicStudioSchema = z.object({
   currency: z.string().length(3).default('INR'),
   contactPhone: z.string().min(5).max(20).optional(),
   contactEmail: z.string().email().optional(),
+  payment: PublicPaymentSettingsSchema.optional(),
 });
 
 export type PublicStudio = z.infer<typeof PublicStudioSchema>;

@@ -10,7 +10,11 @@ import { calculateSessionExpiry } from '@snapprint/domain';
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
 import { createSessionRecord } from './repositories/session.repository.js';
-import { findStudioBySlug } from './repositories/studio.repository.js';
+import {
+  findStudioBySlug,
+  STUDIOS_COLLECTION,
+  StudioDocument,
+} from './repositories/studio.repository.js';
 import { signSessionToken } from './session-token.js';
 
 export interface PublicRouteOptions {
@@ -45,6 +49,10 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       });
     }
 
+    const doc = await db
+      .collection<StudioDocument>(STUDIOS_COLLECTION)
+      .findOne({ slug: slugResult.data });
+
     const publicStudio = PublicStudioSchema.parse({
       id: studio.id,
       slug: studio.slug,
@@ -53,6 +61,13 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       currency: studio.settings.currency,
       contactPhone: studio.settings.contactPhone,
       contactEmail: studio.settings.contactEmail,
+      payment: doc?.payment
+        ? {
+            enableCounterPayment: doc.payment.enableCounterPayment ?? true,
+            enableOnlinePayment: doc.payment.enableOnlinePayment ?? false,
+            isRazorpayConfirmed: doc.payment.isRazorpayConfirmed ?? false,
+          }
+        : undefined,
     });
 
     return reply.status(200).send(publicStudio);

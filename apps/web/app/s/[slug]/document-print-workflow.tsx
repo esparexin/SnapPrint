@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DocumentPrintConfig, OrderRecord } from '@snapprint/contracts';
+import { DocumentPrintConfig, OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { OrderConfirmationView } from './order-confirmation-view';
@@ -13,6 +13,7 @@ interface DocumentPrintWorkflowProps {
   studioName: string;
   sessionId: string;
   token: string;
+  payment?: PublicPaymentSettings;
 }
 
 export function DocumentPrintWorkflow({
@@ -20,6 +21,7 @@ export function DocumentPrintWorkflow({
   studioName,
   sessionId,
   token,
+  payment,
 }: DocumentPrintWorkflowProps) {
   const [docs, setDocs] = useState<UploadedDocInfo[]>([]);
   const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
@@ -70,6 +72,7 @@ export function DocumentPrintWorkflow({
         studioName={studioName}
         slug={slug}
         sessionToken={token}
+        payment={payment}
         onNewOrder={() => {
           setSubmittedOrder(null);
           setDocs([]);

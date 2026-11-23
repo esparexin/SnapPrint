@@ -19,6 +19,8 @@ import { publicRoutes } from './public-routes.js';
 import { sessionPlugin } from './plugins/session.js';
 import { tenantPlugin } from './plugins/tenant.js';
 import { studioRoutes } from './studio-routes.js';
+import { studioOnboardingRoutes } from './studio-onboarding-routes.js';
+import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 
 const config = loadConfig();
@@ -76,6 +78,8 @@ app.register(authRoutes);
 app.register(authRegistrationRoutes, { emailService });
 app.register(authLoginOtpRoutes, { emailService });
 app.register(studioRoutes);
+app.register(studioOnboardingRoutes);
+app.register(studioSettingsRoutes);
 app.register(publicRoutes);
 app.register(assetRoutes);
 app.register(orderRoutes);

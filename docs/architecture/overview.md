@@ -96,3 +96,31 @@
   1. **Client Reachability**: Confirm no active client version, QR session, or webhook sender relies on the legacy schema or endpoint.
   2. **Traffic Audit**: Verify telemetry and server access logs show zero traffic to the deprecated interface across a complete business cycle.
   3. **Data Backfills**: Confirm all historical documents in persistence stores have been migrated to the modern schema structure.
+
+## Phase 6 — Shop Profile Lifecycle, Direct-Print Thresholds, and Payment Method Gating
+
+### 1. Shop Profile & Activation Lifecycle (ADR 0004)
+
+- **Shop State Machine**: Valid statuses are `onboarding`, `active`, `suspended`, and `closed`.
+- **Guided Setup**: A 4-step wizard in the operator portal guides newly created shops through:
+  1. _Shop Details_: Name, phone, city, address, operating hours.
+  2. _Capabilities & Thresholds_: Direct printing toggle, supported paper sizes (`A4`, `A3`, `A5`, `legal`, `letter`), color/duplex support, and direct-print page limit (`autoPrintMaxPages`).
+  3. _Payment Configuration_: Default Pay-at-Counter mode and optional Razorpay API credential verification.
+  4. _Review & Activation_: Atomic validation and transition from `onboarding` to `active` via `POST /studios/:studioId/activate`.
+
+### 2. Direct-Print Safety Thresholds (`autoPrintMaxPages`)
+
+- Direct-to-printer flows enforce an `autoPrintMaxPages` limit (options: `20`, `30`, `50`, `100`; default: `30`).
+- Prevents printer paper tray exhaustion, head jams, and queue monopolization by rogue print jobs. Jobs exceeding the threshold require manual operator release.
+
+### 3. Payment Method Gating & Cryptographic Verification
+
+- **Default Configuration**: All shops initialize strictly in **Pay at Counter (Cash Only)** mode (`enableCounterPayment: true`, `enableOnlinePayment: false`, `isRazorpayConfirmed: false`).
+- **Gateway Handshake Gate**: Online payment via Razorpay can only be activated when `isRazorpayConfirmed: true`. Confirmation requires an active server-side handshake against Razorpay (`POST /studios/:studioId/verify-razorpay`). Invalid or unverified keys cannot enable online checkout.
+
+### 4. Dynamic Customer Checkout Resolution
+
+- Public API endpoint `GET /public/studios/:slug` exposes sanitized `PublicPaymentSettings` without leaking credentials.
+- Customer ordering flows evaluate payment options via `resolveCustomerPaymentMethods`:
+  - When Razorpay is verified and enabled, customers are offered a dual choice: "Pay Online" or "Pay at Counter".
+  - When Razorpay is unconfirmed or disabled, checkout seamlessly falls back to Cash Only with counter instructions.

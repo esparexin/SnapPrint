@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { OrderRecord } from '@snapprint/contracts';
+import { OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
+import { resolveCustomerPaymentMethods } from '@snapprint/domain';
 import { initiateOnlinePayment, verifyOnlinePayment } from '../../../src/payment-client';
+import { customerPaymentStyles as styles } from './customer-payment-styles';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -33,85 +35,28 @@ interface CustomerPaymentCardProps {
   order: OrderRecord;
   slug: string;
   sessionToken?: string;
+  payment?: PublicPaymentSettings;
   onPaymentSuccess: () => void;
 }
-
-const styles = {
-  paidBox: {
-    padding: '16px',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #86efac',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  } as const,
-  paidBadge: {
-    padding: '4px 8px',
-    backgroundColor: '#dcfce7',
-    color: '#15803d',
-    borderRadius: '4px',
-    fontWeight: 700,
-    fontSize: '11px',
-  } as const,
-  card: {
-    padding: '16px',
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fde68a',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    textAlign: 'left',
-  } as const,
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } as const,
-  badge: {
-    padding: '4px 8px',
-    backgroundColor: '#fee2e2',
-    color: '#991b1b',
-    borderRadius: '4px',
-    fontWeight: 700,
-    fontSize: '11px',
-  } as const,
-  error: {
-    marginTop: '10px',
-    padding: '8px',
-    backgroundColor: '#fef2f2',
-    color: '#b91c1c',
-    borderRadius: '4px',
-    fontSize: '12px',
-  } as const,
-  actions: { display: 'flex', gap: '10px', marginTop: '14px' } as const,
-  payBtn: {
-    flex: 1,
-    padding: '10px 14px',
-    backgroundColor: '#0284c7',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    fontWeight: 700,
-    fontSize: '13px',
-  } as const,
-  counterBox: {
-    flex: 1,
-    padding: '10px 14px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #cbd5e1',
-    borderRadius: '6px',
-    fontSize: '12px',
-    color: '#334155',
-    lineHeight: 1.3,
-  } as const,
-};
 
 export function CustomerPaymentCard({
   order,
   slug,
   sessionToken,
+  payment,
   onPaymentSuccess,
 }: CustomerPaymentCardProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const methods = resolveCustomerPaymentMethods(
+    payment ?? {
+      enableCounterPayment: true,
+      enableOnlinePayment: false,
+      isRazorpayConfirmed: false,
+    }
+  );
+  const enableOnline = methods.includes('razorpay');
   const paidAmount = order.paidAmountMinor ?? 0;
   const remainingMinor = Math.max(0, order.totalAmountMinor - paidAmount);
   const isPaid = order.paymentStatus === 'PAID';
@@ -201,6 +146,31 @@ export function CustomerPaymentCard({
     );
   }
 
+  // Cash Only Mode (when Razorpay is not configured/confirmed by shop owner)
+  if (!enableOnline) {
+    return (
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <div>
+            <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
+              Payment Due at Counter: ₹{(remainingMinor / 100).toFixed(2)}
+            </div>
+            <div style={{ fontSize: '12px', color: '#b45309', marginTop: '2px' }}>
+              Pay at Counter / Cash Only
+            </div>
+          </div>
+          <span style={styles.badge}>{order.paymentStatus ?? 'UNPAID'}</span>
+        </div>
+
+        <div style={styles.counterAlert}>
+          💵 <strong>Pay at Counter</strong>: This shop operates in cash/counter mode. Please show
+          Order #{order.orderNumber} to the operator at the desk to pay and collect your printouts.
+        </div>
+      </div>
+    );
+  }
+
+  // Dual Options Mode (Razorpay confirmed + Counter pay enabled)
   return (
     <div style={styles.card}>
       <div style={styles.header}>
@@ -209,7 +179,7 @@ export function CustomerPaymentCard({
             Payment Pending: ₹{(remainingMinor / 100).toFixed(2)}
           </div>
           <div style={{ fontSize: '12px', color: '#b45309', marginTop: '2px' }}>
-            Choose your preferred payment method below
+            Choose Pay Online or Pay at Counter
           </div>
         </div>
         <span style={styles.badge}>{order.paymentStatus ?? 'UNPAID'}</span>

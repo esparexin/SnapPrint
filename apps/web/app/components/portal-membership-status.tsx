@@ -6,12 +6,14 @@ interface PortalMembershipStatusProps {
   uiState: 'no_memberships' | 'access_denied';
   selectedStudioId: string | null;
   onResetStudio: () => void;
+  onOpenWizard?: () => void;
 }
 
 export function PortalMembershipStatus({
   uiState,
   selectedStudioId,
   onResetStudio,
+  onOpenWizard,
 }: PortalMembershipStatusProps) {
   if (uiState === 'no_memberships') {
     return (
@@ -25,10 +27,28 @@ export function PortalMembershipStatus({
         }}
       >
         <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem' }}>No Active Studio Memberships</h2>
-        <p style={{ color: '#4b5563', margin: 0 }}>
-          Your operator account is active, but you have not been granted access to any studios.
-          Please contact your platform administrator.
+        <p style={{ color: '#4b5563', margin: '0 0 1rem' }}>
+          Your operator account is active, but you have not yet set up a shop or been granted
+          access.
         </p>
+        {onOpenWizard && (
+          <button
+            type="button"
+            onClick={onOpenWizard}
+            style={{
+              padding: '0.5rem 1.25rem',
+              background: '#0284c7',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '0.375rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+            }}
+          >
+            + Register & Set Up Your Shop
+          </button>
+        )}
       </div>
     );
   }
