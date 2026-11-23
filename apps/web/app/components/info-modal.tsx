@@ -1,12 +1,13 @@
 import React from 'react';
 
 interface InfoModalProps {
-  title: string;
+  title?: string;
   onClose: () => void;
   children: React.ReactNode;
+  maxWidth?: string;
 }
 
-export function InfoModal({ title, onClose, children }: InfoModalProps) {
+export function InfoModal({ title, onClose, children, maxWidth = '540px' }: InfoModalProps) {
   return (
     <div
       role="dialog"
@@ -27,8 +28,10 @@ export function InfoModal({ title, onClose, children }: InfoModalProps) {
         style={{
           backgroundColor: '#ffffff',
           borderRadius: '16px',
-          maxWidth: '540px',
+          maxWidth,
           width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
           padding: '2rem',
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -53,7 +56,9 @@ export function InfoModal({ title, onClose, children }: InfoModalProps) {
         >
           ×
         </button>
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem' }}>{title}</h2>
+        {title && (
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem' }}>{title}</h2>
+        )}
         <div style={{ fontSize: '0.92rem', lineHeight: 1.6, color: '#334155' }}>{children}</div>
       </div>
     </div>

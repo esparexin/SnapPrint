@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { LoginForm } from './login-form';
 import { OwnerLoginOtpForm } from './owner-login-otp-form';
@@ -9,10 +9,19 @@ import { OwnerRegisterForm } from './owner-register-form';
 interface PortalUnauthenticatedProps {
   errorBanner: string | null;
   onSuccess: (auth: AuthResponse) => void;
+  initialMode?: 'password' | 'email_otp' | 'register';
 }
 
-export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthenticatedProps) {
-  const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
+export function PortalUnauthenticated({
+  errorBanner,
+  onSuccess,
+  initialMode = 'email_otp',
+}: PortalUnauthenticatedProps) {
+  const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>(initialMode);
+
+  useEffect(() => {
+    setAuthMode(initialMode);
+  }, [initialMode]);
 
   return (
     <div>

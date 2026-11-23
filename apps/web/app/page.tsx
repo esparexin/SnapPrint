@@ -7,6 +7,7 @@ import { OperatorPortal } from './components/operator-portal';
 
 export default function HomePage() {
   const [showPortalModal, setShowPortalModal] = useState(false);
+  const [portalMode, setPortalMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -46,12 +47,18 @@ export default function HomePage() {
             },
             {
               label: 'Login',
-              onClick: () => setShowPortalModal(true),
+              onClick: () => {
+                setPortalMode('email_otp');
+                setShowPortalModal(true);
+              },
               variant: 'text',
             },
             {
               label: 'Register',
-              onClick: () => setShowPortalModal(true),
+              onClick: () => {
+                setPortalMode('register');
+                setShowPortalModal(true);
+              },
               variant: 'button',
             },
           ]}
@@ -136,6 +143,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => {
                   setShowAboutModal(false);
+                  setPortalMode('register');
                   setShowPortalModal(true);
                 }}
                 style={{
@@ -158,55 +166,9 @@ export default function HomePage() {
       )}
 
       {showPortalModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            backgroundColor: 'rgba(15, 23, 42, 0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              maxWidth: '560px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '2rem',
-              position: 'relative',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowPortalModal(false)}
-              aria-label="Close Dialog"
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                lineHeight: 1,
-                cursor: 'pointer',
-                color: '#64748b',
-              }}
-            >
-              ×
-            </button>
-            <OperatorPortal />
-          </div>
-        </div>
+        <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="560px">
+          <OperatorPortal initialMode={portalMode} />
+        </InfoModal>
       )}
 
       {showPrivacyModal && (

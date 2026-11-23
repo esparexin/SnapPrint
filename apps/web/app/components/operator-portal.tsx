@@ -11,7 +11,11 @@ import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
 import { WorkspaceKpiBar } from './workspace-kpi-bar';
 
-export function OperatorPortal() {
+export interface OperatorPortalProps {
+  initialMode?: 'password' | 'email_otp' | 'register';
+}
+
+export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProps = {}) {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -78,6 +82,7 @@ export function OperatorPortal() {
   if (!auth) {
     return (
       <PortalUnauthenticated
+        initialMode={initialMode}
         errorBanner={errorBanner}
         onSuccess={(newAuth) => {
           setAuth(newAuth);
