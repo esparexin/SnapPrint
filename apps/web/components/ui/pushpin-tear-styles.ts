@@ -84,6 +84,7 @@ export const TEAR_CSS =
   '.tpf:not(.s3) .tpf-word span{transform:translateY(125%);transition-delay:0s}' +
   '.tpf:not(.s3) .tpf-word span::after{transform:scaleX(0);transition-delay:0s}' +
   '.tpf-word:hover span::after{height:max(4px,.075em)}' +
+  '.tpf-word:has(img) span::after{display:none}' +
   '.tpf-side{top:76%;display:grid;justify-items:center;gap:clamp(8px,1.5cqmin,12px);font-size:clamp(12px,1.6cqmin,14px);transform:translateX(-50%)}' +
   '.tpf-side .tpf-ico{width:1.35em;height:1.35em;transition:transform .35s var(--ease)}' +
   '.tpf-side:hover .tpf-ico{transform:translateY(-2px) rotate(-8deg)}' +

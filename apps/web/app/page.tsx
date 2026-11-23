@@ -40,9 +40,33 @@ export default function HomePage() {
         }}
       >
         <PushpinTearFooter
-          brand="SnapPrint"
+          brand={
+            <img
+              src="/brand/snapprint-logo.png"
+              alt="SnapPrint"
+              style={{
+                height: 'clamp(44px, 6.5cqmin, 62px)',
+                width: 'auto',
+                display: 'block',
+                objectFit: 'contain',
+              }}
+            />
+          }
           name="Palnadu Print Network"
           logoHref="/"
+          logo={
+            <img
+              src="/brand/snapprint-icon.png"
+              alt="SnapPrint"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'block',
+                objectFit: 'contain',
+              }}
+            />
+          }
           sheet="#0284c7"
           paper="#ffffff"
           sheetInk="#ffffff"

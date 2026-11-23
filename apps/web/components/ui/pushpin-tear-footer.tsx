@@ -190,7 +190,7 @@ export default function PushpinTearFooter({
             </A>
           )}
         </div>
-        <A href={logoHref} className="tpf-word" label={name}>
+        <A href={logoHref} className="tpf-word" label={typeof brand === 'string' ? brand : name}>
           <span>{brand}</span>
         </A>
       </div>

@@ -139,21 +139,17 @@ export function Seal() {
 
 export function SnapPrintLogo() {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className="tpf-mark"
-      aria-hidden="true"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="6" y="10" width="20" height="14" rx="2" />
-      <path d="M10 10V4h12v6" />
-      <path d="M10 18h12v10H10z" fill="currentColor" fillOpacity="0.15" />
-      <circle cx="21" cy="14" r="1" fill="currentColor" />
-    </svg>
+    <img
+      src="/brand/snapprint-icon.png"
+      alt="SnapPrint"
+      style={{
+        width: '1.75em',
+        height: '1.75em',
+        borderRadius: '0.38em',
+        display: 'block',
+        objectFit: 'contain',
+      }}
+    />
   );
 }
 

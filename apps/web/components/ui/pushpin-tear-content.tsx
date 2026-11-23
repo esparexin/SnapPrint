@@ -7,7 +7,7 @@ interface PushpinTearContentProps {
   socials?: IconLink[];
   logo?: React.ReactNode;
   logoHref: string;
-  brand?: string;
+  brand?: string | React.ReactNode;
   topNav?: TopNavLink[];
   name: string;
   newsletter?: { label: string; placeholder?: string } | null;
@@ -49,7 +49,7 @@ export function PushpinTearContent({
       <div className="tpf-z tpf-top">
         <A href={logoHref} className="tpf-brand-link tpf-h" label={name} style={H(0)}>
           {logo ?? <SnapPrintLogo />}
-          <span className="tpf-brand-title">{brand ?? name}</span>
+          <span className="tpf-brand-title">{typeof brand === 'string' ? brand : 'SnapPrint'}</span>
         </A>
 
         {topNav && topNav.length > 0 ? (

@@ -42,22 +42,17 @@ export default function AboutPage() {
             href="/"
             style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}
           >
-            <span
+            <img
+              src="/brand/snapprint-icon.png"
+              alt="SnapPrint"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '1.1rem',
+                display: 'block',
+                objectFit: 'contain',
               }}
-            >
-              S
-            </span>
+            />
             <span
               style={{
                 fontSize: '1.25rem',

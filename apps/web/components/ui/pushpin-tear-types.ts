@@ -62,7 +62,7 @@ export interface AnimationParams {
 }
 
 export type PushpinTearFooterProps = {
-  brand?: string;
+  brand?: string | React.ReactNode;
   name?: string;
   logo?: React.ReactNode;
   logoHref?: string;
