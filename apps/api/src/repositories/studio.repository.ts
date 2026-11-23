@@ -149,3 +149,42 @@ export async function updateStudioStatus(
 
   return result.matchedCount > 0;
 }
+
+export interface UpdateStudioProfileFields {
+  tagline?: string;
+  contactPhone?: string;
+  address?: string;
+  isAcceptingOrders?: boolean;
+  status?: StudioStatus;
+}
+
+export async function updateStudioProfile(
+  db: Db,
+  id: string,
+  fields: UpdateStudioProfileFields
+): Promise<Studio | null> {
+  const current = await findStudioById(db, id);
+  if (!current) return null;
+
+  const updateDoc: Record<string, unknown> = { updatedAt: new Date() };
+  if (fields.tagline !== undefined) updateDoc.tagline = fields.tagline;
+  if (fields.contactPhone !== undefined) updateDoc.contactPhone = fields.contactPhone;
+  if (fields.status !== undefined) updateDoc.status = fields.status;
+  if (fields.address !== undefined) {
+    updateDoc.location = {
+      ...current.location,
+      addressLine: fields.address,
+      city: current.location?.city || 'Default City',
+      state: current.location?.state || 'Telangana',
+    };
+  }
+  if (fields.isAcceptingOrders !== undefined) {
+    updateDoc.settings = { ...current.settings, isAcceptingOrders: fields.isAcceptingOrders };
+  }
+
+  await db
+    .collection<StudioDocument>(STUDIOS_COLLECTION)
+    .updateOne({ id }, { $set: updateDoc });
+
+  return findStudioById(db, id);
+}

@@ -17,6 +17,7 @@ import { publicRoutes } from './public-routes.js';
 import { studioRoutes } from './studio-routes.js';
 import { studioOnboardingRoutes } from './studio-onboarding-routes.js';
 import { studioSettingsRoutes } from './studio-settings-routes.js';
+import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 import { MemoryStorageService, StorageService } from './storage/storage-service.js';
@@ -67,6 +68,7 @@ export async function createTestApp(
   await app.register(studioRoutes, { db: mock.db });
   await app.register(studioOnboardingRoutes, { db: mock.db });
   await app.register(studioSettingsRoutes, { db: mock.db, config: testConfig });
+  await app.register(studioWorkspaceRoutes, { db: mock.db });
   await app.register(printerRoutes, { db: mock.db });
   await app.register(publicRoutes, { db: mock.db, config: testConfig });
   await app.register(assetRoutes, { db: mock.db, config: testConfig, storage });

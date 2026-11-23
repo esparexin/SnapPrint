@@ -87,43 +87,4 @@ export const studioRoutes: FastifyPluginAsync<StudioRouteOptions> = async (app, 
       return reply.status(200).send(updated);
     }
   );
-
-  // GET /studios/:studioId/staff - List staff roster for authorized studio
-  app.get(
-    '/studios/:studioId/staff',
-    { preHandler: [requireStudioPermission('manage_studio', getEffectiveDb)] },
-    async (request, reply) => {
-      const db = getEffectiveDb();
-      const staff = await findMembershipsByStudio(db, request.studioId!);
-      return reply.status(200).send(staff);
-    }
-  );
-
-  // POST /studios/:studioId/staff - Add staff to authorized studio
-  app.post(
-    '/studios/:studioId/staff',
-    { preHandler: [requireStudioPermission('manage_studio', getEffectiveDb)] },
-    async (request, reply) => {
-      const db = getEffectiveDb();
-      const parseResult = AddStaffSchema.safeParse(request.body);
-      if (!parseResult.success) {
-        reply.status(400).send({
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid staff input payload',
-          issues: parseResult.error.issues,
-        });
-        return;
-      }
-
-      const membership = await createUserMembership(db, {
-        userId: parseResult.data.userId,
-        studioId: request.studioId!,
-        role: parseResult.data.role,
-        status: 'active',
-      });
-
-      return reply.status(201).send(membership);
-    }
-  );
 };

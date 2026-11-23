@@ -23,6 +23,23 @@ export interface MockCollections {
   emailOtps: EmailOtpDocument[];
 }
 
+function toComparableNumber(val: unknown): number {
+  if (val instanceof Date) return val.getTime();
+  if (typeof val === 'string' && !Number.isNaN(Date.parse(val))) return new Date(val).getTime();
+  return typeof val === 'number' ? val : NaN;
+}
+
+function matchComparisonOp(actual: unknown, op: string, target: unknown): boolean {
+  const a = toComparableNumber(actual);
+  const b = toComparableNumber(target);
+  if (Number.isNaN(a) || Number.isNaN(b)) return false;
+  if (op === '$gt') return a > b;
+  if (op === '$gte') return a >= b;
+  if (op === '$lt') return a < b;
+  if (op === '$lte') return a <= b;
+  return false;
+}
+
 function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
   for (const [k, v] of Object.entries(filter)) {
     if (v === undefined) continue;
@@ -32,37 +49,14 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
         if (!obj.$in.includes(item[k])) return false;
         continue;
       }
-      if ('$gt' in obj) {
-        const itemTime =
-          item[k] instanceof Date ? item[k].getTime() : new Date(item[k] as string).getTime();
-        const targetTime =
-          obj.$gt instanceof Date ? obj.$gt.getTime() : new Date(obj.$gt as string).getTime();
-        if (Number.isNaN(itemTime) || Number.isNaN(targetTime) || !(itemTime > targetTime))
-          return false;
-        continue;
-      }
-      if ('$lt' in obj) {
-        const itemVal = item[k];
-        const targetVal = obj.$lt;
-        if (itemVal instanceof Date || targetVal instanceof Date) {
-          const itemTime =
-            itemVal instanceof Date ? itemVal.getTime() : new Date(itemVal as string).getTime();
-          const targetTime =
-            targetVal instanceof Date
-              ? targetVal.getTime()
-              : new Date(targetVal as string).getTime();
-          if (Number.isNaN(itemTime) || Number.isNaN(targetTime) || !(itemTime < targetTime))
-            return false;
-        } else {
-          if (
-            typeof itemVal !== 'number' ||
-            typeof targetVal !== 'number' ||
-            !(itemVal < targetVal)
-          )
-            return false;
+      let handledOp = false;
+      for (const op of ['$gt', '$gte', '$lt', '$lte'] as const) {
+        if (op in obj) {
+          handledOp = true;
+          if (!matchComparisonOp(item[k], op, obj[op])) return false;
         }
-        continue;
       }
+      if (handledOp) continue;
     }
     if (item[k] !== v) {
       return false;
