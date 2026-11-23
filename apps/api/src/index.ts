@@ -21,6 +21,7 @@ import { tenantPlugin } from './plugins/tenant.js';
 import { studioRoutes } from './studio-routes.js';
 import { studioOnboardingRoutes } from './studio-onboarding-routes.js';
 import { studioSettingsRoutes } from './studio-settings-routes.js';
+import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 
@@ -81,6 +82,7 @@ app.register(authLoginOtpRoutes, { emailService });
 app.register(studioRoutes);
 app.register(studioOnboardingRoutes);
 app.register(studioSettingsRoutes);
+app.register(studioWorkspaceRoutes);
 app.register(printerRoutes);
 app.register(publicRoutes);
 app.register(assetRoutes);

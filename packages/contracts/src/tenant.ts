@@ -33,6 +33,7 @@ export const StudioSettingsSchema = z.object({
     .optional(),
   onlinePaymentEnabled: z.boolean().default(true).optional(),
   counterPaymentEnabled: z.boolean().default(true).optional(),
+  isAcceptingOrders: z.boolean().default(true).optional(),
 });
 
 export type StudioSettings = z.infer<typeof StudioSettingsSchema>;
@@ -79,6 +80,7 @@ export const PublicStudioSchema = z.object({
   currency: z.string().length(3).default('INR'),
   contactPhone: z.string().min(5).max(20).optional(),
   contactEmail: z.string().email().optional(),
+  isAcceptingOrders: z.boolean().default(true).optional(),
   payment: PublicPaymentSettingsSchema.optional(),
 });
 

@@ -9,6 +9,8 @@ interface ModuleCardsProps {
   onOpenOrdersModal?: () => void;
   onOpenSetupModal?: () => void;
   onOpenPrintersModal?: () => void;
+  onOpenStaffModal?: () => void;
+  onOpenProfileModal?: () => void;
 }
 
 export function ModuleCards({
@@ -17,6 +19,8 @@ export function ModuleCards({
   onOpenOrdersModal,
   onOpenSetupModal,
   onOpenPrintersModal,
+  onOpenStaffModal,
+  onOpenProfileModal,
 }: ModuleCardsProps) {
   const modules = [
     {
@@ -34,11 +38,6 @@ export function ModuleCards({
       actionLabel: 'Open Fulfillment Queue',
     },
     {
-      title: 'Catalog & Pricing',
-      desc: 'Configure print dimensions, finish, and pricing.',
-      permission: 'manage_catalog' as Permission,
-    },
-    {
       title: 'Hardware & Fleet',
       desc: 'Manage local printers, drivers, and capability routing.',
       permission: 'manage_printers' as Permission,
@@ -46,11 +45,25 @@ export function ModuleCards({
       actionLabel: 'Manage Printers',
     },
     {
-      title: 'Studio Settings & Staff',
-      desc: 'Manage studio policies, staff roster, and hours.',
+      title: 'Staff & Roles',
+      desc: 'Invite operators, assign staff roles, and revoke access.',
+      permission: 'manage_staff' as Permission,
+      action: onOpenStaffModal,
+      actionLabel: 'Manage Team',
+    },
+    {
+      title: 'Shop Profile & Hours',
+      desc: 'Update shop tagline, phone, and pause/resume orders.',
+      permission: 'manage_studio' as Permission,
+      action: onOpenProfileModal,
+      actionLabel: 'Edit Profile & Pause',
+    },
+    {
+      title: 'Onboarding & Setup',
+      desc: 'Full studio onboarding wizard, capabilities, and readiness.',
       permission: 'manage_studio' as Permission,
       action: onOpenSetupModal,
-      actionLabel: 'Shop Setup & Config',
+      actionLabel: 'Setup Wizard',
     },
   ];
 
