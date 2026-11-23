@@ -122,10 +122,22 @@ export const authLoginOtpRoutes: FastifyPluginAsync<AuthLoginOtpRouteOptions> = 
           subject: emailContent.subject,
           html: emailContent.html,
           text: emailContent.text,
+          otp: code,
+          variables: {
+            otp: code,
+            name: user.name || 'Shop Owner',
+          },
         });
       } catch (err) {
-        await invalidatePendingOtps(db, normalizedEmail, 'owner_login');
-        throw err;
+        if (config.nodeEnv === 'development') {
+          request.log.warn(
+            { err, email: normalizedEmail, devOtpCode: code },
+            '[DEV] Email delivery failed or offline; OTP logged for local testing'
+          );
+        } else {
+          await invalidatePendingOtps(db, normalizedEmail, 'owner_login');
+          throw err;
+        }
       }
 
       return reply.status(200).send(genericResponse);

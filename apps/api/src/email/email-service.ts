@@ -1,10 +1,13 @@
 import type { AppConfig } from '../config.js';
+import { Msg91EmailService } from './msg91-email-service.js';
 
 export interface SendEmailParams {
   to: { email: string; name?: string };
   subject: string;
   html: string;
   text: string;
+  otp?: string;
+  variables?: Record<string, string>;
 }
 
 export interface EmailService {
@@ -75,17 +78,32 @@ export class MemoryEmailService implements EmailService {
 }
 
 export function createEmailService(config: AppConfig): EmailService {
-  if (config.zeptoMailApiToken) {
+  if (config.msg91AuthKey && config.msg91EmailDomain && config.msg91EmailFrom) {
+    return new Msg91EmailService({
+      authKey: config.msg91AuthKey,
+      domain: config.msg91EmailDomain,
+      fromEmail: config.msg91EmailFrom,
+      fromName: config.zeptoMailFromName || 'SnapPrint',
+      templateId: config.msg91EmailTemplateId,
+    });
+  }
+
+  const isZeptoConfigured =
+    Boolean(config.zeptoMailApiToken) &&
+    config.zeptoMailApiToken !== 'your_zeptomail_api_token';
+
+  if (isZeptoConfigured) {
     if (!config.zeptoMailFromEmail) {
       throw new Error('ZeptoMail configuration missing: ZEPTOMAIL_FROM_EMAIL must be configured.');
     }
     return new ZeptoMailEmailService(
-      config.zeptoMailApiToken,
+      config.zeptoMailApiToken!,
       config.zeptoMailFromEmail,
       config.zeptoMailFromName,
       config.zeptoMailBounceAddress
     );
   }
+
   if (config.nodeEnv !== 'test') {
     throw new Error('ZeptoMail configuration missing: ZEPTOMAIL_API_TOKEN must be configured.');
   }
