@@ -5,13 +5,11 @@ import { AuthResponse } from '@snapprint/contracts';
 import { AuthApiError, fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { resolveStudioAuthorization } from '../../src/studio-authorization';
 import { ModuleCards } from './module-cards';
-import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PortalMembershipStatus } from './portal-membership-status';
+import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
-import { PrinterManagementModal } from './printer-management-modal';
-import { ShopSetupWizard } from './shop-setup-wizard';
-import { StudioQrModal } from './studio-qr-modal';
 import { StudioSelector } from './studio-selector';
+import { WorkspaceKpiBar } from './workspace-kpi-bar';
 
 export function OperatorPortal() {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
@@ -23,6 +21,8 @@ export function OperatorPortal() {
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [showPrintersModal, setShowPrintersModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -167,6 +167,10 @@ export function OperatorPortal() {
             effectiveRole={authState.effectiveRole}
           />
 
+          {authState.selectedStudioId && (
+            <WorkspaceKpiBar studioId={authState.selectedStudioId} />
+          )}
+
           <section>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 1rem' }}>
               Studio Modules (Permission-Gated)
@@ -177,65 +181,33 @@ export function OperatorPortal() {
               onOpenOrdersModal={() => setShowOrdersModal(true)}
               onOpenSetupModal={() => setShowSetupModal(true)}
               onOpenPrintersModal={() => setShowPrintersModal(true)}
+              onOpenStaffModal={() => setShowStaffModal(true)}
+              onOpenProfileModal={() => setShowProfileModal(true)}
             />
           </section>
 
-          {showQrModal && authState.selectedStudioId && (
-            <StudioQrModal
-              studio={{
-                id: authState.selectedStudioId,
-                slug: authState.selectedStudioId.replace(/^studio_/, '').replace(/_/g, '-'),
-                name: `Studio ${authState.selectedStudioId}`,
-              }}
-              onClose={() => setShowQrModal(false)}
-            />
-          )}
-
-          {showOrdersModal && authState.selectedStudioId && (
-            <OrderFulfillmentModal
-              studioId={authState.selectedStudioId}
-              studioName={`Studio ${authState.selectedStudioId}`}
-              onClose={() => setShowOrdersModal(false)}
-            />
-          )}
-
-          {showPrintersModal && authState.selectedStudioId && (
-            <PrinterManagementModal
-              studioId={authState.selectedStudioId}
-              studioName={`Studio ${authState.selectedStudioId}`}
-              onClose={() => setShowPrintersModal(false)}
-            />
-          )}
-        </div>
-      )}
-
-      {showSetupModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            zIndex: 50,
-          }}
-        >
-          <div style={{ maxWidth: '620px', width: '100%', margin: 'auto' }}>
-            <ShopSetupWizard
-              initialStudio={
-                authState.selectedStudioId ? { id: authState.selectedStudioId } : undefined
-              }
-              onComplete={async (saved) => {
-                setShowSetupModal(false);
-                const fresh = await fetchCurrentUser().catch(() => null);
-                if (fresh) setAuth(fresh);
-                if (saved?.id) setSelectedStudioId(saved.id);
-              }}
-              onCancel={() => setShowSetupModal(false)}
-            />
-          </div>
+          <PortalModals
+            studioId={authState.selectedStudioId || undefined}
+            studioName={authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined}
+            showQrModal={showQrModal}
+            showOrdersModal={showOrdersModal}
+            showPrintersModal={showPrintersModal}
+            showSetupModal={showSetupModal}
+            showStaffModal={showStaffModal}
+            showProfileModal={showProfileModal}
+            onCloseQr={() => setShowQrModal(false)}
+            onCloseOrders={() => setShowOrdersModal(false)}
+            onClosePrinters={() => setShowPrintersModal(false)}
+            onCloseSetup={() => setShowSetupModal(false)}
+            onCloseStaff={() => setShowStaffModal(false)}
+            onCloseProfile={() => setShowProfileModal(false)}
+            onSetupComplete={async (saved) => {
+              setShowSetupModal(false);
+              const fresh = await fetchCurrentUser().catch(() => null);
+              if (fresh) setAuth(fresh);
+              if (saved?.id) setSelectedStudioId(saved.id);
+            }}
+          />
         </div>
       )}
     </div>

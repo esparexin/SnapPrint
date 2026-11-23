@@ -47,10 +47,10 @@ export type StaffRosterResponse = z.infer<typeof StaffRosterResponseSchema>;
 export const InviteStaffRequestSchema = z.object({
   email: EmailSchema,
   name: z.string().trim().min(1).max(120).optional(),
-  role: z.literal('studio_staff').default('studio_staff'),
+  role: z.literal('studio_staff').default('studio_staff').optional(),
 });
 
-export type InviteStaffRequest = z.infer<typeof InviteStaffRequestSchema>;
+export type InviteStaffRequest = z.input<typeof InviteStaffRequestSchema>;
 
 export const InviteStaffResponseSchema = z.object({
   success: z.boolean(),
