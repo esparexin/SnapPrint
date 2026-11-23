@@ -8,6 +8,7 @@ import { ModuleCards } from './module-cards';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalUnauthenticated } from './portal-unauthenticated';
+import { PrinterManagementModal } from './printer-management-modal';
 import { ShopSetupWizard } from './shop-setup-wizard';
 import { StudioQrModal } from './studio-qr-modal';
 import { StudioSelector } from './studio-selector';
@@ -21,6 +22,7 @@ export function OperatorPortal() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
+  const [showPrintersModal, setShowPrintersModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -66,13 +68,8 @@ export function OperatorPortal() {
 
   if (loading) {
     return (
-      <div
-        role="status"
-        style={{ textAlign: 'center', padding: '3rem', fontFamily: 'system-ui, sans-serif' }}
-      >
-        <p style={{ fontSize: '1.125rem', color: '#4b5563' }}>
-          Verifying operator authentication session...
-        </p>
+      <div role="status" style={{ textAlign: 'center', padding: '3rem', fontFamily: 'system-ui' }}>
+        <p style={{ fontSize: '1.125rem', color: '#4b5563' }}>Verifying operator session...</p>
       </div>
     );
   }
@@ -179,6 +176,7 @@ export function OperatorPortal() {
               onOpenQrModal={() => setShowQrModal(true)}
               onOpenOrdersModal={() => setShowOrdersModal(true)}
               onOpenSetupModal={() => setShowSetupModal(true)}
+              onOpenPrintersModal={() => setShowPrintersModal(true)}
             />
           </section>
 
@@ -200,6 +198,14 @@ export function OperatorPortal() {
               onClose={() => setShowOrdersModal(false)}
             />
           )}
+
+          {showPrintersModal && authState.selectedStudioId && (
+            <PrinterManagementModal
+              studioId={authState.selectedStudioId}
+              studioName={`Studio ${authState.selectedStudioId}`}
+              onClose={() => setShowPrintersModal(false)}
+            />
+          )}
         </div>
       )}
 
@@ -208,13 +214,12 @@ export function OperatorPortal() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
+            background: 'rgba(0,0,0,0.5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1rem',
             zIndex: 50,
-            overflowY: 'auto',
           }}
         >
           <div style={{ maxWidth: '620px', width: '100%', margin: 'auto' }}>

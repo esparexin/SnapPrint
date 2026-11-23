@@ -8,6 +8,7 @@ interface ModuleCardsProps {
   onOpenQrModal?: () => void;
   onOpenOrdersModal?: () => void;
   onOpenSetupModal?: () => void;
+  onOpenPrintersModal?: () => void;
 }
 
 export function ModuleCards({
@@ -15,6 +16,7 @@ export function ModuleCards({
   onOpenQrModal,
   onOpenOrdersModal,
   onOpenSetupModal,
+  onOpenPrintersModal,
 }: ModuleCardsProps) {
   const modules = [
     {
@@ -38,8 +40,10 @@ export function ModuleCards({
     },
     {
       title: 'Hardware & Fleet',
-      desc: 'Manage local thermal & dye-sublimation printers.',
+      desc: 'Manage local printers, drivers, and capability routing.',
       permission: 'manage_printers' as Permission,
+      action: onOpenPrintersModal,
+      actionLabel: 'Manage Printers',
     },
     {
       title: 'Studio Settings & Staff',
