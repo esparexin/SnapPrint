@@ -1,6 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"],
     "jsx": "preserve",
@@ -15,6 +19,6 @@
       }
     ]
   },
-  "include": ["app", "src", "globals.css", "next.config.ts", ".next/types/**/*.ts"],
+  "include": ["app", "components", "src", "globals.css", "next.config.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules", ".next"]
 }
