@@ -28,7 +28,7 @@ export default function PushpinTearFooter({
   timeZone = 'Asia/Kolkata',
   timeLabel = 'IST',
   columns = DEFAULT_COLUMNS,
-  chat = { label: 'help' },
+  chat = null,
   sideLinks = DEFAULT_SIDES,
   copyright = '© 2026 SnapPrint Technologies',
   credit = 'multi-tenant print network',

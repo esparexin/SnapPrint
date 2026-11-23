@@ -218,17 +218,13 @@ export function A({
   children: React.ReactNode;
   style?: React.CSSProperties;
 }) {
-  const onClick = (e: React.MouseEvent) => {
-    if (!href || href === '#') e.preventDefault();
-  };
   const out = !!href && /^https?:/.test(href);
   return (
     <a
-      href={href || '#'}
+      href={href || '/'}
       className={className}
       aria-label={label}
       title={label}
-      onClick={onClick}
       style={style}
       {...(out ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >

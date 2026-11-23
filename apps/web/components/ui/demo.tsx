@@ -50,7 +50,6 @@ export default function DemoEmber() {
           { icon: 'shield', label: 'privacy policy', href: '/#privacy' },
           { icon: 'doc', label: 'terms of service', href: '/#terms' },
         ]}
-        chat={{ label: 'support', href: 'mailto:contact@snapprint.in' }}
         copyright="© 2026 SnapPrint Technologies"
         credit="multi-tenant print network"
         handle={{ label: '@snapprint', href: 'https://print.palnadu.dev' }}

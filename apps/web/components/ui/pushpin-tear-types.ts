@@ -32,7 +32,7 @@ export type IconName =
 
 export type TearLink = { label: string; href?: string };
 export type IconLink = { icon: IconName; label: string; href?: string };
-export type FooterColumn = { title: string; links: TearLink[]; cta?: TearLink };
+export type FooterColumn = { title: string; links: TearLink[] };
 
 export const DEFAULT_SOCIALS: IconLink[] = [
   { icon: 'globe', label: 'Website', href: 'https://print.palnadu.dev' },
