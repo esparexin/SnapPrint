@@ -20,7 +20,7 @@
     "format:write": "prettier --write .",
     "check:file-sizes": "tsx scripts/check-file-sizes.ts",
     "check:architecture": "tsx scripts/check-architecture-boundaries.ts",
-    "security:audit": "pnpm audit --audit-level=critical --prod"
+    "security:audit": "pnpm audit --audit-level=high --prod"
   },
   "devDependencies": {
     "typescript": "~5.8.0",
