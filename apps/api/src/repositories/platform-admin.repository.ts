@@ -39,7 +39,10 @@ export async function getPlatformMetrics(db: Db): Promise<PlatformMetricsRespons
       .countDocuments({ status: { $in: ['onboarding', 'pending_review'] } }),
     db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'suspended' }),
     db.collection('orders').countDocuments({}),
-    db.collection('payments').find({ status: 'completed' }).toArray(),
+    db
+      .collection('payments')
+      .find({ status: { $in: ['SUCCEEDED', 'completed'] } })
+      .toArray(),
   ]);
 
   const totalPaidVolumeMinor = payments.reduce((sum, p) => {

@@ -11,12 +11,7 @@ export interface AdminStatusModalProps {
   onUpdated: (updated: PlatformStudioItem) => void;
 }
 
-export function AdminStatusModal({
-  studio,
-  isOpen,
-  onClose,
-  onUpdated,
-}: AdminStatusModalProps) {
+export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminStatusModalProps) {
   const [selectedStatus, setSelectedStatus] = useState<StudioStatus>(studio.status);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
