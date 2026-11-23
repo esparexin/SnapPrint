@@ -125,9 +125,7 @@ describe('API Configuration', () => {
   });
 
   it('rejects invalid OTP expiry values', () => {
-    expect(() => loadConfig({ OTP_TTL_MINUTES: '0' })).toThrow(
-      'Invalid application configuration'
-    );
+    expect(() => loadConfig({ OTP_TTL_MINUTES: '0' })).toThrow('Invalid application configuration');
   });
 
   it('defaults cookieSecure to true in production when not explicitly specified', () => {
