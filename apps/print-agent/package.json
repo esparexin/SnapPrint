@@ -1,0 +1,25 @@
+{
+  "name": "@snapprint/print-agent",
+  "private": true,
+  "description": "SnapPrint Desktop Print Agent & Spooler Discovery Daemon",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "snapprint-agent": "./dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/cli.ts",
+    "start": "tsx src/cli.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@snapprint/contracts": "workspace:*",
+    "@snapprint/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "~4.19.0",
+    "typescript": "~5.8.0"
+  }
+}

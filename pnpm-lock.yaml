@@ -73,6 +73,25 @@ importers:
         specifier: ~5.8.0
         version: 5.8.3
 
+  apps/print-agent:
+    dependencies:
+      '@snapprint/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@snapprint/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+    devDependencies:
+      '@types/node':
+        specifier: ^22
+        version: 22.20.5
+      tsx:
+        specifier: ~4.19.0
+        version: 4.19.4
+      typescript:
+        specifier: ~5.8.0
+        version: 5.8.3
+
   apps/web:
     dependencies:
       '@snapprint/contracts':
