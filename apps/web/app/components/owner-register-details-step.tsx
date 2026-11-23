@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { CURRENT_PRIVACY_POLICY_VERSION, CURRENT_TERMS_VERSION } from '@snapprint/contracts';
 
 interface OwnerRegisterDetailsStepProps {
   name: string;
@@ -137,7 +136,7 @@ export function OwnerRegisterDetailsStep({
             onChange={(e) => setTermsAccepted(e.target.checked)}
             style={{ marginRight: '0.5rem' }}
           />
-          I agree to the Terms of Service (v{CURRENT_TERMS_VERSION})
+          I agree to the Terms of Service
         </label>
       </div>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -156,7 +155,7 @@ export function OwnerRegisterDetailsStep({
             onChange={(e) => setPrivacyAccepted(e.target.checked)}
             style={{ marginRight: '0.5rem' }}
           />
-          I agree to the Privacy Policy (v{CURRENT_PRIVACY_POLICY_VERSION})
+          I agree to the Privacy Policy
         </label>
       </div>
       <button

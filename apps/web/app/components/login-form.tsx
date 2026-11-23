@@ -45,17 +45,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   return (
     <div
       style={{
-        maxWidth: '400px',
-        margin: '2rem auto',
-        padding: '1.5rem',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.5rem',
-        background: '#ffffff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        width: '100%',
+        margin: '0 auto',
       }}
     >
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 1rem' }}>Operator Sign In</h2>
-      <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0 0 1.5rem' }}>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#0f172a' }}>
+        Operator Sign In
+      </h2>
+      <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
         Access your photo printing studio management portal.
       </p>
 

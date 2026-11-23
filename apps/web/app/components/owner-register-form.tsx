@@ -33,8 +33,8 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [privacyAccepted, setPrivacyAccepted] = useState(true);
   const [otpCode, setOtpCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -129,21 +129,16 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
   return (
     <div
       style={{
-        maxWidth: '420px',
-        margin: '2rem auto',
-        padding: '1.5rem',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.5rem',
-        background: '#ffffff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        width: '100%',
+        margin: '0 auto',
       }}
     >
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
-        Studio Registration
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#0f172a' }}>
+        Shop Registration
       </h2>
-      <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0 0 1.25rem' }}>
+      <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
         {step === 'details'
-          ? 'Create a verified owner account for your print studio.'
+          ? 'Create a verified owner account for your Xerox shop or print store.'
           : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
       </p>
 

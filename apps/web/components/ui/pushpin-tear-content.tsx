@@ -16,7 +16,7 @@ interface PushpinTearContentProps {
   timeZone?: string;
   timeLabel?: string;
   status?: { label: string; href?: string } | null;
-  description?: string;
+  description?: string | React.ReactNode;
   mailto: string;
   H: (i: number) => React.CSSProperties;
   flash?: () => void;

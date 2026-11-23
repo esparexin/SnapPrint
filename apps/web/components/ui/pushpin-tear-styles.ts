@@ -38,7 +38,7 @@ export const TEAR_CSS =
   ".tpf-live::after{content:'';position:absolute;inset:0;border-radius:50%;border:1.5px solid currentColor;animation:tpf-ping 2.2s var(--ease) infinite}" +
   '.tpf a.tpf-status:hover span{text-decoration:underline;text-underline-offset:.2em}' +
   '.tpf-badge{left:50%;top:23%;transform:translate(-50%,-50%);width:clamp(14px,1.8cqmin,18px);height:clamp(14px,1.8cqmin,18px)}' +
-  '.tpf-desc{left:50%;top:29%;transform:translate(-50%,-50%);max-width:min(90cqw,620px);text-align:center;font-size:clamp(13px,1.6cqmin,15.5px);line-height:1.6;opacity:.95;letter-spacing:-.01em;font-weight:400}' +
+  '.tpf-desc{left:50%;top:30%;transform:translate(-50%,-50%);max-width:min(92cqw,680px);text-align:center;font-size:clamp(13.5px,1.7cqmin,16.5px);line-height:1.65;font-weight:500;letter-spacing:-.015em}.tpf-desc strong{font-weight:700;color:#ffffff}' +
   '.tpf-col{top:24%;display:grid;gap:clamp(4px,.7cqmin,7px);font-size:var(--fs)}' +
   '.tpf-col.l{left:14%;justify-items:start}.tpf-col.r{right:14%;justify-items:end;text-align:right}' +
   '.tpf-col h3{all:unset;display:flex;align-items:center;gap:1em;margin-bottom:clamp(3px,.5cqmin,6px);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:.88em;opacity:.85}' +

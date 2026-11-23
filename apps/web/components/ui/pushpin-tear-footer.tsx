@@ -40,7 +40,7 @@ export default function PushpinTearFooter({
   paperInk,
   seed = 7,
   height = '100svh',
-  fontSans = '"Helvetica Neue", Helvetica, Arial, system-ui, sans-serif',
+  fontSans = 'var(--font-family, "Plus Jakarta Sans", system-ui, sans-serif)',
   onSubscribe,
   onRepin,
   className = '',

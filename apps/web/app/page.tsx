@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PushpinTearFooter from '@/components/ui/pushpin-tear-footer';
 import { InfoModal } from './components/info-modal';
 import { OperatorPortal } from './components/operator-portal';
@@ -8,9 +8,18 @@ import { OperatorPortal } from './components/operator-portal';
 export default function HomePage() {
   const [showPortalModal, setShowPortalModal] = useState(false);
   const [portalMode, setPortalMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
-  const [showAboutModal, setShowAboutModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'register') {
+        setPortalMode('register');
+        setShowPortalModal(true);
+      }
+    }
+  }, []);
 
   return (
     <div
@@ -42,7 +51,7 @@ export default function HomePage() {
           topNav={[
             {
               label: 'About',
-              onClick: () => setShowAboutModal(true),
+              href: '/about',
               variant: 'text',
             },
             {
@@ -63,7 +72,25 @@ export default function HomePage() {
             },
           ]}
           status={{ label: 'accepting digital xerox orders' }}
-          description="Instant digital counter Xerox & cloud printing network. Upload your documents with dynamic price calculation, and print directly at your local store with zero WhatsApp privacy leaks."
+          description={
+            <span>
+              <strong
+                style={{
+                  display: 'block',
+                  fontSize: 'clamp(15px, 2cqmin, 19px)',
+                  fontWeight: 700,
+                  marginBottom: '0.35rem',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Instant Digital Counter Xerox & Cloud Printing
+              </strong>
+              <span>
+                Upload documents with automated dynamic pricing and print directly at your local
+                store with <strong>zero WhatsApp privacy leaks</strong>.
+              </span>
+            </span>
+          }
           columns={[]}
           sideLinks={[]}
           newsletter={null}
@@ -81,89 +108,6 @@ export default function HomePage() {
           ]}
         />
       </main>
-
-      {showAboutModal && (
-        <InfoModal title="About SnapPrint" onClose={() => setShowAboutModal(false)}>
-          <div style={{ display: 'grid', gap: '0.85rem', color: '#334155' }}>
-            <div>
-              <h3
-                style={{
-                  fontSize: '0.98rem',
-                  fontWeight: 700,
-                  margin: '0 0 0.2rem',
-                  color: '#0f172a',
-                }}
-              >
-                What is SnapPrint?
-              </h3>
-              <p style={{ margin: 0 }}>
-                SnapPrint is a privacy-first digital counter Xerox and document printing network by
-                Palnadu.dev connecting users directly to verified local print shops and Xerox
-                centers.
-              </p>
-            </div>
-            <div>
-              <h3
-                style={{
-                  fontSize: '0.98rem',
-                  fontWeight: 700,
-                  margin: '0 0 0.2rem',
-                  color: '#0f172a',
-                }}
-              >
-                How It Works
-              </h3>
-              <p style={{ margin: 0 }}>
-                1. Scan the store counter QR code at any SnapPrint partner shop.
-                <br />
-                2. Upload documents or photos with automated page count and color pricing.
-                <br />
-                3. Your print job spools securely to the shop printer and auto-expires in 120
-                minutes.
-              </p>
-            </div>
-            <div>
-              <h3
-                style={{
-                  fontSize: '0.98rem',
-                  fontWeight: 700,
-                  margin: '0 0 0.2rem',
-                  color: '#0f172a',
-                }}
-              >
-                Why SnapPrint?
-              </h3>
-              <p style={{ margin: 0 }}>
-                Zero WhatsApp privacy leaks — sensitive Aadhaar cards, certificates, and personal
-                photos never stay saved on shopkeeper phones or store computers.
-              </p>
-            </div>
-            <div style={{ paddingTop: '0.4rem' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAboutModal(false);
-                  setPortalMode('register');
-                  setShowPortalModal(true);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '10px',
-                  backgroundColor: '#0284c7',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.92rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Register Your Store / Printer →
-              </button>
-            </div>
-          </div>
-        </InfoModal>
-      )}
 
       {showPortalModal && (
         <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="560px">
