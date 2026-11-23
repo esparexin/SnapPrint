@@ -146,9 +146,11 @@ export const CreateShopRequestSchema = z.object({
   }),
 });
 export type CreateShopRequest = z.infer<typeof CreateShopRequestSchema>;
+export type CreateShopInput = z.input<typeof CreateShopRequestSchema>;
 
 export const UpdateShopProfileRequestSchema = CreateShopRequestSchema.partial();
 export type UpdateShopProfileRequest = z.infer<typeof UpdateShopProfileRequestSchema>;
+export type UpdateShopProfileInput = z.input<typeof UpdateShopProfileRequestSchema>;
 
 export const ShopActivationRequestSchema = z.object({
   confirmReady: z.boolean().refine((val) => val === true, {

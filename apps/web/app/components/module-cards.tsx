@@ -7,9 +7,15 @@ interface ModuleCardsProps {
   can: (permission: Permission) => boolean;
   onOpenQrModal?: () => void;
   onOpenOrdersModal?: () => void;
+  onOpenSetupModal?: () => void;
 }
 
-export function ModuleCards({ can, onOpenQrModal, onOpenOrdersModal }: ModuleCardsProps) {
+export function ModuleCards({
+  can,
+  onOpenQrModal,
+  onOpenOrdersModal,
+  onOpenSetupModal,
+}: ModuleCardsProps) {
   const modules = [
     {
       title: 'Permanent Counter QR',
@@ -39,6 +45,8 @@ export function ModuleCards({ can, onOpenQrModal, onOpenOrdersModal }: ModuleCar
       title: 'Studio Settings & Staff',
       desc: 'Manage studio policies, staff roster, and hours.',
       permission: 'manage_studio' as Permission,
+      action: onOpenSetupModal,
+      actionLabel: 'Shop Setup & Config',
     },
   ];
 
