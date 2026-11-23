@@ -84,7 +84,7 @@ export type PaymentHistoryResponse = z.infer<typeof PaymentHistoryResponseSchema
 export const WebhookEventRecordSchema = z.object({
   eventId: z.string().min(1).max(128),
   eventType: z.string().min(1).max(64),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   processedAt: z.string().datetime(),
 });
 export type WebhookEventRecord = z.infer<typeof WebhookEventRecordSchema>;
