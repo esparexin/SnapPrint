@@ -11,7 +11,13 @@ export const StudioIdSchema = z
 
 export type StudioId = z.infer<typeof StudioIdSchema>;
 
-export const StudioStatusSchema = z.enum(['onboarding', 'active', 'suspended', 'closed']);
+export const StudioStatusSchema = z.enum([
+  'onboarding',
+  'pending_review',
+  'active',
+  'suspended',
+  'closed',
+]);
 
 export type StudioStatus = z.infer<typeof StudioStatusSchema>;
 
