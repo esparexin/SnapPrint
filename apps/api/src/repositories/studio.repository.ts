@@ -2,9 +2,11 @@ import { Db } from 'mongodb';
 import {
   Studio,
   StudioIdSchema,
+  StudioNameSchema,
   StudioSchema,
   StudioSettings,
   StudioSettingsSchema,
+  StudioSlugSchema,
   StudioStatus,
   StudioStatusSchema,
   z,
@@ -24,12 +26,8 @@ export interface StudioDocument {
 
 export const CreateStudioInputSchema = z.object({
   id: StudioIdSchema,
-  slug: z
-    .string()
-    .min(3)
-    .max(64)
-    .regex(/^[a-z0-9-]+$/),
-  name: z.string().trim().min(1).max(120),
+  slug: StudioSlugSchema,
+  name: StudioNameSchema,
   status: StudioStatusSchema.optional().default('active'),
   settings: StudioSettingsSchema.optional().default({
     currency: 'INR',
@@ -85,7 +83,7 @@ export async function findStudioById(db: Db, id: string): Promise<Studio | null>
 }
 
 export async function findStudioBySlug(db: Db, slug: string): Promise<Studio | null> {
-  const parsedSlug = StudioSchema.shape.slug.safeParse(slug);
+  const parsedSlug = StudioSlugSchema.safeParse(slug);
   if (!parsedSlug.success) {
     return null;
   }

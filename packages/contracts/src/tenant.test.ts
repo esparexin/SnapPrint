@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   PublicStudioSchema,
   StudioIdSchema,
+  StudioNameSchema,
   StudioSchema,
   StudioSettingsSchema,
+  StudioSlugSchema,
 } from './tenant.js';
 
 describe('Tenant Contracts', () => {
@@ -16,6 +18,21 @@ describe('Tenant Contracts', () => {
     expect(StudioIdSchema.safeParse('st').success).toBe(false); // too short
     expect(StudioIdSchema.safeParse('STUDIO_CAPS').success).toBe(false); // uppercase
     expect(StudioIdSchema.safeParse('studio@123').success).toBe(false); // special char
+  });
+
+  it('validates and trims studio names', () => {
+    expect(StudioNameSchema.parse('  Photo Studio  ')).toBe('Photo Studio');
+    expect(StudioNameSchema.safeParse('').success).toBe(false);
+    expect(StudioNameSchema.safeParse('   ').success).toBe(false);
+    expect(StudioNameSchema.safeParse('A'.repeat(121)).success).toBe(false);
+  });
+
+  it('validates studio slug constraints', () => {
+    expect(StudioSlugSchema.safeParse('koramangala-xerox-01').success).toBe(true);
+    expect(StudioSlugSchema.safeParse('ab').success).toBe(false); // too short (<3)
+    expect(StudioSlugSchema.safeParse('a'.repeat(65)).success).toBe(false); // too long (>64)
+    expect(StudioSlugSchema.safeParse('Invalid_Slug!').success).toBe(false);
+    expect(StudioSlugSchema.safeParse('Studio-Caps').success).toBe(false);
   });
 
   it('validates studio settings with max 2 active printers default', () => {
