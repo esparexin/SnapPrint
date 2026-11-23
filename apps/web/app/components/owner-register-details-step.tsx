@@ -101,24 +101,47 @@ export function OwnerRegisterDetailsStep({
             marginBottom: '0.25rem',
           }}
         >
-          Mobile Number (with country code)
+          Mobile Number
         </label>
-        <input
-          id="reg-phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          disabled={isSubmitting}
-          placeholder="+919876543210"
-          style={{
-            width: '100%',
-            padding: '0.5rem 0.75rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '0.375rem',
-            boxSizing: 'border-box',
-          }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span
+            style={{
+              padding: '0.5rem 0.75rem',
+              backgroundColor: '#f1f5f9',
+              border: '1px solid #d1d5db',
+              borderRight: 'none',
+              borderTopLeftRadius: '0.375rem',
+              borderBottomLeftRadius: '0.375rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: '#475569',
+              userSelect: 'none',
+            }}
+          >
+            +91
+          </span>
+          <input
+            id="reg-phone"
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={10}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+            required
+            disabled={isSubmitting}
+            placeholder="9876543210"
+            style={{
+              flex: 1,
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #d1d5db',
+              borderTopRightRadius: '0.375rem',
+              borderBottomRightRadius: '0.375rem',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
       </div>
       <div style={{ marginBottom: '0.75rem' }}>
         <label

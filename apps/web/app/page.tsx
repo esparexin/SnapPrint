@@ -95,7 +95,7 @@ export default function HomePage() {
               variant: 'button',
             },
           ]}
-          status={{ label: 'accepting digital xerox orders' }}
+          status={null}
           description={
             <span>
               <strong
@@ -134,7 +134,7 @@ export default function HomePage() {
       </main>
 
       {showPortalModal && (
-        <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="560px">
+        <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="420px">
           <OperatorPortal initialMode={portalMode} />
         </InfoModal>
       )}

@@ -13,13 +13,12 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 
 interface OwnerLoginOtpFormProps {
   onSuccess: (auth: AuthResponse) => void;
-  onSwitchToPasswordLogin: () => void;
+  onSwitchToPasswordLogin?: () => void;
   onSwitchToRegister: () => void;
 }
 
 export function OwnerLoginOtpForm({
   onSuccess,
-  onSwitchToPasswordLogin,
   onSwitchToRegister,
 }: OwnerLoginOtpFormProps) {
   const [step, setStep] = useState<'email' | 'otp'>('email');
@@ -102,7 +101,7 @@ export function OwnerLoginOtpForm({
       }}
     >
       <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#0f172a' }}>
-        Owner Sign In
+        OTP Sign In
       </h2>
       <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
         {step === 'email'
@@ -195,22 +194,11 @@ export function OwnerLoginOtpForm({
           paddingTop: '0.875rem',
           display: 'flex',
           justifyContent: 'space-between',
+          alignItems: 'center',
           fontSize: '0.8125rem',
         }}
       >
-        <button
-          type="button"
-          onClick={onSwitchToPasswordLogin}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#4b5563',
-            cursor: 'pointer',
-            padding: 0,
-          }}
-        >
-          Operator Password
-        </button>
+        <span style={{ color: '#64748b' }}>New print store?</span>
         <button
           type="button"
           onClick={onSwitchToRegister}
@@ -219,11 +207,11 @@ export function OwnerLoginOtpForm({
             border: 'none',
             color: '#2563eb',
             cursor: 'pointer',
-            fontWeight: 500,
+            fontWeight: 600,
             padding: 0,
           }}
         >
-          Register New Studio
+          Register
         </button>
       </div>
     </div>

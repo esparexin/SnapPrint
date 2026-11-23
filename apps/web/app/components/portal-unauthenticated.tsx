@@ -81,7 +81,7 @@ export function PortalUnauthenticated({
                 padding: 0,
               }}
             >
-              Register Studio
+              Register
             </button>
           </div>
         </div>

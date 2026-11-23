@@ -14,6 +14,7 @@ import {
   requestOwnerRegistrationOtp,
   verifyOwnerRegistrationOtp,
 } from '../../src/auth-client';
+import { formatIndianMobileE164, validateIndianMobile } from '../../src/mobile-validator';
 import { OtpInputStep } from './otp-input-step';
 import { OwnerRegisterDetailsStep } from './owner-register-details-step';
 
@@ -57,12 +58,19 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
       return;
     }
 
+    const phoneError = validateIndianMobile(phone);
+    if (phoneError) {
+      setErrorMessage(phoneError);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      const formattedPhone = formatIndianMobileE164(phone);
       const res = await requestOwnerRegistrationOtp({
         name,
         email,
-        phone,
+        phone: formattedPhone,
         termsAccepted: true,
         privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
@@ -108,10 +116,11 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
+      const formattedPhone = formatIndianMobileE164(phone);
       const res = await requestOwnerRegistrationOtp({
         name,
         email,
-        phone,
+        phone: formattedPhone,
         termsAccepted: true,
         privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
