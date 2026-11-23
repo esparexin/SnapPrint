@@ -62,6 +62,15 @@ const ConfigSchema = z
     zeptoMailBounceAddress: z.string().optional(),
     zeptoMailFromEmail: z.string().email().optional(),
     zeptoMailFromName: z.string().default('SnapPrint'),
+    cloudinaryCloudName: z.string().optional(),
+    cloudinaryApiKey: z.string().optional(),
+    cloudinaryApiSecret: z.string().optional(),
+    cloudinaryUrl: z.string().optional(),
+    cloudinaryFolder: z.string().optional(),
+    msg91AuthKey: z.string().optional(),
+    msg91EmailDomain: z.string().optional(),
+    msg91EmailFrom: z.string().email().optional(),
+    msg91EmailTemplateId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.nodeEnv === 'production') {
@@ -124,6 +133,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     zeptoMailBounceAddress: env.ZEPTOMAIL_BOUNCE_ADDRESS,
     zeptoMailFromEmail: env.ZEPTOMAIL_FROM_EMAIL,
     zeptoMailFromName: env.ZEPTOMAIL_FROM_NAME,
+    cloudinaryCloudName: env.CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: env.CLOUDINARY_API_KEY,
+    cloudinaryApiSecret: env.CLOUDINARY_API_SECRET,
+    cloudinaryUrl: env.CLOUDINARY_URL,
+    cloudinaryFolder: env.CLOUDINARY_FOLDER,
+    msg91AuthKey: env.MSG91_AUTHKEY,
+    msg91EmailDomain: env.MSG91_EMAIL_DOMAIN,
+    msg91EmailFrom: env.MSG91_EMAIL_FROM,
+    msg91EmailTemplateId: env.MSG91_EMAIL_TEMPLATE_ID,
   });
 
   if (!result.success) {

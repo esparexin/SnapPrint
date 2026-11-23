@@ -170,4 +170,44 @@ describe('API Configuration', () => {
     });
     expect(devUnset.cookieSecure).toBe(false);
   });
+
+  it('loads optional Cloudinary configuration when provided', () => {
+    const config = loadConfig({
+      NODE_ENV: 'development',
+      CLOUDINARY_CLOUD_NAME: 'test_cloud',
+      CLOUDINARY_API_KEY: '1234567890',
+      CLOUDINARY_API_SECRET: 'test_secret_abc',
+      CLOUDINARY_URL: 'cloudinary://1234567890:test_secret_abc@test_cloud',
+      CLOUDINARY_FOLDER: 'Snaprice',
+    });
+    expect(config.cloudinaryCloudName).toBe('test_cloud');
+    expect(config.cloudinaryApiKey).toBe('1234567890');
+    expect(config.cloudinaryApiSecret).toBe('test_secret_abc');
+    expect(config.cloudinaryUrl).toBe('cloudinary://1234567890:test_secret_abc@test_cloud');
+    expect(config.cloudinaryFolder).toBe('Snaprice');
+
+    const defaultConfig = loadConfig({
+      NODE_ENV: 'development',
+    });
+    expect(defaultConfig.cloudinaryFolder).toBeUndefined();
+  });
+
+  it('loads optional MSG91 configuration when provided', () => {
+    const config = loadConfig({
+      NODE_ENV: 'development',
+      MSG91_AUTHKEY: '430568Ad90Gy9O606935c11dP1',
+      MSG91_EMAIL_DOMAIN: 'snap.palnadu.dev',
+      MSG91_EMAIL_FROM: 'otp@snap.palnadu.dev',
+      MSG91_EMAIL_TEMPLATE_ID: 'snap_otp',
+    });
+    expect(config.msg91AuthKey).toBe('430568Ad90Gy9O606935c11dP1');
+    expect(config.msg91EmailDomain).toBe('snap.palnadu.dev');
+    expect(config.msg91EmailFrom).toBe('otp@snap.palnadu.dev');
+    expect(config.msg91EmailTemplateId).toBe('snap_otp');
+
+    const defaultConfig = loadConfig({
+      NODE_ENV: 'development',
+    });
+    expect(defaultConfig.msg91AuthKey).toBeUndefined();
+  });
 });
