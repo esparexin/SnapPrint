@@ -26,7 +26,7 @@ const styles: Record<string, CSSProperties> = {
     backgroundColor: '#ffffff',
     borderRadius: '12px',
     width: '100%',
-    maxWidth: '480px',
+    maxWidth: '440px',
     padding: '24px',
     boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
   },
@@ -36,12 +36,21 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     marginBottom: '16px',
   },
+  amountBox: {
+    padding: '16px',
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    borderRadius: '10px',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
   infoBox: {
     padding: '12px',
     backgroundColor: '#f8fafc',
     borderRadius: '8px',
     marginBottom: '16px',
     fontSize: '13px',
+    color: '#334155',
   },
   errorBox: {
     padding: '10px',
@@ -56,14 +65,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: '13px',
     fontWeight: 600,
     color: '#334155',
-    marginBottom: '6px',
-  },
-  input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #cbd5e1',
-    borderRadius: '6px',
-    fontSize: '14px',
+    marginBottom: '8px',
   },
   btnCancel: {
     flex: 1,
@@ -76,13 +78,13 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
   },
   btnConfirm: {
-    flex: 1,
-    padding: '10px',
+    flex: 2,
+    padding: '10px 14px',
     border: 'none',
     borderRadius: '6px',
     backgroundColor: '#16a34a',
     color: '#fff',
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: 700,
     cursor: 'pointer',
   },
@@ -96,32 +98,19 @@ export function CounterPaymentModal({
 }: CounterPaymentModalProps) {
   const paidMinor = order.paidAmountMinor ?? 0;
   const remainingMinor = Math.max(0, order.totalAmountMinor - paidMinor);
+  const formattedRemaining = (remainingMinor / 100).toFixed(2);
   const [method, setMethod] = useState<'counter_cash' | 'counter_upi'>('counter_cash');
-  const [amountRupees, setAmountRupees] = useState<string>((remainingMinor / 100).toString());
-  const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const amountMinor = Math.round(parseFloat(amountRupees) * 100);
-
-    if (isNaN(amountMinor) || amountMinor <= 0) {
-      setError('Please enter a valid payment amount.');
-      return;
-    }
-    if (amountMinor > remainingMinor) {
-      setError(`Amount cannot exceed remaining balance of ₹${(remainingMinor / 100).toFixed(2)}.`);
-      return;
-    }
-
     setSubmitting(true);
     try {
       const res = await recordOperatorCounterPayment(studioId, order.orderId, {
         method,
-        amountMinor,
-        notes: notes.trim() || undefined,
+        amountMinor: remainingMinor,
       });
       onPaymentSuccess(res.order);
       onClose();
@@ -132,17 +121,20 @@ export function CounterPaymentModal({
     }
   }
 
-  const methodStyle = (active: boolean): CSSProperties => ({
+  const methodBtnStyle = (active: boolean): CSSProperties => ({
     flex: 1,
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    padding: '10px',
-    border: active ? '2px solid #0284c7' : '1px solid #cbd5e1',
-    borderRadius: '6px',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px',
+    border: active ? '2px solid #16a34a' : '1px solid #cbd5e1',
+    backgroundColor: active ? '#f0fdf4' : '#fff',
+    borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: 600,
+    fontSize: '14px',
+    fontWeight: active ? 700 : 500,
+    color: active ? '#15803d' : '#334155',
   });
 
   return (
@@ -150,7 +142,7 @@ export function CounterPaymentModal({
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
-            Record Counter Payment
+            Collect Counter Payment
           </h3>
           <button
             type="button"
@@ -169,77 +161,77 @@ export function CounterPaymentModal({
 
         <div style={styles.infoBox}>
           <div>
-            <strong>Order:</strong> {order.orderNumber} ({order.customerName || 'Walk-in'})
+            <strong>Order:</strong> #{order.orderNumber} ({order.customerName || 'Walk-in Customer'}
+            )
           </div>
-          <div style={{ marginTop: '4px' }}>
-            <strong>Total:</strong> ₹{(order.totalAmountMinor / 100).toFixed(2)} ·{' '}
-            <strong>Paid:</strong> ₹{(paidMinor / 100).toFixed(2)}
+          <div style={{ marginTop: '4px', color: '#64748b' }}>
+            Predefined print charges calculate the exact bill. No manual amount entry needed.
           </div>
-          <div style={{ marginTop: '4px', color: '#0369a1', fontWeight: 700 }}>
-            Remaining Balance: ₹{(remainingMinor / 100).toFixed(2)}
+        </div>
+
+        <div style={styles.amountBox}>
+          <div
+            style={{
+              fontSize: '12px',
+              color: '#15803d',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+            }}
+          >
+            Exact Bill to Collect
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: '#166534', marginTop: '4px' }}>
+            ₹{formattedRemaining}
           </div>
         </div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <label style={styles.label}>Payment Method</label>
+            <label style={styles.label}>Select Payment Received</label>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <label style={methodStyle(method === 'counter_cash')}>
+              <label style={methodBtnStyle(method === 'counter_cash')}>
                 <input
                   type="radio"
                   name="method"
                   value="counter_cash"
                   checked={method === 'counter_cash'}
                   onChange={() => setMethod('counter_cash')}
+                  style={{ display: 'none' }}
                 />
-                💵 Cash
+                💵 Cash (నగదు)
               </label>
-              <label style={methodStyle(method === 'counter_upi')}>
+              <label style={methodBtnStyle(method === 'counter_upi')}>
                 <input
                   type="radio"
                   name="method"
                   value="counter_upi"
                   checked={method === 'counter_upi'}
                   onChange={() => setMethod('counter_upi')}
+                  style={{ display: 'none' }}
                 />
-                📱 Counter UPI QR
+                📱 Shop UPI QR
               </label>
             </div>
           </div>
 
-          <div>
-            <label style={styles.label}>Amount (₹)</label>
-            <input
-              type="number"
-              step="0.5"
-              min="1"
-              max={(remainingMinor / 100).toString()}
-              value={amountRupees}
-              onChange={(e) => setAmountRupees(e.target.value)}
-              required
-              style={styles.input}
-            />
-          </div>
-
-          <div>
-            <label style={styles.label}>Notes (Optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. UPI ref or cash notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={styles.input}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
             <button type="button" onClick={onClose} style={styles.btnCancel}>
               Cancel
             </button>
-            <button type="submit" disabled={submitting} style={styles.btnConfirm}>
-              {submitting ? 'Recording...' : 'Confirm Payment'}
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                ...styles.btnConfirm,
+                opacity: submitting ? 0.7 : 1,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {submitting
+                ? 'Confirming...'
+                : `Confirm ₹${formattedRemaining} ${method === 'counter_cash' ? 'Cash' : 'UPI'} Received`}
             </button>
           </div>
         </form>
