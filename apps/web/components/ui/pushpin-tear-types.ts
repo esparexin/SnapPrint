@@ -71,6 +71,7 @@ export type PushpinTearFooterProps = {
   email?: string;
   newsletter?: { label: string; placeholder?: string } | null;
   status?: { label: string; href?: string } | null;
+  description?: string;
   mark?: string;
   timeZone?: string;
   timeLabel?: string;

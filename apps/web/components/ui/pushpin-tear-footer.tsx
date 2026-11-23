@@ -25,6 +25,7 @@ export default function PushpinTearFooter({
   email = 'contact@snapprint.in',
   newsletter = null,
   status = { label: 'accepting digital xerox orders' },
+  description,
   mark,
   timeZone,
   timeLabel,
@@ -143,6 +144,7 @@ export default function PushpinTearFooter({
         timeZone={timeZone}
         timeLabel={timeLabel}
         status={status}
+        description={description}
         mailto={mailto}
         H={H}
         flash={flash}

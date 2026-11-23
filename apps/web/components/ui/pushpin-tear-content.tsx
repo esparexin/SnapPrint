@@ -16,6 +16,7 @@ interface PushpinTearContentProps {
   timeZone?: string;
   timeLabel?: string;
   status?: { label: string; href?: string } | null;
+  description?: string;
   mailto: string;
   H: (i: number) => React.CSSProperties;
   flash?: () => void;
@@ -35,6 +36,7 @@ export function PushpinTearContent({
   timeZone,
   timeLabel,
   status,
+  description,
   mailto,
   H,
   flash,
@@ -131,6 +133,12 @@ export function PushpinTearContent({
             </span>
           </span>
         </>
+      )}
+
+      {description && (
+        <p className="tpf-z tpf-desc tpf-h" style={H(7)}>
+          {description}
+        </p>
       )}
     </>
   );
