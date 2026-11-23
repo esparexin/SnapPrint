@@ -37,18 +37,20 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
     await app.close();
   });
 
-  it('POST /auth/login/otp/request defends against email enumeration for non-existent users', async () => {
+  it('POST /auth/login/otp/request returns 404 USER_NOT_REGISTERED for non-existent users', async () => {
     const { app, emailService, emailOtps } = await createTestApp();
 
     const res = await app.inject({
       method: 'POST',
       url: '/auth/login/otp/request',
+      headers: { origin: 'http://localhost:3000' },
       payload: { email: 'nonexistent@studio.com' },
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(404);
     const body = JSON.parse(res.payload);
-    expect(body.message).toContain('If this email is eligible');
+    expect(body.code).toBe('USER_NOT_REGISTERED');
+    expect(body.message).toContain('No account found');
 
     // No email should be dispatched
     expect(emailService.getLastEmailFor('nonexistent@studio.com')).toBeUndefined();
@@ -57,7 +59,7 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
     await app.close();
   });
 
-  it('POST /auth/login/otp/request does not expose a resend cooldown for existing users', async () => {
+  it('POST /auth/login/otp/request enforces resend cooldown for existing users', async () => {
     const { app, users, emailService } = await createTestApp();
     users.push({
       id: 'user_owner',
@@ -69,27 +71,24 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
       updatedAt: new Date(),
     });
 
-    await app.inject({
+    const firstResponse = await app.inject({
       method: 'POST',
       url: '/auth/login/otp/request',
+      headers: { origin: 'http://localhost:3000' },
       payload: { email: 'owner@studio.com' },
     });
     const cooldownResponse = await app.inject({
       method: 'POST',
       url: '/auth/login/otp/request',
+      headers: { origin: 'http://localhost:3000' },
       payload: { email: 'owner@studio.com' },
     });
-    const unknownUserResponse = await app.inject({
-      method: 'POST',
-      url: '/auth/login/otp/request',
-      payload: { email: 'unknown@studio.com' },
-    });
 
+    expect(firstResponse.statusCode).toBe(200);
     expect(cooldownResponse.statusCode).toBe(200);
-    expect(unknownUserResponse.statusCode).toBe(200);
+    const firstBody = JSON.parse(firstResponse.payload);
     const cooldownBody = JSON.parse(cooldownResponse.payload);
-    const unknownBody = JSON.parse(unknownUserResponse.payload);
-    expect({ ...cooldownBody, email: unknownBody.email }).toEqual(unknownBody);
+    expect(cooldownBody.email).toBe(firstBody.email);
     expect(emailService.getSentEmails()).toHaveLength(1);
     await app.close();
   });

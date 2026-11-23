@@ -11,21 +11,40 @@ function extractErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+const alertStyle: React.CSSProperties = {
+  background: '#fef2f2',
+  border: '1px solid #f87171',
+  color: '#991b1b',
+  padding: '0.75rem',
+  borderRadius: '0.375rem',
+  fontSize: '0.875rem',
+  marginBottom: '1rem',
+};
+
+const registerLinkStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#2563eb',
+  cursor: 'pointer',
+  fontWeight: 600,
+  textDecoration: 'underline',
+  padding: 0,
+  fontSize: '0.875rem',
+};
+
 interface OwnerLoginOtpFormProps {
   onSuccess: (auth: AuthResponse) => void;
   onSwitchToPasswordLogin?: () => void;
   onSwitchToRegister: () => void;
 }
 
-export function OwnerLoginOtpForm({
-  onSuccess,
-  onSwitchToRegister,
-}: OwnerLoginOtpFormProps) {
+export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginOtpFormProps) {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isUnregistered, setIsUnregistered] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [dispatchMessage, setDispatchMessage] = useState('');
 
@@ -39,6 +58,7 @@ export function OwnerLoginOtpForm({
     e.preventDefault();
     if (isSubmitting) return;
     setErrorMessage(null);
+    setIsUnregistered(false);
 
     setIsSubmitting(true);
     try {
@@ -47,6 +67,12 @@ export function OwnerLoginOtpForm({
       setCooldown(res.retryAfterSeconds);
       setStep('otp');
     } catch (err) {
+      if (
+        err instanceof AuthApiError &&
+        (err.code === 'USER_NOT_REGISTERED' || err.statusCode === 404)
+      ) {
+        setIsUnregistered(true);
+      }
       setErrorMessage(extractErrorMessage(err, 'Login request failed.'));
     } finally {
       setIsSubmitting(false);
@@ -110,19 +136,15 @@ export function OwnerLoginOtpForm({
       </p>
 
       {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            background: '#fef2f2',
-            border: '1px solid #f87171',
-            color: '#991b1b',
-            padding: '0.75rem',
-            borderRadius: '0.375rem',
-            fontSize: '0.875rem',
-            marginBottom: '1rem',
-          }}
-        >
-          {errorMessage}
+        <div role="alert" style={alertStyle}>
+          <div>{errorMessage}</div>
+          {isUnregistered && (
+            <div style={{ marginTop: '0.5rem' }}>
+              <button type="button" onClick={onSwitchToRegister} style={registerLinkStyle}>
+                Register your shop now →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -179,11 +201,16 @@ export function OwnerLoginOtpForm({
           otpCode={otpCode}
           onOtpCodeChange={setOtpCode}
           onSubmit={handleVerifyOtp}
-          onBack={() => setStep('email')}
+          onBack={() => {
+            setStep('email');
+            setErrorMessage(null);
+            setIsUnregistered(false);
+          }}
           onResend={handleResend}
           cooldown={cooldown}
           isSubmitting={isSubmitting}
           submitLabel="Sign In with Code"
+          backLabel="Edit"
         />
       )}
 
