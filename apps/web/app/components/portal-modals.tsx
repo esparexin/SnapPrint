@@ -6,6 +6,7 @@ import { StudioOnboardingProfile } from '../../src/studio-client';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PrinterManagementModal } from './printer-management-modal';
 import { ShopProfileModal } from './shop-profile-modal';
+import { ShopPaymentModal } from './shop-payment-modal';
 import { ShopSetupWizard } from './shop-setup-wizard';
 import { StaffManagementModal } from './staff-management-modal';
 import { StudioQrModal } from './studio-qr-modal';
@@ -19,12 +20,14 @@ export interface PortalModalsProps {
   showSetupModal: boolean;
   showStaffModal: boolean;
   showProfileModal: boolean;
+  showPaymentModal?: boolean;
   onCloseQr: () => void;
   onCloseOrders: () => void;
   onClosePrinters: () => void;
   onCloseSetup: () => void;
   onCloseStaff: () => void;
   onCloseProfile: () => void;
+  onClosePayment?: () => void;
   onSetupComplete: (saved: StudioOnboardingProfile | null) => void;
 }
 
@@ -37,12 +40,14 @@ export function PortalModals({
   showSetupModal,
   showStaffModal,
   showProfileModal,
+  showPaymentModal,
   onCloseQr,
   onCloseOrders,
   onClosePrinters,
   onCloseSetup,
   onCloseStaff,
   onCloseProfile,
+  onClosePayment,
   onSetupComplete,
 }: PortalModalsProps) {
   if (!studioId) return null;
@@ -101,6 +106,15 @@ export function PortalModals({
           studio={currentStudio}
           onClose={onCloseProfile}
           onUpdated={() => onCloseProfile()}
+        />
+      )}
+
+      {showPaymentModal && onClosePayment && (
+        <ShopPaymentModal
+          studioId={studioId}
+          studio={currentStudio}
+          onClose={onClosePayment}
+          onUpdated={() => onClosePayment()}
         />
       )}
 

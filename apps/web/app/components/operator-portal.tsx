@@ -23,6 +23,7 @@ export function OperatorPortal() {
   const [showPrintersModal, setShowPrintersModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -181,6 +182,7 @@ export function OperatorPortal() {
               onOpenPrintersModal={() => setShowPrintersModal(true)}
               onOpenStaffModal={() => setShowStaffModal(true)}
               onOpenProfileModal={() => setShowProfileModal(true)}
+              onOpenPaymentModal={() => setShowPaymentModal(true)}
             />
           </section>
 
@@ -195,12 +197,14 @@ export function OperatorPortal() {
             showSetupModal={showSetupModal}
             showStaffModal={showStaffModal}
             showProfileModal={showProfileModal}
+            showPaymentModal={showPaymentModal}
             onCloseQr={() => setShowQrModal(false)}
             onCloseOrders={() => setShowOrdersModal(false)}
             onClosePrinters={() => setShowPrintersModal(false)}
             onCloseSetup={() => setShowSetupModal(false)}
             onCloseStaff={() => setShowStaffModal(false)}
             onCloseProfile={() => setShowProfileModal(false)}
+            onClosePayment={() => setShowPaymentModal(false)}
             onSetupComplete={async (saved) => {
               setShowSetupModal(false);
               const fresh = await fetchCurrentUser().catch(() => null);

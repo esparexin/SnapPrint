@@ -11,6 +11,7 @@ interface ModuleCardsProps {
   onOpenPrintersModal?: () => void;
   onOpenStaffModal?: () => void;
   onOpenProfileModal?: () => void;
+  onOpenPaymentModal?: () => void;
 }
 
 export function ModuleCards({
@@ -21,6 +22,7 @@ export function ModuleCards({
   onOpenPrintersModal,
   onOpenStaffModal,
   onOpenProfileModal,
+  onOpenPaymentModal,
 }: ModuleCardsProps) {
   const modules = [
     {
@@ -57,6 +59,13 @@ export function ModuleCards({
       permission: 'manage_studio' as Permission,
       action: onOpenProfileModal,
       actionLabel: 'Edit Profile & Pause',
+    },
+    {
+      title: 'Payments & Gateway',
+      desc: 'Configure Razorpay Key ID, online UPI policy, and cash collection.',
+      permission: 'manage_studio' as Permission,
+      action: onOpenPaymentModal,
+      actionLabel: 'Payment Settings',
     },
     {
       title: 'Onboarding & Setup',
