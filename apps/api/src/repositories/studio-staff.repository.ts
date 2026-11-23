@@ -1,10 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Db } from 'mongodb';
 import { StaffMember, StaffMemberSchema, UserStatus } from '@snapprint/contracts';
-import {
-  USER_MEMBERSHIPS_COLLECTION,
-  UserMembershipDocument,
-} from './membership.repository.js';
+import { USER_MEMBERSHIPS_COLLECTION, UserMembershipDocument } from './membership.repository.js';
 import { USERS_COLLECTION, UserDocument } from './user.repository.js';
 
 export async function listStudioStaff(db: Db, studioId: string): Promise<StaffMember[]> {
@@ -48,7 +45,9 @@ export async function listStudioStaff(db: Db, studioId: string): Promise<StaffMe
       role: m.role,
       status,
       createdAt:
-        m.createdAt instanceof Date ? m.createdAt.toISOString() : new Date(m.createdAt).toISOString(),
+        m.createdAt instanceof Date
+          ? m.createdAt.toISOString()
+          : new Date(m.createdAt).toISOString(),
     };
 
     staffList.push(StaffMemberSchema.parse(item));
@@ -97,10 +96,12 @@ export async function inviteStudioStaff(
     .findOne({ userId: targetUserId, studioId: input.studioId });
 
   if (existingMembership) {
-    await db.collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION).updateOne(
-      { userId: targetUserId, studioId: input.studioId },
-      { $set: { role: 'studio_staff', status: 'invited' } }
-    );
+    await db
+      .collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION)
+      .updateOne(
+        { userId: targetUserId, studioId: input.studioId },
+        { $set: { role: 'studio_staff', status: 'invited' } }
+      );
   } else {
     const membershipDoc: UserMembershipDocument = {
       userId: targetUserId,
@@ -109,7 +110,9 @@ export async function inviteStudioStaff(
       status: 'invited',
       createdAt: now,
     };
-    await db.collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION).insertOne(membershipDoc);
+    await db
+      .collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION)
+      .insertOne(membershipDoc);
   }
 
   return StaffMemberSchema.parse({
@@ -136,10 +139,7 @@ export async function revokeStudioStaff(
 
   const result = await db
     .collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION)
-    .updateOne(
-      { studioId, userId },
-      { $set: { status: 'suspended' as UserStatus } }
-    );
+    .updateOne({ studioId, userId }, { $set: { status: 'suspended' as UserStatus } });
 
   return result.matchedCount > 0;
 }

@@ -99,7 +99,12 @@ describe('Workspace Client (apps/web)', () => {
           slug: 'std-1',
           name: 'Studio 1',
           status: 'active',
-          settings: { currency: 'INR', maxActivePrinters: 2, autoApproveOrders: false, isAcceptingOrders: false },
+          settings: {
+            currency: 'INR',
+            maxActivePrinters: 2,
+            autoApproveOrders: false,
+            isAcceptingOrders: false,
+          },
           createdAt: '2026-11-23T00:00:00.000Z',
           updatedAt: '2026-11-23T00:00:00.000Z',
         },

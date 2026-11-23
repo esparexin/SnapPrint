@@ -167,9 +167,7 @@ export function OperatorPortal() {
             effectiveRole={authState.effectiveRole}
           />
 
-          {authState.selectedStudioId && (
-            <WorkspaceKpiBar studioId={authState.selectedStudioId} />
-          )}
+          {authState.selectedStudioId && <WorkspaceKpiBar studioId={authState.selectedStudioId} />}
 
           <section>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 1rem' }}>
@@ -188,7 +186,9 @@ export function OperatorPortal() {
 
           <PortalModals
             studioId={authState.selectedStudioId || undefined}
-            studioName={authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined}
+            studioName={
+              authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined
+            }
             showQrModal={showQrModal}
             showOrdersModal={showOrdersModal}
             showPrintersModal={showPrintersModal}

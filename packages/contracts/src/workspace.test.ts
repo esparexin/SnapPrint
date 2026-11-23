@@ -10,6 +10,11 @@ import {
 
 describe('Workspace Contracts', () => {
   describe('StudioMetricsResponseSchema', () => {
+    it('validates standalone PrintVolumeMetricsSchema', () => {
+      const volume = { bwPages: 10, colorPages: 2, totalSheets: 7 };
+      expect(PrintVolumeMetricsSchema.safeParse(volume).success).toBe(true);
+    });
+
     it('validates a valid operational metrics payload', () => {
       const valid = {
         todayOrdersCount: 14,

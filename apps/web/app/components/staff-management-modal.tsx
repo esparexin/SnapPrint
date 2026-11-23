@@ -2,11 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { StaffMember } from '@snapprint/contracts';
-import {
-  fetchStudioStaff,
-  inviteStudioStaff,
-  revokeStudioStaff,
-} from '../../src/workspace-client';
+import { fetchStudioStaff, inviteStudioStaff, revokeStudioStaff } from '../../src/workspace-client';
+import { StaffInviteForm } from './staff-invite-form';
+import { StaffRosterList } from './staff-roster-list';
 
 interface StaffManagementModalProps {
   studioId: string;
@@ -14,11 +12,7 @@ interface StaffManagementModalProps {
   onClose: () => void;
 }
 
-export function StaffManagementModal({
-  studioId,
-  studioName,
-  onClose,
-}: StaffManagementModalProps) {
+export function StaffManagementModal({ studioId, studioName, onClose }: StaffManagementModalProps) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +44,10 @@ export function StaffManagementModal({
     setInviting(true);
     setError(null);
     try {
-      const res = await inviteStudioStaff(studioId, { email: email.trim(), name: name.trim() || undefined });
+      const res = await inviteStudioStaff(studioId, {
+        email: email.trim(),
+        name: name.trim() || undefined,
+      });
       setStaff((prev) => [...prev.filter((s) => s.userId !== res.staff.userId), res.staff]);
       setEmail('');
       setName('');
@@ -113,126 +110,76 @@ export function StaffManagementModal({
           }}
         >
           <div>
-            <h2 id="staff-modal-title" style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
+            <h2
+              id="staff-modal-title"
+              style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#0f172a' }}
+            >
               Staff & Permissions
             </h2>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
               {studioName || 'Studio Workspace'}
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '1.25rem',
+              cursor: 'pointer',
+              color: '#64748b',
+            }}
+          >
             ✕
           </button>
         </div>
 
         <div style={{ padding: '20px', overflowY: 'auto' }}>
           {error && (
-            <div role="alert" style={{ padding: '8px 12px', backgroundColor: '#fef2f2', color: '#b91c1c', borderRadius: '6px', fontSize: '0.8125rem', marginBottom: '16px' }}>
+            <div
+              role="alert"
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#fef2f2',
+                color: '#b91c1c',
+                borderRadius: '6px',
+                fontSize: '0.8125rem',
+                marginBottom: '16px',
+              }}
+            >
               {error}
             </div>
           )}
 
-          {/* Invite form */}
-          <form onSubmit={handleInvite} style={{ marginBottom: '20px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '8px' }}>
-              + Invite Team Member by Email
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-              <input
-                type="email"
-                placeholder="staff@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                style={{ padding: '8px 10px', fontSize: '0.8125rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-              />
-              <input
-                type="text"
-                placeholder="Name (Optional)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                style={{ padding: '8px 10px', fontSize: '0.8125rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={inviting || !email.trim()}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 600,
-                fontSize: '0.8125rem',
-                cursor: inviting ? 'not-allowed' : 'pointer',
-                opacity: inviting ? 0.7 : 1,
-              }}
-            >
-              {inviting ? 'Inviting...' : 'Send Staff Invitation'}
-            </button>
-          </form>
+          <StaffInviteForm
+            email={email}
+            setEmail={setEmail}
+            name={name}
+            setName={setName}
+            inviting={inviting}
+            onInvite={handleInvite}
+          />
 
-          {/* Staff list */}
-          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '8px' }}>
+          <span
+            style={{
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              color: '#334155',
+              display: 'block',
+              marginBottom: '8px',
+            }}
+          >
             Active Staff Roster ({staff.length})
           </span>
 
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748b', fontSize: '0.875rem' }}>
-              Loading staff members...
-            </div>
-          ) : staff.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '16px 0', color: '#64748b', fontSize: '0.8125rem' }}>
-              No staff members invited yet.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {staff.map((member) => (
-                <div
-                  key={member.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>
-                      {member.name || member.email}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                      {member.email} • <span style={{ textTransform: 'capitalize', color: member.status === 'active' ? '#16a34a' : '#b45309' }}>{member.status}</span>
-                    </div>
-                  </div>
-                  {member.role === 'studio_staff' && (
-                    <button
-                      type="button"
-                      onClick={() => handleRevoke(member.id)}
-                      disabled={revokingId === member.id}
-                      style={{
-                        padding: '4px 8px',
-                        backgroundColor: '#fff1f2',
-                        color: '#e11d48',
-                        border: '1px solid #fecdd3',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        cursor: revokingId === member.id ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {revokingId === member.id ? 'Revoking…' : 'Revoke'}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <StaffRosterList
+            staff={staff}
+            loading={loading}
+            revokingId={revokingId}
+            onRevoke={handleRevoke}
+          />
         </div>
       </div>
     </div>

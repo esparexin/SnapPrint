@@ -18,9 +18,7 @@ import {
   listStudioStaff,
   revokeStudioStaff,
 } from './repositories/studio-staff.repository.js';
-import {
-  createUserMembership,
-} from './repositories/membership.repository.js';
+import { createUserMembership } from './repositories/membership.repository.js';
 import { updateStudioProfile } from './repositories/studio.repository.js';
 
 export interface StudioWorkspaceRouteOptions {

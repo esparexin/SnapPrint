@@ -52,7 +52,12 @@ export function PortalModals({
     slug: studioId.replace(/^studio_/, '').replace(/_/g, '-'),
     name: studioName || `Studio ${studioId}`,
     status: 'active',
-    settings: { currency: 'INR', maxActivePrinters: 2, autoApproveOrders: false, isAcceptingOrders: true },
+    settings: {
+      currency: 'INR',
+      maxActivePrinters: 2,
+      autoApproveOrders: false,
+      isAcceptingOrders: true,
+    },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

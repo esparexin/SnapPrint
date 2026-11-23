@@ -1,12 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Db } from 'mongodb';
-import { StudioSettingsSchema, UserIdSchema, UserRoleSchema, z } from '@snapprint/contracts';
+import { StudioSettingsSchema } from '@snapprint/contracts';
 import { getDb } from './db.js';
 import { requireOperatorAuth, requireStudioPermission } from './plugins/authorization.js';
-import {
-  createUserMembership,
-  findMembershipsByStudio,
-} from './repositories/membership.repository.js';
 import { findStudiosByIds, updateStudioSettings } from './repositories/studio.repository.js';
 
 export interface StudioRouteOptions {
@@ -14,13 +10,6 @@ export interface StudioRouteOptions {
 }
 
 const UpdateSettingsSchema = StudioSettingsSchema.partial();
-
-const AddStaffSchema = z.object({
-  userId: UserIdSchema,
-  role: UserRoleSchema.refine((r) => r !== 'platform_admin', {
-    message: 'Cannot assign platform_admin role via studio staff management',
-  }),
-});
 
 export const studioRoutes: FastifyPluginAsync<StudioRouteOptions> = async (app, opts) => {
   const getEffectiveDb = (): Db => opts?.db ?? getDb();

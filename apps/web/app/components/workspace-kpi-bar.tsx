@@ -35,8 +35,7 @@ export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
   const ordersCount = metrics?.todayOrdersCount ?? 0;
   const cashTotal = ((metrics?.todayPaidCollectionsMinor ?? 0) / 100).toFixed(0);
   const pendingCount = metrics?.pendingOrdersCount ?? 0;
-  const totalPages =
-    (metrics?.printVolume?.bwPages ?? 0) + (metrics?.printVolume?.colorPages ?? 0);
+  const totalPages = (metrics?.printVolume?.bwPages ?? 0) + (metrics?.printVolume?.colorPages ?? 0);
 
   return (
     <div
