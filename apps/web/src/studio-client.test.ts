@@ -61,7 +61,7 @@ describe('Studio API Client (apps/web)', () => {
       { capabilities: { autoPrintMaxPages: 50 } },
       mockFetch as unknown as typeof fetch
     );
-    expect(res.capabilities.autoPrintMaxPages).toBe(50);
+    expect(res.capabilities?.autoPrintMaxPages).toBe(50);
     const [url, init] = mockFetch.mock.calls[0];
     expect(url).toContain('/studios/std_1');
     expect(init.method).toBe('PATCH');
