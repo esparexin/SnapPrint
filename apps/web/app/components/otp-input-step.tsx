@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { OTP_LENGTH } from '@snapprint/contracts';
 
 interface OtpInputStepProps {
   otpCode: string;
@@ -35,12 +36,14 @@ export function OtpInputStep({
             marginBottom: '0.25rem',
           }}
         >
-          6-Digit Verification Code
+          {OTP_LENGTH}-Digit Verification Code
         </label>
         <input
           id="otp-code-input"
           type="text"
-          maxLength={6}
+          maxLength={OTP_LENGTH}
+          inputMode="numeric"
+          autoComplete="one-time-code"
           value={otpCode}
           onChange={(e) => onOtpCodeChange(e.target.value.replace(/\D/g, ''))}
           required
@@ -61,7 +64,7 @@ export function OtpInputStep({
       </div>
       <button
         type="submit"
-        disabled={isSubmitting || otpCode.length < 6}
+        disabled={isSubmitting || otpCode.length !== OTP_LENGTH}
         style={{
           width: '100%',
           padding: '0.625rem',

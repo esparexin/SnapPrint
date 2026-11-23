@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { z } from '@snapprint/contracts';
+import { DEFAULT_OTP_TTL_MINUTES, z } from '@snapprint/contracts';
 
 // Load local .env files if present (checking current working directory and package root)
 const envCandidates = [
@@ -54,12 +54,13 @@ const ConfigSchema = z
     }, z.boolean().optional()),
     rateLimitMax: z.coerce.number().int().positive().default(100),
     rateLimitTimeWindow: z.string().default('1 minute'),
+    otpTtlMinutes: z.coerce.number().int().positive().default(DEFAULT_OTP_TTL_MINUTES),
     razorpayKeyId: z.string().optional(),
     razorpayKeySecret: z.string().optional(),
     razorpayWebhookSecret: z.string().optional(),
     zeptoMailApiToken: z.string().optional(),
     zeptoMailBounceAddress: z.string().optional(),
-    zeptoMailFromEmail: z.string().default('noreply@snapprint.in'),
+    zeptoMailFromEmail: z.string().email().optional(),
     zeptoMailFromName: z.string().default('SnapPrint'),
   })
   .superRefine((data, ctx) => {
@@ -115,13 +116,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     cookieSecure: env.COOKIE_SECURE,
     rateLimitMax: env.RATE_LIMIT_MAX,
     rateLimitTimeWindow: env.RATE_LIMIT_TIME_WINDOW,
+    otpTtlMinutes: env.OTP_TTL_MINUTES,
     razorpayKeyId: env.RAZORPAY_KEY_ID,
     razorpayKeySecret: env.RAZORPAY_KEY_SECRET,
     razorpayWebhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
     zeptoMailApiToken: env.ZEPTOMAIL_API_TOKEN,
     zeptoMailBounceAddress: env.ZEPTOMAIL_BOUNCE_ADDRESS,
-    zeptoMailFromEmail: env.ZEPTOMAIL_FROM_EMAIL || 'noreply@snapprint.in',
-    zeptoMailFromName: env.ZEPTOMAIL_FROM_NAME || 'SnapPrint',
+    zeptoMailFromEmail: env.ZEPTOMAIL_FROM_EMAIL,
+    zeptoMailFromName: env.ZEPTOMAIL_FROM_NAME,
   });
 
   if (!result.success) {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_OTP_TTL_MINUTES } from '@snapprint/contracts';
 import { INSECURE_DEV_COOKIE_SECRET, INSECURE_DEV_SESSION_SECRET, loadConfig } from './config.js';
 
 describe('API Configuration', () => {
@@ -16,6 +17,7 @@ describe('API Configuration', () => {
     expect(config.cookieSecure).toBe(false);
     expect(config.rateLimitMax).toBe(100);
     expect(config.rateLimitTimeWindow).toBe('1 minute');
+    expect(config.otpTtlMinutes).toBe(DEFAULT_OTP_TTL_MINUTES);
   });
 
   it('loads custom environment variables in production with strong secrets', () => {
@@ -33,6 +35,7 @@ describe('API Configuration', () => {
       COOKIE_SECURE: 'true',
       RATE_LIMIT_MAX: '50',
       RATE_LIMIT_TIME_WINDOW: '30 seconds',
+      OTP_TTL_MINUTES: '20',
     });
     expect(config.port).toBe(8080);
     expect(config.host).toBe('0.0.0.0');
@@ -51,6 +54,7 @@ describe('API Configuration', () => {
     expect(config.cookieSecure).toBe(true);
     expect(config.rateLimitMax).toBe(50);
     expect(config.rateLimitTimeWindow).toBe('30 seconds');
+    expect(config.otpTtlMinutes).toBe(20);
   });
 
   it('rejects default insecure session secret in production mode without leaking secret value', () => {
@@ -118,6 +122,10 @@ describe('API Configuration', () => {
         PORT: '-1',
       })
     ).toThrow('Invalid application configuration');
+  });
+
+  it('rejects invalid OTP expiry values', () => {
+    expect(() => loadConfig({ OTP_TTL_MINUTES: '0' })).toThrow('Invalid application configuration');
   });
 
   it('defaults cookieSecure to true in production when not explicitly specified', () => {

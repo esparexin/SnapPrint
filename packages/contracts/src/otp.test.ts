@@ -1,21 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_OTP_TTL_MINUTES,
+  DEFAULT_RESEND_COOLDOWN_SECONDS,
   CURRENT_PRIVACY_POLICY_VERSION,
   CURRENT_TERMS_VERSION,
+  createOtpDispatchResponse,
   LegalAcceptanceSchema,
+  OTP_DISPATCH_MESSAGE,
+  OTP_LENGTH,
   OtpCodeSchema,
+  OtpDispatchResponseSchema,
   OtpIntentSchema,
-  OtpVerificationStatusSchema,
   PhoneNumberSchema,
   RequestOwnerLoginOtpRequestSchema,
   RequestOwnerRegistrationOtpRequestSchema,
-  RequestOtpResponseSchema,
+  VerifyOwnerLoginOtpRequestSchema,
+  VerifyOwnerRegistrationOtpRequestSchema,
   VerifyOwnerOtpRequestSchema,
 } from './otp.js';
 
 describe('OTP & Owner Identity Shared Contracts', () => {
   describe('OtpCodeSchema', () => {
-    it('accepts valid 6-digit numeric codes including leading zeroes', () => {
+    it(`accepts valid ${OTP_LENGTH}-digit numeric codes including leading zeroes`, () => {
       expect(OtpCodeSchema.parse('000123')).toBe('000123');
       expect(OtpCodeSchema.parse('999999')).toBe('999999');
       expect(OtpCodeSchema.parse(' 123456 ')).toBe('123456');
@@ -75,6 +81,16 @@ describe('OTP & Owner Identity Shared Contracts', () => {
         }).success
       ).toBe(false);
     });
+
+    it('rejects versions other than the current terms and privacy policies', () => {
+      expect(
+        LegalAcceptanceSchema.safeParse({
+          termsVersion: 'older',
+          privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
+          acceptedAt: '2026-11-22T00:00:00.000Z',
+        }).success
+      ).toBe(false);
+    });
   });
 
   describe('RequestOwnerRegistrationOtpRequestSchema', () => {
@@ -83,6 +99,8 @@ describe('OTP & Owner Identity Shared Contracts', () => {
         name: '  Kalyan V Medaboina  ',
         email: '  Owner@SnapPrint.COM  ',
         phone: '+91 98765 43210',
+        termsAccepted: true,
+        privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
         privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
       };
@@ -99,8 +117,10 @@ describe('OTP & Owner Identity Shared Contracts', () => {
           name: '',
           email: 'valid@example.com',
           phone: '+919876543210',
-          termsVersion: '2026.1',
-          privacyVersion: '2026.1',
+          termsAccepted: false,
+          privacyPolicyAccepted: true,
+          termsVersion: CURRENT_TERMS_VERSION,
+          privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
         }).success
       ).toBe(false);
 
@@ -109,8 +129,10 @@ describe('OTP & Owner Identity Shared Contracts', () => {
           name: 'Owner',
           email: 'invalid-email',
           phone: '+919876543210',
-          termsVersion: '2026.1',
-          privacyVersion: '2026.1',
+          termsAccepted: true,
+          privacyPolicyAccepted: true,
+          termsVersion: CURRENT_TERMS_VERSION,
+          privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
         }).success
       ).toBe(false);
     });
@@ -132,70 +154,44 @@ describe('OTP & Owner Identity Shared Contracts', () => {
   });
 
   describe('VerifyOwnerOtpRequestSchema', () => {
-    it('validates OTP verification payload for registration and login intents', () => {
-      const reg = VerifyOwnerOtpRequestSchema.parse({
+    it('is the shared request schema for registration and login verification', () => {
+      const request = {
         email: 'owner@studio.com',
-        otp: '123456',
-        intent: 'owner_registration',
-      });
-      expect(reg.intent).toBe('owner_registration');
-
-      const login = VerifyOwnerOtpRequestSchema.parse({
-        email: 'owner@studio.com',
-        otp: '001234',
-        intent: 'owner_login',
-      });
-      expect(login.intent).toBe('owner_login');
-      expect(login.otp).toBe('001234');
-    });
-
-    it('rejects invalid intents or non-6-digit OTPs', () => {
-      expect(
-        VerifyOwnerOtpRequestSchema.safeParse({
-          email: 'owner@studio.com',
-          otp: '123456',
-          intent: 'unsupported_intent',
-        }).success
-      ).toBe(false);
-
-      expect(
-        VerifyOwnerOtpRequestSchema.safeParse({
-          email: 'owner@studio.com',
-          otp: '123',
-          intent: 'owner_login',
-        }).success
-      ).toBe(false);
-    });
-  });
-
-  describe('RequestOtpResponseSchema', () => {
-    it('validates safe response contract without exposing OTP or hashes', () => {
-      const response = {
-        statusCode: 200,
-        message: 'If the email is valid, a verification code has been dispatched.',
-        cooldownSeconds: 60,
-        expiresInSeconds: 600,
+        code: '001234',
       };
+      expect(VerifyOwnerOtpRequestSchema.parse(request).code).toBe('001234');
+      expect(VerifyOwnerRegistrationOtpRequestSchema.parse(request).code).toBe('001234');
+      expect(VerifyOwnerLoginOtpRequestSchema.parse(request).code).toBe('001234');
+    });
 
-      const parsed = RequestOtpResponseSchema.parse(response);
-      expect(parsed.cooldownSeconds).toBe(60);
-      expect(parsed.expiresInSeconds).toBe(600);
-      expect((parsed as Record<string, unknown>).otp).toBeUndefined();
-      expect((parsed as Record<string, unknown>).hash).toBeUndefined();
+    it('rejects non-six-digit OTPs', () => {
+      expect(
+        VerifyOwnerOtpRequestSchema.safeParse({
+          email: 'owner@studio.com',
+          code: '123',
+        }).success
+      ).toBe(false);
     });
   });
 
-  describe('OtpVerificationStatusSchema & OtpIntentSchema', () => {
-    it('supports defined statuses and intents', () => {
+  describe('OTP dispatch responses', () => {
+    it('uses the same generic response shape without fabricated delivery or expiry details', () => {
+      const response = createOtpDispatchResponse('owner@studio.com', 'owner_login');
+      expect(response.message).toBe(OTP_DISPATCH_MESSAGE);
+      expect(response.retryAfterSeconds).toBe(DEFAULT_RESEND_COOLDOWN_SECONDS);
+      expect(response).not.toHaveProperty('success');
+      expect(response).not.toHaveProperty('expiresAt');
+      expect(OtpDispatchResponseSchema.parse(response)).toEqual(response);
+    });
+  });
+
+  describe('OTP intent and defaults', () => {
+    it('exports the supported intents and shared timing values', () => {
       expect(OtpIntentSchema.safeParse('owner_registration').success).toBe(true);
       expect(OtpIntentSchema.safeParse('owner_login').success).toBe(true);
       expect(OtpIntentSchema.safeParse('customer_login').success).toBe(false);
-
-      expect(OtpVerificationStatusSchema.safeParse('verified').success).toBe(true);
-      expect(OtpVerificationStatusSchema.safeParse('invalid_code').success).toBe(true);
-      expect(OtpVerificationStatusSchema.safeParse('expired').success).toBe(true);
-      expect(OtpVerificationStatusSchema.safeParse('max_attempts_exceeded').success).toBe(true);
-      expect(OtpVerificationStatusSchema.safeParse('cooldown_active').success).toBe(true);
+      expect(DEFAULT_OTP_TTL_MINUTES).toBe(15);
+      expect(DEFAULT_RESEND_COOLDOWN_SECONDS).toBe(60);
     });
   });
 });

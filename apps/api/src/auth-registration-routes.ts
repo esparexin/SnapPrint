@@ -3,12 +3,17 @@ import { FastifyPluginAsync } from 'fastify';
 import { Db } from 'mongodb';
 import {
   AuthResponseSchema,
-  DEFAULT_RESEND_COOLDOWN_SECONDS,
-  OtpDispatchResponseSchema,
+  createOtpDispatchResponse,
+  LegalAcceptanceSchema,
   RequestOwnerRegistrationOtpRequestSchema,
   VerifyOwnerRegistrationOtpRequestSchema,
 } from '@snapprint/contracts';
-import { generateSecureOtp, hashOtpVerifier, verifyOtp } from '@snapprint/domain';
+import {
+  calculateOtpExpiry,
+  generateSecureOtp,
+  hashOtpVerifier,
+  verifyOtp,
+} from '@snapprint/domain';
 import { issueOperatorSessionCookie, validateOrigin } from './auth-utils.js';
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
@@ -40,7 +45,7 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
   const getEffectiveEmail = (): EmailService =>
     opts?.emailService ?? createEmailService(getEffectiveConfig());
 
-  // POST /auth/register - Dispatches email OTP for studio owner registration
+  // POST /auth/register - Requests email OTP for studio owner registration
   app.post(
     '/auth/register',
     {
@@ -73,30 +78,27 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
 
       const db = getEffectiveDb();
       const normalizedEmail = parseResult.data.email.trim().toLowerCase();
+      const dispatchResponse = createOtpDispatchResponse(normalizedEmail, 'owner_registration');
 
       const existingUser = await findUserByEmail(db, normalizedEmail);
       if (existingUser) {
-        return reply.status(409).send({
-          statusCode: 409,
-          code: 'USER_ALREADY_EXISTS',
-          message: 'An account with this email address already exists. Please sign in instead.',
-        });
+        return reply.status(200).send(dispatchResponse);
       }
 
       const cooldown = await checkResendCooldown(db, normalizedEmail, 'owner_registration');
       if (!cooldown.canResend) {
-        return reply.status(429).send({
-          statusCode: 429,
-          code: 'COOLDOWN_ACTIVE',
-          message: `Please wait ${cooldown.remainingCooldownSeconds} seconds before requesting a new code.`,
-          retryAfterSeconds: cooldown.remainingCooldownSeconds,
-        });
+        return reply.status(200).send(dispatchResponse);
       }
 
       const code = generateSecureOtp();
       const verifier = hashOtpVerifier(code);
       const otpId = `otp_${randomBytes(12).toString('hex')}`;
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const expiresAt = calculateOtpExpiry(new Date(), config.otpTtlMinutes);
+      const legalAcceptance = LegalAcceptanceSchema.parse({
+        termsVersion: parseResult.data.termsVersion,
+        privacyVersion: parseResult.data.privacyVersion,
+        acceptedAt: new Date().toISOString(),
+      });
 
       await createOtpRecord(db, {
         id: otpId,
@@ -107,13 +109,12 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
         registrationData: {
           name: parseResult.data.name,
           phone: parseResult.data.phone,
-          termsVersion: parseResult.data.termsVersion,
-          privacyVersion: parseResult.data.privacyVersion,
+          ...legalAcceptance,
         },
       });
 
       const emailService = getEffectiveEmail();
-      const emailContent = renderRegistrationOtpEmail(code, 15);
+      const emailContent = renderRegistrationOtpEmail(code, config.otpTtlMinutes);
       try {
         await emailService.sendEmail({
           to: { email: normalizedEmail, name: parseResult.data.name },
@@ -126,16 +127,7 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
         throw err;
       }
 
-      return reply.status(200).send(
-        OtpDispatchResponseSchema.parse({
-          success: true,
-          email: normalizedEmail,
-          intent: 'owner_registration',
-          expiresAt: expiresAt.toISOString(),
-          resendCooldownSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
-          retryAfterSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
-        })
-      );
+      return reply.status(200).send(dispatchResponse);
     }
   );
 
@@ -162,55 +154,47 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
 
     const db = getEffectiveDb();
     const normalizedEmail = parseResult.data.email.trim().toLowerCase();
-
-    const existingUser = await findUserByEmail(db, normalizedEmail);
-    if (existingUser) {
-      return reply.status(409).send({
-        statusCode: 409,
-        code: 'USER_ALREADY_EXISTS',
-        message: 'An account with this email address already exists. Please sign in instead.',
-      });
-    }
-
-    const activeOtp = await findActiveOtp(db, normalizedEmail, 'owner_registration');
-    if (!activeOtp) {
-      return reply.status(400).send({
+    const sendInvalidOtp = () =>
+      reply.status(400).send({
         statusCode: 400,
         code: 'INVALID_OR_EXPIRED_OTP',
         message: 'Invalid, expired, or exhausted verification code. Please request a new code.',
       });
+
+    const existingUser = await findUserByEmail(db, normalizedEmail);
+    if (existingUser) {
+      return sendInvalidOtp();
+    }
+
+    const activeOtp = await findActiveOtp(db, normalizedEmail, 'owner_registration');
+    if (!activeOtp) {
+      return sendInvalidOtp();
     }
 
     const isMatch = verifyOtp(parseResult.data.code, activeOtp.verifier);
     if (!isMatch) {
-      const attempt = await recordFailedAttempt(db, activeOtp.id);
-      const code = attempt.exhausted ? 'OTP_EXHAUSTED' : 'INVALID_OTP';
-      const msg = attempt.exhausted
-        ? 'Maximum verification attempts exceeded. Please request a new code.'
-        : 'Invalid verification code. Please check and try again.';
-      return reply.status(400).send({ statusCode: 400, code, message: msg });
+      await recordFailedAttempt(db, activeOtp.id);
+      return sendInvalidOtp();
+    }
+
+    const registrationData = activeOtp.registrationData;
+    if (!registrationData || !LegalAcceptanceSchema.safeParse(registrationData).success) {
+      return sendInvalidOtp();
     }
 
     const consumed = await consumeOtpAtomically(db, activeOtp.id);
-    if (!consumed) {
-      return reply.status(400).send({
-        statusCode: 400,
-        code: 'OTP_ALREADY_CONSUMED',
-        message: 'Verification code has already been consumed. Please request a new code.',
-      });
-    }
+    if (!consumed) return sendInvalidOtp();
 
     const userId = `user_${randomBytes(12).toString('hex')}`;
-    const now = new Date().toISOString();
     const user = await createUser(db, {
       id: userId,
       email: normalizedEmail,
-      name: activeOtp.registrationData?.name ?? 'Studio Owner',
-      phone: activeOtp.registrationData?.phone,
-      termsAcceptedVersion: activeOtp.registrationData?.termsVersion,
-      termsAcceptedAt: now,
-      privacyPolicyAcceptedVersion: activeOtp.registrationData?.privacyVersion,
-      privacyPolicyAcceptedAt: now,
+      name: registrationData.name,
+      phone: registrationData.phone,
+      termsAcceptedVersion: registrationData.termsVersion,
+      termsAcceptedAt: registrationData.acceptedAt,
+      privacyPolicyAcceptedVersion: registrationData.privacyVersion,
+      privacyPolicyAcceptedAt: registrationData.acceptedAt,
       passwordHash: null,
     });
 

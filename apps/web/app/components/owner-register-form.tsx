@@ -5,6 +5,8 @@ import {
   AuthResponse,
   CURRENT_PRIVACY_POLICY_VERSION,
   CURRENT_TERMS_VERSION,
+  OtpCodeSchema,
+  OTP_LENGTH,
   z,
 } from '@snapprint/contracts';
 import {
@@ -37,6 +39,7 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [dispatchMessage, setDispatchMessage] = useState('');
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -60,10 +63,13 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
         name,
         email,
         phone,
+        termsAccepted: true,
+        privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
         privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
       });
-      setCooldown(res.retryAfterSeconds || 60);
+      setDispatchMessage(res.message);
+      setCooldown(res.retryAfterSeconds);
       setStep('otp');
     } catch (err) {
       setErrorMessage(extractErrorMessage(err, 'Registration request failed.'));
@@ -77,8 +83,9 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
     if (isSubmitting) return;
     setErrorMessage(null);
 
-    if (!/^\d{6}$/.test(otpCode.trim())) {
-      setErrorMessage('Please enter a valid 6-digit verification code.');
+    const parsedCode = OtpCodeSchema.safeParse(otpCode);
+    if (!parsedCode.success) {
+      setErrorMessage(`Please enter a valid ${OTP_LENGTH}-digit verification code.`);
       return;
     }
 
@@ -86,7 +93,7 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
     try {
       const auth = await verifyOwnerRegistrationOtp({
         email,
-        code: otpCode.trim(),
+        code: parsedCode.data,
       });
       onSuccess(auth);
     } catch (err) {
@@ -105,10 +112,13 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
         name,
         email,
         phone,
+        termsAccepted: true,
+        privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
         privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
       });
-      setCooldown(res.retryAfterSeconds || 60);
+      setDispatchMessage(res.message);
+      setCooldown(res.retryAfterSeconds);
     } catch (err) {
       setErrorMessage(extractErrorMessage(err, 'Failed to resend code.'));
     } finally {
@@ -134,7 +144,7 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
       <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0 0 1.25rem' }}>
         {step === 'details'
           ? 'Create a verified owner account for your print studio.'
-          : `Enter the 6-digit code sent to ${email}.`}
+          : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
       </p>
 
       {errorMessage && (

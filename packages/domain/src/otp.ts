@@ -1,16 +1,23 @@
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import {
+  DEFAULT_OTP_TTL_MINUTES,
+  DEFAULT_RESEND_COOLDOWN_SECONDS,
+  OTP_LENGTH,
+} from '@snapprint/contracts';
 
-export const OTP_LENGTH = 6;
-export const DEFAULT_OTP_TTL_MINUTES = 10;
-export const DEFAULT_RESEND_COOLDOWN_SECONDS = 60;
+export {
+  DEFAULT_OTP_TTL_MINUTES,
+  DEFAULT_RESEND_COOLDOWN_SECONDS,
+  OTP_LENGTH,
+} from '@snapprint/contracts';
 export const MAX_OTP_VERIFY_ATTEMPTS = 5;
 export const OTP_SALT_BYTES = 16;
 
-const OTP_REGEX = /^\d{6}$/;
+const OTP_REGEX = new RegExp(`^\\d{${OTP_LENGTH}}$`);
 const OTP_VERIFIER_REGEX = /^\$otp\$v1\$([a-f0-9]{32})\$([a-f0-9]{64})$/i;
 
 /**
- * Generates a cryptographically secure 6-digit numeric OTP.
+ * Generates a cryptographically secure numeric OTP using the shared contract length.
  * Preserves leading zeroes using string padding.
  * Uses node:crypto.randomInt (uniformly distributed, zero modulo bias).
  */
@@ -18,7 +25,7 @@ export function generateSecureOtp(length: number = OTP_LENGTH): string {
   if (length !== OTP_LENGTH) {
     throw new Error(`Unsupported OTP length: expected ${OTP_LENGTH}`);
   }
-  const codeInt = randomInt(0, 1_000_000);
+  const codeInt = randomInt(0, 10 ** OTP_LENGTH);
   return codeInt.toString().padStart(OTP_LENGTH, '0');
 }
 
@@ -34,7 +41,7 @@ export function hashOtpVerifier(
   context?: string
 ): string {
   if (typeof otp !== 'string' || !OTP_REGEX.test(otp)) {
-    throw new Error('Invalid OTP format: must be a 6-digit numeric string');
+    throw new Error(`Invalid OTP format: must be a ${OTP_LENGTH}-digit numeric string`);
   }
 
   if (salt.length !== OTP_SALT_BYTES) {

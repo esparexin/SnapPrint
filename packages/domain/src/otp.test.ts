@@ -16,10 +16,10 @@ import {
 
 describe('OTP Cryptographic Domain SSOT', () => {
   describe('generateSecureOtp', () => {
-    it('generates a 6-digit numeric string', () => {
+    it(`generates a ${OTP_LENGTH}-digit numeric string`, () => {
       const otp = generateSecureOtp();
       expect(otp).toHaveLength(OTP_LENGTH);
-      expect(/^\d{6}$/.test(otp)).toBe(true);
+      expect(new RegExp(`^\\d{${OTP_LENGTH}}$`).test(otp)).toBe(true);
     });
 
     it('generates uniformly distributed codes with preserved leading zeroes over repeated samples', () => {
@@ -28,8 +28,8 @@ describe('OTP Cryptographic Domain SSOT', () => {
       // 100 iterations to verify format consistency and uniqueness
       for (let i = 0; i < 100; i++) {
         const otp = generateSecureOtp();
-        expect(otp).toHaveLength(6);
-        expect(/^\d{6}$/.test(otp)).toBe(true);
+        expect(otp).toHaveLength(OTP_LENGTH);
+        expect(new RegExp(`^\\d{${OTP_LENGTH}}$`).test(otp)).toBe(true);
         codes.add(otp);
       }
 
@@ -45,7 +45,7 @@ describe('OTP Cryptographic Domain SSOT', () => {
 
   describe('hashOtpVerifier', () => {
     it('hashes a plaintext OTP into a protected modular verifier string', () => {
-      const otp = '012345';
+      const otp = `${'0'.repeat(OTP_LENGTH - 1)}1`;
       const verifier = hashOtpVerifier(otp);
 
       expect(typeof verifier).toBe('string');
@@ -64,7 +64,7 @@ describe('OTP Cryptographic Domain SSOT', () => {
     });
 
     it('produces distinct verifiers for the same OTP with random salts', () => {
-      const otp = '987654';
+      const otp = '9'.repeat(OTP_LENGTH);
       const verifier1 = hashOtpVerifier(otp);
       const verifier2 = hashOtpVerifier(otp);
 
@@ -72,7 +72,7 @@ describe('OTP Cryptographic Domain SSOT', () => {
     });
 
     it('incorporates contextual binding (e.g. normalized email) into the hash', () => {
-      const otp = '654321';
+      const otp = '6'.repeat(OTP_LENGTH);
       const salt = Buffer.alloc(OTP_SALT_BYTES, 0xaa);
 
       const verifierWithContext1 = hashOtpVerifier(otp, salt, 'owner@studio.com');
@@ -87,20 +87,22 @@ describe('OTP Cryptographic Domain SSOT', () => {
       expect(() => hashOtpVerifier('12345')).toThrow('Invalid OTP format');
       expect(() => hashOtpVerifier('abcdef')).toThrow('Invalid OTP format');
       expect(() => hashOtpVerifier('')).toThrow('Invalid OTP format');
-      expect(() => hashOtpVerifier('123456', Buffer.alloc(8))).toThrow('Salt must be exactly');
+      expect(() => hashOtpVerifier('1'.repeat(OTP_LENGTH), Buffer.alloc(8))).toThrow(
+        'Salt must be exactly'
+      );
     });
   });
 
   describe('verifyOtp', () => {
     it('successfully verifies candidate OTP against stored verifier', () => {
-      const otp = '045678';
+      const otp = `${'0'.repeat(OTP_LENGTH - 1)}1`;
       const verifier = hashOtpVerifier(otp);
 
       expect(verifyOtp(otp, verifier)).toBe(true);
     });
 
     it('successfully verifies candidate OTP with matching context', () => {
-      const otp = '789012';
+      const otp = '7'.repeat(OTP_LENGTH);
       const context = 'owner@snapprint.com';
       const verifier = hashOtpVerifier(otp, undefined, context);
 
@@ -110,15 +112,16 @@ describe('OTP Cryptographic Domain SSOT', () => {
     });
 
     it('rejects incorrect OTP candidate', () => {
-      const otp = '112233';
+      const otp = '1'.repeat(OTP_LENGTH);
       const verifier = hashOtpVerifier(otp);
+      const differentOtp =
+        otp === '0'.repeat(OTP_LENGTH) ? '1'.repeat(OTP_LENGTH) : '0'.repeat(OTP_LENGTH);
 
-      expect(verifyOtp('998877', verifier)).toBe(false);
-      expect(verifyOtp('112234', verifier)).toBe(false);
+      expect(verifyOtp(differentOtp, verifier)).toBe(false);
     });
 
     it('safely rejects malformed or tampered verifiers without throwing', () => {
-      const otp = '123456';
+      const otp = '1'.repeat(OTP_LENGTH);
       const validVerifier = hashOtpVerifier(otp);
 
       expect(verifyOtp(otp, 'not-a-verifier')).toBe(false);
@@ -141,28 +144,28 @@ describe('OTP Cryptographic Domain SSOT', () => {
 
     it('safely rejects non-string inputs', () => {
       expect(verifyOtp(null as unknown as string, 'verifier')).toBe(false);
-      expect(verifyOtp('123456', null as unknown as string)).toBe(false);
+      expect(verifyOtp('1'.repeat(OTP_LENGTH), null as unknown as string)).toBe(false);
       expect(verifyOtp(undefined as unknown as string, undefined as unknown as string)).toBe(false);
     });
   });
 
   describe('Lifecycle & Expiry Boundaries', () => {
-    it('calculates expiry timestamp with default 10 minutes TTL', () => {
+    it(`calculates expiry timestamp with default ${DEFAULT_OTP_TTL_MINUTES} minutes TTL`, () => {
       const now = new Date('2026-11-22T10:00:00.000Z');
       const expiry = calculateOtpExpiry(now, DEFAULT_OTP_TTL_MINUTES);
 
-      expect(expiry.toISOString()).toBe('2026-11-22T10:10:00.000Z');
+      expect(expiry.toISOString()).toBe('2026-11-22T10:15:00.000Z');
     });
 
     it('evaluates isOtpExpired accurately', () => {
-      const expiry = new Date('2026-11-22T10:10:00.000Z');
+      const expiry = new Date('2026-11-22T10:15:00.000Z');
 
       // Before expiry
-      expect(isOtpExpired(expiry, new Date('2026-11-22T10:09:59.000Z'))).toBe(false);
+      expect(isOtpExpired(expiry, new Date('2026-11-22T10:14:59.000Z'))).toBe(false);
       // At exact expiry
-      expect(isOtpExpired(expiry, new Date('2026-11-22T10:10:00.000Z'))).toBe(true);
+      expect(isOtpExpired(expiry, new Date('2026-11-22T10:15:00.000Z'))).toBe(true);
       // After expiry
-      expect(isOtpExpired(expiry, new Date('2026-11-22T10:10:01.000Z'))).toBe(true);
+      expect(isOtpExpired(expiry, new Date('2026-11-22T10:15:01.000Z'))).toBe(true);
 
       // Invalid date string
       expect(isOtpExpired('invalid-date')).toBe(true);
@@ -190,7 +193,7 @@ describe('OTP Cryptographic Domain SSOT', () => {
     it('exports expected security threshold constants', () => {
       expect(MAX_OTP_VERIFY_ATTEMPTS).toBe(5);
       expect(DEFAULT_RESEND_COOLDOWN_SECONDS).toBe(60);
-      expect(DEFAULT_OTP_TTL_MINUTES).toBe(10);
+      expect(DEFAULT_OTP_TTL_MINUTES).toBe(15);
     });
   });
 });

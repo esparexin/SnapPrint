@@ -3,12 +3,16 @@ import { FastifyPluginAsync } from 'fastify';
 import { Db } from 'mongodb';
 import {
   AuthResponseSchema,
-  DEFAULT_RESEND_COOLDOWN_SECONDS,
-  OtpDispatchResponseSchema,
+  createOtpDispatchResponse,
   RequestOwnerLoginOtpRequestSchema,
   VerifyOwnerLoginOtpRequestSchema,
 } from '@snapprint/contracts';
-import { generateSecureOtp, hashOtpVerifier, verifyOtp } from '@snapprint/domain';
+import {
+  calculateOtpExpiry,
+  generateSecureOtp,
+  hashOtpVerifier,
+  verifyOtp,
+} from '@snapprint/domain';
 import { issueOperatorSessionCookie, validateOrigin } from './auth-utils.js';
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
@@ -40,7 +44,7 @@ export const authLoginOtpRoutes: FastifyPluginAsync<AuthLoginOtpRouteOptions> = 
   const getEffectiveEmail = (): EmailService =>
     opts?.emailService ?? createEmailService(getEffectiveConfig());
 
-  // POST /auth/login/otp/request - Dispatches login OTP with timing defense against enumeration
+  // POST /auth/login/otp/request - Requests login OTP with generic responses
   app.post(
     '/auth/login/otp/request',
     {
@@ -74,46 +78,32 @@ export const authLoginOtpRoutes: FastifyPluginAsync<AuthLoginOtpRouteOptions> = 
       const db = getEffectiveDb();
       const normalizedEmail = parseResult.data.email.trim().toLowerCase();
       const user = await findUserDocumentByEmail(db, normalizedEmail);
+      const genericResponse = createOtpDispatchResponse(normalizedEmail, 'owner_login');
 
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-      const genericResponse = OtpDispatchResponseSchema.parse({
-        success: true,
-        email: normalizedEmail,
-        intent: 'owner_login',
-        expiresAt,
-        resendCooldownSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
-        retryAfterSeconds: DEFAULT_RESEND_COOLDOWN_SECONDS,
-      });
-
-      // Timing defense: if user doesn't exist or is not active, return generic success without email
       if (!user || user.status !== 'active') {
         return reply.status(200).send(genericResponse);
       }
 
       const cooldown = await checkResendCooldown(db, normalizedEmail, 'owner_login');
       if (!cooldown.canResend) {
-        return reply.status(429).send({
-          statusCode: 429,
-          code: 'COOLDOWN_ACTIVE',
-          message: `Please wait ${cooldown.remainingCooldownSeconds} seconds before requesting a new code.`,
-          retryAfterSeconds: cooldown.remainingCooldownSeconds,
-        });
+        return reply.status(200).send(genericResponse);
       }
 
       const code = generateSecureOtp();
       const verifier = hashOtpVerifier(code);
       const otpId = `otp_${randomBytes(12).toString('hex')}`;
+      const expiresAt = calculateOtpExpiry(new Date(), config.otpTtlMinutes);
 
       await createOtpRecord(db, {
         id: otpId,
         email: normalizedEmail,
         intent: 'owner_login',
         verifier,
-        expiresAt: new Date(expiresAt),
+        expiresAt,
       });
 
       const emailService = getEffectiveEmail();
-      const emailContent = renderLoginOtpEmail(code, 15);
+      const emailContent = renderLoginOtpEmail(code, config.otpTtlMinutes);
       try {
         await emailService.sendEmail({
           to: { email: normalizedEmail, name: user.name },

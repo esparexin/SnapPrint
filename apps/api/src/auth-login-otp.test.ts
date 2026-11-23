@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OTP_LENGTH } from '@snapprint/contracts';
 import { createTestApp } from './auth-test-helper.js';
 
 describe('Owner Passwordless Login with OTP (Phase 5)', () => {
@@ -23,7 +24,7 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.payload);
-    expect(body.success).toBe(true);
+    expect(body.message).toContain('If this email is eligible');
     expect(body.email).toBe('owner@studio.com');
     expect(body.intent).toBe('owner_login');
 
@@ -47,12 +48,49 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.payload);
-    expect(body.success).toBe(true);
+    expect(body.message).toContain('If this email is eligible');
 
     // No email should be dispatched
     expect(emailService.getLastEmailFor('nonexistent@studio.com')).toBeUndefined();
     expect(emailOtps).toHaveLength(0);
 
+    await app.close();
+  });
+
+  it('POST /auth/login/otp/request does not expose a resend cooldown for existing users', async () => {
+    const { app, users, emailService } = await createTestApp();
+    users.push({
+      id: 'user_owner',
+      email: 'owner@studio.com',
+      name: 'Studio Owner',
+      passwordHash: null,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await app.inject({
+      method: 'POST',
+      url: '/auth/login/otp/request',
+      payload: { email: 'owner@studio.com' },
+    });
+    const cooldownResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login/otp/request',
+      payload: { email: 'owner@studio.com' },
+    });
+    const unknownUserResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login/otp/request',
+      payload: { email: 'unknown@studio.com' },
+    });
+
+    expect(cooldownResponse.statusCode).toBe(200);
+    expect(unknownUserResponse.statusCode).toBe(200);
+    const cooldownBody = JSON.parse(cooldownResponse.payload);
+    const unknownBody = JSON.parse(unknownUserResponse.payload);
+    expect({ ...cooldownBody, email: unknownBody.email }).toEqual(unknownBody);
+    expect(emailService.getSentEmails()).toHaveLength(1);
     await app.close();
   });
 
@@ -83,7 +121,7 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
     });
 
     const lastEmail = emailService.getLastEmailFor('owner@studio.com');
-    const code = lastEmail?.text.match(/\b\d{6}\b/)![0];
+    const code = lastEmail?.text.match(new RegExp(`\\b\\d{${OTP_LENGTH}}\\b`))![0];
 
     const verifyRes = await app.inject({
       method: 'POST',
@@ -132,7 +170,7 @@ describe('Owner Passwordless Login with OTP (Phase 5)', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/auth/login/otp/verify',
-      payload: { email: 'owner@studio.com', code: '999999' },
+      payload: { email: 'owner@studio.com', code: '9'.repeat(OTP_LENGTH) },
     });
 
     expect(res.statusCode).toBe(401);

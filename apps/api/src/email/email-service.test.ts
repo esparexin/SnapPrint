@@ -7,15 +7,13 @@ describe('Email Service & Delivery Adapters', () => {
   it('MemoryEmailService stores and retrieves sent emails', async () => {
     const memory = new MemoryEmailService();
 
-    const res = await memory.sendEmail({
+    await memory.sendEmail({
       to: { email: 'owner@studio.com', name: 'Studio Owner' },
       subject: 'Verification Code',
       html: '<p>Code: 123456</p>',
       text: 'Code: 123456',
     });
 
-    expect(res.delivered).toBe(true);
-    expect(res.messageId).toMatch(/^mem_/);
     expect(memory.getSentEmails()).toHaveLength(1);
 
     const last = memory.getLastEmailFor('OWNER@STUDIO.COM');
@@ -30,7 +28,6 @@ describe('Email Service & Delivery Adapters', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ data: [{ message_id: 'zepto_msg_12345' }] }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -41,15 +38,13 @@ describe('Email Service & Delivery Adapters', () => {
       'bounce@snapprint.in'
     );
 
-    const result = await zepto.sendEmail({
+    await zepto.sendEmail({
       to: { email: 'client@example.com', name: 'Client' },
       subject: 'Your Login Code',
       html: '<b>123456</b>',
       text: '123456',
     });
 
-    expect(result.delivered).toBe(true);
-    expect(result.messageId).toBe('zepto_msg_12345');
     expect(mockFetch).toHaveBeenCalledTimes(1);
 
     const [url, options] = mockFetch.mock.calls[0];
@@ -68,7 +63,6 @@ describe('Email Service & Delivery Adapters', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 401,
-      text: async () => 'Invalid Authorization Token',
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -81,13 +75,14 @@ describe('Email Service & Delivery Adapters', () => {
         html: '<p>Test</p>',
         text: 'Test',
       })
-    ).rejects.toThrow('ZeptoMail API error (401): Invalid Authorization Token');
+    ).rejects.toThrow('ZeptoMail API error (401)');
 
     vi.unstubAllGlobals();
   });
 
   it('createEmailService instantiates appropriate adapter based on config', () => {
     const devConfig = {
+      nodeEnv: 'test',
       zeptoMailFromEmail: 'noreply@snapprint.in',
       zeptoMailFromName: 'SnapPrint',
     } as AppConfig;
@@ -109,8 +104,24 @@ describe('Email Service & Delivery Adapters', () => {
       zeptoMailFromName: 'SnapPrint',
     } as AppConfig;
     expect(() => createEmailService(prodMissingToken)).toThrow(
-      'ZeptoMail configuration missing in production: ZEPTOMAIL_API_TOKEN must be configured.'
+      'ZeptoMail configuration missing: ZEPTOMAIL_API_TOKEN must be configured.'
     );
+
+    expect(() =>
+      createEmailService({
+        nodeEnv: 'development',
+        zeptoMailFromEmail: 'noreply@snapprint.in',
+        zeptoMailFromName: 'SnapPrint',
+      } as AppConfig)
+    ).toThrow('ZeptoMail configuration missing: ZEPTOMAIL_API_TOKEN must be configured.');
+
+    expect(() =>
+      createEmailService({
+        nodeEnv: 'production',
+        zeptoMailApiToken: 'prod_token',
+        zeptoMailFromName: 'SnapPrint',
+      } as AppConfig)
+    ).toThrow('ZeptoMail configuration missing: ZEPTOMAIL_FROM_EMAIL must be configured.');
   });
 
   it('email templates render code, expiry time, and plain-text fallback', () => {

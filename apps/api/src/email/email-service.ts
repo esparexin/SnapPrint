@@ -7,13 +7,8 @@ export interface SendEmailParams {
   text: string;
 }
 
-export interface EmailDispatchResult {
-  messageId: string;
-  delivered: boolean;
-}
-
 export interface EmailService {
-  sendEmail(params: SendEmailParams): Promise<EmailDispatchResult>;
+  sendEmail(params: SendEmailParams): Promise<void>;
 }
 
 export class ZeptoMailEmailService implements EmailService {
@@ -24,7 +19,7 @@ export class ZeptoMailEmailService implements EmailService {
     private readonly bounceAddress?: string
   ) {}
 
-  async sendEmail(params: SendEmailParams): Promise<EmailDispatchResult> {
+  async sendEmail(params: SendEmailParams): Promise<void> {
     const payload = {
       from: { address: this.fromEmail, name: this.fromName },
       to: [
@@ -52,23 +47,16 @@ export class ZeptoMailEmailService implements EmailService {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`ZeptoMail API error (${response.status}): ${errText}`);
+      throw new Error(`ZeptoMail API error (${response.status})`);
     }
-
-    const data = (await response.json()) as { data?: Array<{ message_id?: string }> };
-    const messageId = data?.data?.[0]?.message_id || `zepto_${Date.now()}`;
-    return { messageId, delivered: true };
   }
 }
 
 export class MemoryEmailService implements EmailService {
   private sentEmails: SendEmailParams[] = [];
 
-  async sendEmail(params: SendEmailParams): Promise<EmailDispatchResult> {
+  async sendEmail(params: SendEmailParams): Promise<void> {
     this.sentEmails.push({ ...params });
-    const messageId = `mem_${Date.now()}_${this.sentEmails.length}`;
-    return { messageId, delivered: true };
   }
 
   getSentEmails(): readonly SendEmailParams[] {
@@ -88,6 +76,9 @@ export class MemoryEmailService implements EmailService {
 
 export function createEmailService(config: AppConfig): EmailService {
   if (config.zeptoMailApiToken) {
+    if (!config.zeptoMailFromEmail) {
+      throw new Error('ZeptoMail configuration missing: ZEPTOMAIL_FROM_EMAIL must be configured.');
+    }
     return new ZeptoMailEmailService(
       config.zeptoMailApiToken,
       config.zeptoMailFromEmail,
@@ -95,10 +86,8 @@ export function createEmailService(config: AppConfig): EmailService {
       config.zeptoMailBounceAddress
     );
   }
-  if (config.nodeEnv === 'production') {
-    throw new Error(
-      'ZeptoMail configuration missing in production: ZEPTOMAIL_API_TOKEN must be configured.'
-    );
+  if (config.nodeEnv !== 'test') {
+    throw new Error('ZeptoMail configuration missing: ZEPTOMAIL_API_TOKEN must be configured.');
   }
   return new MemoryEmailService();
 }
