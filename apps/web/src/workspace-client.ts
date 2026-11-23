@@ -5,6 +5,7 @@ import {
   StaffMember,
   Studio,
   StudioMetricsResponse,
+  StudioSettings,
   UpdateStudioProfileRequest,
 } from '@snapprint/contracts';
 
@@ -122,6 +123,36 @@ export async function updateStudioProfile(
     `/studios/${encodeURIComponent(studioId)}/profile`,
     {
       method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+    customFetch
+  );
+}
+
+export async function updateStudioSettings(
+  studioId: string,
+  settings: Partial<StudioSettings>,
+  customFetch?: typeof fetch
+): Promise<Studio> {
+  return requestJson<Studio>(
+    `/studios/${encodeURIComponent(studioId)}/settings`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(settings),
+    },
+    customFetch
+  );
+}
+
+export async function verifyStudioRazorpay(
+  studioId: string,
+  payload: { keyId: string; keySecret: string },
+  customFetch?: typeof fetch
+): Promise<{ isConfirmed: boolean; message: string }> {
+  return requestJson<{ isConfirmed: boolean; message: string }>(
+    `/studios/${encodeURIComponent(studioId)}/verify-razorpay`,
+    {
+      method: 'POST',
       body: JSON.stringify(payload),
     },
     customFetch
