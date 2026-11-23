@@ -155,6 +155,7 @@ export function CustomerStudioView({ slug }: CustomerStudioViewProps) {
           studioName={studio.name}
           sessionId={session.session.sessionId}
           token={session.token}
+          payment={studio.payment}
         />
       )}
 

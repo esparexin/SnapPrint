@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { OrderRecord } from '@snapprint/contracts';
+import { OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
 import { CustomerPaymentCard } from './customer-payment-card';
 
 interface OrderConfirmationViewProps {
@@ -9,6 +9,7 @@ interface OrderConfirmationViewProps {
   studioName: string;
   slug?: string;
   sessionToken?: string;
+  payment?: PublicPaymentSettings;
   onNewOrder: () => void;
 }
 
@@ -17,6 +18,7 @@ export function OrderConfirmationView({
   studioName,
   slug,
   sessionToken,
+  payment,
   onNewOrder,
 }: OrderConfirmationViewProps) {
   const [order, setOrder] = useState<OrderRecord>(initialOrder);
@@ -68,6 +70,7 @@ export function OrderConfirmationView({
           order={order}
           slug={slug}
           sessionToken={sessionToken}
+          payment={payment}
           onPaymentSuccess={() => {
             setOrder((prev) => ({
               ...prev,
