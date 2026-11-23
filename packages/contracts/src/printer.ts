@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { StudioIdSchema } from './tenant.js';
-import { PaperSizeSchema, type PaperSize } from './document-print.js';
+import { PaperSizeSchema } from './document-print.js';
 
 export const PrinterIdSchema = z
   .string()
