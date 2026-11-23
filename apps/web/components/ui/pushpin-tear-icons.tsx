@@ -38,8 +38,6 @@ export function Icon({
           <circle cx="18.5" cy="5.5" r="2.3" />
         </>
       );
-    case 'squiggle':
-      return svg(<path d="M3.5 15c1.8-3.2 3.6-3.2 5.4 0s3.6 3.2 5.4 0" />);
     case 'github':
       return svg(
         <path
@@ -47,13 +45,6 @@ export function Icon({
           d="M12 2.8a9.3 9.3 0 0 0-2.9 18.1c.5.1.6-.2.6-.5v-1.7c-2.6.6-3.1-1.1-3.1-1.1-.4-1.1-1-1.4-1-1.4-.9-.6.1-.6.1-.6.9.1 1.4 1 1.4 1 .8 1.4 2.2 1 2.7.8.1-.6.3-1 .6-1.2-2.1-.2-4.2-1-4.2-4.6 0-1 .4-1.8 1-2.5-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1a8.8 8.8 0 0 1 4.6 0c1.8-1.2 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.5 1 2.5 0 3.6-2.2 4.4-4.2 4.6.3.3.6.8.6 1.6v2.4c0 .3.2.6.7.5A9.3 9.3 0 0 0 12 2.8z"
         />,
         true
-      );
-    case '21st':
-      return svg(
-        <>
-          <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
-          <path d="M7.6 10.2a1.9 1.9 0 0 1 3.7.4c0 1.6-3.7 2.6-3.7 4.6h3.8M14.2 10.4l1.9-1.4v6.4" />
-        </>
       );
     case 'linkedin':
       return svg(
@@ -86,13 +77,6 @@ export function Icon({
           <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
           <circle cx="12" cy="12" r="3.8" />
           <circle cx="17.1" cy="6.9" r=".6" fill="currentColor" />
-        </>
-      );
-    case 'dribbble':
-      return svg(
-        <>
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="M5.2 7c4.5 2 9.8 2 13 .7M3.6 13c5-1.6 10.4-.4 14 4.6M9 3.9c3 3.6 5.2 9.3 5.7 15.6" />
         </>
       );
     case 'globe':
@@ -220,10 +204,24 @@ export function A({
   children: React.ReactNode;
   style?: React.CSSProperties;
 }) {
+  if (onClick && !href) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={className}
+        aria-label={label}
+        title={label}
+        style={style}
+      >
+        {children}
+      </button>
+    );
+  }
   const out = !onClick && !!href && /^https?:/.test(href);
   return (
     <a
-      href={href || '#'}
+      href={href || '/'}
       onClick={(e) => {
         if (onClick) {
           e.preventDefault();

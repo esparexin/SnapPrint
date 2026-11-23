@@ -50,7 +50,7 @@ export default function HomePage() {
               variant: 'text',
             },
             {
-              label: 'Register Store / Printer',
+              label: 'Register',
               onClick: () => setShowPortalModal(true),
               variant: 'button',
             },
