@@ -62,9 +62,6 @@ export function HomeNavbar({ onOpenPortal }: HomeNavbarProps) {
           <a href="#features" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
             Features
           </a>
-          <a href="/admin" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
-            Admin
-          </a>
           <button
             type="button"
             onClick={onOpenPortal}

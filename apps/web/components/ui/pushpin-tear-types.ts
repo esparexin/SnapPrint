@@ -53,7 +53,6 @@ export const DEFAULT_COLUMNS: FooterColumn[] = [
     links: [
       { label: 'Studio Login', href: '/' },
       { label: 'Register', href: '/' },
-      { label: 'Platform Admin', href: '/admin' },
     ],
   },
 ];

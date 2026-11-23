@@ -114,23 +114,41 @@ export function OperatorPortal() {
             Signed in as <strong>{auth.user.name}</strong> ({auth.user.email})
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={logoutLoading}
-          style={{
-            padding: '0.5rem 1rem',
-            background: logoutLoading ? '#9ca3af' : '#dc2626',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: logoutLoading ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-          }}
-        >
-          {logoutLoading ? 'Signing out...' : 'Sign Out'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          {auth.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active') && (
+            <a
+              href="/admin"
+              style={{
+                padding: '0.5rem 0.875rem',
+                backgroundColor: '#0284c7',
+                color: '#ffffff',
+                borderRadius: '0.375rem',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Admin Workspace →
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={logoutLoading}
+            style={{
+              padding: '0.5rem 1rem',
+              background: logoutLoading ? '#9ca3af' : '#dc2626',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: logoutLoading ? 'not-allowed' : 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+            }}
+          >
+            {logoutLoading ? 'Signing out...' : 'Sign Out'}
+          </button>
+        </div>
       </header>
 
       {errorBanner && (
