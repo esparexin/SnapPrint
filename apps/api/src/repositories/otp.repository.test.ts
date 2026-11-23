@@ -6,10 +6,10 @@ import {
   findActiveOtp,
   findOtpById,
   invalidatePendingOtps,
-  MAX_OTP_ATTEMPTS,
   recordFailedAttempt,
 } from './otp.repository.js';
 import { createMockDb } from '../mock-db.js';
+import { MAX_OTP_VERIFY_ATTEMPTS } from '@snapprint/domain';
 
 describe('OTP Persistence Repository', () => {
   const makeSampleRecord = (overrides = {}) => ({
@@ -105,11 +105,11 @@ describe('OTP Persistence Repository', () => {
     expect(successCount).toBe(1);
   });
 
-  it('consumeOtpAtomically rejects OTPs that reached MAX_OTP_ATTEMPTS', async () => {
+  it('consumeOtpAtomically rejects OTPs that reached MAX_OTP_VERIFY_ATTEMPTS', async () => {
     const { db } = createMockDb();
     await createOtpRecord(db, makeSampleRecord({ id: 'otp_max_att' }));
 
-    for (let i = 0; i < MAX_OTP_ATTEMPTS; i++) {
+    for (let i = 0; i < MAX_OTP_VERIFY_ATTEMPTS; i++) {
       await recordFailedAttempt(db, 'otp_max_att');
     }
 

@@ -6,6 +6,7 @@ import { authLoginOtpRoutes } from './auth-login-otp-routes.js';
 import { authRegistrationRoutes } from './auth-registration-routes.js';
 import { authRoutes } from './auth.js';
 import { AppConfig } from './config.js';
+import { DEFAULT_OTP_TTL_MINUTES } from '@snapprint/contracts';
 import { MemoryEmailService } from './email/email-service.js';
 import { createMockDb, MockCollections } from './mock-db.js';
 import { orderRoutes } from './order-routes.js';
@@ -48,6 +49,7 @@ export async function createTestApp(
     cookieSecure: false,
     rateLimitMax: 100,
     rateLimitTimeWindow: '1 minute',
+    otpTtlMinutes: DEFAULT_OTP_TTL_MINUTES,
     zeptoMailFromEmail: 'noreply@snapprint.in',
     zeptoMailFromName: 'SnapPrint',
     ...configOverrides,

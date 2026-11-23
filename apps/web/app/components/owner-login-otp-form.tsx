@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { AuthResponse, z } from '@snapprint/contracts';
+import { AuthResponse, OTP_LENGTH, OtpCodeSchema, z } from '@snapprint/contracts';
 import { AuthApiError, requestOwnerLoginOtp, verifyOwnerLoginOtp } from '../../src/auth-client';
 import { OtpInputStep } from './otp-input-step';
 
@@ -28,6 +28,7 @@ export function OwnerLoginOtpForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [dispatchMessage, setDispatchMessage] = useState('');
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -43,7 +44,8 @@ export function OwnerLoginOtpForm({
     setIsSubmitting(true);
     try {
       const res = await requestOwnerLoginOtp({ email });
-      setCooldown(res.retryAfterSeconds || 60);
+      setDispatchMessage(res.message);
+      setCooldown(res.retryAfterSeconds);
       setStep('otp');
     } catch (err) {
       setErrorMessage(extractErrorMessage(err, 'Login request failed.'));
@@ -57,8 +59,9 @@ export function OwnerLoginOtpForm({
     if (isSubmitting) return;
     setErrorMessage(null);
 
-    if (!/^\d{6}$/.test(otpCode.trim())) {
-      setErrorMessage('Please enter a valid 6-digit verification code.');
+    const parsedCode = OtpCodeSchema.safeParse(otpCode);
+    if (!parsedCode.success) {
+      setErrorMessage(`Please enter a valid ${OTP_LENGTH}-digit verification code.`);
       return;
     }
 
@@ -66,7 +69,7 @@ export function OwnerLoginOtpForm({
     try {
       const auth = await verifyOwnerLoginOtp({
         email,
-        code: otpCode.trim(),
+        code: parsedCode.data,
       });
       onSuccess(auth);
     } catch (err) {
@@ -82,7 +85,8 @@ export function OwnerLoginOtpForm({
     setErrorMessage(null);
     try {
       const res = await requestOwnerLoginOtp({ email });
-      setCooldown(res.retryAfterSeconds || 60);
+      setDispatchMessage(res.message);
+      setCooldown(res.retryAfterSeconds);
     } catch (err) {
       setErrorMessage(extractErrorMessage(err, 'Failed to resend code.'));
     } finally {
@@ -106,7 +110,7 @@ export function OwnerLoginOtpForm({
       <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0 0 1.25rem' }}>
         {step === 'email'
           ? 'Sign in with a one-time verification code sent to your email.'
-          : `Enter the 6-digit code sent to ${email}.`}
+          : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
       </p>
 
       {errorMessage && (

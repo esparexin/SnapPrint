@@ -1,5 +1,5 @@
 import { Db } from 'mongodb';
-import { OtpIntent } from '@snapprint/contracts';
+import { LegalAcceptance, OtpIntent } from '@snapprint/contracts';
 import {
   calculateOtpExpiry,
   DEFAULT_RESEND_COOLDOWN_SECONDS,
@@ -10,15 +10,12 @@ import {
 } from '@snapprint/domain';
 
 export const EMAIL_OTPS_COLLECTION = 'email_otps';
-export const MAX_OTP_ATTEMPTS = MAX_OTP_VERIFY_ATTEMPTS;
 
 export type OtpRecordStatus = 'pending' | 'consumed' | 'invalidated' | 'exhausted';
 
-export interface EmailOtpRegistrationData {
+export interface EmailOtpRegistrationData extends LegalAcceptance {
   name: string;
   phone: string;
-  termsVersion: string;
-  privacyVersion: string;
 }
 
 export interface EmailOtpDocument {

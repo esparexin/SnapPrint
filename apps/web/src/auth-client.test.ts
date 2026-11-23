@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AuthResponse } from '@snapprint/contracts';
+import {
+  AuthResponse,
+  CURRENT_PRIVACY_POLICY_VERSION,
+  CURRENT_TERMS_VERSION,
+  OTP_DISPATCH_MESSAGE,
+} from '@snapprint/contracts';
 import {
   AuthApiError,
   fetchCurrentUser,
@@ -159,10 +164,9 @@ describe('Frontend Authentication API Client', () => {
 
   it('requestOwnerRegistrationOtp and verifyOwnerRegistrationOtp handle registration handshake', async () => {
     const mockDispatch = {
-      success: true,
       email: 'owner@studio.com',
       intent: 'owner_registration',
-      expiresAt: '2026-11-22T12:00:00.000Z',
+      message: OTP_DISPATCH_MESSAGE,
       resendCooldownSeconds: 60,
       retryAfterSeconds: 60,
     };
@@ -173,12 +177,14 @@ describe('Frontend Authentication API Client', () => {
         name: 'Owner',
         email: 'owner@studio.com',
         phone: '+919876543210',
-        termsVersion: '2026.1',
-        privacyVersion: '2026.1',
+        termsAccepted: true,
+        privacyPolicyAccepted: true,
+        termsVersion: CURRENT_TERMS_VERSION,
+        privacyVersion: CURRENT_PRIVACY_POLICY_VERSION,
       },
       fetchDispatch as unknown as typeof fetch
     );
-    expect(dispatchRes.success).toBe(true);
+    expect(dispatchRes.message).toBe(OTP_DISPATCH_MESSAGE);
 
     const fetchVerify = async () => new Response(JSON.stringify(sampleAuth), { status: 201 });
 
@@ -191,10 +197,9 @@ describe('Frontend Authentication API Client', () => {
 
   it('requestOwnerLoginOtp and verifyOwnerLoginOtp handle login handshake', async () => {
     const mockDispatch = {
-      success: true,
       email: 'owner@studio.com',
       intent: 'owner_login',
-      expiresAt: '2026-11-22T12:00:00.000Z',
+      message: OTP_DISPATCH_MESSAGE,
       resendCooldownSeconds: 60,
       retryAfterSeconds: 60,
     };
