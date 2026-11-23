@@ -10,13 +10,17 @@ describe('validateIndianMobile', () => {
   });
 
   it('rejects empty input', () => {
-    expect(validateIndianMobile('')).toBe('Mobile number is required.');
+    expect(validateIndianMobile('')).toBe(
+      'Please enter your 10-digit mobile number with prefix (+91).'
+    );
   });
 
   it('rejects numbers that are not 10 digits', () => {
-    expect(validateIndianMobile('98765')).toBe('Mobile number must be exactly 10 digits.');
+    expect(validateIndianMobile('98765')).toBe(
+      'Please enter a valid 10-digit mobile number with prefix (+91).'
+    );
     expect(validateIndianMobile('987654321012')).toBe(
-      'Mobile number must be exactly 10 digits.'
+      'Please enter a valid 10-digit mobile number with prefix (+91).'
     );
   });
 

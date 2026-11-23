@@ -6,10 +6,10 @@
 export function validateIndianMobile(raw: string): string | null {
   const digits = raw.replace(/\D/g, '');
   if (!digits || digits.length === 0) {
-    return 'Mobile number is required.';
+    return 'Please enter your 10-digit mobile number with prefix (+91).';
   }
   if (digits.length !== 10) {
-    return 'Mobile number must be exactly 10 digits.';
+    return 'Please enter a valid 10-digit mobile number with prefix (+91).';
   }
   if (!/^[6-9]/.test(digits)) {
     return 'Mobile number must start with 6, 7, 8, or 9.';

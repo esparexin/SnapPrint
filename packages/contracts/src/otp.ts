@@ -27,7 +27,7 @@ export const PhoneNumberSchema = z
   .pipe(
     z.string().regex(/^\+[1-9]\d{6,14}$/, {
       message:
-        'Please enter a valid mobile number with country code (e.g. +919876543210)',
+        'Please enter a valid mobile number with prefix (+91) (e.g. +919876543210)',
     })
   );
 
