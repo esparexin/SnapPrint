@@ -71,36 +71,39 @@ export async function inviteStudioStaff(
   const normalizedEmail = input.email.trim().toLowerCase();
   const now = new Date();
 
-  let user = await db
+  const existingUser = await db
     .collection<UserDocument>(USERS_COLLECTION)
     .findOne({ email: normalizedEmail });
 
-  if (!user) {
-    const newUserId = `usr_${randomBytes(8).toString('hex')}`;
+  let targetUserId = existingUser?.id;
+  let targetUserName = existingUser?.name;
+
+  if (!targetUserId) {
+    targetUserId = `usr_${randomBytes(8).toString('hex')}`;
+    targetUserName = input.name?.trim() || normalizedEmail.split('@')[0];
     const userDoc: UserDocument = {
-      id: newUserId,
+      id: targetUserId,
       email: normalizedEmail,
-      name: input.name?.trim() || normalizedEmail.split('@')[0],
+      name: targetUserName,
       status: 'invited',
       createdAt: now,
       updatedAt: now,
     };
     await db.collection<UserDocument>(USERS_COLLECTION).insertOne(userDoc);
-    user = userDoc;
   }
 
   const existingMembership = await db
     .collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION)
-    .findOne({ userId: user.id, studioId: input.studioId });
+    .findOne({ userId: targetUserId, studioId: input.studioId });
 
   if (existingMembership) {
     await db.collection<UserMembershipDocument>(USER_MEMBERSHIPS_COLLECTION).updateOne(
-      { userId: user.id, studioId: input.studioId },
+      { userId: targetUserId, studioId: input.studioId },
       { $set: { role: 'studio_staff', status: 'invited' } }
     );
   } else {
     const membershipDoc: UserMembershipDocument = {
-      userId: user.id,
+      userId: targetUserId,
       studioId: input.studioId,
       role: 'studio_staff',
       status: 'invited',
@@ -110,11 +113,11 @@ export async function inviteStudioStaff(
   }
 
   return StaffMemberSchema.parse({
-    id: `${input.studioId}_${user.id}`,
-    userId: user.id,
+    id: `${input.studioId}_${targetUserId}`,
+    userId: targetUserId,
     studioId: input.studioId,
     email: normalizedEmail,
-    name: user.name,
+    name: targetUserName,
     role: 'studio_staff',
     status: 'invited',
     createdAt: now.toISOString(),

@@ -33,7 +33,7 @@ export async function getTodayStudioMetrics(
     }
 
     // Pending orders waiting for print or fulfillment
-    if (doc.status === 'queued' || doc.status === 'printing' || doc.status === 'ready') {
+    if (doc.status === 'submitted' || doc.status === 'processing' || doc.status === 'ready') {
       pendingOrdersCount += 1;
     }
 

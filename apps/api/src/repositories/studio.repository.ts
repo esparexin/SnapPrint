@@ -163,7 +163,9 @@ export async function updateStudioProfile(
   id: string,
   fields: UpdateStudioProfileFields
 ): Promise<Studio | null> {
-  const current = await findStudioById(db, id);
+  const current = await db
+    .collection<StudioDocument>(STUDIOS_COLLECTION)
+    .findOne({ id });
   if (!current) return null;
 
   const updateDoc: Record<string, unknown> = { updatedAt: new Date() };
