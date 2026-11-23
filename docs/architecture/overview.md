@@ -42,15 +42,30 @@
 - Hard per-file limit: 50MB; session limit: 50 assets.
 - Asset storage keys are isolated per studio and session. Customer photos are private and access-controlled through short-lived signed URLs.
 
-## Phase 4 — Data Persistence Boundaries (MongoDB Atlas)
+## Phase 4 — External Services, Persistence, and Environment Boundaries
 
-- **Database Engine**: MongoDB Atlas managed document database, accessed via official `mongodb` driver (see `docs/decisions/0001-database-persistence-mongodb-atlas.md`).
+### 1. Data Persistence Boundaries (MongoDB Atlas)
+
+- **Database Engine**: MongoDB Atlas managed document database, accessed via official `mongodb` driver (see `docs/decisions/0001-database-persistence-mongodb-atlas.md` and `docs/decisions/0002-data-access-repository-boundaries.md`).
 - **Core Collections & Indexes**:
   - `studios`: Indexed by `id` (unique) and `slug` (unique).
   - `user_memberships`: Compound unique index on `{ userId: 1, studioId: 1 }`.
   - `qr_sessions`: Indexed by `sessionId` (unique) and `studioId`. Automated TTL index on `expiresAt` (`expireAfterSeconds: 0`) purges expired sessions.
   - `photo_assets`: Indexed by `assetId` (unique) and `{ studioId: 1, sessionId: 1 }`.
 - **Health & Readiness**: `/ready` route performs an active database ping before reporting readiness.
+
+### 2. External Services and Environment Boundaries (ADR 0003)
+
+- **Authoritative Inventory**: All external cloud services, accounts, and integration boundaries are cataloged in `docs/decisions/0003-external-services-and-environment-inventory.md`.
+- **MVP-Approved Services**:
+  - **Database**: MongoDB Atlas (managed document storage with mock DB test fallback).
+  - **Private Object Storage**: AWS S3 / S3-compatible private buckets with pre-signed URLs and local disk fallback.
+  - **Payment Gateway**: Razorpay (Indian UPI/cards test sandbox and production mode with webhook validation).
+  - **Transactional Email**: ZeptoMail by Zoho (dedicated transactional sending for Owner OTP).
+  - **Hosting & Compute**: Next.js App Router on Vercel/Node container; Fastify API on Node.js container.
+- **Environment Isolation**: Four strict tiers: `development` (local/mock/offline), `test` (CI runner/hermetic/zero-network), `staging` (pre-production pilot sandbox), and `production` (hardened cloud, HTTPS-mandated `COOKIE_SECURE=true`, verified SPF/DKIM domains).
+- **Prohibited Integrations**: Third-party error-monitoring SDKs (Sentry, Datadog) are strictly prohibited; first-party structured logging (`pino`) and RFC 7807 problem details are enforced.
+- **Deferred Integrations**: WhatsApp Business API, SMS OTP, recurring subscription billing, and Windows Print Agent code-signing are explicitly deferred until post-MVP gates.
 
 ## Phase 5 — Code Sharing, SSOT, and Compatibility Principles
 
