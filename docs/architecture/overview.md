@@ -51,3 +51,33 @@
   - `qr_sessions`: Indexed by `sessionId` (unique) and `studioId`. Automated TTL index on `expiresAt` (`expireAfterSeconds: 0`) purges expired sessions.
   - `photo_assets`: Indexed by `assetId` (unique) and `{ studioId: 1, sessionId: 1 }`.
 - **Health & Readiness**: `/ready` route performs an active database ping before reporting readiness.
+
+## Phase 5 — Code Sharing, SSOT, and Compatibility Principles
+
+### 1. Shared Contracts vs. Internal Schemas
+
+- **Shared Contracts (`@snapprint/contracts`)**:
+  - Acts as the Single Source of Truth (SSOT) across frontend (`apps/web`) and backend (`apps/api`).
+  - Contains shared DTOs, API request/response payloads, public domain enums, and cross-boundary entity identifiers and standard field validators (e.g., `StudioIdSchema`, `StudioSlugSchema`, `StudioNameSchema`).
+  - TypeScript types are strictly inferred from Zod schemas (`z.infer<...>`).
+- **Internal Schemas (Repositories & Route Adapters)**:
+  - Database document persistence models (e.g., `StudioDocument`, `UserDocument` in `apps/api/src/repositories/*`), driver-specific MongoDB projection types, and route-local intermediate parsers belong internally to `apps/api`.
+  - Do not move internal database mapping or transport-private details into `@snapprint/contracts` unless they represent a shared contract with external clients or web UI.
+
+### 2. Production Fallback and Error Handling Policy
+
+- **No Fake Success in Production**:
+  - Production code paths must never mask fatal dependency failures (e.g., payment gateways, storage drivers, database connections) with dummy successful responses.
+  - Failures must bubble up as structured RFC 7807 problem details or standard `ApiResponse` errors.
+- **Strict Test Isolation**:
+  - In-memory mock databases (`mock-db.ts`), test fixtures, and mock service adapters are strictly test-only and isolated from production entry points.
+
+### 3. Compatibility Layers and Deprecation Checklist
+
+- **Retain Necessary Compatibility**:
+  - Working backward-compatibility code must not be prematurely deleted in pursuit of "zero legacy code".
+  - Existing client versions or active sessions must be supported across deployment rollouts.
+- **Checklist Prior to Removing Compatibility Code**:
+  1. **Client Reachability**: Confirm no active client version, QR session, or webhook sender relies on the legacy schema or endpoint.
+  2. **Traffic Audit**: Verify telemetry and server access logs show zero traffic to the deprecated interface across a complete business cycle.
+  3. **Data Backfills**: Confirm all historical documents in persistence stores have been migrated to the modern schema structure.
