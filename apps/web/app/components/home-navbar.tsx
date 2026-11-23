@@ -14,13 +14,13 @@ export function HomeNavbar({ onOpenPortal }: HomeNavbarProps) {
         top: 0,
         zIndex: 50,
         backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '0.875rem 1.5rem',
+        borderBottom: '1px solid #f1f5f9',
+        padding: '0.75rem 1.5rem',
       }}
     >
       <div
         style={{
-          maxWidth: '1200px',
+          maxWidth: '1080px',
           margin: '0 auto',
           display: 'flex',
           alignItems: 'center',
@@ -32,83 +32,59 @@ export function HomeNavbar({ onOpenPortal }: HomeNavbarProps) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.625rem',
+            gap: '0.5rem',
             textDecoration: 'none',
             color: '#0f172a',
           }}
         >
           <div
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
               backgroundColor: '#0284c7',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
               fontWeight: 800,
-              fontSize: '1.125rem',
+              fontSize: '1rem',
             }}
           >
             S
           </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '1.125rem', lineHeight: 1.2 }}>SnapPrint</div>
-            <div style={{ fontSize: '0.6875rem', color: '#64748b', letterSpacing: '0.05em' }}>
-              PALNADU CLOUD
-            </div>
-          </div>
+          <span style={{ fontWeight: 700, fontSize: '1.125rem', letterSpacing: '-0.02em' }}>
+            SnapPrint
+          </span>
         </a>
 
-        <nav
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.75rem',
-          }}
-          className="snapprint-desktop-nav"
-        >
-          <a href="#features" style={{ fontSize: '0.9375rem', color: '#475569', fontWeight: 500 }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <a href="#features" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
             Features
           </a>
-          <a
-            href="#how-it-works"
-            style={{ fontSize: '0.9375rem', color: '#475569', fontWeight: 500 }}
-          >
-            How We Work
+          <a href="/admin" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
+            Admin
           </a>
-          <a href="#services" style={{ fontSize: '0.9375rem', color: '#475569', fontWeight: 500 }}>
-            Services
-          </a>
-          <a href="/admin" style={{ fontSize: '0.9375rem', color: '#475569', fontWeight: 500 }}>
-            Platform Admin
-          </a>
-        </nav>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             type="button"
             onClick={onOpenPortal}
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#f1f5f9',
-              color: '#0f172a',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
+              background: 'none',
+              border: 'none',
               fontSize: '0.875rem',
+              color: '#475569',
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'background-color 0.2s',
+              padding: '0.375rem 0.5rem',
             }}
           >
-            Shopkeeper Sign In
+            Sign In
           </button>
           <button
             type="button"
             onClick={onOpenPortal}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.45rem 1rem',
               backgroundColor: '#0284c7',
               color: '#ffffff',
               border: 'none',
@@ -116,11 +92,12 @@ export function HomeNavbar({ onOpenPortal }: HomeNavbarProps) {
               fontSize: '0.875rem',
               fontWeight: 600,
               cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
             }}
           >
-            Register Studio
+            Register
           </button>
-        </div>
+        </nav>
       </div>
     </header>
   );

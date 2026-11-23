@@ -1,103 +1,58 @@
 import React from 'react';
 
-const FEATURES = [
+const HIGHLIGHTS = [
   {
     icon: '🛡️',
     title: 'Zero WhatsApp Privacy Leaks',
-    desc: 'Traditional Xerox shops leave sensitive Aadhaar cards, certificates, and photos on the shopkeeper’s WhatsApp. SnapPrint isolates files in secure tenant storage with automated 120-minute TTL purges.',
+    desc: 'Customer files auto-expire after printing with a strict 120-minute TTL. No sensitive Aadhaar cards or personal photos saved on anyone’s phone.',
   },
   {
     icon: '⚡',
     title: 'Instant Dynamic Price Quotes',
-    desc: 'Automatic page analysis calculates exact charges for B&W vs Color, Single vs Duplex sides, and selected page ranges before payment.',
+    desc: 'Automatic page analysis calculates exact charges for B&W vs Color, single vs duplex sides, and custom page ranges before payment.',
   },
   {
     icon: '🖨️',
-    title: 'Automated Desktop Print Spooler',
-    desc: 'The SnapPrint Desktop Agent pairs with local thermal, inkjet, and laser printers, routing print jobs directly to driver spoolers without manual downloads.',
-  },
-  {
-    icon: '💳',
-    title: 'Flexible Cash & UPI Payments',
-    desc: 'Accept payments your way: Instant Razorpay QR/UPI transactions directly into your bank or verified counter cash collection.',
-  },
-  {
-    icon: '👥',
-    title: 'Staff Roles & Permission Gates',
-    desc: 'Empower operators and staff to review print queues and fulfill jobs while locking shop settings and payment policies to studio owners.',
-  },
-  {
-    icon: '📱',
-    title: 'No App or Login Needed for Customers',
-    desc: 'Customers scan your unique counter QR code and immediately upload from their mobile browser without downloading apps or creating accounts.',
+    title: 'Direct Desktop Spooler',
+    desc: 'The SnapPrint Desktop Agent routes approved jobs directly to your local printer driver. Zero manual downloading or file handling.',
   },
 ];
 
 export function HomeFeatures() {
   return (
-    <section id="features" style={{ padding: '4.5rem 1.5rem', backgroundColor: '#ffffff' }}>
-      <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <span
-            style={{
-              color: '#0284c7',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Engineered for Modern Print Shops
-          </span>
-          <h2
-            style={{
-              fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
-              fontWeight: 800,
-              color: '#0f172a',
-              margin: '0.5rem 0 1rem',
-            }}
-          >
-            Why Print Studios & Customers Choose SnapPrint
-          </h2>
-          <p
-            style={{ color: '#64748b', fontSize: '1.0625rem', maxWidth: '640px', margin: '0 auto' }}
-          >
-            Built specifically to solve the chaotic, unorganized, and privacy-invasive workflow of
-            traditional Indian Xerox centers.
-          </p>
-        </div>
-
+    <section id="features" style={{ padding: '2.5rem 1.5rem 4rem', backgroundColor: '#ffffff' }}>
+      <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '1.75rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1.25rem',
           }}
         >
-          {FEATURES.map((f, i) => (
+          {HIGHLIGHTS.map((item, i) => (
             <div
               key={i}
               style={{
-                padding: '1.75rem',
-                borderRadius: '12px',
+                padding: '1.5rem',
+                borderRadius: '10px',
                 border: '1px solid #e2e8f0',
                 backgroundColor: '#f8fafc',
-                transition: 'transform 0.2s, box-shadow 0.2s',
               }}
             >
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{f.icon}</div>
+              <div style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }}>{item.icon}</div>
               <h3
                 style={{
-                  fontSize: '1.1875rem',
+                  fontSize: '1.0625rem',
                   fontWeight: 700,
                   color: '#0f172a',
                   margin: '0 0 0.5rem',
+                  letterSpacing: '-0.015em',
                 }}
               >
-                {f.title}
+                {item.title}
               </h3>
-              <p style={{ color: '#475569', fontSize: '0.9375rem', lineHeight: 1.6, margin: 0 }}>
-                {f.desc}
+              <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.55, margin: 0 }}>
+                {item.desc}
               </p>
             </div>
           ))}

@@ -51,8 +51,8 @@ export const DEFAULT_COLUMNS: FooterColumn[] = [
   {
     title: 'portal',
     links: [
-      { label: 'Shopkeeper Sign In', href: '/' },
-      { label: 'Register Studio', href: '/' },
+      { label: 'Studio Login', href: '/' },
+      { label: 'Register', href: '/' },
       { label: 'Platform Admin', href: '/admin' },
     ],
   },
