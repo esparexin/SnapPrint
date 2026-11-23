@@ -30,8 +30,8 @@ export type IconName =
   | 'shield'
   | 'doc';
 
-export type TearLink = { label: string; href?: string };
-export type IconLink = { icon: IconName; label: string; href?: string };
+export type TearLink = { label: string; href?: string; onClick?: () => void };
+export type IconLink = { icon: IconName; label: string; href?: string; onClick?: () => void };
 export type FooterColumn = { title: string; links: TearLink[] };
 
 export const DEFAULT_SOCIALS: IconLink[] = [

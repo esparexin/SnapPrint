@@ -207,21 +207,29 @@ export function Clock({ zone, label }: { zone: string; label: string }) {
 
 export function A({
   href,
+  onClick,
   className,
   label,
   children,
   style,
 }: {
   href?: string;
+  onClick?: (e: React.MouseEvent) => void;
   className?: string;
   label?: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
 }) {
-  const out = !!href && /^https?:/.test(href);
+  const out = !onClick && !!href && /^https?:/.test(href);
   return (
     <a
-      href={href || '/'}
+      href={href || '#'}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+          onClick(e);
+        }
+      }}
       className={className}
       aria-label={label}
       title={label}

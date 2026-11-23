@@ -158,7 +158,9 @@ export default function PushpinTearFooter({
           <ul>
             {c.links.map((l, j) => (
               <li key={j}>
-                <A href={l.href}>{l.label}</A>
+                <A href={l.href} onClick={l.onClick}>
+                  {l.label}
+                </A>
               </li>
             ))}
           </ul>
@@ -198,6 +200,7 @@ export default function PushpinTearFooter({
         <A
           key={i}
           href={l.href}
+          onClick={l.onClick}
           className={'tpf-z tpf-side tpf-ink tpf-p ' + (i ? 'r' : 'l')}
           label={l.label}
           style={{ ...H(1 + i), left: i ? '71.5%' : '29.5%' }}

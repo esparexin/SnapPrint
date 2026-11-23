@@ -2,21 +2,84 @@
 
 import React, { useState } from 'react';
 import PushpinTearFooter from '@/components/ui/pushpin-tear-footer';
-import { HomeFeatures } from './components/home-features';
-import { HomeHero } from './components/home-hero';
-import { HomeNavbar } from './components/home-navbar';
+import { InfoModal } from './components/info-modal';
 import { OperatorPortal } from './components/operator-portal';
 
 export default function HomePage() {
   const [showPortalModal, setShowPortalModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <HomeNavbar onOpenPortal={() => setShowPortalModal(true)} />
-
-      <main style={{ flex: 1 }}>
-        <HomeHero onOpenPortal={() => setShowPortalModal(true)} />
-        <HomeFeatures />
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#000000',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <main
+        style={{
+          width: '100%',
+          maxWidth: '1440px',
+          height: '100svh',
+          position: 'relative',
+        }}
+      >
+        <PushpinTearFooter
+          brand="SnapPrint"
+          name="Palnadu Print Network"
+          logoHref="/"
+          sheet="#000000"
+          paper="#ffffff"
+          sheetInk="#ffffff"
+          paperInk="#0f172a"
+          seed={19}
+          email="contact@snapprint.in"
+          newsletter={{
+            label: 'receive shop news & print offers',
+            placeholder: 'your@email.com',
+          }}
+          status={{ label: 'accepting digital xerox orders' }}
+          mark="PALNADU / 2026"
+          timeZone="Asia/Kolkata"
+          timeLabel="IST"
+          columns={[
+            {
+              title: 'services',
+              links: [
+                { label: 'B&W Xerox & Document Print', href: '/' },
+                { label: 'Color Photo Printing', href: '/' },
+                { label: 'Duplex Document Xerox', href: '/' },
+              ],
+            },
+            {
+              title: 'portal',
+              links: [
+                { label: 'Studio Login', onClick: () => setShowPortalModal(true) },
+                { label: 'Register', onClick: () => setShowPortalModal(true) },
+              ],
+            },
+          ]}
+          sideLinks={[
+            {
+              icon: 'shield',
+              label: 'privacy policy',
+              onClick: () => setShowPrivacyModal(true),
+            },
+            {
+              icon: 'doc',
+              label: 'terms & conditions',
+              onClick: () => setShowTermsModal(true),
+            },
+          ]}
+          copyright="© 2026 SnapPrint Technologies"
+          credit="multi-tenant print network"
+          handle={{ label: '@snapprint', href: 'https://print.palnadu.dev' }}
+        />
       </main>
 
       {showPortalModal && (
@@ -27,7 +90,7 @@ export default function HomePage() {
             position: 'fixed',
             inset: 0,
             zIndex: 100,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
@@ -38,14 +101,14 @@ export default function HomePage() {
           <div
             style={{
               backgroundColor: '#ffffff',
-              borderRadius: '12px',
+              borderRadius: '16px',
               maxWidth: '560px',
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
               padding: '2rem',
               position: 'relative',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           >
             <button
@@ -71,30 +134,40 @@ export default function HomePage() {
         </div>
       )}
 
-      <PushpinTearFooter
-        brand="SnapPrint"
-        name="Palnadu Print Network"
-        logoHref="/"
-        sheet="#0284c7"
-        paper="#f8fafc"
-        paperInk="#0f172a"
-        email="contact@snapprint.in"
-        newsletter={{
-          label: 'receive shop news & print offers',
-          placeholder: 'your@email.com',
-        }}
-        status={{ label: 'accepting digital xerox orders' }}
-        mark="PALNADU / 2026"
-        timeZone="Asia/Kolkata"
-        timeLabel="IST"
-        sideLinks={[
-          { icon: 'shield', label: 'privacy policy', href: '/#privacy' },
-          { icon: 'doc', label: 'terms & conditions', href: '/#terms' },
-        ]}
-        copyright="© 2026 SnapPrint Technologies"
-        credit="multi-tenant print network"
-        handle={{ label: '@snapprint', href: 'https://print.palnadu.dev' }}
-      />
+      {showPrivacyModal && (
+        <InfoModal title="Privacy Policy" onClose={() => setShowPrivacyModal(false)}>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Zero WhatsApp Privacy Leaks:</strong> Customer files uploaded to SnapPrint
+            auto-expire with a strict 120-minute TTL. No sensitive documents (Aadhaar cards, voter
+            IDs, certificates) remain saved on studio computers or personal phones.
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Encrypted Spool:</strong> Documents travel via TLS directly to the local printer
+            spool queue and are permanently purged after printing.
+          </p>
+          <p>
+            <strong>Network Trust:</strong> SnapPrint never shares or sells customer contact details
+            or uploaded documents.
+          </p>
+        </InfoModal>
+      )}
+
+      {showTermsModal && (
+        <InfoModal title="Terms & Conditions" onClose={() => setShowTermsModal(false)}>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Multi-Tenant Print Network:</strong> SnapPrint provides a digital counter Xerox
+            and printing infrastructure connecting customers to authorized local studios.
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Transparent Pricing:</strong> Page count and color breakdown are dynamically
+            calculated before payment. Quotations are strictly binding.
+          </p>
+          <p>
+            <strong>Operator Agreement:</strong> Registered Xerox centers and studios agree to
+            fulfill spool jobs promptly and maintain high print quality standards.
+          </p>
+        </InfoModal>
+      )}
     </div>
   );
 }
