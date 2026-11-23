@@ -100,9 +100,9 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
   return (
     <div
       style={{
+        width: '100%',
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '1.5rem',
         fontFamily: 'var(--font-family)',
       }}
     >
@@ -110,31 +110,25 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          marginBottom: '1.25rem',
         }}
       >
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#111827' }}>
+        <div style={{ minWidth: 0, flex: '1 1 200px' }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#111827', lineHeight: 1.25 }}>
             SnapPrint Operator Portal
           </h1>
-          <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.875rem' }}>
+          <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Signed in as <strong>{auth.user.name}</strong> ({auth.user.email})
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
           {auth.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active') && (
             <a
               href="/admin"
-              style={{
-                padding: '0.5rem 0.875rem',
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                borderRadius: '0.375rem',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-              }}
+              style={{ padding: '0.35rem 0.75rem', backgroundColor: '#0284c7', color: '#ffffff', borderRadius: '0.375rem', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}
             >
               Admin Workspace →
             </a>
@@ -143,16 +137,7 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
             type="button"
             onClick={handleLogout}
             disabled={logoutLoading}
-            style={{
-              padding: '0.5rem 1rem',
-              background: logoutLoading ? '#9ca3af' : '#dc2626',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '0.375rem',
-              cursor: logoutLoading ? 'not-allowed' : 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-            }}
+            style={{ padding: '0.35rem 0.75rem', background: logoutLoading ? '#9ca3af' : '#dc2626', color: '#ffffff', border: 'none', borderRadius: '0.375rem', cursor: logoutLoading ? 'not-allowed' : 'pointer', fontSize: '0.8125rem', fontWeight: 500, whiteSpace: 'nowrap' }}
           >
             {logoutLoading ? 'Signing out...' : 'Sign Out'}
           </button>
@@ -211,35 +196,35 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
               onOpenPaymentModal={() => setShowPaymentModal(true)}
             />
           </section>
-
-          <PortalModals
-            studioId={authState.selectedStudioId || undefined}
-            studioName={
-              authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined
-            }
-            showQrModal={showQrModal}
-            showOrdersModal={showOrdersModal}
-            showPrintersModal={showPrintersModal}
-            showSetupModal={showSetupModal}
-            showStaffModal={showStaffModal}
-            showProfileModal={showProfileModal}
-            showPaymentModal={showPaymentModal}
-            onCloseQr={() => setShowQrModal(false)}
-            onCloseOrders={() => setShowOrdersModal(false)}
-            onClosePrinters={() => setShowPrintersModal(false)}
-            onCloseSetup={() => setShowSetupModal(false)}
-            onCloseStaff={() => setShowStaffModal(false)}
-            onCloseProfile={() => setShowProfileModal(false)}
-            onClosePayment={() => setShowPaymentModal(false)}
-            onSetupComplete={async (saved) => {
-              setShowSetupModal(false);
-              const fresh = await fetchCurrentUser().catch(() => null);
-              if (fresh) setAuth(fresh);
-              if (saved?.id) setSelectedStudioId(saved.id);
-            }}
-          />
         </div>
       )}
+
+      <PortalModals
+        studioId={authState.selectedStudioId || undefined}
+        studioName={
+          authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined
+        }
+        showQrModal={showQrModal}
+        showOrdersModal={showOrdersModal}
+        showPrintersModal={showPrintersModal}
+        showSetupModal={showSetupModal}
+        showStaffModal={showStaffModal}
+        showProfileModal={showProfileModal}
+        showPaymentModal={showPaymentModal}
+        onCloseQr={() => setShowQrModal(false)}
+        onCloseOrders={() => setShowOrdersModal(false)}
+        onClosePrinters={() => setShowPrintersModal(false)}
+        onCloseSetup={() => setShowSetupModal(false)}
+        onCloseStaff={() => setShowStaffModal(false)}
+        onCloseProfile={() => setShowProfileModal(false)}
+        onClosePayment={() => setShowPaymentModal(false)}
+        onSetupComplete={async (saved) => {
+          setShowSetupModal(false);
+          const fresh = await fetchCurrentUser().catch(() => null);
+          if (fresh) setAuth(fresh);
+          if (saved?.id) setSelectedStudioId(saved.id);
+        }}
+      />
     </div>
   );
 }

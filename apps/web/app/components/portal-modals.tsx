@@ -50,72 +50,78 @@ export function PortalModals({
   onClosePayment,
   onSetupComplete,
 }: PortalModalsProps) {
-  if (!studioId) return null;
+  if (!studioId && !showSetupModal) return null;
 
-  const currentStudio: Studio = {
-    id: studioId,
-    slug: studioId.replace(/^studio_/, '').replace(/_/g, '-'),
-    name: studioName || `Studio ${studioId}`,
-    status: 'active',
-    settings: {
-      currency: 'INR',
-      maxActivePrinters: 2,
-      autoApproveOrders: false,
-      isAcceptingOrders: true,
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  const currentStudio: Studio | null = studioId
+    ? {
+        id: studioId,
+        slug: studioId.replace(/^studio_/, '').replace(/_/g, '-'),
+        name: studioName || `Studio ${studioId}`,
+        status: 'active',
+        settings: {
+          currency: 'INR',
+          maxActivePrinters: 2,
+          autoApproveOrders: false,
+          isAcceptingOrders: true,
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    : null;
 
   return (
     <>
-      {showQrModal && (
-        <StudioQrModal
-          studio={{ id: studioId, slug: currentStudio.slug, name: currentStudio.name }}
-          onClose={onCloseQr}
-        />
-      )}
+      {studioId && currentStudio && (
+        <>
+          {showQrModal && (
+            <StudioQrModal
+              studio={{ id: studioId, slug: currentStudio.slug, name: currentStudio.name }}
+              onClose={onCloseQr}
+            />
+          )}
 
-      {showOrdersModal && (
-        <OrderFulfillmentModal
-          studioId={studioId}
-          studioName={currentStudio.name}
-          onClose={onCloseOrders}
-        />
-      )}
+          {showOrdersModal && (
+            <OrderFulfillmentModal
+              studioId={studioId}
+              studioName={currentStudio.name}
+              onClose={onCloseOrders}
+            />
+          )}
 
-      {showPrintersModal && (
-        <PrinterManagementModal
-          studioId={studioId}
-          studioName={currentStudio.name}
-          onClose={onClosePrinters}
-        />
-      )}
+          {showPrintersModal && (
+            <PrinterManagementModal
+              studioId={studioId}
+              studioName={currentStudio.name}
+              onClose={onClosePrinters}
+            />
+          )}
 
-      {showStaffModal && (
-        <StaffManagementModal
-          studioId={studioId}
-          studioName={currentStudio.name}
-          onClose={onCloseStaff}
-        />
-      )}
+          {showStaffModal && (
+            <StaffManagementModal
+              studioId={studioId}
+              studioName={currentStudio.name}
+              onClose={onCloseStaff}
+            />
+          )}
 
-      {showProfileModal && (
-        <ShopProfileModal
-          studioId={studioId}
-          studio={currentStudio}
-          onClose={onCloseProfile}
-          onUpdated={() => onCloseProfile()}
-        />
-      )}
+          {showProfileModal && (
+            <ShopProfileModal
+              studioId={studioId}
+              studio={currentStudio}
+              onClose={onCloseProfile}
+              onUpdated={() => onCloseProfile()}
+            />
+          )}
 
-      {showPaymentModal && onClosePayment && (
-        <ShopPaymentModal
-          studioId={studioId}
-          studio={currentStudio}
-          onClose={onClosePayment}
-          onUpdated={() => onClosePayment()}
-        />
+          {showPaymentModal && onClosePayment && (
+            <ShopPaymentModal
+              studioId={studioId}
+              studio={currentStudio}
+              onClose={onClosePayment}
+              onUpdated={() => onClosePayment()}
+            />
+          )}
+        </>
       )}
 
       {showSetupModal && (
@@ -133,7 +139,7 @@ export function PortalModals({
         >
           <div style={{ maxWidth: '620px', width: '100%', margin: 'auto' }}>
             <ShopSetupWizard
-              initialStudio={{ id: studioId }}
+              initialStudio={studioId ? { id: studioId } : undefined}
               onComplete={onSetupComplete}
               onCancel={onCloseSetup}
             />

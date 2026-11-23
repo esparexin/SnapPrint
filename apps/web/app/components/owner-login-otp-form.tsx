@@ -35,7 +35,7 @@ const registerLinkStyle: React.CSSProperties = {
 interface OwnerLoginOtpFormProps {
   onSuccess: (auth: AuthResponse) => void;
   onSwitchToPasswordLogin?: () => void;
-  onSwitchToRegister: () => void;
+  onSwitchToRegister: (prefilledEmail?: string) => void;
 }
 
 export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginOtpFormProps) {
@@ -72,6 +72,8 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
         (err.code === 'USER_NOT_REGISTERED' || err.statusCode === 404)
       ) {
         setIsUnregistered(true);
+        onSwitchToRegister(email);
+        return;
       }
       setErrorMessage(extractErrorMessage(err, 'Login request failed.'));
     } finally {
@@ -140,7 +142,7 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
           <div>{errorMessage}</div>
           {isUnregistered && (
             <div style={{ marginTop: '0.5rem' }}>
-              <button type="button" onClick={onSwitchToRegister} style={registerLinkStyle}>
+              <button type="button" onClick={() => onSwitchToRegister(email)} style={registerLinkStyle}>
                 Register your shop now →
               </button>
             </div>
@@ -228,7 +230,7 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
         <span style={{ color: '#64748b' }}>New print store?</span>
         <button
           type="button"
-          onClick={onSwitchToRegister}
+          onClick={() => onSwitchToRegister(email)}
           style={{
             background: 'none',
             border: 'none',

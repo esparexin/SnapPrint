@@ -18,6 +18,7 @@ export function PortalUnauthenticated({
   initialMode = 'email_otp',
 }: PortalUnauthenticatedProps) {
   const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>(initialMode);
+  const [prefilledEmail, setPrefilledEmail] = useState('');
 
   useEffect(() => {
     setAuthMode(initialMode);
@@ -44,7 +45,11 @@ export function PortalUnauthenticated({
       )}
 
       {authMode === 'register' ? (
-        <OwnerRegisterForm onSuccess={onSuccess} onSwitchToLogin={() => setAuthMode('email_otp')} />
+        <OwnerRegisterForm
+          initialEmail={prefilledEmail}
+          onSuccess={onSuccess}
+          onSwitchToLogin={() => setAuthMode('email_otp')}
+        />
       ) : authMode === 'password' ? (
         <div>
           <LoginForm onSuccess={onSuccess} />
@@ -89,7 +94,10 @@ export function PortalUnauthenticated({
         <OwnerLoginOtpForm
           onSuccess={onSuccess}
           onSwitchToPasswordLogin={() => setAuthMode('password')}
-          onSwitchToRegister={() => setAuthMode('register')}
+          onSwitchToRegister={(email) => {
+            if (email) setPrefilledEmail(email);
+            setAuthMode('register');
+          }}
         />
       )}
     </div>

@@ -46,7 +46,7 @@ export function PortalMembershipStatus({
               fontSize: '0.875rem',
             }}
           >
-            + Register & Set Up Your Shop
+            Set Up Your Shop
           </button>
         )}
       </div>

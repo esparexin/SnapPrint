@@ -25,14 +25,19 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 interface OwnerRegisterFormProps {
+  initialEmail?: string;
   onSuccess: (auth: AuthResponse) => void;
   onSwitchToLogin: () => void;
 }
 
-export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterFormProps) {
+export function OwnerRegisterForm({
+  initialEmail,
+  onSuccess,
+  onSwitchToLogin,
+}: OwnerRegisterFormProps) {
   const [step, setStep] = useState<'details' | 'otp'>('details');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail || '');
   const [phone, setPhone] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [privacyAccepted, setPrivacyAccepted] = useState(true);
@@ -41,6 +46,12 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [dispatchMessage, setDispatchMessage] = useState('');
+
+  useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+  }, [initialEmail]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -147,7 +158,9 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
       </h2>
       <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
         {step === 'details'
-          ? 'Create a verified owner account for your Xerox shop or print store.'
+          ? initialEmail
+            ? 'No account was found for this email. Complete registration to get started.'
+            : 'Create a verified owner account for your Xerox shop or print store.'
           : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
       </p>
 
