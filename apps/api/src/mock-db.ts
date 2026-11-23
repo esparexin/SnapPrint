@@ -21,6 +21,7 @@ export interface MockCollections {
   payments: PaymentDocument[];
   webhookEvents: WebhookEventDocument[];
   emailOtps: EmailOtpDocument[];
+  auditLogs?: Record<string, unknown>[];
 }
 
 function toComparableNumber(val: unknown): number {
@@ -171,6 +172,10 @@ export function createMockDb(): { db: Db } & MockCollections {
                   });
                 }
               }
+              return cursor;
+            },
+            skip: (n?: number) => {
+              if (n !== undefined) matched.splice(0, n);
               return cursor;
             },
             limit: (n?: number) => {
