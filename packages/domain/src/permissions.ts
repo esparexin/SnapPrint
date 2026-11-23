@@ -11,6 +11,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'manage_order_status',
     'download_assets',
     'record_payments',
+    'manage_staff',
+    'view_analytics',
   ],
   studio_owner: [
     'manage_studio',
@@ -20,8 +22,16 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'manage_order_status',
     'download_assets',
     'record_payments',
+    'manage_staff',
+    'view_analytics',
   ],
-  studio_staff: ['view_orders', 'manage_order_status', 'download_assets', 'record_payments'],
+  studio_staff: [
+    'view_orders',
+    'manage_order_status',
+    'download_assets',
+    'record_payments',
+    'view_analytics',
+  ],
 } as const;
 
 /**
