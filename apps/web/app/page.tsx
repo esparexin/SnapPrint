@@ -14,7 +14,7 @@ export default function HomePage() {
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#000000',
+        backgroundColor: '#0284c7',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -33,34 +33,38 @@ export default function HomePage() {
           brand="SnapPrint"
           name="Palnadu Print Network"
           logoHref="/"
-          sheet="#000000"
+          sheet="#0284c7"
           paper="#ffffff"
           sheetInk="#ffffff"
           paperInk="#0f172a"
           seed={19}
-          email="contact@snapprint.in"
-          newsletter={{
-            label: 'receive shop news & print offers',
-            placeholder: 'your@email.com',
-          }}
+          topNav={[
+            {
+              label: 'Studio Login',
+              onClick: () => setShowPortalModal(true),
+              variant: 'text',
+            },
+            {
+              label: 'Register',
+              onClick: () => setShowPortalModal(true),
+              variant: 'button',
+            },
+          ]}
           status={{ label: 'accepting digital xerox orders' }}
-          mark="PALNADU / 2026"
-          timeZone="Asia/Kolkata"
-          timeLabel="IST"
           columns={[
             {
-              title: 'services',
+              title: 'print services',
               links: [
-                { label: 'B&W Xerox & Document Print', href: '/' },
-                { label: 'Color Photo Printing', href: '/' },
-                { label: 'Duplex Document Xerox', href: '/' },
+                { label: 'B&W Xerox & Document Print', href: '/s/demo' },
+                { label: 'Color Photo Printing', href: '/s/demo' },
+                { label: 'Duplex Document Xerox', href: '/s/demo' },
               ],
             },
             {
-              title: 'portal',
+              title: 'operator portal',
               links: [
                 { label: 'Studio Login', onClick: () => setShowPortalModal(true) },
-                { label: 'Register', onClick: () => setShowPortalModal(true) },
+                { label: 'Register Xerox Center', onClick: () => setShowPortalModal(true) },
               ],
             },
           ]}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useId, useRef } from 'react';
 import { PushpinTearContent } from './pushpin-tear-content';
 import { usePushpinTearAnimation, useReducedMotion } from './pushpin-tear-hook';
 import { A, Icon } from './pushpin-tear-icons';
@@ -20,6 +20,7 @@ export default function PushpinTearFooter({
   name = 'Palnadu Print Cloud',
   logo,
   logoHref = 'https://print.palnadu.dev',
+  topNav,
   socials = DEFAULT_SOCIALS,
   email = 'contact@snapprint.in',
   newsletter = { label: 'get shop updates & print offers', placeholder: 'your@email' },
@@ -54,9 +55,8 @@ export default function PushpinTearFooter({
   const pinRef = useRef<HTMLButtonElement>(null);
 
   const still = useReducedMotion();
-  const [toast, setToast] = useState('');
 
-  const { stage, hit, pin, repin, kick, s, timers } = usePushpinTearAnimation({
+  const { stage, hit, pin, repin, kick, s } = usePushpinTearAnimation({
     seed,
     still,
     rootRef,
@@ -68,10 +68,7 @@ export default function PushpinTearFooter({
     onRepin,
   });
 
-  const flash = (msg: string) => {
-    setToast(msg);
-    timers.current.push(window.setTimeout(() => setToast(''), 1600));
-  };
+  const flash = () => {};
 
   const pinBase = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(sheet) ? sheet : '#0284c7';
   const flapBase = mixHex(
@@ -135,12 +132,12 @@ export default function PushpinTearFooter({
       />
       <PushpinTearContent
         uid={uid}
-        still={still}
+        brand={brand}
+        topNav={topNav}
         socials={socials}
         logo={logo}
         logoHref={logoHref}
         name={name}
-        email={email}
         newsletter={newsletter}
         onSubscribe={onSubscribe}
         mark={mark}
@@ -150,7 +147,6 @@ export default function PushpinTearFooter({
         mailto={mailto}
         H={H}
         flash={flash}
-        toast={toast}
       />
       {cols.map((c, i) => (
         <nav key={i} className={'tpf-z tpf-col tpf-h ' + (i ? 'r' : 'l')} style={H(6 + i)}>

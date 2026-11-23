@@ -31,6 +31,12 @@ export type IconName =
   | 'doc';
 
 export type TearLink = { label: string; href?: string; onClick?: () => void };
+export type TopNavLink = {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  variant?: 'text' | 'button';
+};
 export type IconLink = { icon: IconName; label: string; href?: string; onClick?: () => void };
 export type FooterColumn = { title: string; links: TearLink[] };
 
@@ -79,6 +85,7 @@ export type PushpinTearFooterProps = {
   name?: string;
   logo?: React.ReactNode;
   logoHref?: string;
+  topNav?: TopNavLink[];
   socials?: IconLink[];
   email?: string;
   newsletter?: { label: string; placeholder?: string } | null;
