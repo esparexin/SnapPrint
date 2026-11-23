@@ -101,7 +101,7 @@ export function OwnerRegisterDetailsStep({
             marginBottom: '0.25rem',
           }}
         >
-          Mobile Number (prefix +91)
+          Mobile Number
         </label>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span

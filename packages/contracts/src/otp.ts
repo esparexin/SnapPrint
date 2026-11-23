@@ -26,8 +26,7 @@ export const PhoneNumberSchema = z
   .transform((val) => val.replace(/[\s\-()]/g, ''))
   .pipe(
     z.string().regex(/^\+[1-9]\d{6,14}$/, {
-      message:
-        'Please enter a valid mobile number with prefix (+91) (e.g. +919876543210)',
+      message: 'Please enter a valid 10-digit mobile number.',
     })
   );
 
