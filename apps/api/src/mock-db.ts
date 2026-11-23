@@ -112,7 +112,7 @@ export function createMockDb(): { db: Db } & MockCollections {
 
   const db = {
     collection: (name: string) => {
-      const list = store[name] || [];
+      const list = store[name] || (store[name] = []);
       return {
         async insertOne(doc: unknown) {
           const item = { ...(doc as Record<string, unknown>) };

@@ -8,4 +8,5 @@ export * from './document-print.js';
 export * from './payment.js';
 export * from './otp.js';
 export * from './shop-onboarding.js';
+export * from './printer.js';
 export { z, ZodError } from 'zod';

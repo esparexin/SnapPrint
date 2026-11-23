@@ -57,6 +57,7 @@ for (const file of domainFiles) {
 const appFiles = [
   ...readSourceFiles(join(ROOT, 'apps/web')),
   ...readSourceFiles(join(ROOT, 'apps/api')),
+  ...readSourceFiles(join(ROOT, 'apps/print-agent')),
 ];
 const deepRelativeImport = /from\s+['"]\.\.\/\.\.\/packages\//;
 for (const file of appFiles) {
