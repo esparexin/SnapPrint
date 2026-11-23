@@ -1,13 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 :root {
   --color-bg: #ffffff;
   --color-text: #0f172a;
   --color-muted: #64748b;
   --color-primary: #0284c7;
   --color-primary-dark: #0369a1;
-  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter',
-    'Segoe UI', Roboto, sans-serif;
+  --font-family: var(
+    --font-family,
+    'Plus Jakarta Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Display',
+    'Inter',
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
 }
 
 *,

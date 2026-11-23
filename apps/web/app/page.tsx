@@ -56,7 +56,7 @@ export default function HomePage() {
           logoHref="/"
           logo={
             <img
-              src="/brand/snapprint-icon.png"
+              src="/favicon.png"
               alt="SnapPrint"
               style={{
                 width: '32px',

@@ -31,9 +31,9 @@ export function useReducedMotion() {
 
 export function usePushpinTearAnimation(p: AnimationParams) {
   const { seed, still, rootRef, svgRef, sheetRef, rimRef, flapRefs, gradRefs, onRepin } = p;
-  const [stage, setStage] = useState(0);
-  const [hit, setHit] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [stage, setStage] = useState(3);
+  const [hit] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [pin, setPin] = useState<'idle' | 'lift' | 'stab'>('idle');
   const timers = useRef<number[]>([]);
 
@@ -44,7 +44,7 @@ export function usePushpinTearAnimation(p: AnimationParams) {
     prev: null as Tear | null,
     from: [] as number[],
     ys: [] as number[],
-    mode: 'wait' as 'wait' | 'intro' | 'morph' | 'rest',
+    mode: 'rest' as 'wait' | 'intro' | 'morph' | 'rest',
     t0: 0,
     dur: 1,
     raf: 0,
@@ -157,26 +157,11 @@ export function usePushpinTearAnimation(p: AnimationParams) {
   }, [rootRef]);
 
   useEffect(() => {
-    if (!visible || stage > 0) return;
-    if (still) {
-      setStage(3);
-      s.mode = 'rest';
-      kick();
-      return;
-    }
-    setStage(1);
-    const t1 = window.setTimeout(() => setStage(2), 640);
-    const t2 = window.setTimeout(() => {
-      setHit(true);
-      setStage(3);
-      s.mode = 'intro';
-      s.t0 = performance.now();
-      s.dur = 1550;
-      kick();
-    }, 1140);
-    const t3 = window.setTimeout(() => setHit(false), 1480);
-    timers.current.push(t1, t2, t3);
-  }, [visible, stage, still, s, kick]);
+    if (!visible) return;
+    setStage(3);
+    s.mode = 'rest';
+    kick();
+  }, [visible, s, kick]);
 
   useEffect(() => () => timers.current.forEach((id) => clearTimeout(id)), []);
 

@@ -43,7 +43,7 @@ export default function AboutPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}
           >
             <img
-              src="/brand/snapprint-icon.png"
+              src="/favicon.png"
               alt="SnapPrint"
               style={{
                 width: '30px',

@@ -14,10 +14,10 @@ export const TEAR_CSS =
   '.tpf-seal{width:100%;height:100%;display:block;max-width:none}' +
   '.tpf-z{position:absolute;z-index:2}' +
   '.tpf-ink{color:var(--tpf-on-paper)}' +
-  '.tpf-h{transition:opacity .7s var(--ease),translate .8s var(--ease),filter .7s var(--ease);transition-delay:calc(var(--i,0)*45ms)}' +
-  '.tpf:not(.s1) .tpf-h{opacity:0;translate:0 10px;filter:blur(6px)}' +
-  '.tpf-p{transition:opacity .8s var(--ease),translate .9s var(--ease),filter .8s var(--ease);transition-delay:calc(480ms + var(--i,0)*70ms)}' +
-  '.tpf:not(.s3) .tpf-p{opacity:0;translate:0 18px;filter:blur(8px);transition-delay:0s}' +
+  '.tpf-h{transition:opacity .35s var(--ease),translate .35s var(--ease)}' +
+  '.tpf:not(.s1) .tpf-h{opacity:0;translate:0 10px}' +
+  '.tpf-p{transition:opacity .35s var(--ease),translate .35s var(--ease)}' +
+  '.tpf:not(.s3) .tpf-p{opacity:0;translate:0 18px}' +
   '.tpf-top{left:0;right:0;top:9.5%;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;padding:0 10%;font-size:clamp(14px,2cqmin,18px)}' +
   '.tpf-brand-link{display:flex;align-items:center;gap:.55em;color:inherit;text-decoration:none}' +
   '.tpf-brand-link .tpf-mark{width:2.1em;height:1.6em}' +
