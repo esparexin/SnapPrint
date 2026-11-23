@@ -36,6 +36,7 @@ export function InfoModal({ title, onClose, children, maxWidth = '540px' }: Info
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           color: '#0f172a',
+          fontFamily: 'var(--font-family)',
         }}
       >
         <button

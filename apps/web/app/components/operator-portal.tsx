@@ -73,7 +73,10 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
 
   if (loading) {
     return (
-      <div role="status" style={{ textAlign: 'center', padding: '3rem', fontFamily: 'system-ui' }}>
+      <div
+        role="status"
+        style={{ textAlign: 'center', padding: '3rem', fontFamily: 'var(--font-family)' }}
+      >
         <p style={{ fontSize: '1.125rem', color: '#4b5563' }}>Verifying operator session...</p>
       </div>
     );
@@ -100,7 +103,7 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
         maxWidth: '800px',
         margin: '0 auto',
         padding: '1.5rem',
-        fontFamily: 'system-ui, sans-serif',
+        fontFamily: 'var(--font-family)',
       }}
     >
       <header

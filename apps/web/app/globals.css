@@ -18,9 +18,22 @@
 
 html {
   scroll-behavior: smooth;
+  font-family: var(--font-family);
 }
 
-body,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  line-height: 1.5;
+  min-height: 100vh;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 h1,
 h2,
 h3,
@@ -31,22 +44,26 @@ p,
 span,
 div,
 a,
-button,
-input,
-textarea {
-  font-family: var(--font-family);
+label,
+li,
+ul,
+ol,
+form,
+section,
+article,
+header,
+footer,
+main,
+nav {
+  font-family: inherit;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
-  line-height: 1.5;
-  min-height: 100vh;
-  letter-spacing: -0.012em;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: var(--font-family);
 }
 
 a {
