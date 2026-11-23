@@ -45,28 +45,9 @@ export const DEFAULT_SOCIALS: IconLink[] = [
   { icon: 'mail', label: 'Email', href: 'mailto:contact@snapprint.in' },
 ];
 
-export const DEFAULT_COLUMNS: FooterColumn[] = [
-  {
-    title: 'services',
-    links: [
-      { label: 'B&W Xerox & Document Print', href: '/' },
-      { label: 'Color Photo Printing', href: '/' },
-      { label: 'Duplex Document Xerox', href: '/' },
-    ],
-  },
-  {
-    title: 'portal',
-    links: [
-      { label: 'Studio Login', href: '/' },
-      { label: 'Register', href: '/' },
-    ],
-  },
-];
+export const DEFAULT_COLUMNS: FooterColumn[] = [];
 
-export const DEFAULT_SIDES: IconLink[] = [
-  { icon: 'shield', label: 'privacy policy', href: '/#privacy' },
-  { icon: 'doc', label: 'terms & conditions', href: '/#terms' },
-];
+export const DEFAULT_SIDES: IconLink[] = [];
 
 export interface AnimationParams {
   seed: number;
@@ -96,6 +77,7 @@ export type PushpinTearFooterProps = {
   columns?: FooterColumn[];
   chat?: TearLink | null;
   sideLinks?: IconLink[];
+  footerLinks?: TearLink[];
   copyright?: string;
   credit?: string;
   handle?: TearLink;

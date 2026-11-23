@@ -23,19 +23,18 @@ export default function PushpinTearFooter({
   topNav,
   socials = DEFAULT_SOCIALS,
   email = 'contact@snapprint.in',
-  newsletter = { label: 'get shop updates & print offers', placeholder: 'your@email' },
-  status = { label: 'accepting digital print orders' },
-  mark = 'SN / 2026',
-  timeZone = 'Asia/Kolkata',
-  timeLabel = 'IST',
+  newsletter = null,
+  status = { label: 'accepting digital xerox orders' },
+  mark,
+  timeZone,
+  timeLabel,
   columns = DEFAULT_COLUMNS,
   chat = null,
   sideLinks = DEFAULT_SIDES,
+  footerLinks,
   copyright = '© 2026 SnapPrint Technologies',
-  credit = 'multi-tenant print network',
-  handle = { label: '@snapprint', href: 'https://print.palnadu.dev' },
   sheet = '#0284c7',
-  paper = '#f8fafc',
+  paper = '#ffffff',
   sheetInk = '#ffffff',
   paperInk,
   seed = 7,
@@ -148,20 +147,21 @@ export default function PushpinTearFooter({
         H={H}
         flash={flash}
       />
-      {cols.map((c, i) => (
-        <nav key={i} className={'tpf-z tpf-col tpf-h ' + (i ? 'r' : 'l')} style={H(6 + i)}>
-          <h3>{c.title}</h3>
-          <ul>
-            {c.links.map((l, j) => (
-              <li key={j}>
-                <A href={l.href} onClick={l.onClick}>
-                  {l.label}
-                </A>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      ))}
+      {cols.length > 0 &&
+        cols.map((c, i) => (
+          <nav key={i} className={'tpf-z tpf-col tpf-h ' + (i ? 'r' : 'l')} style={H(6 + i)}>
+            <h3>{c.title}</h3>
+            <ul>
+              {c.links.map((l, j) => (
+                <li key={j}>
+                  <A href={l.href} onClick={l.onClick}>
+                    {l.label}
+                  </A>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       <button
         ref={pinRef}
         type="button"
@@ -209,14 +209,15 @@ export default function PushpinTearFooter({
         <span className="tpf-p" style={H(3)}>
           {copyright}
         </span>
-        {credit && (
-          <span className="tpf-credit tpf-p" style={H(4)}>
-            {credit}
-          </span>
+        {footerLinks && footerLinks.length > 0 && (
+          <div className="tpf-foot-links tpf-p" style={H(4)}>
+            {footerLinks.map((l, i) => (
+              <A key={i} href={l.href} onClick={l.onClick} label={l.label}>
+                {l.label}
+              </A>
+            ))}
+          </div>
         )}
-        <A href={handle.href} className="tpf-handle tpf-p" style={H(5)}>
-          {handle.label}
-        </A>
       </div>
     </footer>
   );

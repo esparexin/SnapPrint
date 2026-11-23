@@ -40,7 +40,7 @@ export default function HomePage() {
           seed={19}
           topNav={[
             {
-              label: 'Studio Login',
+              label: 'Login',
               onClick: () => setShowPortalModal(true),
               variant: 'text',
             },
@@ -51,38 +51,21 @@ export default function HomePage() {
             },
           ]}
           status={{ label: 'accepting digital xerox orders' }}
-          columns={[
+          columns={[]}
+          sideLinks={[]}
+          newsletter={null}
+          credit=""
+          copyright="© 2026 SnapPrint Technologies"
+          footerLinks={[
             {
-              title: 'print services',
-              links: [
-                { label: 'B&W Xerox & Document Print', href: '/s/demo' },
-                { label: 'Color Photo Printing', href: '/s/demo' },
-                { label: 'Duplex Document Xerox', href: '/s/demo' },
-              ],
-            },
-            {
-              title: 'operator portal',
-              links: [
-                { label: 'Studio Login', onClick: () => setShowPortalModal(true) },
-                { label: 'Register Xerox Center', onClick: () => setShowPortalModal(true) },
-              ],
-            },
-          ]}
-          sideLinks={[
-            {
-              icon: 'shield',
-              label: 'privacy policy',
+              label: 'Privacy Policy',
               onClick: () => setShowPrivacyModal(true),
             },
             {
-              icon: 'doc',
-              label: 'terms & conditions',
+              label: 'Terms & Conditions',
               onClick: () => setShowTermsModal(true),
             },
           ]}
-          copyright="© 2026 SnapPrint Technologies"
-          credit="multi-tenant print network"
-          handle={{ label: '@snapprint', href: 'https://print.palnadu.dev' }}
         />
       </main>
 
