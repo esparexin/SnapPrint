@@ -23,6 +23,7 @@ import { studioOnboardingRoutes } from './studio-onboarding-routes.js';
 import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
+import { platformAdminRoutes } from './platform-admin-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 
 const config = loadConfig();
@@ -89,6 +90,7 @@ app.register(assetRoutes);
 app.register(orderRoutes);
 app.register(paymentRoutes);
 app.register(operatorPaymentRoutes);
+app.register(platformAdminRoutes);
 app.register(webhookRoutes);
 
 const signals = ['SIGINT', 'SIGTERM'] as const;

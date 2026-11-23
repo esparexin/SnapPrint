@@ -88,6 +88,34 @@ export function requireOperatorAuth(
   };
 }
 
+export function requirePlatformAdminAuth(
+  getCustomDb?: () => Db
+): (request: FastifyRequest, reply: FastifyReply) => Promise<void> {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const db = getCustomDb ? getCustomDb() : getDb();
+    const authenticated = await authenticateOperator(request, reply, db);
+    if (!authenticated || !request.operator) {
+      return;
+    }
+
+    const platformAdmin = request.operator.memberships.find(
+      (m) => m.role === 'platform_admin' && m.status === 'active'
+    );
+    if (!platformAdmin) {
+      reply.status(403).send({
+        statusCode: 403,
+        code: 'PLATFORM_ADMIN_REQUIRED',
+        message: 'Platform administrator privileges are required to access this endpoint.',
+      });
+      return;
+    }
+
+    request.operator.role = 'platform_admin';
+    request.operator.currentMembership = platformAdmin;
+    request.operator.permissions = ROLE_PERMISSIONS.platform_admin;
+  };
+}
+
 export function requireStudioPermission(
   permission?: Permission,
   getCustomDb?: () => Db
