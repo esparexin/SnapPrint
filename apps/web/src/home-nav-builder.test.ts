@@ -1,0 +1,99 @@
+import { describe, expect, it, vi } from 'vitest';
+import { AuthResponse } from '@snapprint/contracts';
+import { buildHomeTopNav } from '../app/components/home-nav-builder.js';
+
+describe('Home Navigation Builder (Session-Aware Top Nav)', () => {
+  const onOpenLogin = vi.fn();
+  const onOpenRegister = vi.fn();
+  const onOpenPortal = vi.fn();
+  const onLogout = vi.fn();
+
+  const options = {
+    onOpenLogin,
+    onOpenRegister,
+    onOpenPortal,
+    onLogout,
+  };
+
+  it('renders standard anonymous nav when user is not authenticated', () => {
+    const nav = buildHomeTopNav({ auth: null, ...options });
+
+    expect(nav).toHaveLength(3);
+    expect(nav[0]).toEqual({ label: 'About', href: '/about', variant: 'text' });
+    expect(nav[1].label).toBe('Login');
+    expect(nav[2].label).toBe('Register');
+
+    nav[1].onClick?.();
+    expect(onOpenLogin).toHaveBeenCalledOnce();
+
+    nav[2].onClick?.();
+    expect(onOpenRegister).toHaveBeenCalledOnce();
+  });
+
+  it('renders Admin Workspace link and Sign Out button for active platform_admin', () => {
+    const adminAuth: AuthResponse = {
+      user: {
+        id: 'admin_1',
+        email: 'admin@snapprint.io',
+        name: 'Platform Admin',
+        status: 'active',
+        createdAt: '2026-11-20T00:00:00.000Z',
+        updatedAt: '2026-11-20T00:00:00.000Z',
+      },
+      memberships: [
+        {
+          userId: 'admin_1',
+          studioId: 'platform_scope',
+          role: 'platform_admin',
+          status: 'active',
+          createdAt: '2026-11-20T00:00:00.000Z',
+        },
+      ],
+    };
+
+    const nav = buildHomeTopNav({ auth: adminAuth, ...options });
+
+    expect(nav).toHaveLength(3);
+    expect(nav[0]).toEqual({ label: 'About', href: '/about', variant: 'text' });
+    expect(nav[1]).toEqual({ label: 'Admin Workspace', href: '/admin', variant: 'text' });
+    expect(nav[2].label).toBe('Sign Out');
+    expect(nav[2].variant).toBe('button');
+
+    nav[2].onClick?.();
+    expect(onLogout).toHaveBeenCalledOnce();
+  });
+
+  it('renders Shop Portal trigger and Sign Out button for studio owners and operators', () => {
+    const operatorAuth: AuthResponse = {
+      user: {
+        id: 'owner_1',
+        email: 'owner@studio.com',
+        name: 'Shop Owner',
+        status: 'active',
+        createdAt: '2026-11-20T00:00:00.000Z',
+        updatedAt: '2026-11-20T00:00:00.000Z',
+      },
+      memberships: [
+        {
+          userId: 'owner_1',
+          studioId: 'studio_main',
+          role: 'studio_owner',
+          status: 'active',
+          createdAt: '2026-11-20T00:00:00.000Z',
+        },
+      ],
+    };
+
+    const nav = buildHomeTopNav({ auth: operatorAuth, ...options });
+
+    expect(nav).toHaveLength(3);
+    expect(nav[0]).toEqual({ label: 'About', href: '/about', variant: 'text' });
+    expect(nav[1].label).toBe('Shop Portal');
+    expect(nav[1].variant).toBe('text');
+    expect(nav[2].label).toBe('Sign Out');
+    expect(nav[2].variant).toBe('button');
+
+    nav[1].onClick?.();
+    expect(onOpenPortal).toHaveBeenCalledOnce();
+  });
+});
