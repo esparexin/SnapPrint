@@ -88,7 +88,14 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               Fatal Application Error
             </h1>
 
-            <p style={{ fontSize: '0.975rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+            <p
+              style={{
+                fontSize: '0.975rem',
+                color: '#64748b',
+                lineHeight: 1.6,
+                margin: '0 0 1.5rem',
+              }}
+            >
               A critical error occurred in the application shell. Please attempt to recover by
               re-initializing the session or reloading the application.
             </p>
@@ -111,7 +118,14 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               </div>
             )}
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                justifyContent: 'center',
+              }}
+            >
               <button
                 type="button"
                 onClick={() => reset()}

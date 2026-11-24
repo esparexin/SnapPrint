@@ -80,7 +80,14 @@ export default function ErrorBoundary({ error, reset }: RouteErrorProps) {
             Something went wrong
           </h1>
 
-          <p style={{ fontSize: '0.975rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+          <p
+            style={{
+              fontSize: '0.975rem',
+              color: '#64748b',
+              lineHeight: 1.6,
+              margin: '0 0 1.5rem',
+            }}
+          >
             An unexpected error occurred while processing your request. Your documents and data
             remain safe. You can retry the operation or return to the home page.
           </p>
@@ -103,7 +110,9 @@ export default function ErrorBoundary({ error, reset }: RouteErrorProps) {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+          <div
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}
+          >
             <button
               type="button"
               onClick={() => reset()}

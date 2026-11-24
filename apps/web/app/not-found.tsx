@@ -68,12 +68,16 @@ export default function NotFound() {
             We couldn’t find that page
           </h1>
 
-          <p style={{ fontSize: '0.975rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 2rem' }}>
+          <p
+            style={{ fontSize: '0.975rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 2rem' }}
+          >
             The link you followed may be incorrect, the print session may have expired, or the shop
             address may have changed. Please verify the URL or return home to start fresh.
           </p>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+          <div
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}
+          >
             <Link
               href="/"
               style={{
