@@ -117,7 +117,7 @@ export function ShopProfileFields({
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={10}
-          placeholder="e.g. 9876543210"
+          placeholder="e.g. 9876512340"
           value={contactPhone}
           onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
           style={{

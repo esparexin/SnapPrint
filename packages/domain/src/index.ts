@@ -17,3 +17,4 @@ export * from './signature-verification.js';
 export * from './otp.js';
 export * from './shop-lifecycle.js';
 export * from './printer-routing.js';
+export * from './mobile-validator.js';
