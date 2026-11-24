@@ -87,4 +87,55 @@ describe('AgentClient', () => {
     const res = await customClient.sendHeartbeat('tok_xyz');
     expect(res.timestamp).toBe('2026-11-23T12:00:00.000Z');
   });
+
+  it('fetchPendingJobs sends GET /agent/jobs/pending and returns jobs array', async () => {
+    const mockJobs = [
+      {
+        jobId: 'job_123',
+        studioId: 'std_1',
+        orderId: 'ord_1',
+        itemId: 'itm_1',
+        assetId: 'ast_1',
+        targetPrinterId: 'prn_hp',
+        printerName: 'HP LaserJet',
+        colorMode: 'bw',
+        paperSize: 'A4',
+        sides: 'single',
+        copies: 1,
+        filename: 'doc.pdf',
+        status: 'pending',
+        createdAt: '2026-11-24T00:00:00.000Z',
+      },
+    ];
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ jobs: mockJobs }),
+    });
+
+    const client = new AgentClient('http://127.0.0.1:3001', mockFetch as unknown as typeof fetch);
+    const jobs = await client.fetchPendingJobs('tok_xyz');
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0].jobId).toBe('job_123');
+
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toBe('http://127.0.0.1:3001/agent/jobs/pending');
+    expect(init.headers['x-device-token']).toBe('tok_xyz');
+  });
+
+  it('updateJobStatus sends POST /agent/jobs/:jobId/status', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, jobId: 'job_123', status: 'completed' }),
+    });
+
+    const client = new AgentClient('http://127.0.0.1:3001', mockFetch as unknown as typeof fetch);
+    await client.updateJobStatus('tok_xyz', 'job_123', 'completed');
+
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toBe('http://127.0.0.1:3001/agent/jobs/job_123/status');
+    expect(init.method).toBe('POST');
+    expect(init.headers['x-device-token']).toBe('tok_xyz');
+    expect(JSON.parse(init.body)).toEqual({ status: 'completed' });
+  });
 });

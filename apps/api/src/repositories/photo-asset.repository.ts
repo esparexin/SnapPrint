@@ -127,3 +127,15 @@ export async function deletePhotoAssetRecord(
 
   return result.deletedCount > 0;
 }
+
+export async function findPhotoAssetByStudioAndAssetId(
+  db: Db,
+  studioId: string,
+  assetId: string
+): Promise<PhotoAsset | null> {
+  const doc = await db
+    .collection<PhotoAssetDocument>(PHOTO_ASSETS_COLLECTION)
+    .findOne({ studioId, assetId }, { projection: { _id: 0 } });
+
+  return doc ? toPhotoAssetContract(doc) : null;
+}

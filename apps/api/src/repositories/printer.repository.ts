@@ -47,7 +47,6 @@ export async function createPairingKey(
   expiresAt: Date
 ): Promise<AgentPairingKeyDocument> {
   const now = new Date();
-  // Revoke any previously active pairing keys for this studio
   await db
     .collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION)
     .updateMany({ studioId, status: 'active' }, { $set: { status: 'revoked' } });
@@ -167,7 +166,6 @@ export async function updateStudioPrinterRole(
   role: PrinterRole
 ): Promise<boolean> {
   const now = new Date();
-  // If assigning active_bw or active_color, unset that role on any other printer in this studio
   if (role === 'active_bw' || role === 'active_color') {
     await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
@@ -179,3 +177,5 @@ export async function updateStudioPrinterRole(
     .updateOne({ studioId, id: printerId }, { $set: { role, updatedAt: now } });
   return res.modifiedCount > 0;
 }
+
+export * from './print-job.repository.js';

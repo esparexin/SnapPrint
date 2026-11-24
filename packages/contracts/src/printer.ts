@@ -88,3 +88,38 @@ export const UpdatePrinterRoleRequestSchema = z.object({
   role: PrinterRoleSchema,
 });
 export type UpdatePrinterRoleRequest = z.infer<typeof UpdatePrinterRoleRequestSchema>;
+
+export const PrintJobStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
+export type PrintJobStatus = z.infer<typeof PrintJobStatusSchema>;
+
+export const PrintJobRecordSchema = z.object({
+  jobId: z.string().trim().min(3).max(64),
+  studioId: StudioIdSchema,
+  orderId: z.string().trim().min(3).max(64),
+  itemId: z.string().trim().min(1).max(64),
+  assetId: z.string().trim().min(1).max(128),
+  targetPrinterId: PrinterIdSchema,
+  printerName: z.string().trim().min(1).max(120),
+  colorMode: z.enum(['bw', 'color']),
+  paperSize: PaperSizeSchema,
+  sides: z.enum(['single', 'double']),
+  copies: z.number().int().min(1).max(100).default(1),
+  filename: z.string().trim().min(1).max(256),
+  pageRange: z.string().optional(),
+  status: PrintJobStatusSchema.default('pending'),
+  errorMessage: z.string().optional(),
+  createdAt: z.string().datetime(),
+  completedAt: z.string().datetime().optional(),
+});
+export type PrintJobRecord = z.infer<typeof PrintJobRecordSchema>;
+
+export const AgentPendingJobsResponseSchema = z.object({
+  jobs: z.array(PrintJobRecordSchema),
+});
+export type AgentPendingJobsResponse = z.infer<typeof AgentPendingJobsResponseSchema>;
+
+export const AgentJobStatusUpdateRequestSchema = z.object({
+  status: PrintJobStatusSchema,
+  errorMessage: z.string().max(500).optional(),
+});
+export type AgentJobStatusUpdateRequest = z.infer<typeof AgentJobStatusUpdateRequestSchema>;

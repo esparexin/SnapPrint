@@ -116,8 +116,18 @@ export function createMockDb(): { db: Db } & MockCollections {
             item.sessionId ||
             item.orderId ||
             item.paymentId ||
+            item.jobId ||
             item.eventId) as string;
           return { acknowledged: true, insertedId: id };
+        },
+        async insertMany(docs: unknown[]) {
+          const insertedIds: Record<number, unknown> = {};
+          for (let i = 0; i < docs.length; i++) {
+            const item = { ...(docs[i] as Record<string, unknown>) };
+            list.push(item);
+            insertedIds[i] = item.id || item.jobId || i;
+          }
+          return { acknowledged: true, insertedCount: docs.length, insertedIds };
         },
         async findOne(filter: Record<string, unknown>) {
           return list.find((i) => matchDoc(i, filter)) ?? null;

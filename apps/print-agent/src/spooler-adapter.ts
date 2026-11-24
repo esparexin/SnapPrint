@@ -12,8 +12,14 @@ export interface DiscoveredPrinter {
   isDefault?: boolean;
 }
 
+export interface PrintFileOptions {
+  copies?: number;
+  paperSize?: PaperSize;
+}
+
 export interface SpoolerAdapter {
   getPrinters(): Promise<DiscoveredPrinter[]>;
+  printFile(printerName: string, filePath: string, options?: PrintFileOptions): Promise<void>;
 }
 
 export function inferIsColorSupported(name: string, driverName: string): boolean {
@@ -143,6 +149,26 @@ export function createSystemSpoolerAdapter(options?: {
       } catch {
         return [];
       }
+    },
+
+    async printFile(printerName: string, filePath: string, opts?: PrintFileOptions): Promise<void> {
+      const copies = opts?.copies && opts.copies > 0 ? opts.copies : 1;
+
+      if (platform === 'win32') {
+        const safePath = filePath.replace(/"/g, '`"');
+        const safePrinter = printerName.replace(/"/g, '`"');
+        for (let i = 0; i < copies; i++) {
+          await runner(
+            `powershell -NoProfile -Command "Start-Process -FilePath '${safePath}' -Verb PrintTo -ArgumentList '${safePrinter}' -PassThru | Wait-Process"`
+          );
+        }
+        return;
+      }
+
+      // macOS / Linux via CUPS lp
+      const safePath = filePath.replace(/"/g, '\\"');
+      const safePrinter = printerName.replace(/"/g, '\\"');
+      await runner(`lp -d "${safePrinter}" -n ${copies} "${safePath}"`);
     },
   };
 }

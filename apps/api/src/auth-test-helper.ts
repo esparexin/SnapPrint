@@ -70,7 +70,7 @@ export async function createTestApp(
   await app.register(studioOnboardingRoutes, { db: mock.db });
   await app.register(studioSettingsRoutes, { db: mock.db, config: testConfig });
   await app.register(studioWorkspaceRoutes, { db: mock.db });
-  await app.register(printerRoutes, { db: mock.db });
+  await app.register(printerRoutes, { db: mock.db, storage });
   await app.register(publicRoutes, { db: mock.db, config: testConfig });
   await app.register(assetRoutes, { db: mock.db, config: testConfig, storage });
   await app.register(orderRoutes, { db: mock.db, config: testConfig, storage });

@@ -109,3 +109,110 @@ export function canRedeemPairingKey(
 
   return { allowed: true };
 }
+
+export interface OrderItemForPrintRouting {
+  assetId: string;
+  filename: string;
+  paperSize: PaperSize;
+  colorMode: 'black_and_white' | 'color' | 'bw';
+  sides: 'single_sided' | 'double_sided' | 'single' | 'double';
+  copies: number;
+  pageSelection?: string;
+  itemId?: string;
+}
+
+export interface OrderForPrintRouting {
+  orderId: string;
+  studioId: string;
+  items: readonly OrderItemForPrintRouting[];
+}
+
+export interface GeneratedPrintJobDescriptor {
+  jobId: string;
+  studioId: string;
+  orderId: string;
+  itemId: string;
+  assetId: string;
+  targetPrinterId: string;
+  printerName: string;
+  colorMode: 'bw' | 'color';
+  paperSize: PaperSize;
+  sides: 'single' | 'double';
+  copies: number;
+  filename: string;
+  pageRange?: string;
+  status: 'pending';
+  createdAt: string;
+}
+
+export interface CreatePrintJobsResult {
+  success: boolean;
+  jobs: GeneratedPrintJobDescriptor[];
+  failures: Array<{
+    itemIndex: number;
+    filename: string;
+    reason: string;
+  }>;
+}
+
+export function createPrintJobsForOrder(
+  order: OrderForPrintRouting,
+  printers: readonly PrinterRoutingCandidate[],
+  nowIso: string = new Date().toISOString()
+): CreatePrintJobsResult {
+  const jobs: GeneratedPrintJobDescriptor[] = [];
+  const failures: Array<{ itemIndex: number; filename: string; reason: string }> = [];
+
+  for (let i = 0; i < order.items.length; i++) {
+    const item = order.items[i];
+    const normalizedColorMode: 'bw' | 'color' = item.colorMode === 'color' ? 'color' : 'bw';
+    const normalizedSides: 'single' | 'double' =
+      item.sides === 'double_sided' || item.sides === 'double' ? 'double' : 'single';
+    const pageRange =
+      item.pageSelection && item.pageSelection !== 'all' ? item.pageSelection : undefined;
+
+    const routeResult = resolvePrinterForJob({
+      colorMode: normalizedColorMode,
+      paperSize: item.paperSize,
+      printers,
+    });
+
+    if (!routeResult.allowed || !routeResult.selectedPrinter) {
+      failures.push({
+        itemIndex: i,
+        filename: item.filename,
+        reason: routeResult.reason || 'NO_PRINTER_AVAILABLE',
+      });
+      continue;
+    }
+
+    const cleanOrderId = order.orderId.replace(/^ord_/, '');
+    const randSuffix = Math.random().toString(36).substring(2, 6);
+    const jobId = `job_${cleanOrderId}_${i + 1}_${randSuffix}`;
+    const itemId = item.itemId || `item_${i + 1}`;
+
+    jobs.push({
+      jobId,
+      studioId: order.studioId,
+      orderId: order.orderId,
+      itemId,
+      assetId: item.assetId,
+      targetPrinterId: routeResult.selectedPrinter.id,
+      printerName: routeResult.selectedPrinter.name,
+      colorMode: normalizedColorMode,
+      paperSize: item.paperSize,
+      sides: normalizedSides,
+      copies: Math.max(1, item.copies || 1),
+      filename: item.filename,
+      pageRange,
+      status: 'pending',
+      createdAt: nowIso,
+    });
+  }
+
+  return {
+    success: failures.length === 0,
+    jobs,
+    failures,
+  };
+}
