@@ -78,7 +78,6 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
       aria-modal="true"
       aria-labelledby="payment-modal-title"
       className="dialog-overlay"
-      style={{ zIndex: 60 }}
       onClick={handleBackdropClick}
     >
       <div

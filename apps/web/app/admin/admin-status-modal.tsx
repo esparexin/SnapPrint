@@ -64,7 +64,6 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
       aria-modal="true"
       aria-labelledby="admin-status-title"
       className="dialog-overlay"
-      style={{ zIndex: 50 }}
       onClick={handleBackdropClick}
     >
       <div

@@ -58,8 +58,7 @@ export function CounterPaymentModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="counter-payment-title"
-      className="dialog-overlay"
-      style={{ zIndex: 10000 }}
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div

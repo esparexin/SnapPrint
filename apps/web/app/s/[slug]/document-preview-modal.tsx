@@ -39,7 +39,6 @@ export function DocumentPreviewModal({
       aria-modal="true"
       aria-labelledby="document-preview-title"
       className="dialog-overlay"
-      style={{ zIndex: 9999 }}
       onClick={handleBackdropClick}
     >
       <div

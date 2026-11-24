@@ -80,7 +80,6 @@ export function OrderFulfillmentModal({
       aria-modal="true"
       aria-labelledby="order-fulfillment-title"
       className="dialog-overlay"
-      style={{ zIndex: 9999 }}
       onClick={handleBackdropClick}
     >
       <div

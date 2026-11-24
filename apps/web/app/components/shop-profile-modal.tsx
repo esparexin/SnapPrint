@@ -62,7 +62,6 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
       aria-modal="true"
       aria-labelledby="profile-modal-title"
       className="dialog-overlay"
-      style={{ zIndex: 60 }}
       onClick={handleBackdropClick}
     >
       <div

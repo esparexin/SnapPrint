@@ -49,7 +49,6 @@ function SetupWizardModal({
       aria-modal="true"
       aria-labelledby="wizard-title"
       className="dialog-overlay"
-      style={{ zIndex: 50 }}
       onClick={handleBackdropClick}
     >
       <div

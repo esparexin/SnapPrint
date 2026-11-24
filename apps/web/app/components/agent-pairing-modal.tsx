@@ -55,8 +55,7 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
       role="dialog"
       aria-modal="true"
       aria-labelledby="agent-pairing-title"
-      className="dialog-overlay"
-      style={{ zIndex: 60 }}
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div

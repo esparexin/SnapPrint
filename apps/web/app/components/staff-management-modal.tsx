@@ -84,7 +84,6 @@ export function StaffManagementModal({ studioId, studioName, onClose }: StaffMan
       aria-modal="true"
       aria-labelledby="staff-modal-title"
       className="dialog-overlay"
-      style={{ zIndex: 60 }}
       onClick={handleBackdropClick}
     >
       <div
