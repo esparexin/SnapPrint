@@ -31,4 +31,14 @@ describe('CLI Commands', () => {
     expect(consoleErrSpy).toHaveBeenCalledWith(expect.stringContaining('Device not enrolled'));
     consoleErrSpy.mockRestore();
   });
+
+  it('unpairs device and returns 0', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitCode = await runCli(['unpair']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Device credentials cleared successfully')
+    );
+    consoleLogSpy.mockRestore();
+  });
 });

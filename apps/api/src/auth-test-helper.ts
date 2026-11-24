@@ -1,6 +1,7 @@
 import fastify, { FastifyInstance } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
+import { hashPassword } from '@snapprint/domain';
 import { assetRoutes } from './asset-routes.js';
 import { authLoginOtpRoutes } from './auth-login-otp-routes.js';
 import { authRegistrationRoutes } from './auth-registration-routes.js';
@@ -20,7 +21,9 @@ import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { platformAdminRoutes } from './platform-admin-routes.js';
+import { subscriptionRoutes } from './subscription-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
+import { agentDownloadRoutes } from './agent-download-routes.js';
 import { MemoryStorageService, StorageService } from './storage/storage-service.js';
 
 export interface TestAuthContext extends MockCollections {
@@ -77,7 +80,9 @@ export async function createTestApp(
   await app.register(paymentRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(operatorPaymentRoutes, { db: mock.db });
   await app.register(platformAdminRoutes, { getCustomDb: () => mock.db });
+  await app.register(subscriptionRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(webhookRoutes, { db: mock.db, config: testConfig, gateway });
+  await app.register(agentDownloadRoutes);
   await app.ready();
 
   return {
@@ -97,4 +102,41 @@ export async function createTestApp(
     gateway,
     emailService,
   };
+}
+
+export async function seedTestStudio(ctx: TestAuthContext, studioId = 'studio_test_1') {
+  const hash = await hashPassword('Password123!');
+  const now = new Date();
+  ctx.users.push({
+    id: `usr_${studioId}`,
+    email: `${studioId}@example.com`,
+    name: 'Owner',
+    passwordHash: hash,
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+  });
+  ctx.studios.push({
+    id: studioId,
+    slug: studioId.replace(/_/g, '-') + '-slug',
+    name: 'Studio',
+    status: 'active',
+    settings: { currency: 'INR', maxActivePrinters: 2, autoApproveOrders: false },
+    createdAt: now,
+    updatedAt: now,
+  });
+  ctx.memberships.push({
+    userId: `usr_${studioId}`,
+    studioId,
+    role: 'studio_owner',
+    status: 'active',
+    createdAt: now,
+  });
+  const login = await ctx.app.inject({
+    method: 'POST',
+    url: '/auth/login',
+    payload: { email: `${studioId}@example.com`, password: 'Password123!' },
+  });
+  const cookies = { [login.cookies[0]!.name]: login.cookies[0]!.value };
+  return { studioId, cookies };
 }

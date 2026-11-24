@@ -34,6 +34,7 @@ export const PaymentRecordSchema = z.object({
   gatewayOrderId: z.string().optional(),
   gatewayPaymentId: z.string().optional(),
   gatewaySignature: z.string().optional(),
+  gatewayCapturedAt: z.string().datetime().optional(),
   recordedByUserId: UserIdSchema.optional(),
   notes: z.string().max(500).optional(),
   createdAt: z.string().datetime(),

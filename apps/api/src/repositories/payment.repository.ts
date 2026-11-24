@@ -20,6 +20,7 @@ export interface PaymentDocument {
   gatewayOrderId?: string;
   gatewayPaymentId?: string;
   gatewaySignature?: string;
+  gatewayCapturedAt?: Date;
   recordedByUserId?: string;
   notes?: string;
   createdAt: Date;
@@ -39,6 +40,11 @@ export function toPaymentContract(doc: PaymentDocument): PaymentRecord {
     gatewayOrderId: doc.gatewayOrderId,
     gatewayPaymentId: doc.gatewayPaymentId,
     gatewaySignature: doc.gatewaySignature,
+    gatewayCapturedAt: doc.gatewayCapturedAt
+      ? doc.gatewayCapturedAt instanceof Date
+        ? doc.gatewayCapturedAt.toISOString()
+        : new Date(doc.gatewayCapturedAt).toISOString()
+      : undefined,
     recordedByUserId: doc.recordedByUserId,
     notes: doc.notes,
     createdAt:
@@ -69,6 +75,7 @@ export async function createPaymentRecord(db: Db, payment: PaymentRecord): Promi
     gatewayOrderId: parsed.gatewayOrderId,
     gatewayPaymentId: parsed.gatewayPaymentId,
     gatewaySignature: parsed.gatewaySignature,
+    gatewayCapturedAt: parsed.gatewayCapturedAt ? new Date(parsed.gatewayCapturedAt) : undefined,
     recordedByUserId: parsed.recordedByUserId,
     notes: parsed.notes,
     createdAt: Number.isNaN(createdDate.getTime()) ? new Date() : createdDate,
@@ -118,7 +125,11 @@ export async function updatePaymentStatus(
   studioId: string,
   paymentId: string,
   status: PaymentStatus,
-  metadata?: { gatewayPaymentId?: string; gatewaySignature?: string }
+  metadata?: {
+    gatewayPaymentId?: string;
+    gatewaySignature?: string;
+    gatewayCapturedAt?: Date | string;
+  }
 ): Promise<PaymentRecord | null> {
   const now = new Date();
   const updateFields: Record<string, unknown> = { status, updatedAt: now };
@@ -127,6 +138,15 @@ export async function updatePaymentStatus(
   }
   if (metadata?.gatewaySignature) {
     updateFields.gatewaySignature = metadata.gatewaySignature;
+  }
+  if (metadata?.gatewayCapturedAt) {
+    const d =
+      metadata.gatewayCapturedAt instanceof Date
+        ? metadata.gatewayCapturedAt
+        : new Date(metadata.gatewayCapturedAt);
+    if (!Number.isNaN(d.getTime())) {
+      updateFields.gatewayCapturedAt = d;
+    }
   }
 
   const result = await db

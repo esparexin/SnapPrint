@@ -11,4 +11,6 @@ export * from './shop-onboarding.js';
 export * from './printer.js';
 export * from './workspace.js';
 export * from './platform-admin.js';
+export * from './subscription.js';
+export * from './agent-download.js';
 export { z, ZodError } from 'zod';

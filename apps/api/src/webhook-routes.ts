@@ -11,6 +11,11 @@ import {
   updatePaymentStatus,
 } from './repositories/payment.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
+import {
+  applySubscriptionRenewal,
+  findSubscriptionOrderByGatewayOrderId,
+  updateSubscriptionOrderStatus,
+} from './repositories/subscription.repository.js';
 import { recordWebhookEvent, updateWebhookEventStatus } from './repositories/webhook.repository.js';
 
 export interface WebhookRouteOptions {
@@ -58,8 +63,11 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
     const event = (typeof request.body === 'string' ? JSON.parse(request.body) : request.body) as {
       id?: string;
       event?: string;
+      created_at?: number;
       payload?: {
-        payment?: { entity?: { id?: string; order_id?: string; status?: string } };
+        payment?: {
+          entity?: { id?: string; order_id?: string; status?: string; created_at?: number };
+        };
         order?: { entity?: { id?: string; status?: string } };
       };
     };
@@ -86,10 +94,22 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
       if (gatewayOrderId) {
         const payment = await findPaymentByGatewayOrderId(db, gatewayOrderId);
         if (payment) {
-          if (eventType === 'payment.captured' || eventType === 'order.paid') {
-            const gatewayPaymentId = event.payload?.payment?.entity?.id;
+          const paymentEntity = event.payload?.payment?.entity;
+          const isCaptured =
+            (eventType === 'payment.captured' && paymentEntity?.status === 'captured') ||
+            (eventType === 'order.paid' &&
+              (paymentEntity?.status === 'captured' || !paymentEntity));
+
+          if (isCaptured) {
+            const gatewayPaymentId = paymentEntity?.id;
+            const gatewayCapturedAt =
+              typeof event.created_at === 'number' && event.created_at > 0
+                ? new Date(event.created_at * 1000).toISOString()
+                : undefined;
+
             await updatePaymentStatus(db, payment.studioId, payment.paymentId, 'SUCCEEDED', {
               gatewayPaymentId,
+              gatewayCapturedAt,
             });
 
             const order = await findOrderById(db, payment.studioId, payment.orderId);
@@ -122,6 +142,30 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
                 summary.paymentStatus
               );
             }
+          }
+        }
+
+        const subOrder = await findSubscriptionOrderByGatewayOrderId(db, gatewayOrderId);
+        if (subOrder) {
+          const paymentEntity = event.payload?.payment?.entity;
+          const isSubCaptured =
+            (eventType === 'payment.captured' && paymentEntity?.status === 'captured') ||
+            (eventType === 'order.paid' &&
+              (paymentEntity?.status === 'captured' || !paymentEntity));
+
+          if (isSubCaptured) {
+            const gatewayPaymentId = paymentEntity?.id;
+            const capturedAt =
+              typeof event.created_at === 'number' && event.created_at > 0
+                ? new Date(event.created_at * 1000).toISOString()
+                : new Date().toISOString();
+            await updateSubscriptionOrderStatus(db, gatewayOrderId, 'PAID', {
+              gatewayPaymentId,
+              capturedAt,
+            });
+            await applySubscriptionRenewal(db, subOrder.studioId, subOrder.plan, capturedAt);
+          } else if (eventType === 'payment.failed') {
+            await updateSubscriptionOrderStatus(db, gatewayOrderId, 'FAILED');
           }
         }
       }

@@ -25,11 +25,25 @@ import {
 } from './repositories/payment.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 import { findStudioBySlug } from './repositories/studio.repository.js';
+import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
 
 export interface PaymentRouteOptions {
   db?: Db;
   config?: AppConfig;
   gateway?: PaymentGatewayService;
+}
+
+async function syncPayment(db: Db, studioId: string, orderId: string, totalAmountMinor: number) {
+  const allPayments = await listPaymentsByOrder(db, studioId, orderId);
+  const summary = deriveOrderPaymentStatus(totalAmountMinor, allPayments);
+  await updateOrderPaymentSummary(
+    db,
+    studioId,
+    orderId,
+    summary.paidAmountMinor,
+    summary.paymentStatus
+  );
+  return summary;
 }
 
 export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app, opts) => {
@@ -49,23 +63,28 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
           .send({ statusCode: 404, code: 'STUDIO_NOT_FOUND', message: 'Studio not found.' });
       }
 
+      const avail = await checkStudioCheckoutAvailability(db, studio);
+      if (!avail.allowed) {
+        return reply.status(403).send({
+          statusCode: 403,
+          code: avail.reason,
+          message: `Studio checkout is currently unavailable: ${avail.reason}`,
+        });
+      }
+
       const bodyResult = PaymentInitiateRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply.status(400).send({
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid payment initiation payload.',
-        });
+        return reply
+          .status(400)
+          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
       }
 
       const sessionId = (request.headers['x-session-token'] as string) || '';
       const order = await findOrderBySessionAndId(db, studio.id, sessionId, request.params.orderId);
       if (!order) {
-        return reply.status(404).send({
-          statusCode: 404,
-          code: 'ORDER_NOT_FOUND',
-          message: 'Order was not found for this customer session.',
-        });
+        return reply
+          .status(404)
+          .send({ statusCode: 404, code: 'ORDER_NOT_FOUND', message: 'Order not found.' });
       }
 
       const paidMinor = order.paidAmountMinor ?? 0;
@@ -81,7 +100,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
         return reply.status(400).send({
           statusCode: 400,
           code: validation.error,
-          message: `Payment attempt invalid: ${validation.error}`,
+          message: `Invalid: ${validation.error}`,
         });
       }
 
@@ -139,21 +158,17 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
 
       const bodyResult = PaymentVerifyRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply.status(400).send({
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid payment verification payload.',
-        });
+        return reply
+          .status(400)
+          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
       }
 
       const { paymentId, gatewayOrderId, gatewayPaymentId, gatewaySignature } = bodyResult.data;
       const payment = await findPaymentById(db, studio.id, paymentId);
       if (!payment || payment.orderId !== request.params.orderId) {
-        return reply.status(404).send({
-          statusCode: 404,
-          code: 'PAYMENT_NOT_FOUND',
-          message: 'Payment record not found for this order.',
-        });
+        return reply
+          .status(404)
+          .send({ statusCode: 404, code: 'PAYMENT_NOT_FOUND', message: 'Payment not found.' });
       }
 
       const isValid = gateway.verifyPaymentSignature(
@@ -166,37 +181,22 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
           gatewayPaymentId,
           gatewaySignature,
         });
-        const allPayments = await listPaymentsByOrder(db, studio.id, payment.orderId);
-        const summary = deriveOrderPaymentStatus(payment.amountMinor, allPayments);
-        await updateOrderPaymentSummary(
-          db,
-          studio.id,
-          payment.orderId,
-          summary.paidAmountMinor,
-          summary.paymentStatus
-        );
+        await syncPayment(db, studio.id, payment.orderId, payment.amountMinor);
         return reply.status(400).send({
           statusCode: 400,
           code: 'INVALID_PAYMENT_SIGNATURE',
-          message: 'Payment signature verification failed.',
+          message: 'Signature failed.',
         });
       }
 
+      const capturedAt = new Date().toISOString();
       const updatedPayment = await updatePaymentStatus(db, studio.id, paymentId, 'SUCCEEDED', {
         gatewayPaymentId,
         gatewaySignature,
+        gatewayCapturedAt: capturedAt,
       });
 
-      const allPayments = await listPaymentsByOrder(db, studio.id, payment.orderId);
-      const summary = deriveOrderPaymentStatus(payment.amountMinor, allPayments);
-      await updateOrderPaymentSummary(
-        db,
-        studio.id,
-        payment.orderId,
-        summary.paidAmountMinor,
-        summary.paymentStatus
-      );
-
+      const summary = await syncPayment(db, studio.id, payment.orderId, payment.amountMinor);
       if (summary.paymentStatus === 'PAID') {
         await autoDispatchOrderPrintJobs(db, studio.id, payment.orderId);
       }

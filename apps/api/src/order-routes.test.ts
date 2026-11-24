@@ -49,6 +49,40 @@ describe('Document Print Orders & Quotation Routes', () => {
       createdAt: new Date(),
     });
 
+    const now = new Date();
+    await ctx.db.collection('subscriptions').insertOne({
+      studioId,
+      plan: 'quarterly',
+      status: 'active',
+      startsAt: now,
+      expiresAt: new Date(Date.now() + 86400000 * 90),
+      updatedAt: now,
+    });
+    await ctx.db.collection('agent_devices').insertOne({
+      deviceId: 'dev_order_test',
+      studioId,
+      hostname: 'POS',
+      osPlatform: 'win32',
+      agentVersion: '1.0.0',
+      deviceToken: 'dvt_1',
+      status: 'active',
+      lastHeartbeatAt: now,
+      createdAt: now,
+    });
+    await ctx.db.collection('studio_printers').insertOne({
+      id: 'prn_order_bw',
+      studioId,
+      name: 'HP',
+      role: 'active_bw',
+      isColorSupported: false,
+      supportedPaperSizes: ['A4'],
+      status: 'online',
+      isDefaultOsPrinter: true,
+      lastSeenAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     const token = signSessionToken({ sessionId, studioId, expiresAt }, secret);
 
     // Operator with view_orders & manage_order_status
@@ -70,39 +104,27 @@ describe('Document Print Orders & Quotation Routes', () => {
       createdAt: new Date(),
     });
 
-    const loginOperator = async () => {
-      const res = await ctx.app.inject({
-        method: 'POST',
-        url: '/auth/login',
-        payload: { email: 'staff@xerox.com', password: 'Password123!' },
-      });
-      return res.cookies[0];
-    };
-
-    return { ctx, studioId, slug, sessionId, assetId, token, loginOperator };
+    return { ctx, studioId, slug, sessionId, assetId, token };
   }
 
   it('calculates server-authoritative quotation for PDF print job', async () => {
     const { ctx, slug, sessionId, assetId, token } = await seedTestEnvironment();
 
+    const item = {
+      assetId,
+      paperSize: 'A4' as const,
+      colorMode: 'black_and_white' as const,
+      sides: 'single_sided' as const,
+      orientation: 'portrait' as const,
+      scaling: 'fit_to_page' as const,
+      pageSelection: '1-5',
+      copies: 2,
+    };
     const res = await ctx.app.inject({
       method: 'POST',
       url: `/public/studios/${slug}/sessions/${sessionId}/quote`,
       headers: { authorization: `Bearer ${token}` },
-      payload: {
-        items: [
-          {
-            assetId,
-            paperSize: 'A4',
-            colorMode: 'black_and_white',
-            sides: 'single_sided',
-            orientation: 'portrait',
-            scaling: 'fit_to_page',
-            pageSelection: '1-5',
-            copies: 2,
-          },
-        ],
-      },
+      payload: { items: [item] },
     });
 
     expect(res.statusCode).toBe(200);
@@ -118,22 +140,21 @@ describe('Document Print Orders & Quotation Routes', () => {
     const { ctx, slug, sessionId, assetId, token } = await seedTestEnvironment();
     const idempotencyKey = 'idem_checkout_req_99999';
 
+    const item = {
+      assetId,
+      paperSize: 'A4' as const,
+      colorMode: 'black_and_white' as const,
+      sides: 'double_sided' as const,
+      orientation: 'portrait' as const,
+      scaling: 'fit_to_page' as const,
+      pageSelection: 'all',
+      copies: 1,
+    };
     const orderPayload = {
       idempotencyKey,
       customerName: 'Kalyan Medaboina',
       customerPhone: '9988776655',
-      items: [
-        {
-          assetId,
-          paperSize: 'A4',
-          colorMode: 'black_and_white',
-          sides: 'double_sided',
-          orientation: 'portrait',
-          scaling: 'fit_to_page',
-          pageSelection: 'all', // 10 pages -> 5 sheets duplex
-          copies: 1,
-        },
-      ],
+      items: [item],
     };
 
     // First submission: creates order
@@ -176,7 +197,7 @@ describe('Document Print Orders & Quotation Routes', () => {
   });
 
   it('allows authorized operator to view queue and update status', async () => {
-    const { ctx, studioId, sessionId, loginOperator } = await seedTestEnvironment();
+    const { ctx, studioId, sessionId } = await seedTestEnvironment();
 
     // Seed existing order in collection
     ctx.orders.push({
@@ -194,7 +215,12 @@ describe('Document Print Orders & Quotation Routes', () => {
       updatedAt: new Date(),
     });
 
-    const cookie = await loginOperator();
+    const loginRes = await ctx.app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email: 'staff@xerox.com', password: 'Password123!' },
+    });
+    const cookie = loginRes.cookies[0]!;
 
     // GET /studios/:studioId/orders
     const listRes = await ctx.app.inject({

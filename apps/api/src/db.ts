@@ -112,4 +112,43 @@ export async function ensureIndexes(db: Db): Promise<void> {
     { key: { email: 1, intent: 1, status: 1 }, name: 'idx_email_otp_email_intent_status' },
     { key: { expiresAt: 1 }, expireAfterSeconds: 0, name: 'ttl_email_otp_expiry' },
   ]);
+
+  // 11. Print jobs: studio queue polling, unique job ID, and order association
+  await db.collection('print_jobs').createIndexes([
+    { key: { studioId: 1, status: 1, createdAt: 1 }, name: 'idx_print_jobs_studio_status_created' },
+    { key: { jobId: 1 }, unique: true, name: 'uid_print_job_id' },
+    { key: { orderId: 1 }, name: 'idx_print_jobs_order' },
+    { key: { studioId: 1, claimedByDeviceId: 1 }, name: 'idx_print_jobs_device_claim' },
+  ]);
+
+  // 12. Agent devices: unique token lookup, studio fleet listing, and heartbeat tracking
+  await db.collection('agent_devices').createIndexes([
+    { key: { deviceToken: 1 }, unique: true, name: 'uid_agent_device_token' },
+    { key: { deviceId: 1 }, unique: true, name: 'uid_agent_device_id' },
+    { key: { studioId: 1, status: 1 }, name: 'idx_agent_device_studio_status' },
+    { key: { lastHeartbeatAt: 1 }, name: 'idx_agent_device_heartbeat' },
+  ]);
+
+  // 13. Studio printers: unique printer per studio and active status lookup
+  await db.collection('studio_printers').createIndexes([
+    { key: { studioId: 1, id: 1 }, unique: true, name: 'uid_studio_printer_id' },
+    { key: { studioId: 1, role: 1, status: 1 }, name: 'idx_studio_printer_role_status' },
+  ]);
+
+  // 14. Subscriptions collection: one subscription record per studio
+  await db
+    .collection('subscriptions')
+    .createIndexes([{ key: { studioId: 1 }, unique: true, name: 'uid_subscription_studio_id' }]);
+
+  // 15. Subscription orders: gateway order/payment idempotency and history
+  await db.collection('subscription_orders').createIndexes([
+    { key: { gatewayOrderId: 1 }, unique: true, name: 'uid_sub_order_gateway_order' },
+    {
+      key: { gatewayPaymentId: 1 },
+      unique: true,
+      sparse: true,
+      name: 'uid_sub_order_gateway_payment',
+    },
+    { key: { studioId: 1, createdAt: -1 }, name: 'idx_sub_order_studio_created' },
+  ]);
 }

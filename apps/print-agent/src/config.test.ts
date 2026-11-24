@@ -2,9 +2,16 @@ import { existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearAgentConfig, loadAgentConfig, saveAgentConfig } from './config.js';
+import {
+  clearAgentConfig,
+  loadAgentConfig,
+  protectCredential,
+  saveAgentConfig,
+  unpairAgent,
+  unprotectCredential,
+} from './config.js';
 
-describe('Agent Config Store', () => {
+describe('Agent Config Store & Credential Protection', () => {
   const testDir = join(tmpdir(), `snapprint-agent-test-${Date.now()}`);
   const testConfigPath = join(testDir, 'agent-config.json');
 
@@ -46,6 +53,36 @@ describe('Agent Config Store', () => {
     expect(loaded.deviceId).toBe('dev_test');
     expect(loaded.deviceFriendlyName).toBe('Shop-PC-FrontDesk');
     expect(loaded.lastSyncAt).toBe('2026-11-23T12:00:00.000Z');
+  });
+
+  it('protects and unprotects credentials across platforms', () => {
+    const rawToken = 'device_tok_secret_999';
+    const nonWinProtected = protectCredential(rawToken, 'darwin');
+    expect(nonWinProtected).toBe(rawToken);
+    expect(unprotectCredential(nonWinProtected, 'darwin')).toBe(rawToken);
+
+    const winProtected = protectCredential(rawToken, 'win32');
+    expect(typeof winProtected).toBe('string');
+    expect(unprotectCredential(winProtected, 'win32')).toBe(rawToken);
+  });
+
+  it('unpairs agent by removing device credentials while preserving apiUrl', () => {
+    saveAgentConfig(
+      {
+        apiUrl: 'http://custom-api:3001',
+        deviceToken: 'tok_to_unpair',
+        studioId: 'std_unpair',
+        deviceId: 'dev_unpair',
+      },
+      testConfigPath
+    );
+
+    unpairAgent(testConfigPath);
+    const afterUnpair = loadAgentConfig(testConfigPath);
+    expect(afterUnpair.apiUrl).toBe('http://custom-api:3001');
+    expect(afterUnpair.deviceToken).toBeUndefined();
+    expect(afterUnpair.studioId).toBeUndefined();
+    expect(afterUnpair.deviceId).toBeUndefined();
   });
 
   it('clears agent config file', () => {

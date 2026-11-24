@@ -98,5 +98,43 @@ describe('Database Indexes & Connection State', () => {
       expireAfterSeconds: 0,
       name: 'ttl_email_otp_expiry',
     });
+
+    // Verify print_jobs indexes
+    expect(createdIndexes['print_jobs']).toBeDefined();
+    expect(createdIndexes['print_jobs']).toContainEqual({
+      key: { jobId: 1 },
+      unique: true,
+      name: 'uid_print_job_id',
+    });
+
+    // Verify agent_devices indexes
+    expect(createdIndexes['agent_devices']).toBeDefined();
+    expect(createdIndexes['agent_devices']).toContainEqual({
+      key: { deviceToken: 1 },
+      unique: true,
+      name: 'uid_agent_device_token',
+    });
+
+    // Verify studio_printers indexes
+    expect(createdIndexes['studio_printers']).toBeDefined();
+    expect(createdIndexes['studio_printers']).toContainEqual({
+      key: { studioId: 1, id: 1 },
+      unique: true,
+      name: 'uid_studio_printer_id',
+    });
+
+    // Verify subscriptions and subscription_orders indexes
+    expect(createdIndexes['subscriptions']).toBeDefined();
+    expect(createdIndexes['subscriptions']).toContainEqual({
+      key: { studioId: 1 },
+      unique: true,
+      name: 'uid_subscription_studio_id',
+    });
+    expect(createdIndexes['subscription_orders']).toBeDefined();
+    expect(createdIndexes['subscription_orders']).toContainEqual({
+      key: { gatewayOrderId: 1 },
+      unique: true,
+      name: 'uid_sub_order_gateway_order',
+    });
   });
 });

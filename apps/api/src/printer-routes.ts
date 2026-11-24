@@ -1,24 +1,17 @@
-import crypto from 'node:crypto';
 import { FastifyInstance } from 'fastify';
 import { Db } from 'mongodb';
-import {
-  AgentEnrollmentRequestSchema,
-  AgentSyncPrintersRequestSchema,
-  UpdatePrinterRoleRequestSchema,
-} from '@snapprint/contracts';
-import { canRedeemPairingKey, generatePairingCode } from '@snapprint/domain';
+import { UpdatePrinterRoleRequestSchema } from '@snapprint/contracts';
+import { generatePairingCode } from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
+import { registerPrinterAgentRoutes } from './printer-agent-routes.js';
 import { registerPrinterJobRoutes } from './printer-job-routes.js';
+import { requeuePrintJob } from './repositories/print-job-claim.repository.js';
 import {
-  consumePairingKey,
   createPairingKey,
-  findAgentDeviceByToken,
-  findPairingKey,
+  listStudioDevices,
   listStudioPrinters,
-  registerAgentDevice,
-  syncDiscoveredPrinters,
-  updateDeviceHeartbeat,
+  revokeAgentDevice,
   updateStudioPrinterRole,
 } from './repositories/printer.repository.js';
 import { StorageService } from './storage/storage-service.js';
@@ -40,11 +33,9 @@ export async function printerRoutes(
     { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
     async (request, reply) => {
       const db = getEffectiveDb();
-      const studioId = request.params.studioId;
       const code = generatePairingCode();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins TTL
-
-      const created = await createPairingKey(db, studioId, code, expiresAt);
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const created = await createPairingKey(db, request.params.studioId, code, expiresAt);
       return reply.status(201).send({
         code: created.code,
         studioId: created.studioId,
@@ -78,7 +69,7 @@ export async function printerRoutes(
     }
   );
 
-  // 3. Operator: Update Printer Role (active_bw, active_color, standby)
+  // 3. Operator: Update Printer Role
   app.patch<{ Params: { studioId: string; printerId: string } }>(
     '/studios/:studioId/printers/:printerId/role',
     { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
@@ -116,133 +107,66 @@ export async function printerRoutes(
     }
   );
 
-  // 4. Device Agent: Enroll with Pairing Code
-  app.post('/agent/enroll', async (request, reply) => {
-    const db = getEffectiveDb();
-    const body = AgentEnrollmentRequestSchema.safeParse(request.body);
-    if (!body.success) {
-      return reply.status(400).send({
-        statusCode: 400,
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid agent enrollment payload.',
+  // 4. Operator: List Fleet Devices & Online Status
+  app.get<{ Params: { studioId: string } }>(
+    '/studios/:studioId/devices',
+    { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
+    async (request, reply) => {
+      const db = getEffectiveDb();
+      const devices = await listStudioDevices(db, request.params.studioId);
+      const now = Date.now();
+      return reply.send({
+        devices: devices.map((d) => ({
+          deviceId: d.deviceId,
+          studioId: d.studioId,
+          hostname: d.hostname,
+          osPlatform: d.osPlatform,
+          agentVersion: d.agentVersion,
+          status: d.status,
+          isOnline: now - new Date(d.lastHeartbeatAt).getTime() < 120_000 && d.status === 'active',
+          lastHeartbeatAt: new Date(d.lastHeartbeatAt).toISOString(),
+          createdAt: new Date(d.createdAt).toISOString(),
+        })),
       });
     }
+  );
 
-    const key = await findPairingKey(db, body.data.pairingCode);
-    if (!key) {
-      return reply.status(404).send({
-        statusCode: 404,
-        code: 'PAIRING_KEY_NOT_FOUND',
-        message: 'Pairing key not found.',
-      });
+  // 5. Operator: Revoke Agent Device
+  app.post<{ Params: { studioId: string; deviceId: string } }>(
+    '/studios/:studioId/devices/:deviceId/revoke',
+    { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
+    async (request, reply) => {
+      const db = getEffectiveDb();
+      const revoked = await revokeAgentDevice(db, request.params.studioId, request.params.deviceId);
+      if (!revoked) {
+        return reply.status(404).send({
+          statusCode: 404,
+          code: 'DEVICE_NOT_FOUND',
+          message: 'Device not found in this studio.',
+        });
+      }
+      return reply.send({ success: true, deviceId: request.params.deviceId, status: 'revoked' });
     }
+  );
 
-    const redemption = canRedeemPairingKey(
-      { status: key.status, expiresAt: key.expiresAt.toISOString() },
-      new Date().toISOString()
-    );
-
-    if (!redemption.allowed) {
-      return reply.status(400).send({
-        statusCode: 400,
-        code: redemption.reason,
-        message: 'Pairing key cannot be redeemed.',
-      });
+  // 6. Operator: Requeue Stalled/Failed Print Job
+  app.post<{ Params: { studioId: string; jobId: string } }>(
+    '/studios/:studioId/jobs/:jobId/requeue',
+    { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
+    async (request, reply) => {
+      const db = getEffectiveDb();
+      const requeued = await requeuePrintJob(db, request.params.studioId, request.params.jobId);
+      if (!requeued) {
+        return reply.status(404).send({
+          statusCode: 404,
+          code: 'JOB_NOT_REQUEUEABLE',
+          message: 'Job not found or not in stalled/failed state.',
+        });
+      }
+      return reply.send({ success: true, jobId: request.params.jobId, status: requeued.status });
     }
+  );
 
-    const consumed = await consumePairingKey(db, body.data.pairingCode);
-    if (!consumed) {
-      return reply.status(409).send({
-        statusCode: 409,
-        code: 'PAIRING_KEY_ALREADY_USED',
-        message: 'Pairing key has already been consumed.',
-      });
-    }
-
-    const deviceId = `dev_${crypto.randomBytes(8).toString('hex')}`;
-    const deviceToken = `dvt_${crypto.randomBytes(24).toString('hex')}`;
-
-    await registerAgentDevice(db, {
-      deviceId,
-      studioId: key.studioId,
-      hostname: body.data.hostname,
-      osPlatform: body.data.osPlatform,
-      agentVersion: body.data.agentVersion,
-      deviceToken,
-      status: 'active',
-    });
-
-    return reply.status(201).send({
-      success: true,
-      deviceId,
-      studioId: key.studioId,
-      deviceToken,
-    });
-  });
-
-  // 5. Device Agent: Sync Discovered Printers
-  app.post('/agent/sync-printers', async (request, reply) => {
-    const db = getEffectiveDb();
-    const token = request.headers['x-device-token'] as string | undefined;
-    if (!token) {
-      return reply.status(401).send({
-        statusCode: 401,
-        code: 'DEVICE_UNAUTHORIZED',
-        message: 'Missing x-device-token header.',
-      });
-    }
-
-    const device = await findAgentDeviceByToken(db, token);
-    if (!device) {
-      return reply.status(401).send({
-        statusCode: 401,
-        code: 'DEVICE_UNAUTHORIZED',
-        message: 'Invalid device token.',
-      });
-    }
-
-    const body = AgentSyncPrintersRequestSchema.safeParse(request.body);
-    if (!body.success) {
-      return reply.status(400).send({
-        statusCode: 400,
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid sync printers payload.',
-      });
-    }
-
-    await syncDiscoveredPrinters(db, device.studioId, body.data.printers);
-    await updateDeviceHeartbeat(db, device.deviceId);
-
-    return reply.send({
-      success: true,
-      syncedCount: body.data.printers.length,
-    });
-  });
-
-  // 6. Device Agent: Heartbeat
-  app.post('/agent/heartbeat', async (request, reply) => {
-    const db = getEffectiveDb();
-    const token = request.headers['x-device-token'] as string | undefined;
-    if (!token) {
-      return reply.status(401).send({
-        statusCode: 401,
-        code: 'DEVICE_UNAUTHORIZED',
-        message: 'Missing x-device-token header.',
-      });
-    }
-
-    const device = await findAgentDeviceByToken(db, token);
-    if (!device) {
-      return reply.status(401).send({
-        statusCode: 401,
-        code: 'DEVICE_UNAUTHORIZED',
-        message: 'Invalid device token.',
-      });
-    }
-
-    await updateDeviceHeartbeat(db, device.deviceId);
-    return reply.send({ success: true, timestamp: new Date().toISOString() });
-  });
-
+  await registerPrinterAgentRoutes(app, opts);
   await registerPrinterJobRoutes(app, opts);
 }

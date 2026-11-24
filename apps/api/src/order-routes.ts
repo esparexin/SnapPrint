@@ -18,6 +18,7 @@ import {
   findOrderByStudioAndIdempotency,
 } from './repositories/order.repository.js';
 import { findPhotoAssetsByIds } from './repositories/photo-asset.repository.js';
+import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
 import { StorageService } from './storage/storage-service.js';
 
 export interface OrderRouteOptions {
@@ -51,12 +52,9 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const bodyResult = QuoteRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply.status(400).send({
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid quotation request parameters.',
-          issues: bodyResult.error.issues,
-        });
+        return reply
+          .status(400)
+          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
       }
 
       const assetIds = Array.from(new Set(bodyResult.data.items.map((i) => i.assetId)));
@@ -66,11 +64,9 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       for (const item of bodyResult.data.items) {
         const asset = assetMap.get(item.assetId);
         if (!asset) {
-          return reply.status(404).send({
-            statusCode: 404,
-            code: 'ASSET_NOT_FOUND',
-            message: `Document asset '${item.assetId}' was not found in this session.`,
-          });
+          return reply
+            .status(404)
+            .send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
         }
         itemsWithMeta.push({
           config: item,
@@ -108,14 +104,18 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       );
       if (!studio) return;
 
+      const avail = await checkStudioCheckoutAvailability(db, studio);
+      if (!avail.allowed) {
+        return reply
+          .status(403)
+          .send({ statusCode: 403, code: avail.reason, message: avail.reason });
+      }
+
       const bodyResult = OrderSubmissionRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply.status(400).send({
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid order submission parameters.',
-          issues: bodyResult.error.issues,
-        });
+        return reply
+          .status(400)
+          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
       }
 
       const existing = await findOrderByStudioAndIdempotency(
@@ -134,11 +134,9 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       for (const item of bodyResult.data.items) {
         const asset = assetMap.get(item.assetId);
         if (!asset) {
-          return reply.status(404).send({
-            statusCode: 404,
-            code: 'ASSET_NOT_FOUND',
-            message: `Document asset '${item.assetId}' was not found in this session.`,
-          });
+          return reply
+            .status(404)
+            .send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
         }
         itemsWithMeta.push({
           config: item,
@@ -189,11 +187,9 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         request.params.orderId
       );
       if (!order) {
-        return reply.status(404).send({
-          statusCode: 404,
-          code: 'ORDER_NOT_FOUND',
-          message: 'Order was not found.',
-        });
+        return reply
+          .status(404)
+          .send({ statusCode: 404, code: 'ORDER_NOT_FOUND', message: 'Order was not found.' });
       }
 
       return reply.status(200).send(OrderRecordSchema.parse(order));

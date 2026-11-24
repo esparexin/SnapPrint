@@ -8,12 +8,17 @@ import {
   PaymentRecord,
   PaymentRecordSchema,
 } from '@snapprint/contracts';
-import { deriveOrderPaymentStatus, validatePaymentAttempt } from '@snapprint/domain';
+import {
+  deriveOrderPaymentStatus,
+  isSubscriptionActive,
+  validatePaymentAttempt,
+} from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
 import { findOrderById, updateOrderPaymentSummary } from './repositories/order.repository.js';
 import { createPaymentRecord, listPaymentsByOrder } from './repositories/payment.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
+import { getStudioSubscription } from './repositories/subscription.repository.js';
 
 export interface OperatorPaymentRouteOptions {
   db?: Db;
@@ -32,6 +37,15 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
     async (request, reply) => {
       const db = getEffectiveDb();
       const studioId = request.studioId!;
+
+      const sub = await getStudioSubscription(db, studioId);
+      if (!sub || !isSubscriptionActive(sub.expiresAt)) {
+        return reply.status(403).send({
+          statusCode: 403,
+          code: 'SUBSCRIPTION_EXPIRED',
+          message: 'Active subscription required to record counter payments.',
+        });
+      }
       const bodyResult = CounterPaymentRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
         return reply.status(400).send({
@@ -79,6 +93,7 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
         status: 'SUCCEEDED',
         recordedByUserId: request.operator?.user.id,
         notes: bodyResult.data.notes,
+        gatewayCapturedAt: now,
         createdAt: now,
         updatedAt: now,
       };

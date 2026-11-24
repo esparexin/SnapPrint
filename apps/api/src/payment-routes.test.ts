@@ -5,6 +5,7 @@ import { createTestApp } from './auth-test-helper.js';
 describe('Payment Routes & Authorization Policy', () => {
   const setupBaseFixture = async () => {
     const ctx = await createTestApp();
+    const now = new Date();
     const studio = {
       id: 'studio_test_1',
       slug: 'quick-print',
@@ -18,31 +19,61 @@ describe('Payment Routes & Authorization Policy', () => {
         onlinePaymentEnabled: true,
         counterPaymentEnabled: true,
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     ctx.studios.push(studio);
 
+    await ctx.db.collection('subscriptions').insertOne({
+      studioId: studio.id,
+      plan: 'quarterly',
+      status: 'active',
+      startsAt: now,
+      expiresAt: new Date(Date.now() + 86400000 * 90),
+      updatedAt: now,
+    });
+    await ctx.db.collection('agent_devices').insertOne({
+      deviceId: 'dev_pay_agent',
+      studioId: studio.id,
+      hostname: 'POS',
+      osPlatform: 'win32',
+      agentVersion: '1.0.0',
+      deviceToken: 'dvt_pay',
+      status: 'active',
+      lastHeartbeatAt: now,
+      createdAt: now,
+    });
+    await ctx.db.collection('studio_printers').insertOne({
+      id: 'prn_pay_bw',
+      studioId: studio.id,
+      name: 'HP',
+      role: 'active_bw',
+      isColorSupported: false,
+      supportedPaperSizes: ['A4'],
+      status: 'online',
+      isDefaultOsPrinter: true,
+      lastSeenAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     const passwordHash = await hashPassword('Password123!');
-    const user = {
+    ctx.users.push({
       id: 'usr_staff_123',
       email: 'staff@example.com',
       name: 'Staff Member',
       status: 'active' as const,
       passwordHash,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    ctx.users.push(user);
-
-    const membership = {
-      userId: user.id,
+      createdAt: now,
+      updatedAt: now,
+    });
+    ctx.memberships.push({
+      userId: 'usr_staff_123',
       studioId: studio.id,
       role: 'studio_staff' as const,
       status: 'active' as const,
-      createdAt: new Date(),
-    };
-    ctx.memberships.push(membership);
+      createdAt: now,
+    });
 
     const loginRes = await ctx.app.inject({
       method: 'POST',
@@ -66,12 +97,34 @@ describe('Payment Routes & Authorization Policy', () => {
       status: 'submitted' as const,
       paidAmountMinor: 0,
       paymentStatus: 'UNPAID' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     ctx.orders.push(order);
 
-    return { ctx, studio, user, order, opCookie };
+    const patchStatus = (status = 'processing') =>
+      ctx.app.inject({
+        method: 'PATCH',
+        url: `/studios/${studio.id}/orders/${order.orderId}/status`,
+        cookies: { [opCookie.name]: opCookie.value },
+        headers: { 'x-studio-id': studio.id },
+        payload: { status },
+      });
+
+    const payCounter = (
+      amountMinor: number,
+      method: 'counter_cash' | 'counter_upi',
+      notes?: string
+    ) =>
+      ctx.app.inject({
+        method: 'POST',
+        url: `/studios/${studio.id}/orders/${order.orderId}/payments/counter`,
+        cookies: { [opCookie.name]: opCookie.value },
+        headers: { 'x-studio-id': studio.id },
+        payload: { method, amountMinor, ...(notes ? { notes } : {}) },
+      });
+
+    return { ctx, studio, order, opCookie, patchStatus, payCounter };
   };
 
   it('customer initiates and verifies online payment successfully', async () => {
@@ -103,8 +156,7 @@ describe('Payment Routes & Authorization Policy', () => {
     });
 
     expect(verifyRes.statusCode).toBe(200);
-    const verifyData = JSON.parse(verifyRes.body);
-    expect(verifyData.status).toBe('SUCCEEDED');
+    expect(JSON.parse(verifyRes.body).status).toBe('SUCCEEDED');
 
     const historyRes = await ctx.app.inject({
       method: 'GET',
@@ -143,32 +195,16 @@ describe('Payment Routes & Authorization Policy', () => {
   });
 
   it('operator records counter cash and UPI payments', async () => {
-    const { ctx, studio, order, opCookie } = await setupBaseFixture();
+    const { payCounter } = await setupBaseFixture();
 
-    // Partial payment 200 INR (Cash)
-    const partRes = await ctx.app.inject({
-      method: 'POST',
-      url: `/studios/${studio.id}/orders/${order.orderId}/payments/counter`,
-      cookies: { [opCookie.name]: opCookie.value },
-      headers: { 'x-studio-id': studio.id },
-      payload: { method: 'counter_cash', amountMinor: 200, notes: 'Part payment' },
-    });
-
+    const partRes = await payCounter(200, 'counter_cash', 'Part payment');
     expect(partRes.statusCode).toBe(200);
     const partData = JSON.parse(partRes.body);
     expect(partData.payment.status).toBe('SUCCEEDED');
     expect(partData.order.paidAmountMinor).toBe(200);
     expect(partData.order.paymentStatus).toBe('PARTIALLY_PAID');
 
-    // Remaining payment 300 INR (UPI)
-    const remRes = await ctx.app.inject({
-      method: 'POST',
-      url: `/studios/${studio.id}/orders/${order.orderId}/payments/counter`,
-      cookies: { [opCookie.name]: opCookie.value },
-      headers: { 'x-studio-id': studio.id },
-      payload: { method: 'counter_upi', amountMinor: 300, notes: 'Remaining counter UPI' },
-    });
-
+    const remRes = await payCounter(300, 'counter_upi', 'Remaining counter UPI');
     expect(remRes.statusCode).toBe(200);
     const remData = JSON.parse(remRes.body);
     expect(remData.order.paidAmountMinor).toBe(500);
@@ -176,57 +212,24 @@ describe('Payment Routes & Authorization Policy', () => {
   });
 
   it('enforces print authorization policy: rejects printing unpaid order under payment_required', async () => {
-    const { ctx, studio, order, opCookie } = await setupBaseFixture();
-
-    const printRes = await ctx.app.inject({
-      method: 'PATCH',
-      url: `/studios/${studio.id}/orders/${order.orderId}/status`,
-      cookies: { [opCookie.name]: opCookie.value },
-      headers: { 'x-studio-id': studio.id },
-      payload: { status: 'processing' },
-    });
-
+    const { patchStatus } = await setupBaseFixture();
+    const printRes = await patchStatus('processing');
     expect(printRes.statusCode).toBe(403);
-    const data = JSON.parse(printRes.body);
-    expect(data.code).toBe('PAYMENT_REQUIRED_BEFORE_PRINT');
+    expect(JSON.parse(printRes.body).code).toBe('PAYMENT_REQUIRED_BEFORE_PRINT');
   });
 
   it('allows print authorization when order is fully PAID', async () => {
-    const { ctx, studio, order, opCookie } = await setupBaseFixture();
-
-    // Record full payment first
-    await ctx.app.inject({
-      method: 'POST',
-      url: `/studios/${studio.id}/orders/${order.orderId}/payments/counter`,
-      cookies: { [opCookie.name]: opCookie.value },
-      headers: { 'x-studio-id': studio.id },
-      payload: { method: 'counter_cash', amountMinor: 500 },
-    });
-
-    const printRes = await ctx.app.inject({
-      method: 'PATCH',
-      url: `/studios/${studio.id}/orders/${order.orderId}/status`,
-      cookies: { [opCookie.name]: opCookie.value },
-      headers: { 'x-studio-id': studio.id },
-      payload: { status: 'processing' },
-    });
-
+    const { payCounter, patchStatus } = await setupBaseFixture();
+    await payCounter(500, 'counter_cash');
+    const printRes = await patchStatus('processing');
     expect(printRes.statusCode).toBe(200);
     expect(JSON.parse(printRes.body).status).toBe('processing');
   });
 
   it('allows print authorization when studio policy is pay_at_counter even if UNPAID', async () => {
-    const { ctx, studio, order, opCookie } = await setupBaseFixture();
+    const { studio, patchStatus } = await setupBaseFixture();
     studio.settings.paymentPolicy = 'pay_at_counter';
-
-    const printRes = await ctx.app.inject({
-      method: 'PATCH',
-      url: `/studios/${studio.id}/orders/${order.orderId}/status`,
-      cookies: { [opCookie.name]: opCookie.value },
-      headers: { 'x-studio-id': studio.id },
-      payload: { status: 'processing' },
-    });
-
+    const printRes = await patchStatus('processing');
     expect(printRes.statusCode).toBe(200);
     expect(JSON.parse(printRes.body).status).toBe('processing');
   });

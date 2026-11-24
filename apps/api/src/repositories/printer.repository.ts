@@ -70,11 +70,17 @@ export async function findPairingKey(
   return db.collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION).findOne({ code });
 }
 
-export async function consumePairingKey(db: Db, code: string): Promise<boolean> {
-  const res = await db
+export async function consumePairingKey(
+  db: Db,
+  code: string,
+  now: Date = new Date()
+): Promise<AgentPairingKeyDocument | null> {
+  return db
     .collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION)
-    .updateOne({ code, status: 'active' }, { $set: { status: 'consumed' } });
-  return res.modifiedCount > 0;
+    .findOneAndUpdate(
+      { code, status: 'active', expiresAt: { $gte: now } },
+      { $set: { status: 'consumed' } }
+    );
 }
 
 export async function registerAgentDevice(
@@ -175,6 +181,49 @@ export async function updateStudioPrinterRole(
   const res = await db
     .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
     .updateOne({ studioId, id: printerId }, { $set: { role, updatedAt: now } });
+  return res.modifiedCount > 0;
+}
+
+export const AGENT_HEARTBEAT_TIMEOUT_MS = 120_000;
+
+export async function hasOnlineAgentDevice(db: Db, studioId: string): Promise<boolean> {
+  const cutoff = new Date(Date.now() - AGENT_HEARTBEAT_TIMEOUT_MS);
+  const count = await db.collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION).countDocuments({
+    studioId,
+    status: 'active',
+    lastHeartbeatAt: { $gte: cutoff },
+  });
+  return count > 0;
+}
+
+export async function hasActivePrinterAssigned(db: Db, studioId: string): Promise<boolean> {
+  const count = await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).countDocuments({
+    studioId,
+    role: { $in: ['active_bw', 'active_color'] },
+    status: 'online',
+  });
+  return count > 0;
+}
+
+export async function listStudioDevices(db: Db, studioId: string): Promise<AgentDeviceDocument[]> {
+  return db
+    .collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION)
+    .find({ studioId })
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
+export async function revokeAgentDevice(
+  db: Db,
+  studioId: string,
+  deviceId: string
+): Promise<boolean> {
+  const res = await db
+    .collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION)
+    .updateOne(
+      { studioId, deviceId, status: 'active' },
+      { $set: { status: 'revoked', deviceToken: `revoked_${Date.now()}` } }
+    );
   return res.modifiedCount > 0;
 }
 

@@ -1,3 +1,6 @@
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   createSystemSpoolerAdapter,
@@ -130,34 +133,47 @@ printer HP_LaserJet_1020 is idle. enabled since Mon 23 Nov 2026 10:00:00 AM IST
     });
 
     it('executes silent Start-Process command on win32', async () => {
+      const tempPdf = join(tmpdir(), 'test_invoice.pdf');
+      writeFileSync(tempPdf, Buffer.from('%PDF-1.4 test'));
       const executedCommands: string[] = [];
       const mockExec = async (cmd: string) => {
         executedCommands.push(cmd);
         return { stdout: '', stderr: '' };
       };
 
-      const adapter = createSystemSpoolerAdapter({ platform: 'win32', execAsync: mockExec });
-      await adapter.printFile('HP LaserJet Pro M126nw', 'C:\\temp\\invoice.pdf', { copies: 2 });
+      try {
+        const adapter = createSystemSpoolerAdapter({ platform: 'win32', execAsync: mockExec });
+        await adapter.printFile('HP LaserJet Pro M126nw', tempPdf, { copies: 2 });
 
-      expect(executedCommands).toHaveLength(2);
-      expect(executedCommands[0]).toContain('Start-Process');
-      expect(executedCommands[0]).toContain('-Verb PrintTo');
-      expect(executedCommands[0]).toContain('HP LaserJet Pro M126nw');
-      expect(executedCommands[0]).toContain('C:\\temp\\invoice.pdf');
+        expect(executedCommands).toHaveLength(2); // Validation + Dispatch
+        expect(executedCommands[0]).toContain("Get-Printer -Name 'HP LaserJet Pro M126nw'");
+        expect(executedCommands[1]).toContain('Start-Process');
+        expect(executedCommands[1]).toContain('-Verb PrintTo');
+        expect(executedCommands[1]).toContain('HP LaserJet Pro M126nw');
+        expect(executedCommands[1]).toContain(tempPdf);
+      } finally {
+        if (existsSync(tempPdf)) unlinkSync(tempPdf);
+      }
     });
 
     it('executes lp command on darwin/linux', async () => {
+      const tempPdf = join(tmpdir(), 'test_ticket.pdf');
+      writeFileSync(tempPdf, Buffer.from('%PDF-1.4 test'));
       const executedCommands: string[] = [];
       const mockExec = async (cmd: string) => {
         executedCommands.push(cmd);
         return { stdout: '', stderr: '' };
       };
 
-      const adapter = createSystemSpoolerAdapter({ platform: 'darwin', execAsync: mockExec });
-      await adapter.printFile('Epson_L3150', '/tmp/ticket.pdf', { copies: 3 });
+      try {
+        const adapter = createSystemSpoolerAdapter({ platform: 'darwin', execAsync: mockExec });
+        await adapter.printFile('Epson_L3150', tempPdf, { copies: 3 });
 
-      expect(executedCommands).toHaveLength(1);
-      expect(executedCommands[0]).toBe('lp -d "Epson_L3150" -n 3 "/tmp/ticket.pdf"');
+        expect(executedCommands).toHaveLength(1);
+        expect(executedCommands[0]).toBe(`lp -d "Epson_L3150" -n 3 "${tempPdf}"`);
+      } finally {
+        if (existsSync(tempPdf)) unlinkSync(tempPdf);
+      }
     });
   });
 });

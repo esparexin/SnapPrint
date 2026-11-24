@@ -1,6 +1,12 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { PaperSize } from '@snapprint/contracts';
+import {
+  buildWindowsImagePrintScript,
+  buildWindowsPdfPrintScript,
+  buildWindowsPrinterValidationScript,
+  validatePrintTarget,
+} from './windows-print-dispatcher.js';
 
 const execPromise = promisify(exec);
 
@@ -152,23 +158,63 @@ export function createSystemSpoolerAdapter(options?: {
     },
 
     async printFile(printerName: string, filePath: string, opts?: PrintFileOptions): Promise<void> {
+      const validation = validatePrintTarget(printerName, filePath);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+
       const copies = opts?.copies && opts.copies > 0 ? opts.copies : 1;
 
       if (platform === 'win32') {
-        const safePath = filePath.replace(/"/g, '`"');
-        const safePrinter = printerName.replace(/"/g, '`"');
-        for (let i = 0; i < copies; i++) {
-          await runner(
-            `powershell -NoProfile -Command "Start-Process -FilePath '${safePath}' -Verb PrintTo -ArgumentList '${safePrinter}' -PassThru | Wait-Process"`
+        // 1. Validate target printer exists and is online
+        const checkCmd = buildWindowsPrinterValidationScript(printerName);
+        try {
+          await runner(`powershell -NoProfile -Command "${checkCmd}"`);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('PRINTER_NOT_FOUND')) {
+            throw new Error(`PRINTER_NOT_FOUND: Target printer '${printerName}' is not installed.`);
+          }
+          if (msg.includes('PRINTER_OFFLINE')) {
+            throw new Error(
+              `PRINTER_OFFLINE: Target printer '${printerName}' is offline or disconnected.`
+            );
+          }
+          throw new Error(
+            `SPOOLER_SUBMISSION_FAILED: Validation failed for printer '${printerName}': ${msg}`
+          );
+        }
+
+        // 2. Dispatch print job based on format
+        let printCmd: string;
+        if (['.png', '.jpg', '.jpeg'].includes(validation.ext)) {
+          printCmd = buildWindowsImagePrintScript(printerName, filePath, copies);
+        } else {
+          printCmd = buildWindowsPdfPrintScript(printerName, filePath, copies);
+        }
+
+        try {
+          await runner(`powershell -NoProfile -Command "${printCmd}"`);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            `SPOOLER_SUBMISSION_FAILED: Spooler dispatch failed for '${printerName}': ${msg}`
           );
         }
         return;
       }
 
-      // macOS / Linux via CUPS lp
+      // Unix / macOS / Linux fallback via CUPS
       const safePath = filePath.replace(/"/g, '\\"');
       const safePrinter = printerName.replace(/"/g, '\\"');
-      await runner(`lp -d "${safePrinter}" -n ${copies} "${safePath}"`);
+      try {
+        await runner(`lp -d "${safePrinter}" -n ${copies} "${safePath}"`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `SPOOLER_SUBMISSION_FAILED: CUPS dispatch failed for '${printerName}': ${msg}`
+        );
+      }
     },
   };
 }
