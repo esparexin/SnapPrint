@@ -15,6 +15,9 @@ export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
   useEffect(() => {
     let mounted = true;
     async function load() {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       try {
         const data = await fetchStudioMetrics(studioId);
         if (mounted) setMetrics(data);
@@ -26,9 +29,18 @@ export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
     }
     load();
     const interval = setInterval(load, 15000); // 15s live refresh
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        load();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       mounted = false;
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [studioId]);
 
