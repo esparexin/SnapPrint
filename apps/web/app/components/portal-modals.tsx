@@ -3,7 +3,7 @@
 import React from 'react';
 import { Studio } from '@snapprint/contracts';
 import { StudioOnboardingProfile } from '../../src/studio-client';
-import { useDialog } from '../hooks/use-dialog';
+import { ModalSheetShell } from './modal-sheet-shell';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PrinterManagementModal } from './printer-management-modal';
 import { ShopProfileModal } from './shop-profile-modal';
@@ -41,33 +41,20 @@ function SetupWizardModal({
   onComplete: (saved: StudioOnboardingProfile | null) => void;
   onClose: () => void;
 }) {
-  const { handleBackdropClick } = useDialog({ isOpen: true, onClose, enableSwipeDown: false });
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wizard-title"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
+    <ModalSheetShell
+      onClose={onClose}
+      titleId="wizard-title"
+      maxWidth="620px"
+      enableSwipeDown={false}
+      contentStyle={{ width: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      <div
-        className="dialog-content"
-        style={{
-          maxWidth: '620px',
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ShopSetupWizard
-          initialStudio={studioId ? { id: studioId } : undefined}
-          onComplete={onComplete}
-          onCancel={onClose}
-        />
-      </div>
-    </div>
+      <ShopSetupWizard
+        initialStudio={studioId ? { id: studioId } : undefined}
+        onComplete={onComplete}
+        onCancel={onClose}
+      />
+    </ModalSheetShell>
   );
 }
 
