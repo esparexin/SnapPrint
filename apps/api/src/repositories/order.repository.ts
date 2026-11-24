@@ -7,6 +7,7 @@ import {
   OrderRecordSchema,
   OrderStatus,
 } from '@snapprint/contracts';
+import { sanitizeOrderDocument } from './order-sanitizer.js';
 
 export const ORDERS_COLLECTION = 'orders';
 
@@ -32,32 +33,7 @@ export interface OrderDocument {
 }
 
 export function toOrderContract(doc: OrderDocument): OrderRecord {
-  return OrderRecordSchema.parse({
-    orderId: doc.orderId,
-    orderNumber: doc.orderNumber,
-    studioId: doc.studioId,
-    sessionId: doc.sessionId,
-    idempotencyKey: doc.idempotencyKey,
-    customerName: doc.customerName,
-    customerPhone: doc.customerPhone,
-    notes: doc.notes,
-    items: doc.items,
-    totalSheets: doc.totalSheets,
-    totalAmountMinor: doc.totalAmountMinor,
-    currency: doc.currency,
-    status: doc.status,
-    paidAmountMinor: doc.paidAmountMinor ?? 0,
-    paymentStatus: doc.paymentStatus ?? 'UNPAID',
-    events: Array.isArray(doc.events) ? doc.events : [],
-    createdAt:
-      doc.createdAt instanceof Date
-        ? doc.createdAt.toISOString()
-        : new Date(doc.createdAt).toISOString(),
-    updatedAt:
-      doc.updatedAt instanceof Date
-        ? doc.updatedAt.toISOString()
-        : new Date(doc.updatedAt).toISOString(),
-  });
+  return sanitizeOrderDocument(doc);
 }
 
 export async function createOrderRecord(db: Db, order: OrderRecordInput): Promise<OrderRecord> {
@@ -146,7 +122,16 @@ export async function listOrdersByStudio(
     .sort({ createdAt: -1 })
     .limit(Math.min(limit, 100))
     .toArray();
-  return docs.map(toOrderContract);
+
+  const results: OrderRecord[] = [];
+  for (const doc of docs) {
+    try {
+      results.push(toOrderContract(doc));
+    } catch {
+      // Gracefully omit corrupt unparseable documents so one corrupt doc never crashes the queue
+    }
+  }
+  return results;
 }
 
 export async function updateOrderStatus(
