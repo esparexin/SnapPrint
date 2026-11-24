@@ -3,6 +3,9 @@ import {
   lockScroll,
   unlockScroll,
   getOpenDialogCount,
+  getActiveDialogStack,
+  pushDialogToStack,
+  popDialogFromStack,
   resetDialogStateForTests,
 } from './use-dialog';
 
@@ -88,5 +91,29 @@ describe('useDialog Scroll Locking & Restoration Logic', () => {
       left: 0,
       behavior: 'instant',
     });
+  });
+
+  it('manages LIFO active dialog stack correctly for nested dialogs', () => {
+    expect(getActiveDialogStack()).toEqual([]);
+
+    pushDialogToStack('dialog-parent');
+    expect(getActiveDialogStack()).toEqual(['dialog-parent']);
+
+    pushDialogToStack('dialog-child');
+    expect(getActiveDialogStack()).toEqual(['dialog-parent', 'dialog-child']);
+
+    // Pop child first
+    popDialogFromStack('dialog-child');
+    expect(getActiveDialogStack()).toEqual(['dialog-parent']);
+
+    // Pop parent
+    popDialogFromStack('dialog-parent');
+    expect(getActiveDialogStack()).toEqual([]);
+  });
+
+  it('safely handles non-existent dialog ID pop', () => {
+    pushDialogToStack('dialog-1');
+    popDialogFromStack('non-existent');
+    expect(getActiveDialogStack()).toEqual(['dialog-1']);
   });
 });
