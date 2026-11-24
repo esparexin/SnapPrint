@@ -1,25 +1,61 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { AuthResponse } from '@snapprint/contracts';
 import PushpinTearFooter from '@/components/ui/pushpin-tear-footer';
+import { fetchCurrentUser, logoutOperator } from '../src/auth-client';
+import { buildHomeTopNav } from './components/home-nav-builder';
 import { InfoModal } from './components/info-modal';
+import { LegalModals } from './components/legal-modals';
 import { OperatorPortal } from './components/operator-portal';
 
 export default function HomePage() {
+  const [auth, setAuth] = useState<AuthResponse | null>(null);
   const [showPortalModal, setShowPortalModal] = useState(false);
   const [portalMode, setPortalMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    fetchCurrentUser()
+      .then((user) => mounted && setAuth(user))
+      .catch(() => mounted && setAuth(null));
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('action') === 'register') {
+      const action = params.get('action');
+      if (action === 'register') {
         setPortalMode('register');
+        setShowPortalModal(true);
+      } else if (action === 'portal' || params.get('portal') === 'open') {
         setShowPortalModal(true);
       }
     }
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  const handleLogout = async () => {
+    await logoutOperator().catch(() => {});
+    setAuth(null);
+    setShowPortalModal(false);
+  };
+
+  const topNav = buildHomeTopNav({
+    auth,
+    onOpenLogin: () => {
+      setPortalMode('email_otp');
+      setShowPortalModal(true);
+    },
+    onOpenRegister: () => {
+      setPortalMode('register');
+      setShowPortalModal(true);
+    },
+    onOpenPortal: () => setShowPortalModal(true),
+    onLogout: handleLogout,
+  });
 
   return (
     <div
@@ -32,14 +68,7 @@ export default function HomePage() {
         overflow: 'hidden',
       }}
     >
-      <main
-        style={{
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+      <main style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
         <PushpinTearFooter
           height="100%"
           brand={
@@ -74,25 +103,7 @@ export default function HomePage() {
           sheetInk="#ffffff"
           paperInk="#0f172a"
           seed={19}
-          topNav={[
-            { label: 'About', href: '/about', variant: 'text' },
-            {
-              label: 'Login',
-              onClick: () => {
-                setPortalMode('email_otp');
-                setShowPortalModal(true);
-              },
-              variant: 'text',
-            },
-            {
-              label: 'Register',
-              onClick: () => {
-                setPortalMode('register');
-                setShowPortalModal(true);
-              },
-              variant: 'button',
-            },
-          ]}
+          topNav={topNav}
           status={null}
           description={
             <span>
@@ -139,44 +150,16 @@ export default function HomePage() {
 
       {showPortalModal && (
         <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="420px">
-          <OperatorPortal initialMode={portalMode} />
+          <OperatorPortal initialMode={portalMode} onAuthChange={(newAuth) => setAuth(newAuth)} />
         </InfoModal>
       )}
 
-      {showPrivacyModal && (
-        <InfoModal title="Privacy Policy" onClose={() => setShowPrivacyModal(false)}>
-          <p style={{ marginBottom: '0.75rem' }}>
-            <strong>Zero WhatsApp Privacy Leaks:</strong> Customer files uploaded to SnapPrint
-            auto-expire with a strict 120-minute TTL. No sensitive documents (Aadhaar cards, voter
-            IDs, certificates) remain saved on studio computers or personal phones.
-          </p>
-          <p style={{ marginBottom: '0.75rem' }}>
-            <strong>Encrypted Spool:</strong> Documents travel via TLS directly to the local printer
-            spool queue and are permanently purged after printing.
-          </p>
-          <p>
-            <strong>Network Trust:</strong> SnapPrint never shares or sells customer contact details
-            or uploaded documents.
-          </p>
-        </InfoModal>
-      )}
-
-      {showTermsModal && (
-        <InfoModal title="Terms & Conditions" onClose={() => setShowTermsModal(false)}>
-          <p style={{ marginBottom: '0.75rem' }}>
-            <strong>Multi-Tenant Print Network:</strong> SnapPrint provides a digital counter Xerox
-            and printing infrastructure connecting customers to authorized local studios.
-          </p>
-          <p style={{ marginBottom: '0.75rem' }}>
-            <strong>Transparent Pricing:</strong> Page count and color breakdown are dynamically
-            calculated before payment. Quotations are strictly binding.
-          </p>
-          <p>
-            <strong>Operator Agreement:</strong> Registered Xerox centers and studios agree to
-            fulfill spool jobs promptly and maintain high print quality standards.
-          </p>
-        </InfoModal>
-      )}
+      <LegalModals
+        showPrivacy={showPrivacyModal}
+        showTerms={showTermsModal}
+        onClosePrivacy={() => setShowPrivacyModal(false)}
+        onCloseTerms={() => setShowTermsModal(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { AuthApiError, fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { resolveStudioAuthorization } from '../../src/studio-authorization';
@@ -12,27 +12,17 @@ import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
 import { WorkspaceKpiBar } from './workspace-kpi-bar';
-
-const portalStyles: Record<string, CSSProperties> = {
-  wrapper: { width: '100%', maxWidth: '800px', margin: '0 auto', fontFamily: 'var(--font-family)' },
-  loading: { textAlign: 'center', padding: '3rem', fontFamily: 'var(--font-family)' },
-  alert: {
-    padding: '0.75rem 1rem',
-    background: '#fee2e2',
-    border: '1px solid #f87171',
-    borderRadius: '0.375rem',
-    color: '#991b1b',
-    marginBottom: '1.5rem',
-    fontSize: '0.875rem',
-  },
-  sectionHeading: { fontSize: '1.25rem', fontWeight: 600, margin: '0 0 1rem' },
-};
+import { portalStyles } from './operator-portal-styles';
 
 export interface OperatorPortalProps {
   initialMode?: 'password' | 'email_otp' | 'register';
+  onAuthChange?: (auth: AuthResponse | null) => void;
 }
 
-export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProps = {}) {
+export function OperatorPortal({
+  initialMode = 'email_otp',
+  onAuthChange,
+}: OperatorPortalProps = {}) {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -70,6 +60,7 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
       await logoutOperator();
       setAuth(null);
       setSelectedStudioId(null);
+      onAuthChange?.(null);
     } catch (err) {
       setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.');
     } finally {
@@ -93,6 +84,13 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
         onSuccess={(newAuth) => {
           setAuth(newAuth);
           setErrorBanner(null);
+          onAuthChange?.(newAuth);
+          const isSuper = newAuth.memberships.some(
+            (m) => m.role === 'platform_admin' && m.status === 'active'
+          );
+          if (isSuper && typeof window !== 'undefined') {
+            window.location.href = '/admin';
+          }
         }}
       />
     );

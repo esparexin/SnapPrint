@@ -6,45 +6,58 @@ import {
   PlatformAuditEntry,
   PlatformMetricsResponse,
   PlatformStudioItem,
+  PlatformUserItem,
   StudioStatus,
 } from '@snapprint/contracts';
 import {
   getPlatformMetrics,
   listPlatformAuditLogs,
   listPlatformStudios,
+  listPlatformUsers,
 } from '../../src/platform-admin-client';
 import { AdminAuditTable } from './admin-audit-table';
 import { AdminKpiGrid } from './admin-kpi-grid';
 import { adminLayoutStyles } from './admin-layout-styles';
+import { AdminPortalHeader, AdminTabType } from './admin-portal-header';
 import { AdminShopTable } from './admin-shop-table';
 import { AdminStatusModal } from './admin-status-modal';
+import { AdminUserTable } from './admin-user-table';
 
 export interface AdminPortalViewProps {
   auth: AuthResponse;
   onLogout: () => void;
 }
 
+interface PortalData {
+  metrics: PlatformMetricsResponse | null;
+  studios: PlatformStudioItem[];
+  auditLogs: PlatformAuditEntry[];
+  users: PlatformUserItem[];
+}
+
 export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'studios' | 'audit'>('overview');
-  const [metrics, setMetrics] = useState<PlatformMetricsResponse | null>(null);
-  const [studios, setStudios] = useState<PlatformStudioItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<PlatformAuditEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<AdminTabType>('overview');
+  const [data, setData] = useState<PortalData>({
+    metrics: null,
+    studios: [],
+    auditLogs: [],
+    users: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedStudio, setSelectedStudio] = useState<PlatformStudioItem | null>(null);
 
-  const loadData = useCallback(async (statusFilter?: StudioStatus, searchFilter?: string) => {
+  const loadData = useCallback(async (stFilter?: StudioStatus, scFilter?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const [m, s, a] = await Promise.all([
+      const [metrics, s, a, u] = await Promise.all([
         getPlatformMetrics(),
-        listPlatformStudios({ status: statusFilter, search: searchFilter }),
+        listPlatformStudios({ status: stFilter, search: scFilter }),
         listPlatformAuditLogs(50),
+        listPlatformUsers(50),
       ]);
-      setMetrics(m);
-      setStudios(s.studios);
-      setAuditLogs(a.auditLogs);
+      setData({ metrics, studios: s.studios, auditLogs: a.auditLogs, users: u.users });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch platform administration data');
     } finally {
@@ -56,78 +69,40 @@ export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
     loadData();
   }, [loadData]);
 
-  const handleStudioUpdated = (updated: PlatformStudioItem) => {
-    setStudios((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  const handleUpdated = (up: PlatformStudioItem) => {
+    setData((d) => ({ ...d, studios: d.studios.map((s) => (s.id === up.id ? up : s)) }));
     loadData();
   };
 
   return (
     <div style={adminLayoutStyles.pageWrapper}>
-      <header style={adminLayoutStyles.header}>
-        <div style={adminLayoutStyles.headerInner}>
-          <div>
-            <div style={adminLayoutStyles.brandRow}>
-              <h1 style={adminLayoutStyles.brandTitle}>SnapPrint</h1>
-              <span style={adminLayoutStyles.badgeAdmin}>Platform Admin</span>
-            </div>
-            <p style={adminLayoutStyles.userSubtext}>
-              Signed in as <strong style={{ color: '#334155' }}>{auth.user.email}</strong>
-            </p>
-          </div>
-
-          <div style={adminLayoutStyles.btnRow}>
-            <button type="button" onClick={() => loadData()} style={adminLayoutStyles.btnSecondary}>
-              Refresh
-            </button>
-            <a href="/" style={adminLayoutStyles.btnSecondary}>
-              Shop Workspace
-            </a>
-            <button type="button" onClick={onLogout} style={adminLayoutStyles.btnDanger}>
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        <div style={adminLayoutStyles.tabRow}>
-          {(['overview', 'studios', 'audit'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              style={
-                activeTab === tab
-                  ? adminLayoutStyles.tabBtnActive
-                  : adminLayoutStyles.tabBtnInactive
-              }
-            >
-              {tab === 'overview'
-                ? 'Overview & Metrics'
-                : tab === 'studios'
-                  ? 'Tenants Directory'
-                  : 'Audit Trail'}
-            </button>
-          ))}
-        </div>
-      </header>
+      <AdminPortalHeader
+        email={auth.user.email}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onRefresh={() => loadData()}
+        onLogout={onLogout}
+      />
 
       <main style={adminLayoutStyles.main}>
         {error && <div style={adminLayoutStyles.errorBanner}>{error}</div>}
 
         {(activeTab === 'overview' || activeTab === 'studios') && (
-          <AdminKpiGrid metrics={metrics} loading={loading} />
+          <>
+            <AdminKpiGrid metrics={data.metrics} loading={loading} />
+            <AdminShopTable
+              studios={data.studios}
+              loading={loading}
+              onManageStatus={(st) => setSelectedStudio(st)}
+              onFilterChange={(st, sc) => loadData(st, sc)}
+            />
+          </>
         )}
 
-        {(activeTab === 'overview' || activeTab === 'studios') && (
-          <AdminShopTable
-            studios={studios}
-            loading={loading}
-            onManageStatus={(studio) => setSelectedStudio(studio)}
-            onFilterChange={(st, sc) => loadData(st, sc)}
-          />
-        )}
+        {activeTab === 'users' && <AdminUserTable users={data.users} loading={loading} />}
 
         {(activeTab === 'overview' || activeTab === 'audit') && (
-          <AdminAuditTable logs={auditLogs} loading={loading} />
+          <AdminAuditTable logs={data.auditLogs} loading={loading} />
         )}
 
         {selectedStudio && (
@@ -135,7 +110,7 @@ export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
             studio={selectedStudio}
             isOpen={Boolean(selectedStudio)}
             onClose={() => setSelectedStudio(null)}
-            onUpdated={handleStudioUpdated}
+            onUpdated={handleUpdated}
           />
         )}
       </main>

@@ -77,3 +77,23 @@ export const ListPlatformAuditLogsResponseSchema = z.object({
 });
 
 export type ListPlatformAuditLogsResponse = z.infer<typeof ListPlatformAuditLogsResponseSchema>;
+
+export const PlatformUserItemSchema = z.object({
+  id: z.string().min(1),
+  email: z.string().email(),
+  name: z.string().min(1),
+  phone: z.string().optional(),
+  status: z.enum(['active', 'suspended', 'pending_verification']),
+  role: z.enum(['platform_admin', 'studio_owner', 'studio_staff']),
+  studioId: z.string().nullable().optional(),
+  createdAt: z.string().datetime(),
+});
+
+export type PlatformUserItem = z.infer<typeof PlatformUserItemSchema>;
+
+export const ListPlatformUsersResponseSchema = z.object({
+  users: z.array(PlatformUserItemSchema),
+  total: z.number().int().nonnegative(),
+});
+
+export type ListPlatformUsersResponse = z.infer<typeof ListPlatformUsersResponseSchema>;

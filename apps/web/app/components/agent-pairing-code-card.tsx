@@ -82,11 +82,13 @@ export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeC
       >
         <strong>Setup Steps on Shop Computer:</strong>
         <ol style={{ margin: '6px 0 0', paddingLeft: '20px' }}>
-          <li>Open the SnapPrint Agent on your Windows/Mac shop computer.</li>
+          <li>Open a terminal on your shop computer in the SnapPrint directory.</li>
           <li>
-            Run command: <code>pnpm agent:pair</code> or launch the tray app.
+            Enroll printer agent: <code>pnpm agent:pair {code}</code>
           </li>
-          <li>Paste this pairing code when prompted to link your printers.</li>
+          <li>
+            Launch background spooler loop: <code>pnpm agent:start</code>
+          </li>
         </ol>
       </div>
     </>
