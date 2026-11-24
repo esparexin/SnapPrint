@@ -162,7 +162,9 @@ export function OperatorPortal({
             <PortalModals
               studioId={activeStudioId}
               studioName={
-                activeStudioId ? studioNames[activeStudioId] || `Studio ${activeStudioId}` : undefined
+                activeStudioId
+                  ? studioNames[activeStudioId] || `Studio ${activeStudioId}`
+                  : undefined
               }
               activeView={activeView}
               onBackToHub={() => setActiveView('hub')}

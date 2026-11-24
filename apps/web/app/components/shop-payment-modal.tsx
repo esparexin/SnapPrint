@@ -18,25 +18,37 @@ interface ShopPaymentModalProps {
   onUpdated: (updated: Studio) => void;
 }
 
+const alertBoxStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  backgroundColor: '#fef2f2',
+  color: '#b91c1c',
+  borderRadius: '6px',
+  fontSize: '0.8125rem',
+  marginBottom: '16px',
+};
+
 export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopPaymentModalProps) {
-  const initialSettings = studio.settings;
-  const initialPayment = (studio as unknown as { payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string } }).payment;
+  const s = studio.settings;
+  const p = (studio as { payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string } })
+    .payment;
 
   const [paymentPolicy, setPaymentPolicy] = useState<'payment_required' | 'pay_at_counter'>(
-    initialSettings?.paymentPolicy || 'payment_required'
+    s?.paymentPolicy || 'payment_required'
   );
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(initialSettings?.onlinePaymentEnabled ?? true);
-  const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(initialSettings?.counterPaymentEnabled ?? true);
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(s?.onlinePaymentEnabled ?? true);
+  const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(
+    s?.counterPaymentEnabled ?? true
+  );
   const [printRates, setPrintRates] = useState<StudioPrintRatesContract>(
-    initialSettings?.printRates || {
+    s?.printRates || {
       A4: {
         black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
         color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
       },
     }
   );
-  const [keyId, setKeyId] = useState(initialPayment?.razorpayKeyId || '');
-  const [isConfirmed, setIsConfirmed] = useState(initialPayment?.isRazorpayConfirmed ?? false);
+  const [keyId, setKeyId] = useState(p?.razorpayKeyId || '');
+  const [isConfirmed, setIsConfirmed] = useState(p?.isRazorpayConfirmed ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,17 +110,7 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
 
         <div style={{ padding: '20px', overflowY: 'auto' }}>
           {error && (
-            <div
-              role="alert"
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#fef2f2',
-                color: '#b91c1c',
-                borderRadius: '6px',
-                fontSize: '0.8125rem',
-                marginBottom: '16px',
-              }}
-            >
+            <div role="alert" style={alertBoxStyle}>
               {error}
             </div>
           )}

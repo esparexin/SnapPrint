@@ -109,21 +109,25 @@ export function sanitizeOrderDocument(doc: OrderDocument): OrderRecord {
     ? doc.items.map(sanitizeOrderItem).filter((i): i is QuoteItemBreakdown => i !== null)
     : [];
 
-  const rawOrderId = typeof doc.orderId === 'string' && doc.orderId.length >= 16
-    ? doc.orderId
-    : `ord_${Date.now()}_fallback00`;
+  const rawOrderId =
+    typeof doc.orderId === 'string' && doc.orderId.length >= 16
+      ? doc.orderId
+      : `ord_${Date.now()}_fallback00`;
 
-  const rawOrderNumber = typeof doc.orderNumber === 'string' && doc.orderNumber.length >= 3
-    ? doc.orderNumber
-    : 'ORD-000';
+  const rawOrderNumber =
+    typeof doc.orderNumber === 'string' && doc.orderNumber.length >= 3
+      ? doc.orderNumber
+      : 'ORD-000';
 
-  const rawSessionId = typeof doc.sessionId === 'string' && doc.sessionId.length >= 16
-    ? doc.sessionId
-    : 'session_legacy_fallback00';
+  const rawSessionId =
+    typeof doc.sessionId === 'string' && doc.sessionId.length >= 16
+      ? doc.sessionId
+      : 'session_legacy_fallback00';
 
-  const rawIdempotencyKey = typeof doc.idempotencyKey === 'string' && doc.idempotencyKey.length >= 8
-    ? doc.idempotencyKey
-    : `idemp_${Date.now()}`;
+  const rawIdempotencyKey =
+    typeof doc.idempotencyKey === 'string' && doc.idempotencyKey.length >= 8
+      ? doc.idempotencyKey
+      : `idemp_${Date.now()}`;
 
   const status: OrderStatus = VALID_STATUSES.has(doc.status) ? doc.status : 'submitted';
   const paymentStatus: OrderPaymentStatus = VALID_PAYMENT_STATUSES.has(
@@ -132,13 +136,15 @@ export function sanitizeOrderDocument(doc: OrderDocument): OrderRecord {
     ? (doc.paymentStatus as OrderPaymentStatus)
     : 'UNPAID';
 
-  const totalSheets = typeof doc.totalSheets === 'number' && doc.totalSheets >= 0
-    ? doc.totalSheets
-    : sanitizedItems.reduce((acc, i) => acc + i.sheetsCount, 0);
+  const totalSheets =
+    typeof doc.totalSheets === 'number' && doc.totalSheets >= 0
+      ? doc.totalSheets
+      : sanitizedItems.reduce((acc, i) => acc + i.sheetsCount, 0);
 
-  const totalAmountMinor = typeof doc.totalAmountMinor === 'number' && doc.totalAmountMinor >= 0
-    ? doc.totalAmountMinor
-    : sanitizedItems.reduce((acc, i) => acc + i.subtotalMinor, 0);
+  const totalAmountMinor =
+    typeof doc.totalAmountMinor === 'number' && doc.totalAmountMinor >= 0
+      ? doc.totalAmountMinor
+      : sanitizedItems.reduce((acc, i) => acc + i.subtotalMinor, 0);
 
   const events: OrderAuditEvent[] = Array.isArray(doc.events)
     ? doc.events.map(sanitizeAuditEvent).filter((e): e is OrderAuditEvent => e !== null)

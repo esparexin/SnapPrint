@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/cli.ts",
     "start": "tsx src/cli.ts",
-    "build": "tsc",
+    "build": "tsc && tsx scripts/build-windows-package.ts",
     "build:wix": "tsx scripts/build-windows-package.ts",
     "typecheck": "tsc --noEmit"
   },

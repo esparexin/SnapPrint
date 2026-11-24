@@ -42,10 +42,7 @@ describe('Studio Names & Context Formatting', () => {
     expect(formatStudioOptionLabel({})).toBe('Platform Administration');
     expect(formatStudioOptionLabel({ studioId: 'studio_123' }, {})).toBe('Studio: studio_123');
     expect(
-      formatStudioOptionLabel(
-        { studioId: 'studio_123' },
-        { studio_123: 'Vikram Mobiles' }
-      )
+      formatStudioOptionLabel({ studioId: 'studio_123' }, { studio_123: 'Vikram Mobiles' })
     ).toBe('Vikram Mobiles (studio_123)');
   });
 });

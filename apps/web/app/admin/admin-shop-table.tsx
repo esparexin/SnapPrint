@@ -11,6 +11,8 @@ export interface AdminShopTableProps {
   onInspect: (studio: PlatformStudioItem) => void;
   onManageStatus: (studio: PlatformStudioItem) => void;
   onFilterChange: (status?: StudioStatus, search?: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
 }
 
 export function AdminShopTable({
@@ -19,9 +21,10 @@ export function AdminShopTable({
   onInspect,
   onManageStatus,
   onFilterChange,
+  statusFilter = 'all',
+  onStatusFilterChange,
 }: AdminShopTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const onSearch = (val: string) => {
     setSearchTerm(val);
@@ -30,7 +33,7 @@ export function AdminShopTable({
   };
 
   const onStatus = (val: string) => {
-    setStatusFilter(val);
+    onStatusFilterChange?.(val);
     const filter = val === 'all' ? undefined : (val as StudioStatus);
     onFilterChange(filter, searchTerm.trim() || undefined);
   };
@@ -74,6 +77,7 @@ export function AdminShopTable({
               <th style={adminTableStyles.th}>Studio Name</th>
               <th style={adminTableStyles.th}>Identifier / Slug</th>
               <th style={adminTableStyles.th}>Status</th>
+              <th style={adminTableStyles.th}>Printers & Payments</th>
               <th style={adminTableStyles.th}>Owner & Contact</th>
               <th style={adminTableStyles.th}>Created</th>
               <th style={adminTableStyles.thRight}>Action</th>
@@ -82,13 +86,13 @@ export function AdminShopTable({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={adminTableStyles.emptyCell}>
+                <td colSpan={7} style={adminTableStyles.emptyCell}>
                   Loading studios directory...
                 </td>
               </tr>
             ) : studios.length === 0 ? (
               <tr>
-                <td colSpan={6} style={adminTableStyles.emptyCell}>
+                <td colSpan={7} style={adminTableStyles.emptyCell}>
                   No studios found matching the criteria.
                 </td>
               </tr>

@@ -42,6 +42,49 @@ export function ShopPrintRatesFields({ printRates, onChange }: ShopPrintRatesFie
     marginTop: '4px',
   };
 
+  const fields = [
+    {
+      label: '⚫ B&W Single Sided',
+      mode: 'black_and_white' as const,
+      side: 'singleSidedMinor' as const,
+      step: '0.5',
+      val: (a4.black_and_white?.singleSidedMinor ?? 200) / 100,
+      bg: '#f8fafc',
+      border: '#e2e8f0',
+      color: '#334155',
+    },
+    {
+      label: '⚫ B&W Back-to-Back',
+      mode: 'black_and_white' as const,
+      side: 'doubleSidedMinor' as const,
+      step: '0.5',
+      val: (a4.black_and_white?.doubleSidedMinor ?? 300) / 100,
+      bg: '#f8fafc',
+      border: '#e2e8f0',
+      color: '#334155',
+    },
+    {
+      label: '🌈 Color Single Sided',
+      mode: 'color' as const,
+      side: 'singleSidedMinor' as const,
+      step: '1',
+      val: (a4.color?.singleSidedMinor ?? 1000) / 100,
+      bg: '#fdf4ff',
+      border: '#f5d0fe',
+      color: '#86198f',
+    },
+    {
+      label: '🌈 Color Back-to-Back',
+      mode: 'color' as const,
+      side: 'doubleSidedMinor' as const,
+      step: '1',
+      val: (a4.color?.doubleSidedMinor ?? 1800) / 100,
+      bg: '#fdf4ff',
+      border: '#f5d0fe',
+      color: '#86198f',
+    },
+  ];
+
   return (
     <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
       <div style={{ marginBottom: '12px' }}>
@@ -49,66 +92,44 @@ export function ShopPrintRatesFields({ printRates, onChange }: ShopPrintRatesFie
           🖨️ Document Print & Xerox Rates (A4)
         </span>
         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-          Set your counter rates per page/sheet in Rupees (₹). Live quotes on /s/[slug] update automatically.
+          Set your counter rates per page/sheet in Rupees (₹). Live quotes on /s/[slug] update
+          automatically.
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-        <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', display: 'block' }}>
-            ⚫ B&W Single Sided
-          </span>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            style={inputStyle}
-            value={(a4.black_and_white?.singleSidedMinor ?? 200) / 100}
-            onChange={(e) => updateRate('black_and_white', 'singleSidedMinor', parseFloat(e.target.value) || 0)}
-          />
-        </div>
-
-        <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', display: 'block' }}>
-            ⚫ B&W Back-to-Back
-          </span>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            style={inputStyle}
-            value={(a4.black_and_white?.doubleSidedMinor ?? 300) / 100}
-            onChange={(e) => updateRate('black_and_white', 'doubleSidedMinor', parseFloat(e.target.value) || 0)}
-          />
-        </div>
-
-        <div style={{ padding: '10px', backgroundColor: '#fdf4ff', borderRadius: '6px', border: '1px solid #f5d0fe' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#86198f', display: 'block' }}>
-            🌈 Color Single Sided
-          </span>
-          <input
-            type="number"
-            step="1"
-            min="0"
-            style={inputStyle}
-            value={(a4.color?.singleSidedMinor ?? 1000) / 100}
-            onChange={(e) => updateRate('color', 'singleSidedMinor', parseFloat(e.target.value) || 0)}
-          />
-        </div>
-
-        <div style={{ padding: '10px', backgroundColor: '#fdf4ff', borderRadius: '6px', border: '1px solid #f5d0fe' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#86198f', display: 'block' }}>
-            🌈 Color Back-to-Back
-          </span>
-          <input
-            type="number"
-            step="1"
-            min="0"
-            style={inputStyle}
-            value={(a4.color?.doubleSidedMinor ?? 1800) / 100}
-            onChange={(e) => updateRate('color', 'doubleSidedMinor', parseFloat(e.target.value) || 0)}
-          />
-        </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '12px',
+          marginBottom: '12px',
+        }}
+      >
+        {fields.map((f) => (
+          <div
+            key={f.label}
+            style={{
+              padding: '10px',
+              backgroundColor: f.bg,
+              borderRadius: '6px',
+              border: `1px solid ${f.border}`,
+            }}
+          >
+            <span
+              style={{ fontSize: '0.75rem', fontWeight: 700, color: f.color, display: 'block' }}
+            >
+              {f.label}
+            </span>
+            <input
+              type="number"
+              step={f.step}
+              min="0"
+              style={inputStyle}
+              value={f.val}
+              onChange={(e) => updateRate(f.mode, f.side, parseFloat(e.target.value) || 0)}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );

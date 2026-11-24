@@ -37,6 +37,12 @@ describe('platform-admin contracts', () => {
       contactPhone: '+919876543210',
       contactEmail: 'owner@central.in',
       isAcceptingOrders: true,
+      printerCount: 3,
+      payment: {
+        enableCounterPayment: true,
+        enableOnlinePayment: true,
+        isRazorpayConfirmed: true,
+      },
       createdAt: '2026-11-20T10:00:00.000Z',
       updatedAt: '2026-11-23T10:00:00.000Z',
     };

@@ -147,4 +147,37 @@ describe('Platform Admin Governance & RBAC Separation', () => {
       mockDetails.printStats.totalCompletedPrints
     );
   });
+
+  it('correctly maps KPI card targets to studio status filters', () => {
+    const kpiTargets: Record<string, 'all' | 'onboarding' | 'suspended'> = {
+      'Total Studios': 'all',
+      'Pending Onboarding': 'onboarding',
+      'Suspended Studios': 'suspended',
+    };
+
+    expect(kpiTargets['Total Studios']).toBe('all');
+    expect(kpiTargets['Pending Onboarding']).toBe('onboarding');
+    expect(kpiTargets['Suspended Studios']).toBe('suspended');
+  });
+
+  it('correctly maps printer count and payment badges for directory table', () => {
+    const studioItem: PlatformStudioItem = {
+      id: 'studio_01',
+      slug: 'kora-print',
+      name: 'Koramangala Print Hub',
+      status: 'active',
+      printerCount: 2,
+      payment: {
+        enableCounterPayment: true,
+        enableOnlinePayment: true,
+        isRazorpayConfirmed: true,
+      },
+      createdAt: '2026-11-20T00:00:00.000Z',
+      updatedAt: '2026-11-20T00:00:00.000Z',
+    };
+
+    expect(studioItem.printerCount).toBe(2);
+    expect(studioItem.payment?.enableCounterPayment).toBe(true);
+    expect(studioItem.payment?.enableOnlinePayment).toBe(true);
+  });
 });

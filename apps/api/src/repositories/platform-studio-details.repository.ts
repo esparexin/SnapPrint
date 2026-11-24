@@ -29,10 +29,13 @@ export async function getPlatformStudioDetails(
   const rawDevices = await db.collection('agent_devices').find({ studioId }).toArray();
 
   const rawSub = await db.collection('subscriptions').findOne({ studioId });
+  const isSubActive = rawSub?.expiresAt
+    ? new Date(rawSub.expiresAt).getTime() > Date.now()
+    : rawSub?.status === 'active';
   const subscription = rawSub
     ? {
         plan: rawSub.plan,
-        status: rawSub.status,
+        status: (isSubActive ? 'active' : 'expired') as 'active' | 'expired',
         startsAt: rawSub.startsAt ? toIsoString(rawSub.startsAt) : undefined,
         expiresAt: rawSub.expiresAt ? toIsoString(rawSub.expiresAt) : undefined,
       }
@@ -58,10 +61,7 @@ export async function getPlatformStudioDetails(
   } else {
     const completedOrders = await db
       .collection('orders')
-      .find(
-        { studioId, status: { $in: ['completed', 'ready'] } },
-        { projection: { items: 1 } }
-      )
+      .find({ studioId, status: { $in: ['completed', 'ready'] } }, { projection: { items: 1 } })
       .toArray();
 
     for (const order of completedOrders) {
@@ -88,7 +88,8 @@ export async function getPlatformStudioDetails(
 
   const studioItem = toPlatformStudioItem(
     doc,
-    owner ? { name: owner.name, email: owner.email } : undefined
+    owner ? { name: owner.name, email: owner.email } : undefined,
+    rawPrinters.length
   );
 
   return {

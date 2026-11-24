@@ -31,6 +31,8 @@ export const PlatformStudioItemSchema = z.object({
   contactPhone: z.string().optional(),
   contactEmail: z.string().email().optional(),
   isAcceptingOrders: z.boolean().optional(),
+  printerCount: z.number().int().nonnegative().optional(),
+  payment: ShopPaymentSettingsSchema.optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

@@ -77,7 +77,8 @@ function toIsoString(val: unknown): string {
 
 export function toPlatformStudioItem(
   doc: StudioDocument,
-  owner?: { name?: string; email?: string }
+  owner?: { name?: string; email?: string },
+  printerCount?: number
 ): PlatformStudioItem {
   return {
     id: doc.id,
@@ -90,6 +91,8 @@ export function toPlatformStudioItem(
     contactPhone: doc.settings?.contactPhone ?? doc.contactPhone,
     contactEmail: doc.settings?.contactEmail ?? doc.contactEmail,
     isAcceptingOrders: doc.settings?.isAcceptingOrders,
+    printerCount: printerCount ?? 0,
+    payment: doc.payment,
     createdAt: toIsoString(doc.createdAt),
     updatedAt: toIsoString(doc.updatedAt),
   };
@@ -142,9 +145,27 @@ export async function listPlatformStudios(
     owners.map((u) => [u.id as string, { name: u.name as string, email: u.email as string }])
   );
 
+  const sIds = paginated.map((s) => s.id);
+  const printers =
+    sIds.length > 0
+      ? await db
+          .collection('studio_printers')
+          .find({ studioId: { $in: sIds } })
+          .toArray()
+      : [];
+  const printerMap = new Map<string, number>();
+  for (const p of printers) {
+    const sId = (p as { studioId?: string }).studioId;
+    if (sId) printerMap.set(sId, (printerMap.get(sId) ?? 0) + 1);
+  }
+
   return {
     studios: paginated.map((s) =>
-      toPlatformStudioItem(s, s.ownerUserId ? ownerMap.get(s.ownerUserId) : undefined)
+      toPlatformStudioItem(
+        s,
+        s.ownerUserId ? ownerMap.get(s.ownerUserId) : undefined,
+        printerMap.get(s.id) ?? 0
+      )
     ),
     total,
   };

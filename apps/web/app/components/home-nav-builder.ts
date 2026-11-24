@@ -7,12 +7,7 @@ interface HomeNavOptions {
   onLogout: () => void;
 }
 
-export function buildHomeTopNav({
-  auth,
-  onOpenLogin,
-  onOpenRegister,
-  onLogout,
-}: HomeNavOptions) {
+export function buildHomeTopNav({ auth, onOpenLogin, onOpenRegister, onLogout }: HomeNavOptions) {
   const isSuper = Boolean(
     auth?.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active')
   );
