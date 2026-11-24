@@ -5,7 +5,6 @@ import {
   ListPlatformStudiosResponse,
   PlatformAuditEntry,
   PlatformMetricsResponse,
-  PlatformStudioDetailsResponse,
   PlatformStudioItem,
   StudioStatus,
 } from '@snapprint/contracts';
