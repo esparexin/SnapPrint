@@ -4,6 +4,9 @@
  * and sequential digits (e.g. 1234567890, 9876543210).
  */
 export function validateIndianMobile(raw: string): string | null {
+  if (/[a-zA-Z]/.test(raw) || /[^\d+\s-]/.test(raw)) {
+    return 'Please enter a valid 10-digit mobile number.';
+  }
   const digits = raw.replace(/\D/g, '');
   if (!digits || digits.length === 0) {
     return 'Please enter your 10-digit mobile number.';
@@ -22,6 +25,13 @@ export function validateIndianMobile(raw: string): string | null {
     return 'Please enter a valid mobile number (sequential numbers not allowed).';
   }
   return null;
+}
+
+export function validateOptionalIndianMobile(raw?: string | null): string | null {
+  if (!raw || !raw.trim()) {
+    return null;
+  }
+  return validateIndianMobile(raw);
 }
 
 export function formatIndianMobileE164(raw: string): string {

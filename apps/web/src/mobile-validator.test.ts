@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { formatIndianMobileE164, validateIndianMobile } from './mobile-validator';
+import {
+  formatIndianMobileE164,
+  validateIndianMobile,
+  validateOptionalIndianMobile,
+} from './mobile-validator';
 
 describe('validateIndianMobile', () => {
   it('accepts valid 10-digit Indian mobile numbers starting with 6-9', () => {
@@ -49,5 +53,21 @@ describe('validateIndianMobile', () => {
 
   it('formats valid digits to E.164 with +91', () => {
     expect(formatIndianMobileE164('9876543211')).toBe('+919876543211');
+  });
+
+  describe('validateOptionalIndianMobile', () => {
+    it('returns null for empty or undefined input', () => {
+      expect(validateOptionalIndianMobile('')).toBeNull();
+      expect(validateOptionalIndianMobile('   ')).toBeNull();
+      expect(validateOptionalIndianMobile(undefined)).toBeNull();
+      expect(validateOptionalIndianMobile(null)).toBeNull();
+    });
+
+    it('validates provided non-empty mobile numbers', () => {
+      expect(validateOptionalIndianMobile('9848022338')).toBeNull();
+      expect(validateOptionalIndianMobile('9034657890ssssss')).toBe(
+        'Please enter a valid 10-digit mobile number.'
+      );
+    });
   });
 });

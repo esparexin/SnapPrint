@@ -135,9 +135,20 @@ export function PortalModals({
             justifyContent: 'center',
             padding: '1rem',
             zIndex: 50,
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
           }}
         >
-          <div style={{ maxWidth: '620px', width: '100%', margin: 'auto' }}>
+          <div
+            style={{
+              maxWidth: '620px',
+              width: '100%',
+              margin: 'auto',
+              maxHeight: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <ShopSetupWizard
               initialStudio={studioId ? { id: studioId } : undefined}
               onComplete={onSetupComplete}

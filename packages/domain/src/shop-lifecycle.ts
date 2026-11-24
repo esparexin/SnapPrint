@@ -5,6 +5,16 @@ export interface SlugValidationResult {
   reason?: string;
 }
 
+export function generateAutoSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48)
+    .replace(/-+$/, '');
+}
+
 export function validateSlugSanity(slug: string): SlugValidationResult {
   const raw = slug.trim();
 

@@ -52,6 +52,12 @@ export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSet
         padding: '1.5rem',
         border: '1px solid #e5e7eb',
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        maxHeight: 'min(90vh, calc(100dvh - 2rem))',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        width: '100%',
       }}
     >
       <div
