@@ -11,6 +11,7 @@ import {
   getPlatformMetrics,
   listPlatformAuditLogs,
   listPlatformStudios,
+  listPlatformUsers,
   updateStudioStatusWithAudit,
 } from './repositories/platform-admin.repository.js';
 
@@ -83,6 +84,14 @@ export const platformAdminRoutes: FastifyPluginAsync<PlatformAdminRoutesOptions>
     const query = request.query as { limit?: string };
     const limit = query?.limit ? Math.min(100, Math.max(1, parseInt(query.limit, 10))) : 50;
     const result = await listPlatformAuditLogs(db, limit);
+    return reply.status(200).send(result);
+  });
+
+  fastify.get('/admin/users', { preHandler: [adminAuth] }, async (request, reply) => {
+    const db = getActiveDb();
+    const query = request.query as { limit?: string };
+    const limit = query?.limit ? Math.min(100, Math.max(1, parseInt(query.limit, 10))) : 50;
+    const result = await listPlatformUsers(db, limit);
     return reply.status(200).send(result);
   });
 };

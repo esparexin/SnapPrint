@@ -177,4 +177,21 @@ describe('Platform Admin Routes & Authorization', () => {
     expect(log.actorId).toBe('admin_user');
     await app.close();
   });
+
+  it('lists registered users and their RBAC roles for platform admin', async () => {
+    const { app, login } = await seedPlatformEnvironment();
+    const adminCookie = await login('superadmin@snapprint.in');
+
+    const usersRes = await app.inject({
+      method: 'GET',
+      url: '/admin/users',
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(usersRes.statusCode).toBe(200);
+    const body = JSON.parse(usersRes.payload);
+    expect(body.users.length).toBeGreaterThanOrEqual(2);
+    expect(body.users.some((u: { role: string }) => u.role === 'platform_admin')).toBe(true);
+    expect(body.users.some((u: { role: string }) => u.role === 'studio_owner')).toBe(true);
+    await app.close();
+  });
 });

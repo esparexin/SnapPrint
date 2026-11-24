@@ -2,6 +2,7 @@ import {
   ListPlatformAuditLogsResponse,
   ListPlatformStudiosQuery,
   ListPlatformStudiosResponse,
+  ListPlatformUsersResponse,
   PlatformMetricsResponse,
   PlatformStudioItem,
   UpdatePlatformStudioStatusRequest,
@@ -102,6 +103,17 @@ export async function listPlatformAuditLogs(
 ): Promise<ListPlatformAuditLogsResponse> {
   return requestJson<ListPlatformAuditLogsResponse>(
     `/admin/audit-logs?limit=${encodeURIComponent(limit)}`,
+    { method: 'GET' },
+    customFetch
+  );
+}
+
+export async function listPlatformUsers(
+  limit = 50,
+  customFetch: typeof fetch = fetch
+): Promise<ListPlatformUsersResponse> {
+  return requestJson<ListPlatformUsersResponse>(
+    `/admin/users?limit=${encodeURIComponent(limit)}`,
     { method: 'GET' },
     customFetch
   );
