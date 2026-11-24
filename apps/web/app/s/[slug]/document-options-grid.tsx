@@ -7,11 +7,14 @@ import {
   PaperSize,
   PrintOrientation,
   PrintSides,
+  StudioPrintRatesContract,
 } from '@snapprint/contracts';
+import { DocumentRateSelector } from './document-rate-selector';
 
 interface DocumentOptionsGridProps {
   config: DocumentPrintConfig;
   pageCount?: number;
+  printRates?: StudioPrintRatesContract;
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
 
@@ -32,74 +35,70 @@ const selectStyle: React.CSSProperties = {
   backgroundColor: '#ffffff',
 };
 
-export function DocumentOptionsGrid({ config, pageCount, onUpdate }: DocumentOptionsGridProps) {
+export function DocumentOptionsGrid({
+  config,
+  pageCount,
+  printRates,
+  onUpdate,
+}: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
 
+  function handleRateSelect(colorMode: ColorMode, sides: PrintSides) {
+    onUpdate({
+      ...config,
+      colorMode,
+      sides: isSinglePage ? 'single_sided' : sides,
+    });
+  }
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '10px',
-        marginBottom: '12px',
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <label style={labelStyle}>Paper Size</label>
-        <select
-          value={config.paperSize}
-          onChange={(e) => onUpdate({ ...config, paperSize: e.target.value as PaperSize })}
-          style={selectStyle}
-        >
-          <option value="A4">A4 (Standard)</option>
-          <option value="A3">A3 (Large)</option>
-          <option value="A5">A5 (Compact)</option>
-          <option value="legal">Legal</option>
-          <option value="letter">Letter</option>
-        </select>
-      </div>
+    <div>
+      <DocumentRateSelector
+        colorMode={config.colorMode}
+        sides={config.sides}
+        paperSize={config.paperSize}
+        printRates={printRates}
+        isSinglePage={isSinglePage}
+        onSelect={handleRateSelect}
+      />
 
-      <div style={{ minWidth: 0 }}>
-        <label style={labelStyle}>Color</label>
-        <select
-          value={config.colorMode}
-          onChange={(e) => onUpdate({ ...config, colorMode: e.target.value as ColorMode })}
-          style={selectStyle}
-        >
-          <option value="black_and_white">B&W (₹)</option>
-          <option value="color">Color (₹₹)</option>
-        </select>
-      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '10px',
+          marginBottom: '12px',
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <label style={labelStyle}>Paper Size</label>
+          <select
+            value={config.paperSize}
+            onChange={(e) => onUpdate({ ...config, paperSize: e.target.value as PaperSize })}
+            style={selectStyle}
+          >
+            <option value="A4">A4 (Standard)</option>
+            <option value="A3">A3 (Large)</option>
+            <option value="A5">A5 (Compact)</option>
+            <option value="legal">Legal</option>
+            <option value="letter">Letter</option>
+          </select>
+        </div>
 
-      <div style={{ minWidth: 0 }}>
-        <label style={labelStyle}>Sides</label>
-        <select
-          value={isSinglePage ? 'single_sided' : config.sides}
-          disabled={isSinglePage}
-          onChange={(e) => onUpdate({ ...config, sides: e.target.value as PrintSides })}
-          style={{
-            ...selectStyle,
-            backgroundColor: isSinglePage ? '#f1f5f9' : '#ffffff',
-            cursor: isSinglePage ? 'not-allowed' : 'pointer',
-          }}
-        >
-          <option value="single_sided">Single-Sided</option>
-          <option value="double_sided">Double-Sided (Duplex)</option>
-        </select>
-      </div>
-
-      <div style={{ minWidth: 0 }}>
-        <label style={labelStyle}>Orientation</label>
-        <select
-          value={config.orientation}
-          onChange={(e) => onUpdate({ ...config, orientation: e.target.value as PrintOrientation })}
-          style={selectStyle}
-        >
-          <option value="portrait">▯ Portrait</option>
-          <option value="landscape">▭ Landscape</option>
-          <option value="auto">⟳ Auto</option>
-        </select>
+        <div style={{ minWidth: 0 }}>
+          <label style={labelStyle}>Orientation</label>
+          <select
+            value={config.orientation}
+            onChange={(e) => onUpdate({ ...config, orientation: e.target.value as PrintOrientation })}
+            style={selectStyle}
+          >
+            <option value="portrait">▯ Portrait</option>
+            <option value="landscape">▭ Landscape</option>
+            <option value="auto">⟳ Auto</option>
+          </select>
+        </div>
       </div>
     </div>
   );
 }
+

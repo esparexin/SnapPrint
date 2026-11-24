@@ -7,6 +7,8 @@ import {
   PlatformMetricsResponse,
   PlatformStudioItem,
   StudioStatus,
+  SubscriptionPlanId,
+  SubscriptionStatus,
 } from '@snapprint/contracts';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
 
@@ -31,26 +33,17 @@ export interface PlatformAuditLogDocument {
 }
 
 export async function getPlatformMetrics(db: Db): Promise<PlatformMetricsResponse> {
-  const [
-    totalStudios,
-    activeStudios,
-    onboardingStudios,
-    suspendedStudios,
-    totalOrdersCount,
-    payments,
-  ] = await Promise.all([
-    db.collection(STUDIOS_COLLECTION).countDocuments({}),
-    db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'active' }),
-    db
-      .collection(STUDIOS_COLLECTION)
-      .countDocuments({ status: { $in: ['onboarding', 'pending_review'] } }),
-    db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'suspended' }),
-    db.collection('orders').countDocuments({}),
-    db
-      .collection('payments')
-      .find({ status: { $in: ['SUCCEEDED', 'completed'] } })
-      .toArray(),
-  ]);
+  const [totalStudios, activeStudios, onboardingStudios, suspendedStudios, totalOrdersCount, payments] =
+    await Promise.all([
+      db.collection(STUDIOS_COLLECTION).countDocuments({}),
+      db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'active' }),
+      db
+        .collection(STUDIOS_COLLECTION)
+        .countDocuments({ status: { $in: ['onboarding', 'pending_review'] } }),
+      db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'suspended' }),
+      db.collection('orders').countDocuments({}),
+      db.collection('payments').find({ status: { $in: ['SUCCEEDED', 'completed'] } }).toArray(),
+    ]);
 
   const totalPaidVolumeMinor = payments.reduce((sum, p) => {
     const raw = p as Record<string, unknown>;
@@ -78,7 +71,8 @@ function toIsoString(val: unknown): string {
 export function toPlatformStudioItem(
   doc: StudioDocument,
   owner?: { name?: string; email?: string },
-  printerCount?: number
+  printerCount?: number,
+  subscription?: { plan: SubscriptionPlanId; status: SubscriptionStatus; expiresAt?: string } | null
 ): PlatformStudioItem {
   return {
     id: doc.id,
@@ -93,6 +87,7 @@ export function toPlatformStudioItem(
     isAcceptingOrders: doc.settings?.isAcceptingOrders,
     printerCount: printerCount ?? 0,
     payment: doc.payment,
+    subscription: subscription ?? undefined,
     createdAt: toIsoString(doc.createdAt),
     updatedAt: toIsoString(doc.updatedAt),
   };
@@ -102,14 +97,9 @@ export async function listPlatformStudios(
   db: Db,
   query: ListPlatformStudiosQuery
 ): Promise<ListPlatformStudiosResponse> {
-  const filter: Record<string, unknown> = {};
-  if (query.status) {
-    filter.status = query.status;
-  }
-
   const rawStudios = (await db
     .collection(STUDIOS_COLLECTION)
-    .find(filter)
+    .find(query.status ? { status: query.status } : {})
     .toArray()) as unknown as StudioDocument[];
 
   let filtered = rawStudios;
@@ -120,16 +110,9 @@ export async function listPlatformStudios(
     );
   }
 
-  filtered.sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeB - timeA;
-  });
-
+  filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const total = filtered.length;
-  const skip = query.skip ?? 0;
-  const limit = query.limit ?? 50;
-  const paginated = filtered.slice(skip, skip + limit);
+  const paginated = filtered.slice(query.skip ?? 0, (query.skip ?? 0) + (query.limit ?? 50));
 
   const ownerUserIds = Array.from(
     new Set(paginated.map((s) => s.ownerUserId).filter(Boolean))
@@ -146,17 +129,34 @@ export async function listPlatformStudios(
   );
 
   const sIds = paginated.map((s) => s.id);
-  const printers =
-    sIds.length > 0
-      ? await db
-          .collection('studio_printers')
-          .find({ studioId: { $in: sIds } })
-          .toArray()
-      : [];
+  const [printers, rawSubs] = await Promise.all([
+    sIds.length > 0 ? db.collection('studio_printers').find({ studioId: { $in: sIds } }).toArray() : [],
+    sIds.length > 0 ? db.collection('subscriptions').find({ studioId: { $in: sIds } }).toArray() : [],
+  ]);
+
   const printerMap = new Map<string, number>();
   for (const p of printers) {
     const sId = (p as { studioId?: string }).studioId;
     if (sId) printerMap.set(sId, (printerMap.get(sId) ?? 0) + 1);
+  }
+
+  const subMap = new Map<
+    string,
+    { plan: SubscriptionPlanId; status: SubscriptionStatus; expiresAt?: string }
+  >();
+  for (const sub of rawSubs) {
+    const s = sub as Record<string, unknown>;
+    const sId = s.studioId as string | undefined;
+    if (sId && s.plan) {
+      const isAct = s.expiresAt
+        ? new Date(s.expiresAt as string).getTime() > Date.now()
+        : s.status === 'active';
+      subMap.set(sId, {
+        plan: s.plan as SubscriptionPlanId,
+        status: isAct ? 'active' : 'expired',
+        expiresAt: s.expiresAt ? toIsoString(s.expiresAt) : undefined,
+      });
+    }
   }
 
   return {
@@ -164,7 +164,8 @@ export async function listPlatformStudios(
       toPlatformStudioItem(
         s,
         s.ownerUserId ? ownerMap.get(s.ownerUserId) : undefined,
-        printerMap.get(s.id) ?? 0
+        printerMap.get(s.id) ?? 0,
+        subMap.get(s.id)
       )
     ),
     total,
@@ -182,9 +183,7 @@ export async function updateStudioStatusWithAudit(
     .collection(STUDIOS_COLLECTION)
     .findOne({ id: studioId })) as unknown as StudioDocument | null;
 
-  if (!existing) {
-    return null;
-  }
+  if (!existing) return null;
 
   const now = new Date();
   await db
@@ -199,31 +198,21 @@ export async function updateStudioStatusWithAudit(
     targetType: 'studio',
     targetId: studioId,
     reason: reason || undefined,
-    metadata: {
-      previousStatus: existing.status,
-      newStatus,
-    },
+    metadata: { previousStatus: existing.status, newStatus },
   };
 
   await db.collection(AUDIT_LOGS_COLLECTION).insertOne(auditEntry);
-
-  return toPlatformStudioItem({
-    ...existing,
-    status: newStatus,
-    updatedAt: now,
-  });
+  return toPlatformStudioItem({ ...existing, status: newStatus, updatedAt: now });
 }
 
 export async function listPlatformAuditLogs(
   db: Db,
   limit = 50
 ): Promise<ListPlatformAuditLogsResponse> {
-  const logs = (await db
-    .collection(AUDIT_LOGS_COLLECTION)
-    .find({})
-    .sort({ timestamp: -1 })
-    .limit(limit)
-    .toArray()) as unknown as PlatformAuditLogDocument[];
+  const [logs, total] = await Promise.all([
+    db.collection(AUDIT_LOGS_COLLECTION).find({}).sort({ timestamp: -1 }).limit(limit).toArray() as unknown as Promise<PlatformAuditLogDocument[]>,
+    db.collection(AUDIT_LOGS_COLLECTION).countDocuments({}),
+  ]);
 
   const auditLogs: PlatformAuditEntry[] = logs.map((doc) => ({
     id: doc.id,
@@ -236,10 +225,5 @@ export async function listPlatformAuditLogs(
     metadata: doc.metadata,
   }));
 
-  const total = await db.collection(AUDIT_LOGS_COLLECTION).countDocuments({});
-
-  return {
-    auditLogs,
-    total,
-  };
+  return { auditLogs, total };
 }

@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { DocumentPrintConfig } from '@snapprint/contracts';
+import { DocumentPrintConfig, StudioPrintRatesContract } from '@snapprint/contracts';
 import { DocumentOptionsGrid } from './document-options-grid';
 
 interface DocumentConfigFormProps {
   config: DocumentPrintConfig;
   filename: string;
   pageCount: number;
+  printRates?: StudioPrintRatesContract;
   onUpdate: (updated: DocumentPrintConfig) => void;
   onPreview: () => void;
   onRemove: () => void;
@@ -31,10 +32,19 @@ const stepBtnStyle: React.CSSProperties = {
   fontWeight: 700,
 };
 
+const actionBtnBase: React.CSSProperties = {
+  padding: '5px 10px',
+  borderRadius: '6px',
+  fontSize: '12px',
+  fontWeight: 600,
+  cursor: 'pointer',
+};
+
 export function DocumentConfigForm({
   config,
   filename,
   pageCount,
+  printRates,
   onUpdate,
   onPreview,
   onRemove,
@@ -94,39 +104,26 @@ export function DocumentConfigForm({
           <button
             type="button"
             onClick={onPreview}
-            style={{
-              padding: '5px 10px',
-              backgroundColor: '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#334155',
-              cursor: 'pointer',
-            }}
+            style={{ ...actionBtnBase, backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155' }}
           >
             👁️ Preview
           </button>
           <button
             type="button"
             onClick={onRemove}
-            style={{
-              padding: '5px 10px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#b91c1c',
-              cursor: 'pointer',
-            }}
+            style={{ ...actionBtnBase, backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c' }}
           >
             🗑️ Delete
           </button>
         </div>
       </div>
 
-      <DocumentOptionsGrid config={config} pageCount={pageCount} onUpdate={onUpdate} />
+      <DocumentOptionsGrid
+        config={config}
+        pageCount={pageCount}
+        printRates={printRates}
+        onUpdate={onUpdate}
+      />
 
       <div
         style={{
