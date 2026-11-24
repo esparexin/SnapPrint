@@ -7,7 +7,7 @@ interface StudioSelectorProps {
   activeMemberships: UserMembership[];
   selectedStudioId: string | null;
   onSelectStudio: (studioId: string) => void;
-  effectiveRole: UserRole | null;
+  effectiveRole?: UserRole | null;
   studioNames?: Record<string, string>;
 }
 
@@ -28,79 +28,53 @@ export function StudioSelector({
   activeMemberships,
   selectedStudioId,
   onSelectStudio,
-  effectiveRole,
   studioNames = {},
 }: StudioSelectorProps) {
+  const selectable = activeMemberships.filter(
+    (m) => m.studioId && m.studioId !== 'platform_scope'
+  );
+  if (selectable.length <= 1) {
+    return null;
+  }
+
   return (
-    <section
+    <div
       style={{
-        background: '#f9fafb',
-        padding: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        marginBottom: '1rem',
+        padding: '0.5rem 0.75rem',
+        background: '#f8fafc',
+        border: '1px solid #e2e8f0',
         borderRadius: '0.5rem',
-        marginBottom: '1.5rem',
-        border: '1px solid #e5e7eb',
       }}
     >
-      <div
+      <label
+        htmlFor="studio-select"
+        style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569' }}
+      >
+        Switch Shop:
+      </label>
+      <select
+        id="studio-select"
+        value={selectedStudioId || ''}
+        onChange={(e) => onSelectStudio(e.target.value)}
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          padding: '0.375rem 0.625rem',
+          borderRadius: '0.375rem',
+          border: '1px solid #cbd5e1',
+          background: '#ffffff',
+          fontSize: '0.8125rem',
+          color: '#1e293b',
         }}
       >
-        <div>
-          <label
-            htmlFor="studio-select"
-            style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              color: '#374151',
-              marginBottom: '0.25rem',
-            }}
-          >
-            Active Studio Context
-          </label>
-          <select
-            id="studio-select"
-            value={selectedStudioId || ''}
-            onChange={(e) => onSelectStudio(e.target.value)}
-            style={{
-              padding: '0.5rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db',
-              background: '#ffffff',
-              minWidth: '200px',
-            }}
-          >
-            {activeMemberships.map((m) => (
-              <option key={m.studioId || 'platform'} value={m.studioId || 'platform_scope'}>
-                {formatStudioOptionLabel(m, studioNames)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <span style={{ fontSize: '0.875rem', color: '#4b5563', marginRight: '0.5rem' }}>
-            Effective Role:
-          </span>
-          <span
-            style={{
-              padding: '0.25rem 0.5rem',
-              background: '#e0e7ff',
-              color: '#3730a3',
-              borderRadius: '0.25rem',
-              fontSize: '0.75rem',
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-            }}
-          >
-            {effectiveRole}
-          </span>
-        </div>
-      </div>
-    </section>
+        {activeMemberships.map((m) => (
+          <option key={m.studioId || 'platform'} value={m.studioId || 'platform_scope'}>
+            {formatStudioOptionLabel(m, studioNames)}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

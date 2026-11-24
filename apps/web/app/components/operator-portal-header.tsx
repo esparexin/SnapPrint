@@ -21,6 +21,7 @@ interface OperatorPortalHeaderProps {
   activeView?: OperatorView;
   onNavigate?: (view: OperatorView) => void;
   onClosePortal?: () => void;
+  studioName?: string;
 }
 
 const VIEW_TITLES: Record<OperatorView, string> = {
@@ -43,20 +44,19 @@ export function OperatorPortalHeader({
   activeView = 'hub',
   onNavigate,
   onClosePortal,
+  studioName,
 }: OperatorPortalHeaderProps) {
   const isSubView = activeView !== 'hub';
+  const headingTitle = isSubView
+    ? VIEW_TITLES[activeView] || 'Operator Portal'
+    : studioName || 'SnapPrint Operator Portal';
 
   return (
     <header
       style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '0.75rem',
-        marginBottom: '1.25rem',
-        paddingBottom: '0.75rem',
-        borderBottom: '1px solid #e5e7eb',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem',
+        paddingBottom: '0.75rem', borderBottom: '1px solid #e5e7eb',
       }}
     >
       <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -80,7 +80,7 @@ export function OperatorPortalHeader({
         )}
         <div>
           <h1 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#111827' }}>
-            {VIEW_TITLES[activeView] || 'Operator Portal'}
+            {headingTitle}
           </h1>
           <p
             style={{
