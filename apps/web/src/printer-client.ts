@@ -20,9 +20,25 @@ export interface AgentPairingKeyResponse {
   status: 'active' | 'consumed' | 'expired' | 'revoked';
 }
 
+export interface AgentDevice {
+  deviceId: string;
+  studioId: string;
+  hostname: string;
+  osPlatform: string;
+  agentVersion: string;
+  status: 'active' | 'revoked';
+  isOnline: boolean;
+  lastHeartbeatAt: string;
+  createdAt: string;
+}
+
 import { getApiBaseUrl } from './auth-client.js';
 
 export { getApiBaseUrl };
+
+export function getAgentDownloadUrl(): string {
+  return `${getApiBaseUrl()}/downloads/windows-agent/latest.msi`;
+}
 
 export class PrinterApiError extends Error {
   constructor(
@@ -100,6 +116,46 @@ export async function updatePrinterRole(
       res.status,
       data?.code
     );
+  }
+  return data;
+}
+
+export async function fetchStudioDevices(
+  studioId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<{ devices: AgentDevice[] }> {
+  const url = `${getApiBaseUrl()}/studios/${encodeURIComponent(studioId)}/devices`;
+  const res = await fetchImpl(url, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new PrinterApiError(
+      data?.message || 'Failed to fetch studio devices',
+      res.status,
+      data?.code
+    );
+  }
+  return data;
+}
+
+export async function revokeAgentDevice(
+  studioId: string,
+  deviceId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<{ success: boolean; deviceId: string; status: string }> {
+  const url = `${getApiBaseUrl()}/studios/${encodeURIComponent(studioId)}/devices/${encodeURIComponent(deviceId)}/revoke`;
+  const res = await fetchImpl(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new PrinterApiError(data?.message || 'Failed to revoke device', res.status, data?.code);
   }
   return data;
 }

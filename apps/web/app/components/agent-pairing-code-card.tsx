@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getAgentDownloadUrl } from '../../src/printer-client';
 
 interface AgentPairingCodeCardProps {
   code: string;
@@ -9,6 +10,8 @@ interface AgentPairingCodeCardProps {
 }
 
 export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeCardProps) {
+  const downloadUrl = getAgentDownloadUrl();
+
   return (
     <>
       <div
@@ -55,7 +58,8 @@ export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeC
           onClick={onCopy}
           style={{
             width: '100%',
-            padding: '8px 12px',
+            minHeight: '44px',
+            padding: '10px 12px',
             backgroundColor: copied ? '#16a34a' : '#0284c7',
             color: '#ffffff',
             border: 'none',
@@ -69,9 +73,37 @@ export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeC
         </button>
       </div>
 
+      <a
+        href={downloadUrl}
+        download="SnapPrint-Print-Agent.msi"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          width: '100%',
+          minHeight: '44px',
+          padding: '10px 16px',
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          borderRadius: '6px',
+          fontWeight: 600,
+          fontSize: '0.875rem',
+          textDecoration: 'none',
+          boxSizing: 'border-box',
+          cursor: 'pointer',
+          marginTop: '16px',
+        }}
+      >
+        <span>📥</span>
+        <span>Download Windows Print Agent (.msi)</span>
+      </a>
+
       <div
         style={{
-          marginTop: '20px',
+          marginTop: '16px',
           padding: '12px',
           backgroundColor: '#f1f5f9',
           borderRadius: '6px',
@@ -80,15 +112,19 @@ export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeC
           lineHeight: 1.5,
         }}
       >
-        <strong>Setup Steps on Shop Computer:</strong>
-        <ol style={{ margin: '6px 0 0', paddingLeft: '20px' }}>
-          <li>Open a terminal on your shop computer in the SnapPrint directory.</li>
-          <li>
-            Enroll printer agent: <code>pnpm agent:pair {code}</code>
-          </li>
-          <li>
-            Launch background spooler loop: <code>pnpm agent:start</code>
-          </li>
+        <strong>Simple 3-Step Setup on Shop Computer:</strong>
+        <ol
+          style={{
+            margin: '6px 0 0',
+            paddingLeft: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+          }}
+        >
+          <li>Click the button above to download and install SnapPrint-Print-Agent.msi.</li>
+          <li>Launch the agent from your desktop and enter this 15-minute Pairing Code.</li>
+          <li>The agent runs in the background and connects your local printers automatically.</li>
         </ol>
       </div>
     </>

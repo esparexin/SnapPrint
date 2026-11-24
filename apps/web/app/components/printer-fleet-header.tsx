@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getAgentDownloadUrl } from '../../src/printer-client';
 
 interface PrinterFleetHeaderProps {
   studioId: string;
@@ -15,6 +16,8 @@ export function PrinterFleetHeader({
   onOpenPairing,
   onClose,
 }: PrinterFleetHeaderProps) {
+  const downloadUrl = getAgentDownloadUrl();
+
   return (
     <div
       style={{
@@ -23,6 +26,8 @@ export function PrinterFleetHeader({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
       }}
     >
       <div>
@@ -36,12 +41,39 @@ export function PrinterFleetHeader({
           {studioName || `Studio ${studioId}`} · Capability Routing &amp; Discovery
         </p>
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <a
+          href={downloadUrl}
+          download="SnapPrint-Print-Agent.msi"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            minHeight: '44px',
+            backgroundColor: '#f1f5f9',
+            color: '#0f172a',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            cursor: 'pointer',
+            boxSizing: 'border-box',
+          }}
+        >
+          📥 Download Agent (.msi)
+        </a>
         <button
           type="button"
           onClick={onOpenPairing}
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
             padding: '6px 12px',
+            minHeight: '44px',
             backgroundColor: '#0284c7',
             color: '#fff',
             border: 'none',
@@ -49,6 +81,7 @@ export function PrinterFleetHeader({
             fontSize: '0.8125rem',
             fontWeight: 600,
             cursor: 'pointer',
+            boxSizing: 'border-box',
           }}
         >
           + Pair PC Agent

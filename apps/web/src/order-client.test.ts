@@ -145,4 +145,24 @@ describe('Order & Quotation Client', () => {
       expect.anything()
     );
   });
+
+  it('throws OrderApiError with specific error code when hardware is offline', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ code: 'AGENT_OFFLINE', message: 'AGENT_OFFLINE' }),
+    });
+
+    try {
+      await submitPrintOrder('alpha-xerox', 'sess_123', 'tok_456', {
+        idempotencyKey: 'idem_12345678',
+        items: [],
+      });
+      expect.fail('Should have thrown OrderApiError');
+    } catch (err) {
+      expect(err).toBeInstanceOf(OrderApiError);
+      expect((err as OrderApiError).statusCode).toBe(403);
+      expect((err as OrderApiError).code).toBe('AGENT_OFFLINE');
+    }
+  });
 });
