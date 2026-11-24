@@ -5,8 +5,9 @@ import { PrinterRole } from '@snapprint/contracts';
 import { fetchStudioPrinters, StudioPrinter, updatePrinterRole } from '../../src/printer-client';
 import { useDialog } from '../hooks/use-dialog';
 import { AgentPairingModal } from './agent-pairing-modal';
-import { EmptyPrinterState } from './empty-printer-state';
-import { PrinterRowItem } from './printer-row-item';
+import { PrinterFleetFooter } from './printer-fleet-footer';
+import { PrinterFleetHeader } from './printer-fleet-header';
+import { PrinterFleetList } from './printer-fleet-list';
 
 interface PrinterManagementModalProps {
   studioId: string;
@@ -68,7 +69,13 @@ export function PrinterManagementModal({
   });
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="printer-management-title" className="dialog-overlay" onClick={handleBackdropClick}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="printer-management-title"
+      className="dialog-overlay"
+      onClick={handleBackdropClick}
+    >
       <div
         className="dialog-content"
         style={{
@@ -80,50 +87,12 @@ export function PrinterManagementModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <div
-          style={{
-            padding: '16px 24px',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            <h2 id="printer-management-title" style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-              Hardware &amp; Printers Fleet
-            </h2>
-            <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
-              {studioName || `Studio ${studioId}`} · Capability Routing &amp; Discovery
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => setShowPairingModal(true)}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#0284c7',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              + Pair PC Agent
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="dialog-close-btn"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+        <PrinterFleetHeader
+          studioId={studioId}
+          studioName={studioName}
+          onOpenPairing={() => setShowPairingModal(true)}
+          onClose={onClose}
+        />
 
         <div style={{ padding: '16px 24px', overflowY: 'auto', flex: 1 }}>
           {error && (
@@ -142,86 +111,16 @@ export function PrinterManagementModal({
             </div>
           )}
 
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: '8px',
-              fontSize: '0.8125rem',
-              color: '#166534',
-              marginBottom: '16px',
-              lineHeight: 1.5,
-            }}
-          >
-            <strong>💡 Smart Capability Routing:</strong> B&amp;W jobs route automatically to the{' '}
-            <strong>Active B&amp;W</strong> printer. Color jobs route automatically to the{' '}
-            <strong>Active Color</strong> printer. Standby printers act as backups.
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: '#64748b' }}>
-              Loading connected printers...
-            </div>
-          ) : printers.length === 0 ? (
-            <EmptyPrinterState onPairAgent={() => setShowPairingModal(true)} />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {printers.map((printer) => (
-                <PrinterRowItem
-                  key={printer.id}
-                  printer={printer}
-                  isUpdating={updatingId === printer.id}
-                  onRoleChange={handleRoleChange}
-                />
-              ))}
-            </div>
-          )}
+          <PrinterFleetList
+            printers={printers}
+            loading={loading}
+            updatingId={updatingId}
+            onRoleChange={handleRoleChange}
+            onPairAgent={() => setShowPairingModal(true)}
+          />
         </div>
 
-        <div
-          style={{
-            padding: '12px 24px',
-            borderTop: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            backgroundColor: '#f8fafc',
-          }}
-        >
-          <button
-            type="button"
-            onClick={loadPrinters}
-            disabled={loading}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              fontSize: '0.8125rem',
-              color: '#334155',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            ↻ Refresh Printers
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: '6px 16px',
-              backgroundColor: '#0f172a',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Close
-          </button>
-        </div>
+        <PrinterFleetFooter loading={loading} onRefresh={loadPrinters} onClose={onClose} />
       </div>
 
       {showPairingModal && (

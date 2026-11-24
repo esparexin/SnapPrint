@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { buildPermanentStudioUrl } from '@snapprint/domain';
 import { useDialog } from '../hooks/use-dialog';
 import { StudioQrActions } from './studio-qr-actions';
+import { StudioQrPreviewBox } from './studio-qr-preview-box';
 
 interface StudioQrModalProps {
   studio: {
@@ -96,13 +97,16 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
   });
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="studio-qr-title" className="dialog-overlay" onClick={handleBackdropClick}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="studio-qr-title"
+      className="dialog-overlay"
+      onClick={handleBackdropClick}
+    >
       <div
         className="dialog-content"
-        style={{
-          maxWidth: '480px',
-          padding: '24px',
-        }}
+        style={{ maxWidth: '480px', padding: '24px' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
@@ -117,12 +121,7 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
           <h2 id="studio-qr-title" style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
             Permanent Counter QR Code
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="dialog-close-btn"
-          >
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
             ✕
           </button>
         </div>
@@ -132,52 +131,7 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
           permanently encodes your studio URL and never expires.
         </p>
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#f8fafc',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '16px',
-          }}
-        >
-          {svgMarkup ? (
-            <div
-              style={{ width: '220px', height: '220px' }}
-              dangerouslySetInnerHTML={{ __html: svgMarkup }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '220px',
-                height: '220px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#94a3b8',
-              }}
-            >
-              Generating QR...
-            </div>
-          )}
-        </div>
-
-        <div
-          style={{
-            marginBottom: '16px',
-            padding: '10px 12px',
-            backgroundColor: '#f1f5f9',
-            borderRadius: '6px',
-            fontSize: '12px',
-          }}
-        >
-          <div style={{ color: '#64748b', marginBottom: '4px' }}>Permanent URL:</div>
-          <div style={{ fontWeight: 600, color: '#0f172a', wordBreak: 'break-all' }}>
-            {canonicalUrl}
-          </div>
-        </div>
+        <StudioQrPreviewBox svgMarkup={svgMarkup} canonicalUrl={canonicalUrl} />
 
         <StudioQrActions
           copied={copied}

@@ -5,6 +5,8 @@ import { Studio } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
+import { ShopPaymentModalFooter } from './shop-payment-modal-footer';
+import { ShopPaymentModalHeader } from './shop-payment-modal-header';
 import { ShopPaymentPolicyFields } from './shop-payment-policy-fields';
 import { ShopRazorpayForm } from './shop-razorpay-form';
 
@@ -82,44 +84,15 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
     >
       <div
         className="dialog-content"
-        style={{
-          maxWidth: '520px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
+        style={{ maxWidth: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            <h2
-              id="payment-modal-title"
-              style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#0f172a' }}
-            >
-              Payment & Gateway Settings
-            </h2>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-              {studio.name} ({studio.slug})
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="dialog-close-btn"
-          >
-            ✕
-          </button>
-        </div>
+        <ShopPaymentModalHeader
+          studioName={studio.name}
+          studioSlug={studio.slug}
+          onClose={onClose}
+        />
 
         <div style={{ padding: '20px', overflowY: 'auto' }}>
           {error && (
@@ -160,43 +133,7 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
               onError={setError}
             />
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  flex: 1,
-                  padding: '9px 14px',
-                  backgroundColor: '#f1f5f9',
-                  color: '#334155',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  padding: '9px 14px',
-                  backgroundColor: '#0284c7',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  opacity: saving ? 0.7 : 1,
-                }}
-              >
-                {saving ? 'Saving…' : 'Save Payment Settings'}
-              </button>
-            </div>
+            <ShopPaymentModalFooter saving={saving} onClose={onClose} />
           </form>
         </div>
       </div>
