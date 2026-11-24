@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DEFAULT_OTP_TTL_MINUTES, z } from '@snapprint/contracts';
+import { DEFAULT_CORS_ALLOWED_ORIGINS } from './cors.js';
 
 // Load local .env files if present (checking current working directory and package root)
 const envCandidates = [
@@ -34,7 +35,7 @@ const ConfigSchema = z
     logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
     sessionSecret: z.string().min(32).default(INSECURE_DEV_SESSION_SECRET),
     cookieSecret: z.string().min(32).default(INSECURE_DEV_COOKIE_SECRET),
-    corsAllowedOrigins: z.string().default('http://localhost:3000,http://127.0.0.1:3000'),
+    corsAllowedOrigins: z.string().default(DEFAULT_CORS_ALLOWED_ORIGINS),
     trustProxy: z.preprocess(
       (val) => {
         if (typeof val === 'string') {
