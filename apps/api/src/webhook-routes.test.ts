@@ -4,6 +4,16 @@ import { createTestApp } from './auth-test-helper.js';
 
 describe('Razorpay Webhook Routes', () => {
   const webhookSecret = 'mock_webhook_secret';
+  const sign = (body: string) =>
+    crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
+
+  const postWebhook = (app: any, body: string, sig?: string) =>
+    app.inject({
+      method: 'POST',
+      url: '/webhooks/razorpay',
+      headers: { 'x-razorpay-signature': sig ?? sign(body), 'content-type': 'application/json' },
+      payload: body,
+    });
 
   const setupFixture = async () => {
     const ctx = await createTestApp();
@@ -66,13 +76,11 @@ describe('Razorpay Webhook Routes', () => {
 
   it('rejects webhook with invalid signature', async () => {
     const { ctx } = await setupFixture();
-
-    const res = await ctx.app.inject({
-      method: 'POST',
-      url: '/webhooks/razorpay',
-      headers: { 'x-razorpay-signature': 'mock_invalid_sig' },
-      payload: { event: 'payment.captured' },
-    });
+    const res = await postWebhook(
+      ctx.app,
+      JSON.stringify({ event: 'payment.captured' }),
+      'mock_invalid_sig'
+    );
 
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).code).toBe('INVALID_WEBHOOK_SIGNATURE');
@@ -81,30 +89,22 @@ describe('Razorpay Webhook Routes', () => {
   it('processes valid payment.captured webhook and deduplicates duplicates', async () => {
     const { ctx, order, payment } = await setupFixture();
 
-    const eventPayload = {
+    const rawBody = JSON.stringify({
       id: 'evt_rzp_wh_captured_999',
       event: 'payment.captured',
       payload: {
         payment: {
-          entity: { id: 'pay_rzp_captured_999', order_id: payment.gatewayOrderId, amount: 1000, status: 'captured' },
+          entity: {
+            id: 'pay_rzp_captured_999',
+            order_id: payment.gatewayOrderId,
+            amount: 1000,
+            status: 'captured',
+          },
         },
       },
-    };
-
-    const rawBody = JSON.stringify(eventPayload);
-    const validSignature = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
-
-    // First delivery: should process and succeed
-    const res1 = await ctx.app.inject({
-      method: 'POST',
-      url: '/webhooks/razorpay',
-      headers: {
-        'x-razorpay-signature': validSignature,
-        'content-type': 'application/json',
-      },
-      payload: rawBody,
     });
 
+    const res1 = await postWebhook(ctx.app, rawBody);
     expect(res1.statusCode).toBe(200);
     expect(JSON.parse(res1.body).received).toBe(true);
 
@@ -116,17 +116,7 @@ describe('Razorpay Webhook Routes', () => {
     expect(updatedOrder?.paidAmountMinor).toBe(1000);
     expect(updatedOrder?.paymentStatus).toBe('PAID');
 
-    // Second delivery: duplicate eventId should be idempotently acknowledged
-    const res2 = await ctx.app.inject({
-      method: 'POST',
-      url: '/webhooks/razorpay',
-      headers: {
-        'x-razorpay-signature': validSignature,
-        'content-type': 'application/json',
-      },
-      payload: rawBody,
-    });
-
+    const res2 = await postWebhook(ctx.app, rawBody);
     expect(res2.statusCode).toBe(200);
     expect(JSON.parse(res2.body).duplicate).toBe(true);
   });
@@ -134,27 +124,22 @@ describe('Razorpay Webhook Routes', () => {
   it('processes payment.failed webhook', async () => {
     const { ctx, payment } = await setupFixture();
 
-    const eventPayload = {
+    const rawBody = JSON.stringify({
       id: 'evt_rzp_wh_failed_888',
       event: 'payment.failed',
       payload: {
-        payment: { entity: { id: 'pay_rzp_fail_888', order_id: payment.gatewayOrderId, amount: 1000, status: 'failed' } },
+        payment: {
+          entity: {
+            id: 'pay_rzp_fail_888',
+            order_id: payment.gatewayOrderId,
+            amount: 1000,
+            status: 'failed',
+          },
+        },
       },
-    };
-
-    const rawBody = JSON.stringify(eventPayload);
-    const validSignature = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
-
-    const res = await ctx.app.inject({
-      method: 'POST',
-      url: '/webhooks/razorpay',
-      headers: {
-        'x-razorpay-signature': validSignature,
-        'content-type': 'application/json',
-      },
-      payload: rawBody,
     });
 
+    const res = await postWebhook(ctx.app, rawBody);
     expect(res.statusCode).toBe(200);
     const updatedPayment = ctx.payments.find((p) => p.paymentId === payment.paymentId);
     expect(updatedPayment?.status).toBe('FAILED');
@@ -164,7 +149,6 @@ describe('Razorpay Webhook Routes', () => {
     const { ctx, payment, order } = await setupFixture();
     const eventId = 'evt_retry_test_123';
 
-    // Seed event as failed
     ctx.webhookEvents.push({
       eventId,
       eventType: 'payment.captured',
@@ -174,27 +158,22 @@ describe('Razorpay Webhook Routes', () => {
       error: 'Previous transient failure',
     });
 
-    const eventPayload = {
+    const rawBody = JSON.stringify({
       id: eventId,
       event: 'payment.captured',
       payload: {
-        payment: { entity: { id: 'pay_rzp_retry_999', order_id: payment.gatewayOrderId, amount: 1000, status: 'captured' } },
+        payment: {
+          entity: {
+            id: 'pay_rzp_retry_999',
+            order_id: payment.gatewayOrderId,
+            amount: 1000,
+            status: 'captured',
+          },
+        },
       },
-    };
-
-    const rawBody = JSON.stringify(eventPayload);
-    const validSignature = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
-
-    const res = await ctx.app.inject({
-      method: 'POST',
-      url: '/webhooks/razorpay',
-      headers: {
-        'x-razorpay-signature': validSignature,
-        'content-type': 'application/json',
-      },
-      payload: rawBody,
     });
 
+    const res = await postWebhook(ctx.app, rawBody);
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).received).toBe(true);
     expect(JSON.parse(res.body).duplicate).toBeUndefined();
@@ -227,21 +206,7 @@ describe('Razorpay Webhook Routes', () => {
       2
     );
 
-    const validSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(Buffer.from(formattedRawBody, 'utf8'))
-      .digest('hex');
-
-    const res = await ctx.app.inject({
-      method: 'POST',
-      url: '/webhooks/razorpay',
-      headers: {
-        'x-razorpay-signature': validSignature,
-        'content-type': 'application/json',
-      },
-      payload: formattedRawBody,
-    });
-
+    const res = await postWebhook(ctx.app, formattedRawBody);
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).received).toBe(true);
   });

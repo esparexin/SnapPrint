@@ -22,7 +22,15 @@ export default function PrivacyPolicyPage() {
     >
       <ErrorHeader actionHref="/?action=register" actionText="Register Shop" />
 
-      <main style={{ flex: 1, maxWidth: '800px', width: '100%', margin: '0 auto', padding: '3rem 1.5rem 4rem' }}>
+      <main
+        style={{
+          flex: 1,
+          maxWidth: '800px',
+          width: '100%',
+          margin: '0 auto',
+          padding: '3rem 1.5rem 4rem',
+        }}
+      >
         <div
           style={{
             backgroundColor: '#ffffff',
@@ -64,45 +72,75 @@ export default function PrivacyPolicyPage() {
           </h1>
 
           <section style={{ marginBottom: '1.75rem', lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               1. Zero WhatsApp Privacy Leaks
             </h2>
             <p>
-              Customer files uploaded to SnapPrint auto-expire with a strict 120-minute TTL. No sensitive
-              documents (Aadhaar cards, voter IDs, educational certificates, personal photos) remain saved on
-              studio computers or operator personal phones.
+              Customer files uploaded to SnapPrint auto-expire with a strict 120-minute TTL. No
+              sensitive documents (Aadhaar cards, voter IDs, educational certificates, personal
+              photos) remain saved on studio computers or operator personal phones.
             </p>
           </section>
 
           <section style={{ marginBottom: '1.75rem', lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               2. Encrypted Spooling & Native Purging
             </h2>
             <p>
-              Documents travel via TLS encrypted channels directly to the local printer spool queue on enrolled
-              desktop devices. Immediately after spooling to native hardware, temporary cached files are permanently
-              purged from local storage.
+              Documents travel via TLS encrypted channels directly to the local printer spool queue
+              on enrolled desktop devices. Immediately after spooling to native hardware, temporary
+              cached files are permanently purged from local storage.
             </p>
           </section>
 
           <section style={{ marginBottom: '1.75rem', lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               3. Data Trust & Non-Disclosure
             </h2>
             <p>
-              SnapPrint operates on a zero-commercialization data model. We never sell, rent, monetize, or disclose
-              customer phone numbers, payment details, or document contents to third-party advertisers or data brokers.
+              SnapPrint operates on a zero-commercialization data model. We never sell, rent,
+              monetize, or disclose customer phone numbers, payment details, or document contents to
+              third-party advertisers or data brokers.
             </p>
           </section>
 
           <section style={{ lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               4. Cookies & Ephemeral Sessions
             </h2>
             <p>
-              Customer mobile ordering sessions are authenticated purely via time-limited cryptographic tokens. No tracking
-              or cross-site advertising cookies are placed on customer devices. Operator sessions utilize strictly
-              necessary HTTP-only cookies for authentication.
+              Customer mobile ordering sessions are authenticated purely via time-limited
+              cryptographic tokens. No tracking or cross-site advertising cookies are placed on
+              customer devices. Operator sessions utilize strictly necessary HTTP-only cookies for
+              authentication.
             </p>
           </section>
         </div>

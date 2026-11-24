@@ -22,7 +22,15 @@ export default function RefundsPage() {
     >
       <ErrorHeader actionHref="/?action=register" actionText="Register Shop" />
 
-      <main style={{ flex: 1, maxWidth: '800px', width: '100%', margin: '0 auto', padding: '3rem 1.5rem 4rem' }}>
+      <main
+        style={{
+          flex: 1,
+          maxWidth: '800px',
+          width: '100%',
+          margin: '0 auto',
+          padding: '3rem 1.5rem 4rem',
+        }}
+      >
         <div
           style={{
             backgroundColor: '#ffffff',
@@ -64,44 +72,79 @@ export default function RefundsPage() {
           </h1>
 
           <section style={{ marginBottom: '1.75rem', lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               1. Order Cancellation
             </h2>
             <p>
-              Customers may cancel print jobs prior to operator release or hardware spooling. If the shop operator has not yet
-              dispatched the print job to native hardware, online payments will be refunded in full.
+              Customers may cancel print jobs prior to operator release or hardware spooling. If the
+              shop operator has not yet dispatched the print job to native hardware, online payments
+              will be refunded in full.
             </p>
           </section>
 
           <section style={{ marginBottom: '1.75rem', lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               2. Print Quality Defects & Hardware Malfunctions
             </h2>
             <p>
-              In the event of paper jams, toner streaks, distorted margins, or illegible outputs, the fulfilling studio is
-              obligated to immediately provide a clean reprint at zero additional charge. If a reprint cannot be completed,
-              the shop will issue a full refund.
+              In the event of paper jams, toner streaks, distorted margins, or illegible outputs,
+              the fulfilling studio is obligated to immediately provide a clean reprint at zero
+              additional charge. If a reprint cannot be completed, the shop will issue a full
+              refund.
             </p>
           </section>
 
           <section style={{ marginBottom: '1.75rem', lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               3. Refund Processing Timelines
             </h2>
             <p>
-              For Pay-at-Counter cash or offline UPI payments, refunds are settled directly at the counter by the shop operator.
-              For online gateway payments (Razorpay), approved refunds are initiated within 24 hours and credited to the
-              customer’s original payment source (bank account, UPI, or card) within 5 to 7 business days.
+              For Pay-at-Counter cash or offline UPI payments, refunds are settled directly at the
+              counter by the shop operator. For online gateway payments (Razorpay), approved refunds
+              are initiated within 24 hours and credited to the customer’s original payment source
+              (bank account, UPI, or card) within 5 to 7 business days.
             </p>
           </section>
 
           <section style={{ lineHeight: 1.7, color: '#334155' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+            <h2
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: '0.5rem',
+              }}
+            >
               4. Support & Escalations
             </h2>
             <p>
-              For unresolvable disputes or technical payment deductions where jobs failed to register, reach our support team
-              at <a href="mailto:contact@snapprint.in" style={{ color: '#0284c7', fontWeight: 600 }}>contact@snapprint.in</a>.
+              For unresolvable disputes or technical payment deductions where jobs failed to
+              register, reach our support team at{' '}
+              <a href="mailto:contact@snapprint.in" style={{ color: '#0284c7', fontWeight: 600 }}>
+                contact@snapprint.in
+              </a>
+              .
             </p>
           </section>
         </div>

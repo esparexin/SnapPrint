@@ -31,7 +31,9 @@ export const metadata: Metadata = {
       'Multi-tenant photo printing and digital document Xerox SaaS platform. Zero-login QR mobile ordering and direct desktop printer spooling.',
     url: 'https://snap.palnadu.dev',
     siteName: 'SnapPrint',
-    images: [{ url: '/brand/snapprint-logo.png', width: 1200, height: 630, alt: 'SnapPrint Cloud' }],
+    images: [
+      { url: '/brand/snapprint-logo.png', width: 1200, height: 630, alt: 'SnapPrint Cloud' },
+    ],
     locale: 'en_IN',
     type: 'website',
   },
