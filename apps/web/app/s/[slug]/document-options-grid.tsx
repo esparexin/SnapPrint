@@ -118,7 +118,9 @@ export function DocumentOptionsGrid({
           <label style={labelStyle}>Orientation</label>
           <select
             value={config.orientation}
-            onChange={(e) => onUpdate({ ...config, orientation: e.target.value as PrintOrientation })}
+            onChange={(e) =>
+              onUpdate({ ...config, orientation: e.target.value as PrintOrientation })
+            }
             style={selectStyle}
           >
             <option value="portrait">▯ Portrait</option>
@@ -130,4 +132,3 @@ export function DocumentOptionsGrid({
     </div>
   );
 }
-

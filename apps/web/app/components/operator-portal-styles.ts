@@ -1,5 +1,26 @@
 import { CSSProperties } from 'react';
 
+export type OperatorView =
+  | 'hub'
+  | 'orders'
+  | 'printers'
+  | 'qr'
+  | 'profile'
+  | 'payment'
+  | 'staff'
+  | 'setup';
+
+export const VIEW_TITLES: Record<OperatorView, string> = {
+  hub: 'Operator Portal',
+  orders: 'Orders',
+  printers: 'Printers',
+  qr: 'QR Stand',
+  profile: 'Shop Settings',
+  payment: 'Payments',
+  staff: 'Staff',
+  setup: 'Setup Guide',
+};
+
 export const portalStyles: Record<string, CSSProperties> = {
   wrapper: { width: '100%', maxWidth: '800px', margin: '0 auto', fontFamily: 'var(--font-family)' },
   loading: { textAlign: 'center', padding: '3rem', fontFamily: 'var(--font-family)' },

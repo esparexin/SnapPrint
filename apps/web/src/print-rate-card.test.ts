@@ -54,10 +54,22 @@ describe('Print Rates Calculation & Display', () => {
 
     // When A4, A3, Legal, Letter are configured
     const multiRates: StudioPrintRatesContract = {
-      A4: { black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 }, color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 } },
-      A3: { black_and_white: { singleSidedMinor: 500, doubleSidedMinor: 800 }, color: { singleSidedMinor: 2000, doubleSidedMinor: 3500 } },
-      legal: { black_and_white: { singleSidedMinor: 250, doubleSidedMinor: 400 }, color: { singleSidedMinor: 1200, doubleSidedMinor: 2200 } },
-      letter: { black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 }, color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 } },
+      A4: {
+        black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+        color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+      },
+      A3: {
+        black_and_white: { singleSidedMinor: 500, doubleSidedMinor: 800 },
+        color: { singleSidedMinor: 2000, doubleSidedMinor: 3500 },
+      },
+      legal: {
+        black_and_white: { singleSidedMinor: 250, doubleSidedMinor: 400 },
+        color: { singleSidedMinor: 1200, doubleSidedMinor: 2200 },
+      },
+      letter: {
+        black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+        color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+      },
     };
     expect(filterSizes(multiRates)).toEqual(['A4', 'A3', 'legal', 'letter']);
   });

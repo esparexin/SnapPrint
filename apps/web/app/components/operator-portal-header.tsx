@@ -1,16 +1,9 @@
 'use client';
 
 import React from 'react';
+import { OperatorView, VIEW_TITLES } from './operator-portal-styles';
 
-export type OperatorView =
-  | 'hub'
-  | 'orders'
-  | 'printers'
-  | 'qr'
-  | 'profile'
-  | 'payment'
-  | 'staff'
-  | 'setup';
+export type { OperatorView };
 
 interface OperatorPortalHeaderProps {
   userName: string;
@@ -23,17 +16,6 @@ interface OperatorPortalHeaderProps {
   onClosePortal?: () => void;
   studioName?: string;
 }
-
-const VIEW_TITLES: Record<OperatorView, string> = {
-  hub: 'Operator Portal',
-  orders: 'Orders',
-  printers: 'Printers',
-  qr: 'QR Stand',
-  profile: 'Shop Settings',
-  payment: 'Payments',
-  staff: 'Staff',
-  setup: 'Setup Guide',
-};
 
 export function OperatorPortalHeader({
   userName,
@@ -54,9 +36,14 @@ export function OperatorPortalHeader({
   return (
     <header
       style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem',
-        paddingBottom: '0.75rem', borderBottom: '1px solid #e5e7eb',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
+        marginBottom: '1.25rem',
+        paddingBottom: '0.75rem',
+        borderBottom: '1px solid #e5e7eb',
       }}
     >
       <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

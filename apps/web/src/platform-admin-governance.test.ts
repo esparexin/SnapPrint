@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PlatformStudioItem, PlatformUserItem } from '@snapprint/contracts';
-import {
-  formatDaysRemaining,
-  formatPlanLabel,
-} from '../app/admin/admin-subscription-helpers';
+import { formatDaysRemaining, formatPlanLabel } from '../app/admin/admin-subscription-helpers';
 
 describe('Platform Admin Governance & RBAC Separation', () => {
   const sampleUsers: PlatformUserItem[] = [

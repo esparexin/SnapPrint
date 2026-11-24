@@ -30,9 +30,7 @@ export function StudioSelector({
   onSelectStudio,
   studioNames = {},
 }: StudioSelectorProps) {
-  const selectable = activeMemberships.filter(
-    (m) => m.studioId && m.studioId !== 'platform_scope'
-  );
+  const selectable = activeMemberships.filter((m) => m.studioId && m.studioId !== 'platform_scope');
   if (selectable.length <= 1) {
     return null;
   }

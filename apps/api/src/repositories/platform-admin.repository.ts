@@ -1,12 +1,9 @@
 import { Db } from 'mongodb';
 import {
-  ListPlatformAuditLogsResponse,
   ListPlatformStudiosQuery,
   ListPlatformStudiosResponse,
-  PlatformAuditEntry,
   PlatformMetricsResponse,
   PlatformStudioItem,
-  StudioStatus,
   SubscriptionPlanId,
   SubscriptionStatus,
 } from '@snapprint/contracts';
@@ -19,31 +16,34 @@ export {
   updatePlatformUserStatus,
 } from './platform-user-admin.repository.js';
 
-export const AUDIT_LOGS_COLLECTION = 'audit_logs';
-
-export interface PlatformAuditLogDocument {
-  id: string;
-  timestamp: Date | string;
-  actorId: string;
-  action: string;
-  targetType: string;
-  targetId: string;
-  reason?: string;
-  metadata?: Record<string, unknown>;
-}
+export {
+  AUDIT_LOGS_COLLECTION,
+  updateStudioStatusWithAudit,
+  listPlatformAuditLogs,
+} from './platform-admin-audit.repository.js';
+export type { PlatformAuditLogDocument } from './platform-admin-audit.repository.js';
 
 export async function getPlatformMetrics(db: Db): Promise<PlatformMetricsResponse> {
-  const [totalStudios, activeStudios, onboardingStudios, suspendedStudios, totalOrdersCount, payments] =
-    await Promise.all([
-      db.collection(STUDIOS_COLLECTION).countDocuments({}),
-      db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'active' }),
-      db
-        .collection(STUDIOS_COLLECTION)
-        .countDocuments({ status: { $in: ['onboarding', 'pending_review'] } }),
-      db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'suspended' }),
-      db.collection('orders').countDocuments({}),
-      db.collection('payments').find({ status: { $in: ['SUCCEEDED', 'completed'] } }).toArray(),
-    ]);
+  const [
+    totalStudios,
+    activeStudios,
+    onboardingStudios,
+    suspendedStudios,
+    totalOrdersCount,
+    payments,
+  ] = await Promise.all([
+    db.collection(STUDIOS_COLLECTION).countDocuments({}),
+    db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'active' }),
+    db
+      .collection(STUDIOS_COLLECTION)
+      .countDocuments({ status: { $in: ['onboarding', 'pending_review'] } }),
+    db.collection(STUDIOS_COLLECTION).countDocuments({ status: 'suspended' }),
+    db.collection('orders').countDocuments({}),
+    db
+      .collection('payments')
+      .find({ status: { $in: ['SUCCEEDED', 'completed'] } })
+      .toArray(),
+  ]);
 
   const totalPaidVolumeMinor = payments.reduce((sum, p) => {
     const raw = p as Record<string, unknown>;
@@ -130,8 +130,18 @@ export async function listPlatformStudios(
 
   const sIds = paginated.map((s) => s.id);
   const [printers, rawSubs] = await Promise.all([
-    sIds.length > 0 ? db.collection('studio_printers').find({ studioId: { $in: sIds } }).toArray() : [],
-    sIds.length > 0 ? db.collection('subscriptions').find({ studioId: { $in: sIds } }).toArray() : [],
+    sIds.length > 0
+      ? db
+          .collection('studio_printers')
+          .find({ studioId: { $in: sIds } })
+          .toArray()
+      : [],
+    sIds.length > 0
+      ? db
+          .collection('subscriptions')
+          .find({ studioId: { $in: sIds } })
+          .toArray()
+      : [],
   ]);
 
   const printerMap = new Map<string, number>();
@@ -170,60 +180,4 @@ export async function listPlatformStudios(
     ),
     total,
   };
-}
-
-export async function updateStudioStatusWithAudit(
-  db: Db,
-  studioId: string,
-  newStatus: StudioStatus,
-  actorId: string,
-  reason?: string
-): Promise<PlatformStudioItem | null> {
-  const existing = (await db
-    .collection(STUDIOS_COLLECTION)
-    .findOne({ id: studioId })) as unknown as StudioDocument | null;
-
-  if (!existing) return null;
-
-  const now = new Date();
-  await db
-    .collection(STUDIOS_COLLECTION)
-    .updateOne({ id: studioId }, { $set: { status: newStatus, updatedAt: now } });
-
-  const auditEntry: PlatformAuditLogDocument = {
-    id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    timestamp: now,
-    actorId,
-    action: 'studio.status_change',
-    targetType: 'studio',
-    targetId: studioId,
-    reason: reason || undefined,
-    metadata: { previousStatus: existing.status, newStatus },
-  };
-
-  await db.collection(AUDIT_LOGS_COLLECTION).insertOne(auditEntry);
-  return toPlatformStudioItem({ ...existing, status: newStatus, updatedAt: now });
-}
-
-export async function listPlatformAuditLogs(
-  db: Db,
-  limit = 50
-): Promise<ListPlatformAuditLogsResponse> {
-  const [logs, total] = await Promise.all([
-    db.collection(AUDIT_LOGS_COLLECTION).find({}).sort({ timestamp: -1 }).limit(limit).toArray() as unknown as Promise<PlatformAuditLogDocument[]>,
-    db.collection(AUDIT_LOGS_COLLECTION).countDocuments({}),
-  ]);
-
-  const auditLogs: PlatformAuditEntry[] = logs.map((doc) => ({
-    id: doc.id,
-    timestamp: toIsoString(doc.timestamp),
-    actorId: doc.actorId,
-    action: doc.action,
-    targetType: doc.targetType,
-    targetId: doc.targetId,
-    reason: doc.reason,
-    metadata: doc.metadata,
-  }));
-
-  return { auditLogs, total };
 }
