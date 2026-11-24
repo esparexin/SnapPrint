@@ -32,8 +32,7 @@ export default function HomePage() {
           (m) => m.role === 'platform_admin' && m.status === 'active'
         );
         if (params?.get('action') === 'portal' || params?.get('portal') === 'open') {
-          if (isSuper) window.location.href = '/admin';
-          else setShowPortalModal(true);
+          window.location.href = isSuper ? '/admin' : '/portal';
         }
       })
       .catch(() => {
@@ -62,7 +61,6 @@ export default function HomePage() {
     auth,
     onOpenLogin: () => openPortalWithMode('email_otp'),
     onOpenRegister: () => openPortalWithMode('register'),
-    onOpenPortal: () => setShowPortalModal(true),
     onLogout: handleLogout,
   });
 

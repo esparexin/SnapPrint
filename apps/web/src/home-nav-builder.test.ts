@@ -1,19 +1,21 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthResponse } from '@snapprint/contracts';
 import { buildHomeTopNav } from '../app/components/home-nav-builder.js';
 
 describe('Home Navigation Builder (Session-Aware Top Nav)', () => {
   const onOpenLogin = vi.fn();
   const onOpenRegister = vi.fn();
-  const onOpenPortal = vi.fn();
   const onLogout = vi.fn();
 
   const options = {
     onOpenLogin,
     onOpenRegister,
-    onOpenPortal,
     onLogout,
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('renders standard anonymous nav when user is not authenticated', () => {
     const nav = buildHomeTopNav({ auth: null, ...options });
@@ -88,12 +90,11 @@ describe('Home Navigation Builder (Session-Aware Top Nav)', () => {
 
     expect(nav).toHaveLength(3);
     expect(nav[0]).toEqual({ label: 'About', href: '/about', variant: 'text' });
-    expect(nav[1].label).toBe('Shop Portal');
-    expect(nav[1].variant).toBe('text');
+    expect(nav[1]).toEqual({ label: 'Shop Portal', href: '/portal', variant: 'text' });
     expect(nav[2].label).toBe('Sign Out');
     expect(nav[2].variant).toBe('button');
 
-    nav[1].onClick?.();
-    expect(onOpenPortal).toHaveBeenCalledOnce();
+    nav[2].onClick?.();
+    expect(onLogout).toHaveBeenCalledOnce();
   });
 });
