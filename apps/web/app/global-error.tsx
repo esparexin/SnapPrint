@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { ErrorFooter, ErrorHeader } from './components/error-shell.js';
 
 export interface GlobalErrorProps {
   error: Error & { digest?: string };
@@ -9,7 +10,6 @@ export interface GlobalErrorProps {
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
   useEffect(() => {
-    // Log sanitized fatal error to diagnostic console
     console.error('Fatal root layout error caught by global error boundary:', error);
   }, [error]);
 
@@ -33,59 +33,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
           boxSizing: 'border-box',
         }}
       >
-        <header
-          style={{
-            borderBottom: '1px solid #e2e8f0',
-            backgroundColor: '#ffffff',
-            padding: '0.85rem 1.5rem',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: '1100px',
-              margin: '0 auto',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/favicon.png"
-                alt="SnapPrint"
-                style={{
-                  width: '30px',
-                  height: '30px',
-                  borderRadius: '8px',
-                  display: 'block',
-                  objectFit: 'contain',
-                }}
-              />
-              <span
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  letterSpacing: '-0.025em',
-                }}
-              >
-                SnapPrint
-              </span>
-            </div>
-            <a
-              href="/"
-              style={{
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                color: '#475569',
-                textDecoration: 'none',
-              }}
-            >
-              Home
-            </a>
-          </div>
-        </header>
+        <ErrorHeader isRawHtml />
 
         <main
           role="alert"
@@ -140,14 +88,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               Fatal Application Error
             </h1>
 
-            <p
-              style={{
-                fontSize: '0.975rem',
-                color: '#64748b',
-                lineHeight: 1.6,
-                margin: '0 0 1.5rem',
-              }}
-            >
+            <p style={{ fontSize: '0.975rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
               A critical error occurred in the application shell. Please attempt to recover by
               re-initializing the session or reloading the application.
             </p>
@@ -170,15 +111,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               </div>
             )}
 
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: '0.75rem',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
               <button
                 type="button"
                 onClick={() => reset()}
@@ -226,46 +159,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
           </div>
         </main>
 
-        <footer
-          style={{
-            borderTop: '1px solid #e2e8f0',
-            backgroundColor: '#ffffff',
-            padding: '1.25rem 1.5rem',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: '1100px',
-              margin: '0 auto',
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.75rem',
-              fontSize: '0.85rem',
-              color: '#64748b',
-            }}
-          >
-            <span>© 2026 SnapPrint Technologies</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <a href="/" style={{ color: '#64748b', textDecoration: 'none' }}>
-                Home
-              </a>
-              <a
-                href="https://www.palnadu.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: '#0284c7',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                Developed by Palnadu.dev
-              </a>
-            </div>
-          </div>
-        </footer>
+        <ErrorFooter isRawHtml />
       </body>
     </html>
   );

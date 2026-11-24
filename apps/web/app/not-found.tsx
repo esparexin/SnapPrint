@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { ErrorFooter, ErrorHeader } from './components/error-shell.js';
 
 export default function NotFound() {
   return (
@@ -13,88 +14,7 @@ export default function NotFound() {
         fontFamily: 'var(--font-family), system-ui, sans-serif',
       }}
     >
-      <header
-        style={{
-          borderBottom: '1px solid #e2e8f0',
-          backgroundColor: '#ffffff',
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1100px',
-            margin: '0 auto',
-            padding: '0.85rem 1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Link
-            href="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              textDecoration: 'none',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/favicon.png"
-              alt="SnapPrint"
-              style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '8px',
-                display: 'block',
-                objectFit: 'contain',
-              }}
-            />
-            <span
-              style={{
-                fontSize: '1.25rem',
-                fontWeight: 800,
-                color: '#0f172a',
-                letterSpacing: '-0.025em',
-              }}
-            >
-              SnapPrint
-            </span>
-          </Link>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <Link
-              href="/"
-              style={{
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                color: '#475569',
-                textDecoration: 'none',
-              }}
-            >
-              Home
-            </Link>
-            <Link
-              href="/?action=register"
-              style={{
-                padding: '0.45rem 1.1rem',
-                borderRadius: '99px',
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
-              }}
-            >
-              Register Shop
-            </Link>
-          </div>
-        </div>
-      </header>
+      <ErrorHeader actionHref="/?action=register" actionText="Register Shop" />
 
       <main
         style={{
@@ -148,27 +68,12 @@ export default function NotFound() {
             We couldn’t find that page
           </h1>
 
-          <p
-            style={{
-              fontSize: '0.975rem',
-              color: '#64748b',
-              lineHeight: 1.6,
-              margin: '0 0 2rem',
-            }}
-          >
+          <p style={{ fontSize: '0.975rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 2rem' }}>
             The link you followed may be incorrect, the print session may have expired, or the shop
             address may have changed. Please verify the URL or return home to start fresh.
           </p>
 
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-              justifyContent: 'center',
-            }}
-          >
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
             <Link
               href="/"
               style={{
@@ -211,46 +116,7 @@ export default function NotFound() {
         </div>
       </main>
 
-      <footer
-        style={{
-          borderTop: '1px solid #e2e8f0',
-          backgroundColor: '#ffffff',
-          padding: '1.25rem 1.5rem',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1100px',
-            margin: '0 auto',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '0.75rem',
-            fontSize: '0.85rem',
-            color: '#64748b',
-          }}
-        >
-          <span>© 2026 SnapPrint Technologies</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <Link href="/" style={{ color: '#64748b', textDecoration: 'none' }}>
-              Home
-            </Link>
-            <a
-              href="https://www.palnadu.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: '#0284c7',
-                fontWeight: 600,
-                textDecoration: 'none',
-              }}
-            >
-              Developed by Palnadu.dev
-            </a>
-          </div>
-        </div>
-      </footer>
+      <ErrorFooter />
     </div>
   );
 }
