@@ -12,8 +12,8 @@ import { getDb } from './db.js';
 import { createSessionRecord } from './repositories/session.repository.js';
 import {
   findStudioBySlug,
-  STUDIOS_COLLECTION,
-  StudioDocument,
+  findStudioDocumentBySlug,
+  toStudioContract,
 } from './repositories/studio.repository.js';
 import { signSessionToken } from './session-token.js';
 
@@ -40,8 +40,8 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
     }
 
     const db = getEffectiveDb();
-    const studio = await findStudioBySlug(db, slugResult.data);
-    if (!studio) {
+    const doc = await findStudioDocumentBySlug(db, slugResult.data);
+    if (!doc) {
       return reply.status(404).send({
         statusCode: 404,
         code: 'STUDIO_NOT_FOUND',
@@ -49,9 +49,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       });
     }
 
-    const doc = await db
-      .collection<StudioDocument>(STUDIOS_COLLECTION)
-      .findOne({ slug: slugResult.data });
+    const studio = toStudioContract(doc);
 
     const publicStudio = PublicStudioSchema.parse({
       id: studio.id,
@@ -61,7 +59,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       currency: studio.settings.currency,
       contactPhone: studio.settings.contactPhone,
       contactEmail: studio.settings.contactEmail,
-      payment: doc?.payment
+      payment: doc.payment
         ? {
             enableCounterPayment: doc.payment.enableCounterPayment ?? true,
             enableOnlinePayment: doc.payment.enableOnlinePayment ?? false,

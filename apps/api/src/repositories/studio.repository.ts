@@ -94,16 +94,22 @@ export async function findStudioById(db: Db, id: string): Promise<Studio | null>
   return doc ? toStudioContract(doc) : null;
 }
 
-export async function findStudioBySlug(db: Db, slug: string): Promise<Studio | null> {
+export async function findStudioDocumentBySlug(
+  db: Db,
+  slug: string
+): Promise<StudioDocument | null> {
   const parsedSlug = StudioSlugSchema.safeParse(slug);
   if (!parsedSlug.success) {
     return null;
   }
 
-  const doc = await db
+  return db
     .collection<StudioDocument>(STUDIOS_COLLECTION)
     .findOne({ slug: parsedSlug.data }, { projection: { _id: 0 } });
+}
 
+export async function findStudioBySlug(db: Db, slug: string): Promise<Studio | null> {
+  const doc = await findStudioDocumentBySlug(db, slug);
   return doc ? toStudioContract(doc) : null;
 }
 

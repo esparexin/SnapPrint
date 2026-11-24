@@ -71,6 +71,26 @@ export async function findPhotoAssetById(
   return doc ? toPhotoAssetContract(doc) : null;
 }
 
+export async function findPhotoAssetsByIds(
+  db: Db,
+  studioId: string,
+  sessionId: string,
+  assetIds: string[]
+): Promise<Map<string, PhotoAsset>> {
+  if (assetIds.length === 0) return new Map();
+
+  const docs = await db
+    .collection<PhotoAssetDocument>(PHOTO_ASSETS_COLLECTION)
+    .find({ studioId, sessionId, assetId: { $in: assetIds } }, { projection: { _id: 0 } })
+    .toArray();
+
+  const map = new Map<string, PhotoAsset>();
+  for (const doc of docs) {
+    map.set(doc.assetId, toPhotoAssetContract(doc));
+  }
+  return map;
+}
+
 export async function listPhotoAssetsBySession(
   db: Db,
   studioId: string,
