@@ -69,11 +69,28 @@ for (const file of appFiles) {
   }
 }
 
+// 3. Prohibited telemetry and error-monitoring SDKs (ADR 0003).
+//    SnapPrint strictly enforces first-party pino logging and RFC 7807 problem details.
+const prohibitedSdkImport = /from\s+['"](@sentry\/|datadog|@datadog\/|bugsnag|@bugsnag\/|newrelic)/;
+const allSourceFiles = [
+  ...domainFiles,
+  ...appFiles,
+  ...readSourceFiles(join(ROOT, 'packages/contracts/src')),
+];
+for (const file of allSourceFiles) {
+  if (prohibitedSdkImport.test(file.content)) {
+    console.error(
+      `ARCHITECTURE VIOLATION: ${file.relativePath} imports a prohibited external monitoring SDK. ADR 0003 mandates first-party logging.`
+    );
+    failed = true;
+  }
+}
+
 if (failed) {
   console.error('\nArchitecture boundary violations found. Fix the files listed above.');
   process.exit(1);
 }
 console.log(
-  'Architecture boundaries OK: domain is framework-independent; apps import shared packages by name.'
+  'Architecture boundaries OK: domain is framework-independent; apps import shared packages by name; no prohibited SDKs.'
 );
 process.exit(0);

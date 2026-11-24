@@ -1,0 +1,19 @@
+# SnapPrint Cursor Rules
+
+# Always follow the root instruction SSOT in AGENTS.md
+- Read AGENTS.md for full architectural and coding guidelines.
+
+# Non-Negotiable Rules
+1. Work in small, reviewable changes: 1 PR = 1 problem category.
+2. No cross-cutting refactors or unsolicited code changes.
+3. No business logic or API contract breaking changes.
+4. No UI redesigns: keep designs identical to established patterns.
+5. Respect deterministic file line budgets:
+   - Page shells: max 100 lines
+   - Custom hooks: max 150 lines
+   - UI components: max 150 lines
+   - Backend handlers: max 200 lines
+   - Absolute file maximum: 250 lines
+6. Zero third-party telemetry/error SDKs (Sentry/Datadog are prohibited per ADR 0003).
+7. Pure domain isolation: `packages/domain` must have zero framework/UI imports.
+8. Every change must pass: `pnpm check:file-sizes && pnpm check:architecture && pnpm typecheck && pnpm test && pnpm build`.

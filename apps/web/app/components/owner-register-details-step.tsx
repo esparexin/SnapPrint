@@ -130,7 +130,7 @@ export function OwnerRegisterDetailsStep({
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
             required
             disabled={isSubmitting}
-            placeholder="9876543210"
+            placeholder="9876512340"
             style={{
               flex: 1,
               width: '100%',

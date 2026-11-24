@@ -150,7 +150,7 @@ export function ShopDetailsFormFields({
             maxLength={10}
             value={phone}
             onChange={onPhoneChange}
-            placeholder="9876543210"
+            placeholder="9876512340"
             style={{ ...inputStyle, borderTopLeftRadius: 0, borderBottomLeftRadius: 0, flex: 1 }}
           />
         </div>

@@ -49,6 +49,24 @@ export const DEFAULT_COLUMNS: FooterColumn[] = [];
 
 export const DEFAULT_SIDES: IconLink[] = [];
 
+export const DEFAULT_PROPS = {
+  brand: 'SnapPrint',
+  name: 'Palnadu Print Cloud',
+  logoHref: 'https://snap.palnadu.dev',
+  socials: DEFAULT_SOCIALS,
+  email: 'contact@snapprint.in',
+  columns: DEFAULT_COLUMNS,
+  sideLinks: DEFAULT_SIDES,
+  copyright: '© 2026 SnapPrint Technologies',
+  sheet: '#0284c7',
+  paper: '#ffffff',
+  sheetInk: '#ffffff',
+  seed: 7,
+  height: '100svh',
+  fontSans: 'var(--font-family)',
+  className: '',
+};
+
 export interface AnimationParams {
   seed: number;
   still: boolean;

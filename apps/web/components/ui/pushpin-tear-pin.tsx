@@ -1,5 +1,39 @@
 import React from 'react';
-import { mixHex } from './pushpin-tear-math';
+import { mixHex } from './pushpin-tear-color';
+
+export function PinButton({
+  pinRef,
+  pin,
+  repin,
+  pinBase,
+  uid,
+}: {
+  pinRef: React.RefObject<HTMLButtonElement | null>;
+  pin: string;
+  repin: () => void;
+  pinBase: string;
+  uid: string;
+}) {
+  return (
+    <button
+      ref={pinRef}
+      type="button"
+      className="tpf-pin"
+      data-pin={pin}
+      onClick={repin}
+      aria-label="Re-pin"
+    >
+      <span className="tpf-shadow" aria-hidden="true" />
+      <span className="tpf-tilt">
+        <span className="tpf-drop">
+          <span className="tpf-body">
+            <Pin base={pinBase} id={uid + 'p'} />
+          </span>
+        </span>
+      </span>
+    </button>
+  );
+}
 
 export function Pin({ base, id }: { base: string; id: string }) {
   const hi = mixHex(base, '#ffffff', 0.62);

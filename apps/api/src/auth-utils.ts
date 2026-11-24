@@ -78,6 +78,38 @@ export function validateOrigin(
 }
 
 /**
+ * Validates Origin header against CORS whitelist; sends 403 on mismatch.
+ */
+export function checkCsrfOrigin(
+  origin: string | undefined,
+  allowedOrigins: string,
+  reply: FastifyReply
+): boolean {
+  if (!validateOrigin(origin, allowedOrigins)) {
+    reply.status(403).send({
+      statusCode: 403,
+      code: 'CSRF_ORIGIN_MISMATCH',
+      message: 'Cross-origin authentication request forbidden',
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Clears the operator session cookie on the Fastify reply.
+ */
+export function clearOperatorSessionCookie(reply: FastifyReply, cookieSecure: boolean): void {
+  const cookieName = getOperatorCookieName(cookieSecure);
+  reply.clearCookie(cookieName, {
+    path: '/',
+    httpOnly: true,
+    secure: cookieSecure,
+    sameSite: 'strict',
+  });
+}
+
+/**
  * Creates an operator session in the database and sets the session cookie on the Fastify reply.
  */
 export async function issueOperatorSessionCookie(
