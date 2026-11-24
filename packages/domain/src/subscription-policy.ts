@@ -38,19 +38,24 @@ export function calculateSubscriptionExpiry(
  * Exact boundary: active until and including exact expiresAt millisecond; expired immediately after.
  */
 export function isSubscriptionActive(
-  expiresAt: Date | string,
+  expiresAt: Date | string | null | undefined,
   now: Date | string = new Date()
 ): boolean {
-  const exp = parseDateInput(expiresAt, 'expiresAt');
-  const current = parseDateInput(now, 'now');
-  return current.getTime() <= exp.getTime();
+  if (!expiresAt) return false;
+  try {
+    const exp = parseDateInput(expiresAt, 'expiresAt');
+    const current = parseDateInput(now, 'now');
+    return current.getTime() <= exp.getTime();
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Derives subscription status ('active' | 'expired').
  */
 export function deriveSubscriptionStatus(
-  expiresAt: Date | string,
+  expiresAt: Date | string | null | undefined,
   now: Date | string = new Date()
 ): SubscriptionStatus {
   return isSubscriptionActive(expiresAt, now) ? 'active' : 'expired';

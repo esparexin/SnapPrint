@@ -63,6 +63,7 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
     const event = (typeof request.body === 'string' ? JSON.parse(request.body) : request.body) as {
       id?: string;
       event?: string;
+      created_at?: number;
       payload?: {
         payment?: {
           entity?: { id?: string; order_id?: string; status?: string; created_at?: number };
@@ -93,12 +94,19 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
       if (gatewayOrderId) {
         const payment = await findPaymentByGatewayOrderId(db, gatewayOrderId);
         if (payment) {
-          if (eventType === 'payment.captured' || eventType === 'order.paid') {
-            const gatewayPaymentId = event.payload?.payment?.entity?.id;
-            const entityCreatedAt = event.payload?.payment?.entity?.created_at;
-            const gatewayCapturedAt = entityCreatedAt
-              ? new Date(entityCreatedAt * 1000).toISOString()
-              : new Date().toISOString();
+          const paymentEntity = event.payload?.payment?.entity;
+          const isCaptured =
+            (eventType === 'payment.captured' && paymentEntity?.status === 'captured') ||
+            (eventType === 'order.paid' &&
+              (paymentEntity?.status === 'captured' || !paymentEntity));
+
+          if (isCaptured) {
+            const gatewayPaymentId = paymentEntity?.id;
+            const gatewayCapturedAt =
+              typeof event.created_at === 'number' && event.created_at > 0
+                ? new Date(event.created_at * 1000).toISOString()
+                : undefined;
+
             await updatePaymentStatus(db, payment.studioId, payment.paymentId, 'SUCCEEDED', {
               gatewayPaymentId,
               gatewayCapturedAt,
@@ -139,12 +147,18 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
 
         const subOrder = await findSubscriptionOrderByGatewayOrderId(db, gatewayOrderId);
         if (subOrder) {
-          if (eventType === 'payment.captured' || eventType === 'order.paid') {
-            const gatewayPaymentId = event.payload?.payment?.entity?.id;
-            const entityCreatedAt = event.payload?.payment?.entity?.created_at;
-            const capturedAt = entityCreatedAt
-              ? new Date(entityCreatedAt * 1000).toISOString()
-              : new Date().toISOString();
+          const paymentEntity = event.payload?.payment?.entity;
+          const isSubCaptured =
+            (eventType === 'payment.captured' && paymentEntity?.status === 'captured') ||
+            (eventType === 'order.paid' &&
+              (paymentEntity?.status === 'captured' || !paymentEntity));
+
+          if (isSubCaptured) {
+            const gatewayPaymentId = paymentEntity?.id;
+            const capturedAt =
+              typeof event.created_at === 'number' && event.created_at > 0
+                ? new Date(event.created_at * 1000).toISOString()
+                : new Date().toISOString();
             await updateSubscriptionOrderStatus(db, gatewayOrderId, 'PAID', {
               gatewayPaymentId,
               capturedAt,

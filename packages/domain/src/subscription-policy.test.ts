@@ -86,6 +86,17 @@ describe('Subscription Policy Pure Domain SSOT', () => {
       expect(isSubscriptionActive(expiryStr, now)).toBe(false);
       expect(deriveSubscriptionStatus(expiryStr, now)).toBe('expired');
     });
+
+    it('is expired when expiry timestamp is null, undefined, empty, or invalid', () => {
+      expect(isSubscriptionActive(null)).toBe(false);
+      expect(isSubscriptionActive(undefined)).toBe(false);
+      expect(isSubscriptionActive('')).toBe(false);
+      expect(isSubscriptionActive('not-a-date')).toBe(false);
+      expect(deriveSubscriptionStatus(null)).toBe('expired');
+      expect(deriveSubscriptionStatus(undefined)).toBe('expired');
+      expect(deriveSubscriptionStatus('')).toBe('expired');
+      expect(deriveSubscriptionStatus('not-a-date')).toBe('expired');
+    });
   });
 
   describe('Subscription Extension (Cumulative Renewal)', () => {

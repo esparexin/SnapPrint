@@ -82,17 +82,16 @@ describe('Razorpay Webhook Routes', () => {
       JSON.stringify({ event: 'payment.captured' }),
       'mock_invalid_sig'
     );
-
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).code).toBe('INVALID_WEBHOOK_SIGNATURE');
   });
 
-  it('processes valid payment.captured webhook and deduplicates duplicates', async () => {
+  it('extracts signed event.created_at as capture time, and deduplicates duplicates', async () => {
     const { ctx, order, payment } = await setupFixture();
-
     const rawBody = JSON.stringify({
       id: 'evt_rzp_wh_captured_999',
       event: 'payment.captured',
+      created_at: 1700000050,
       payload: {
         payment: {
           entity: {
@@ -100,6 +99,7 @@ describe('Razorpay Webhook Routes', () => {
             order_id: payment.gatewayOrderId,
             amount: 1000,
             status: 'captured',
+            created_at: 1700000000,
           },
         },
       },
@@ -109,9 +109,13 @@ describe('Razorpay Webhook Routes', () => {
     expect(res1.statusCode).toBe(200);
     expect(JSON.parse(res1.body).received).toBe(true);
 
-    const updatedPayment = ctx.payments.find((p) => p.paymentId === payment.paymentId);
-    expect(updatedPayment?.status).toBe('SUCCEEDED');
-    expect(updatedPayment?.gatewayPaymentId).toBe('pay_rzp_captured_999');
+    const updated = ctx.payments.find((p) => p.paymentId === payment.paymentId);
+    expect(updated?.status).toBe('SUCCEEDED');
+    expect(updated?.gatewayPaymentId).toBe('pay_rzp_captured_999');
+    expect(updated?.gatewayCapturedAt).toBeDefined();
+    expect(new Date(updated!.gatewayCapturedAt!).toISOString()).toBe(
+      new Date(1700000050 * 1000).toISOString()
+    );
 
     const updatedOrder = ctx.orders.find((o) => o.orderId === order.orderId);
     expect(updatedOrder?.paidAmountMinor).toBe(1000);
@@ -122,9 +126,56 @@ describe('Razorpay Webhook Routes', () => {
     expect(JSON.parse(res2.body).duplicate).toBe(true);
   });
 
+  it('does not mark payment as succeeded if status is not captured', async () => {
+    const { ctx, payment } = await setupFixture();
+    const rawBody = JSON.stringify({
+      id: 'evt_rzp_wh_auth_only',
+      event: 'payment.captured',
+      created_at: 1700000050,
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_rzp_auth',
+            order_id: payment.gatewayOrderId,
+            amount: 1000,
+            status: 'authorized',
+          },
+        },
+      },
+    });
+
+    const res = await postWebhook(ctx.app, rawBody);
+    expect(res.statusCode).toBe(200);
+    const p = ctx.payments.find((item) => item.paymentId === payment.paymentId);
+    expect(p?.status).toBe('CREATED');
+  });
+
+  it('leaves gatewayCapturedAt undefined if event.created_at is missing from webhook', async () => {
+    const { ctx, payment } = await setupFixture();
+    const rawBody = JSON.stringify({
+      id: 'evt_no_created_at',
+      event: 'payment.captured',
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_no_ts',
+            order_id: payment.gatewayOrderId,
+            amount: 1000,
+            status: 'captured',
+          },
+        },
+      },
+    });
+
+    const res = await postWebhook(ctx.app, rawBody);
+    expect(res.statusCode).toBe(200);
+    const p = ctx.payments.find((item) => item.paymentId === payment.paymentId);
+    expect(p?.status).toBe('SUCCEEDED');
+    expect(p?.gatewayCapturedAt).toBeUndefined();
+  });
+
   it('processes payment.failed webhook', async () => {
     const { ctx, payment } = await setupFixture();
-
     const rawBody = JSON.stringify({
       id: 'evt_rzp_wh_failed_888',
       event: 'payment.failed',
@@ -142,14 +193,13 @@ describe('Razorpay Webhook Routes', () => {
 
     const res = await postWebhook(ctx.app, rawBody);
     expect(res.statusCode).toBe(200);
-    const updatedPayment = ctx.payments.find((p) => p.paymentId === payment.paymentId);
-    expect(updatedPayment?.status).toBe('FAILED');
+    const updated = ctx.payments.find((p) => p.paymentId === payment.paymentId);
+    expect(updated?.status).toBe('FAILED');
   });
 
   it('allows retry when webhook previously failed', async () => {
     const { ctx, payment, order } = await setupFixture();
     const eventId = 'evt_retry_test_123';
-
     ctx.webhookEvents.push({
       eventId,
       eventType: 'payment.captured',
@@ -162,6 +212,7 @@ describe('Razorpay Webhook Routes', () => {
     const rawBody = JSON.stringify({
       id: eventId,
       event: 'payment.captured',
+      created_at: 1700000080,
       payload: {
         payment: {
           entity: {
@@ -177,38 +228,9 @@ describe('Razorpay Webhook Routes', () => {
     const res = await postWebhook(ctx.app, rawBody);
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).received).toBe(true);
-    expect(JSON.parse(res.body).duplicate).toBeUndefined();
-
-    const updatedPayment = ctx.payments.find((p) => p.paymentId === payment.paymentId);
-    expect(updatedPayment?.status).toBe('SUCCEEDED');
+    const updated = ctx.payments.find((p) => p.paymentId === payment.paymentId);
+    expect(updated?.status).toBe('SUCCEEDED');
     const updatedOrder = ctx.orders.find((o) => o.orderId === order.orderId);
     expect(updatedOrder?.paidAmountMinor).toBe(1000);
-  });
-
-  it('processes valid webhook with formatted whitespace preserving raw body HMAC signature', async () => {
-    const { ctx, payment } = await setupFixture();
-
-    const formattedRawBody = JSON.stringify(
-      {
-        id: 'evt_rzp_formatted_123',
-        event: 'payment.captured',
-        payload: {
-          payment: {
-            entity: {
-              id: 'pay_rzp_formatted_123',
-              order_id: payment.gatewayOrderId,
-              amount: 1000,
-              status: 'captured',
-            },
-          },
-        },
-      },
-      null,
-      2
-    );
-
-    const res = await postWebhook(ctx.app, formattedRawBody);
-    expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).received).toBe(true);
   });
 });

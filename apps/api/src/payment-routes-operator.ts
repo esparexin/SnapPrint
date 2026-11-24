@@ -8,7 +8,11 @@ import {
   PaymentRecord,
   PaymentRecordSchema,
 } from '@snapprint/contracts';
-import { deriveOrderPaymentStatus, validatePaymentAttempt } from '@snapprint/domain';
+import {
+  deriveOrderPaymentStatus,
+  isSubscriptionActive,
+  validatePaymentAttempt,
+} from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
 import { findOrderById, updateOrderPaymentSummary } from './repositories/order.repository.js';
@@ -35,7 +39,7 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
       const studioId = request.studioId!;
 
       const sub = await getStudioSubscription(db, studioId);
-      if (!sub || sub.status !== 'active') {
+      if (!sub || !isSubscriptionActive(sub.expiresAt)) {
         return reply.status(403).send({
           statusCode: 403,
           code: 'SUBSCRIPTION_EXPIRED',
@@ -89,6 +93,7 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
         status: 'SUCCEEDED',
         recordedByUserId: request.operator?.user.id,
         notes: bodyResult.data.notes,
+        gatewayCapturedAt: now,
         createdAt: now,
         updatedAt: now,
       };

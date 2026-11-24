@@ -43,8 +43,10 @@ export interface SubscriptionOrderDocument {
   updatedAt: Date;
 }
 
-export function toSubscriptionRecord(doc: StudioSubscriptionDocument): StudioSubscriptionRecord {
-  const now = new Date();
+export function toSubscriptionRecord(
+  doc: StudioSubscriptionDocument,
+  now: Date | string = new Date()
+): StudioSubscriptionRecord {
   const active = isSubscriptionActive(doc.expiresAt, now);
   return StudioSubscriptionRecordSchema.parse({
     studioId: doc.studioId,
@@ -67,12 +69,13 @@ export function toSubscriptionRecord(doc: StudioSubscriptionDocument): StudioSub
 
 export async function getStudioSubscription(
   db: Db,
-  studioId: string
+  studioId: string,
+  now?: Date | string
 ): Promise<StudioSubscriptionRecord | null> {
   const doc = await db
     .collection<StudioSubscriptionDocument>(SUBSCRIPTIONS_COLLECTION)
     .findOne({ studioId }, { projection: { _id: 0 } });
-  return doc ? toSubscriptionRecord(doc) : null;
+  return doc ? toSubscriptionRecord(doc, now) : null;
 }
 
 export async function upsertStudioSubscription(
@@ -185,9 +188,10 @@ export async function isJobEntitledForFulfillment(
   db: Db,
   studioId: string,
   orderId: string,
-  sub: StudioSubscriptionRecord | null
+  sub: StudioSubscriptionRecord | null,
+  now: Date | string = new Date()
 ): Promise<boolean> {
-  if (sub && sub.status === 'active') {
+  if (sub && isSubscriptionActive(sub.expiresAt, now)) {
     return true;
   }
   if (!sub) {
@@ -199,7 +203,10 @@ export async function isJobEntitledForFulfillment(
   }
   const payments = await listPaymentsByOrder(db, studioId, orderId);
   const succeededPayment = payments.find((p) => p.status === 'SUCCEEDED');
-  const capturedAt = succeededPayment?.gatewayCapturedAt ?? succeededPayment?.createdAt;
+  const capturedAt = succeededPayment?.gatewayCapturedAt;
+  if (!capturedAt) {
+    return false;
+  }
 
   const decision = evaluateOrderFulfillmentEntitlement({
     paymentStatus: order.paymentStatus,
@@ -211,10 +218,11 @@ export async function isJobEntitledForFulfillment(
 
 export async function checkStudioCheckoutAvailability(
   db: Db,
-  studio: { id: string; status: string; isAcceptingOrders?: boolean }
+  studio: { id: string; status: string; isAcceptingOrders?: boolean },
+  now: Date | string = new Date()
 ): Promise<StorefrontCheckoutAvailabilityDecision> {
-  const sub = await getStudioSubscription(db, studio.id);
-  const hasActiveSubscription = Boolean(sub && sub.status === 'active');
+  const sub = await getStudioSubscription(db, studio.id, now);
+  const hasActiveSubscription = Boolean(sub && isSubscriptionActive(sub.expiresAt, now));
   const hasOnlineAgent = await hasOnlineAgentDevice(db, studio.id);
   const hasActivePrinter = await hasActivePrinterAssigned(db, studio.id);
 
