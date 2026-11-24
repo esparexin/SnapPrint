@@ -24,10 +24,12 @@ import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { platformAdminRoutes } from './platform-admin-routes.js';
+import { initializeStorageService } from './storage/storage-service.js';
 import { webhookRoutes } from './webhook-routes.js';
 
 const config = loadConfig();
 const emailService = createEmailService(config);
+initializeStorageService(config);
 
 const app = fastify({
   trustProxy: config.trustProxy,

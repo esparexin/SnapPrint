@@ -10,6 +10,14 @@ export interface StorageService {
 export class MemoryStorageService implements StorageService {
   private store = new Map<string, { data: Uint8Array; mimeType: string }>();
 
+  constructor(private readonly allowInProduction = false) {
+    if (!this.allowInProduction && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'MemoryStorageService is not permitted in production. Use LocalDiskStorageService or a persistent storage provider.'
+      );
+    }
+  }
+
   async put(storageKey: string, data: Uint8Array, mimeType: string): Promise<void> {
     this.store.set(storageKey, { data: new Uint8Array(data), mimeType });
   }
@@ -63,7 +71,7 @@ export class LocalDiskStorageService implements StorageService {
   }
 }
 
-let defaultStorageService: StorageService = new MemoryStorageService();
+let defaultStorageService: StorageService = new MemoryStorageService(true);
 
 export function getStorageService(): StorageService {
   return defaultStorageService;
@@ -71,4 +79,22 @@ export function getStorageService(): StorageService {
 
 export function setStorageService(service: StorageService): void {
   defaultStorageService = service;
+}
+
+export interface StorageConfig {
+  nodeEnv?: string;
+  storageBaseDir?: string;
+}
+
+export function createStorageService(config: StorageConfig = {}): StorageService {
+  if (config.nodeEnv === 'production') {
+    return new LocalDiskStorageService(config.storageBaseDir);
+  }
+  return new MemoryStorageService(true);
+}
+
+export function initializeStorageService(config: StorageConfig = {}): StorageService {
+  const service = createStorageService(config);
+  setStorageService(service);
+  return service;
 }
