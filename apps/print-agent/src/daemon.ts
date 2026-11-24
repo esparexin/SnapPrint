@@ -154,12 +154,15 @@ export class AgentDaemon {
         });
         this.jobTracker.clearInFlight(job.jobId);
 
+        log(
+          `[Job ${job.jobId}] Spooler accepted document for ${job.printerName}. Spooler submission confirmed (physical output handled by hardware print engine).`
+        );
         await this.client.updateJobStatus(token, job.jobId, 'completed');
         executedCount++;
       } catch (err) {
         this.jobTracker.clearInFlight(job.jobId);
         const errMsg = err instanceof Error ? err.message : String(err);
-        log(`[Job ${job.jobId}] Printing failed: ${errMsg}`);
+        log(`[Job ${job.jobId}] Spooler submission failed: ${errMsg}`);
         try {
           await this.client.updateJobStatus(token, job.jobId, 'failed', errMsg);
         } catch {
