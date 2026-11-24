@@ -121,12 +121,23 @@ describe('AgentDaemon', () => {
 
     const count = await daemon.pollAndExecuteJobsOnce();
     expect(count).toBe(1);
+
     expect(mockClient.fetchPendingJobs).toHaveBeenCalledWith('tok_device_test');
+    expect(mockClient.updateJobStatus).toHaveBeenCalledWith(
+      'tok_device_test',
+      'job_test_456',
+      'processing'
+    );
     expect(mockClient.downloadJobDocument).toHaveBeenCalledTimes(1);
     expect(mockSpooler.printFile).toHaveBeenCalledWith(
       'HP LaserJet Pro M126nw',
       expect.stringContaining('snapprint_job_test_456_ticket.pdf'),
       { copies: 2, paperSize: 'A4' }
+    );
+    expect(mockClient.updateJobStatus).toHaveBeenCalledWith(
+      'tok_device_test',
+      'job_test_456',
+      'completed'
     );
   });
 

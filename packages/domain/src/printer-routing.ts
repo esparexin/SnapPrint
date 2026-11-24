@@ -165,7 +165,7 @@ export function createPrintJobsForOrder(
 
   for (let i = 0; i < order.items.length; i++) {
     const item = order.items[i];
-
+    const normalizedColorMode: 'bw' | 'color' = item.colorMode === 'color' ? 'color' : 'bw';
     const normalizedSides: 'single' | 'double' =
       item.sides === 'double_sided' || item.sides === 'double' ? 'double' : 'single';
     const pageRange =

@@ -3,29 +3,26 @@ import { FastifyInstance } from 'fastify';
 import { Db } from 'mongodb';
 import {
   AgentEnrollmentRequestSchema,
-  AgentJobStatusUpdateRequestSchema,
   AgentSyncPrintersRequestSchema,
   UpdatePrinterRoleRequestSchema,
 } from '@snapprint/contracts';
 import { canRedeemPairingKey, generatePairingCode } from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
+import { registerPrinterJobRoutes } from './printer-job-routes.js';
 import {
   consumePairingKey,
   createPairingKey,
   findAgentDeviceByToken,
   findPairingKey,
-  findPendingPrintJobsByStudio,
-  findPrintJobById,
-  findPrintJobsByOrderId,
   listStudioPrinters,
   registerAgentDevice,
   syncDiscoveredPrinters,
-  toPrintJobRecord,
   updateDeviceHeartbeat,
-  updatePrintJobStatus,
   updateStudioPrinterRole,
 } from './repositories/printer.repository.js';
+import { StorageService } from './storage/storage-service.js';
+
 export interface PrinterRoutesOptions {
   db?: Db;
   storage?: StorageService;
@@ -246,4 +243,6 @@ export async function printerRoutes(
     await updateDeviceHeartbeat(db, device.deviceId);
     return reply.send({ success: true, timestamp: new Date().toISOString() });
   });
+
+  await registerPrinterJobRoutes(app, opts);
 }

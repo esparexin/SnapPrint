@@ -150,6 +150,8 @@ export class AgentClient {
 
     return data.jobs;
   }
+
+  async downloadJobDocument(deviceToken: string, jobId: string, targetPath: string): Promise<void> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/${encodeURIComponent(jobId)}/document`;
     const res = await this.fetchImpl(url, {
       method: 'GET',

@@ -1,19 +1,9 @@
 import { Db } from 'mongodb';
-import {
-  DiscoveredPrinter,
-  PaperSize,
-  PrinterRole,
-  PrinterStatus,
-  PrintJobRecord,
-  PrintJobStatus,
-} from '@snapprint/contracts';
-import { createPrintJobsForOrder, GeneratedPrintJobDescriptor } from '@snapprint/domain';
-import { findOrderById, updateOrderStatus } from './order.repository.js';
+import { DiscoveredPrinter, PaperSize, PrinterRole, PrinterStatus } from '@snapprint/contracts';
 
 export const PRINTERS_COLLECTION = 'studio_printers';
 export const PAIRING_KEYS_COLLECTION = 'agent_pairing_keys';
 export const AGENT_DEVICES_COLLECTION = 'agent_devices';
-export const PRINT_JOBS_COLLECTION = 'print_jobs';
 
 export interface StudioPrinterDocument {
   id: string;
@@ -187,3 +177,5 @@ export async function updateStudioPrinterRole(
     .updateOne({ studioId, id: printerId }, { $set: { role, updatedAt: now } });
   return res.modifiedCount > 0;
 }
+
+export * from './print-job.repository.js';
