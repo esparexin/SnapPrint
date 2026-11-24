@@ -96,12 +96,7 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
   });
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
-    >
+    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
       <div
         className="dialog-content"
         style={{

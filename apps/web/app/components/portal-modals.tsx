@@ -169,11 +169,7 @@ export function PortalModals({
       )}
 
       {showSetupModal && (
-        <SetupWizardModal
-          studioId={studioId}
-          onComplete={onSetupComplete}
-          onClose={onCloseSetup}
-        />
+        <SetupWizardModal studioId={studioId} onComplete={onSetupComplete} onClose={onCloseSetup} />
       )}
     </>
   );

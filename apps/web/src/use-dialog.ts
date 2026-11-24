@@ -115,11 +115,7 @@ export function useDialog({
   };
 
   const handleTouchEnd = () => {
-    if (
-      enableSwipeDown &&
-      touchStartY.current !== null &&
-      touchCurrentY.current !== null
-    ) {
+    if (enableSwipeDown && touchStartY.current !== null && touchCurrentY.current !== null) {
       const deltaY = touchCurrentY.current - touchStartY.current;
       if (deltaY > swipeThreshold) {
         onClose();

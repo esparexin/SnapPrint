@@ -16,22 +16,13 @@ export function InfoModal({ title, onClose, children, maxWidth = '540px' }: Info
   });
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
-    >
+    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
       <div
         className="dialog-content"
         style={{ maxWidth, padding: '2rem' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          {...swipeHandlers}
-          className="dialog-drag-handle"
-          aria-hidden="true"
-        />
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <button
           type="button"
           onClick={onClose}

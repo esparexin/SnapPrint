@@ -13,24 +13,6 @@ interface CounterPaymentModalProps {
 }
 
 const styles: Record<string, CSSProperties> = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '16px',
-    zIndex: 10000,
-  },
-  modal: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    width: '100%',
-    maxWidth: '440px',
-    padding: '24px',
-    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-  },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
