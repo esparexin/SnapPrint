@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { DocumentPrintConfig, OrderRecord, QuoteResponse } from '@snapprint/contracts';
-import { requestPrintQuote, submitPrintOrder } from '../../../src/order-client';
+import { OrderApiError, requestPrintQuote, submitPrintOrder } from '../../../src/order-client';
+import { OrderCustomerForm } from './order-customer-form';
 import { OrderItemsBreakdown } from './order-items-breakdown';
 
 interface OrderSummaryCardProps {
@@ -11,23 +12,8 @@ interface OrderSummaryCardProps {
   token: string;
   configs: DocumentPrintConfig[];
   onOrderSubmitted: (order: OrderRecord) => void;
+  isAcceptingOrders?: boolean;
 }
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '11px',
-  fontWeight: 600,
-  color: '#475569',
-  marginBottom: '3px',
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px',
-  borderRadius: '6px',
-  border: '1px solid #cbd5e1',
-  fontSize: '16px',
-};
 
 export function OrderSummaryCard({
   slug,
@@ -35,6 +21,7 @@ export function OrderSummaryCard({
   token,
   configs,
   onOrderSubmitted,
+  isAcceptingOrders = true,
 }: OrderSummaryCardProps) {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
@@ -88,7 +75,21 @@ export function OrderSummaryCard({
       });
       onOrderSubmitted(order);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Order submission failed');
+      if (err instanceof OrderApiError) {
+        if (err.code === 'AGENT_OFFLINE' || err.code === 'NO_ACTIVE_PRINTER') {
+          setError(
+            'This shop is currently unable to accept new print orders because printing hardware is offline. Please try again shortly.'
+          );
+        } else if (err.code === 'SUBSCRIPTION_EXPIRED') {
+          setError(
+            'This shop is currently unable to accept new print orders because the subscription has expired. Please contact the shop owner.'
+          );
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Order submission failed');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -143,7 +144,6 @@ export function OrderSummaryCard({
       {quote && (
         <div style={{ marginBottom: '14px' }}>
           <OrderItemsBreakdown items={quote.items} />
-
           <div
             style={{
               display: 'flex',
@@ -168,52 +168,64 @@ export function OrderSummaryCard({
         </div>
       )}
 
-      <div
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <label style={labelStyle}>Customer Name (Optional)</label>
-          <input
-            type="text"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="For counter call"
-            style={inputStyle}
-          />
+      <OrderCustomerForm
+        customerName={customerName}
+        customerPhone={customerPhone}
+        onChangeName={setCustomerName}
+        onChangePhone={setCustomerPhone}
+      />
+
+      {isAcceptingOrders === false && (
+        <div
+          role="alert"
+          style={{
+            padding: '10px 14px',
+            backgroundColor: '#fffbeb',
+            border: '1px solid #fde68a',
+            borderRadius: '6px',
+            color: '#92400e',
+            fontSize: '13px',
+            marginBottom: '12px',
+          }}
+        >
+          This shop is currently unable to accept new print orders because printing hardware is
+          offline. Please try again shortly.
         </div>
-        <div style={{ minWidth: 0 }}>
-          <label style={labelStyle}>Mobile Number (Optional)</label>
-          <input
-            type="tel"
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            placeholder="10-digit mobile"
-            style={inputStyle}
-          />
-        </div>
-      </div>
+      )}
 
       <button
         type="button"
         onClick={handleSubmitOrder}
-        disabled={submitting || !quote || loadingQuote}
+        disabled={submitting || !quote || loadingQuote || isAcceptingOrders === false}
         style={{
           width: '100%',
           padding: '12px 16px',
-          backgroundColor: submitting || !quote || loadingQuote ? '#94a3b8' : '#0284c7',
+          backgroundColor:
+            submitting || !quote || loadingQuote || isAcceptingOrders === false
+              ? '#94a3b8'
+              : '#0284c7',
           color: '#ffffff',
           border: 'none',
           borderRadius: '8px',
           fontSize: '15px',
           fontWeight: 700,
-          cursor: submitting || !quote || loadingQuote ? 'not-allowed' : 'pointer',
+          cursor:
+            submitting || !quote || loadingQuote || isAcceptingOrders === false
+              ? 'not-allowed'
+              : 'pointer',
           position: 'sticky',
           bottom: '12px',
           zIndex: 10,
           boxShadow: '0 4px 10px rgba(2, 132, 199, 0.3)',
         }}
       >
-        {submitting ? 'Submitting Order...' : loadingQuote ? 'Calculating Total...' : '🖨️ Print'}
+        {isAcceptingOrders === false
+          ? 'Hardware Offline - Orders Paused'
+          : submitting
+            ? 'Submitting Order...'
+            : loadingQuote
+              ? 'Calculating Total...'
+              : '🖨️ Print'}
       </button>
     </div>
   );

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { CustomerSessionResponse, PublicStudio } from '@snapprint/contracts';
 import {
   CustomerApiError,
@@ -10,6 +9,7 @@ import {
 } from '../../../src/customer-client';
 import {
   CustomerStudioError,
+  CustomerStudioHeader,
   CustomerStudioInactive,
   CustomerStudioLoading,
 } from './customer-status-views';
@@ -87,53 +87,7 @@ export function CustomerStudioView({
         overflowX: 'hidden',
       }}
     >
-      <header style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <Link
-          href="/"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            textDecoration: 'none',
-            marginBottom: '10px',
-          }}
-        >
-          <img
-            src="/favicon.png"
-            alt="SnapPrint"
-            style={{ width: '22px', height: '22px', borderRadius: '6px' }}
-          />
-          <span
-            style={{
-              fontSize: '13px',
-              fontWeight: 800,
-              color: '#0284c7',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            SnapPrint Network
-          </span>
-        </Link>
-        <h1
-          style={{
-            fontSize: '26px',
-            fontWeight: 800,
-            color: '#0f172a',
-            letterSpacing: '-0.5px',
-            margin: '0 0 4px',
-          }}
-        >
-          {studio.name}
-        </h1>
-        <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 600 }}>
-          Xerox & Digital Document Printing
-        </div>
-        {studio.contactPhone && (
-          <div style={{ color: '#64748b', fontSize: '13px', marginTop: '4px' }}>
-            Shop Contact: {studio.contactPhone}
-          </div>
-        )}
-      </header>
+      <CustomerStudioHeader studio={studio} />
 
       {session && (
         <div
@@ -157,6 +111,25 @@ export function CustomerStudioView({
         </div>
       )}
 
+      {studio.isAcceptingOrders === false && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: '20px',
+            padding: '14px 16px',
+            backgroundColor: '#fffbeb',
+            border: '1px solid #fde68a',
+            borderRadius: '8px',
+            color: '#92400e',
+            fontSize: '14px',
+            lineHeight: 1.5,
+          }}
+        >
+          <strong>⚠️ Printing Hardware Offline:</strong> This shop is currently unable to accept new
+          print orders because printing hardware is offline. Please try again shortly.
+        </div>
+      )}
+
       {session && (
         <DocumentPrintWorkflow
           slug={slug}
@@ -164,6 +137,7 @@ export function CustomerStudioView({
           sessionId={session.session.sessionId}
           token={session.token}
           payment={studio.payment}
+          isAcceptingOrders={studio.isAcceptingOrders !== false}
         />
       )}
 

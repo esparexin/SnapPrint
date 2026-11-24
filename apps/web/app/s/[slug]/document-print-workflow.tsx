@@ -14,6 +14,7 @@ interface DocumentPrintWorkflowProps {
   sessionId: string;
   token: string;
   payment?: PublicPaymentSettings;
+  isAcceptingOrders?: boolean;
 }
 
 const createDefaultConfig = (assetId: string): DocumentPrintConfig => ({
@@ -33,6 +34,7 @@ export function DocumentPrintWorkflow({
   sessionId,
   token,
   payment,
+  isAcceptingOrders = true,
 }: DocumentPrintWorkflowProps) {
   const [docs, setDocs] = useState<UploadedDocInfo[]>([]);
   const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
@@ -51,10 +53,11 @@ export function DocumentPrintWorkflow({
     setConfigs((prev) => {
       const pKey = prev.map((c) => c.assetId).join(',');
       const nKey = updatedDocs.map((d) => d.assetId).join(',');
-      if (pKey === nKey) return prev;
-      return updatedDocs.map(
-        (d) => prev.find((c) => c.assetId === d.assetId) || createDefaultConfig(d.assetId)
-      );
+      return pKey === nKey
+        ? prev
+        : updatedDocs.map(
+            (d) => prev.find((c) => c.assetId === d.assetId) || createDefaultConfig(d.assetId)
+          );
     });
   }, []);
 
@@ -127,6 +130,7 @@ export function DocumentPrintWorkflow({
             token={token}
             configs={configs}
             onOrderSubmitted={(order) => setSubmittedOrder(order)}
+            isAcceptingOrders={isAcceptingOrders}
           />
         </section>
       )}

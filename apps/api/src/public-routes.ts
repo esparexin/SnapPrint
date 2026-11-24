@@ -15,6 +15,7 @@ import {
   findStudioDocumentBySlug,
   toStudioContract,
 } from './repositories/studio.repository.js';
+import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
 import { signSessionToken } from './session-token.js';
 
 export interface PublicRouteOptions {
@@ -51,6 +52,12 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
 
     const studio = toStudioContract(doc);
 
+    const avail = await checkStudioCheckoutAvailability(db, {
+      id: studio.id,
+      status: studio.status,
+      isAcceptingOrders: studio.settings.isAcceptingOrders,
+    });
+
     const publicStudio = PublicStudioSchema.parse({
       id: studio.id,
       slug: studio.slug,
@@ -59,6 +66,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       currency: studio.settings.currency,
       contactPhone: studio.settings.contactPhone,
       contactEmail: studio.settings.contactEmail,
+      isAcceptingOrders: avail.allowed,
       payment: doc.payment
         ? {
             enableCounterPayment: doc.payment.enableCounterPayment ?? true,

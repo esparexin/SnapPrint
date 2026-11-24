@@ -90,7 +90,11 @@ export function AdminTenantDetailsModal({ studio, isOpen, onClose }: AdminTenant
             }}
           >
             <AdminTenantOverviewSection owner={details.owner} studio={details.studio} />
-            <AdminTenantFleetSection printers={details.printers} devices={details.devices} />
+            <AdminTenantFleetSection
+              printers={details.printers}
+              devices={details.devices}
+              studioId={details.studio.id}
+            />
           </div>
         )}
       </div>

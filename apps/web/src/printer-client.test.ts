@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  fetchStudioDevices,
   fetchStudioPrinters,
   generateAgentPairingKey,
+  getAgentDownloadUrl,
   PrinterApiError,
+  revokeAgentDevice,
   updatePrinterRole,
 } from './printer-client';
 
@@ -83,5 +86,53 @@ describe('Printer Client (apps/web)', () => {
     await expect(
       generateAgentPairingKey('std_1', mockFetch as unknown as typeof fetch)
     ).rejects.toThrow(PrinterApiError);
+  });
+
+  it('getAgentDownloadUrl returns valid MSI download endpoint', () => {
+    const url = getAgentDownloadUrl();
+    expect(url).toContain('/downloads/windows-agent/latest.msi');
+  });
+
+  it('fetchStudioDevices issues GET /studios/:id/devices', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        devices: [
+          {
+            deviceId: 'dev_1',
+            studioId: 'std_1',
+            hostname: 'COUNTER-PC',
+            osPlatform: 'win32',
+            agentVersion: '1.0.0',
+            status: 'active',
+            isOnline: true,
+            lastHeartbeatAt: '2026-11-24T12:00:00.000Z',
+            createdAt: '2026-11-24T10:00:00.000Z',
+          },
+        ],
+      }),
+    });
+
+    const res = await fetchStudioDevices('std_1', mockFetch as unknown as typeof fetch);
+    expect(res.devices).toHaveLength(1);
+    expect(res.devices[0].hostname).toBe('COUNTER-PC');
+    expect(res.devices[0].isOnline).toBe(true);
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toContain('/studios/std_1/devices');
+    expect(init.method).toBe('GET');
+  });
+
+  it('revokeAgentDevice issues POST /studios/:id/devices/:deviceId/revoke', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, deviceId: 'dev_1', status: 'revoked' }),
+    });
+
+    const res = await revokeAgentDevice('std_1', 'dev_1', mockFetch as unknown as typeof fetch);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe('revoked');
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toContain('/studios/std_1/devices/dev_1/revoke');
+    expect(init.method).toBe('POST');
   });
 });

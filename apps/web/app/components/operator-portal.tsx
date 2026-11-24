@@ -4,14 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { AuthApiError, fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { resolveStudioAuthorization } from '../../src/studio-authorization';
-import { ModuleCards } from './module-cards';
 import { OperatorPortalHeader, OperatorView } from './operator-portal-header';
+import { OperatorStudioHub } from './operator-studio-hub';
 import { PlatformScopeHub } from './platform-scope-hub';
 import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
-import { WorkspaceKpiBar } from './workspace-kpi-bar';
 import { portalStyles } from './operator-portal-styles';
 
 export interface OperatorPortalProps {
@@ -149,22 +148,11 @@ export function OperatorPortal({
               {isPlatformScope ? (
                 <PlatformScopeHub onOpenWizard={() => setActiveView('setup')} />
               ) : (
-                <>
-                  {activeStudioId && <WorkspaceKpiBar studioId={activeStudioId} />}
-                  <section>
-                    <h2 style={portalStyles.sectionHeading}>Studio Modules (Permission-Gated)</h2>
-                    <ModuleCards
-                      can={authState.can}
-                      onOpenQrModal={() => setActiveView('qr')}
-                      onOpenOrdersModal={() => setActiveView('orders')}
-                      onOpenSetupModal={() => setActiveView('setup')}
-                      onOpenPrintersModal={() => setActiveView('printers')}
-                      onOpenStaffModal={() => setActiveView('staff')}
-                      onOpenProfileModal={() => setActiveView('profile')}
-                      onOpenPaymentModal={() => setActiveView('payment')}
-                    />
-                  </section>
-                </>
+                <OperatorStudioHub
+                  studioId={activeStudioId}
+                  can={authState.can}
+                  onNavigate={setActiveView}
+                />
               )}
             </div>
           ) : (
