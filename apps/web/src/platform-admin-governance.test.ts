@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PlatformStudioItem, PlatformUserItem } from '@snapprint/contracts';
+import { formatDaysRemaining, formatPlanLabel } from '../app/admin/admin-subscription-helpers';
 
 describe('Platform Admin Governance & RBAC Separation', () => {
   const sampleUsers: PlatformUserItem[] = [
@@ -195,5 +196,37 @@ describe('Platform Admin Governance & RBAC Separation', () => {
     expect(validateOverride(0, 'Test reason').valid).toBe(false);
     expect(validateOverride(4000, 'Test reason').valid).toBe(false);
     expect(validateOverride(30, 'ok').valid).toBe(false);
+  });
+
+  it('formats subscription plan labels and days remaining countdown correctly', () => {
+    expect(formatPlanLabel('quarterly')).toBe('Quarterly');
+    expect(formatPlanLabel('free')).toBe('Free Trial');
+    expect(formatPlanLabel(undefined)).toBe('No Plan');
+
+    const future = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+    const past = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    expect(formatDaysRemaining(future, true)).toBe('10d remaining');
+    expect(formatDaysRemaining(past, false)).toBe('Expired 5d ago');
+    expect(formatDaysRemaining(undefined)).toBe('No expiry date');
+  });
+
+  it('correctly maps studio item subscription presence to table badges', () => {
+    const itemWithSub: PlatformStudioItem = {
+      id: 'studio_sub_01',
+      slug: 'sub-studio',
+      name: 'Subscription Studio',
+      status: 'active',
+      subscription: {
+        plan: 'quarterly',
+        status: 'active',
+        expiresAt: '2027-02-18T10:00:00.000Z',
+      },
+      createdAt: '2026-11-20T00:00:00.000Z',
+      updatedAt: '2026-11-20T00:00:00.000Z',
+    };
+
+    expect(itemWithSub.subscription).toBeDefined();
+    expect(itemWithSub.subscription?.plan).toBe('quarterly');
+    expect(itemWithSub.subscription?.status).toBe('active');
   });
 });

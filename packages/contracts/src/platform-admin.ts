@@ -33,6 +33,14 @@ export const PlatformStudioItemSchema = z.object({
   isAcceptingOrders: z.boolean().optional(),
   printerCount: z.number().int().nonnegative().optional(),
   payment: ShopPaymentSettingsSchema.optional(),
+  subscription: z
+    .object({
+      plan: SubscriptionPlanIdSchema,
+      status: SubscriptionStatusSchema,
+      expiresAt: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

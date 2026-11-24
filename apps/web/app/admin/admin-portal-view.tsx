@@ -34,6 +34,7 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
   const [error, setError] = useState<string | null>(null);
   const [selectedStudio, setSelectedStudio] = useState<PlatformStudioItem | null>(null);
   const [inspectStudio, setInspectStudio] = useState<PlatformStudioItem | null>(null);
+  const [overrideSubStudio, setOverrideSubStudio] = useState<PlatformStudioItem | null>(null);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -108,6 +109,7 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
               onStatusFilterChange={setStatusFilter}
               onInspect={setInspectStudio}
               onManageStatus={setSelectedStudio}
+              onManageSubscription={setOverrideSubStudio}
               onFilterChange={(st, sc) => {
                 setStatusFilter(st || 'all');
                 setSearchTerm(sc || '');
@@ -132,9 +134,11 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
         <AdminPortalModals
           selectedStudio={selectedStudio}
           inspectStudio={inspectStudio}
+          overrideSubStudio={overrideSubStudio}
           showCreateAdmin={showCreateAdmin}
           onCloseSelected={() => setSelectedStudio(null)}
           onCloseInspect={() => setInspectStudio(null)}
+          onCloseOverrideSub={() => setOverrideSubStudio(null)}
           onCloseCreate={() => setShowCreateAdmin(false)}
           onReload={() => loadData()}
         />

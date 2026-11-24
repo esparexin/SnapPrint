@@ -175,24 +175,6 @@ export function OrderSummaryCard({
         onChangePhone={setCustomerPhone}
       />
 
-      {isAcceptingOrders === false && (
-        <div
-          role="alert"
-          style={{
-            padding: '10px 14px',
-            backgroundColor: '#fffbeb',
-            border: '1px solid #fde68a',
-            borderRadius: '6px',
-            color: '#92400e',
-            fontSize: '13px',
-            marginBottom: '12px',
-          }}
-        >
-          This shop is currently unable to accept new print orders because printing hardware is
-          offline. Please try again shortly.
-        </div>
-      )}
-
       <button
         type="button"
         onClick={handleSubmitOrder}
@@ -220,7 +202,7 @@ export function OrderSummaryCard({
         }}
       >
         {isAcceptingOrders === false
-          ? 'Hardware Offline - Orders Paused'
+          ? '⚠️ Printer Offline'
           : submitting
             ? 'Submitting Order...'
             : loadingQuote

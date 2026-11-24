@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { StudioMetricsResponse } from '@snapprint/contracts';
 import { fetchStudioMetrics } from '../../src/workspace-client';
+import type { OperatorView } from './operator-portal-header';
 
 interface WorkspaceKpiBarProps {
   studioId: string;
+  onNavigate?: (view: OperatorView) => void;
 }
 
-export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
+export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) {
   const [metrics, setMetrics] = useState<StudioMetricsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +51,45 @@ export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
   const pendingCount = metrics?.pendingOrdersCount ?? 0;
   const totalPages = (metrics?.printVolume?.bwPages ?? 0) + (metrics?.printVolume?.colorPages ?? 0);
 
+  const kpis = [
+    {
+      label: 'Orders',
+      val: loading ? '…' : ordersCount,
+      view: 'orders' as OperatorView,
+      bg: '#f8fafc',
+      border: '#e2e8f0',
+      color: '#0f172a',
+      subColor: '#64748b',
+    },
+    {
+      label: 'Cash',
+      val: loading ? '…' : `₹${cashTotal}`,
+      view: 'payment' as OperatorView,
+      bg: '#f0fdf4',
+      border: '#bbf7d0',
+      color: '#166534',
+      subColor: '#15803d',
+    },
+    {
+      label: 'Pending',
+      val: loading ? '…' : pendingCount,
+      view: 'orders' as OperatorView,
+      bg: pendingCount > 0 ? '#fffbeb' : '#f8fafc',
+      border: pendingCount > 0 ? '#fde68a' : '#e2e8f0',
+      color: pendingCount > 0 ? '#b45309' : '#0f172a',
+      subColor: pendingCount > 0 ? '#b45309' : '#64748b',
+    },
+    {
+      label: 'Pages',
+      val: loading ? '…' : totalPages,
+      view: 'orders' as OperatorView,
+      bg: '#f8fafc',
+      border: '#e2e8f0',
+      color: '#0f172a',
+      subColor: '#64748b',
+    },
+  ];
+
   return (
     <div
       role="region"
@@ -61,141 +102,45 @@ export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
         width: '100%',
       }}
     >
-      {/* Box 1: Orders */}
-      <div
-        style={{
-          backgroundColor: '#f8fafc',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          padding: '8px 10px',
-          textAlign: 'center',
-        }}
-      >
-        <span
+      {kpis.map((kpi) => (
+        <button
+          key={kpi.label}
+          type="button"
+          onClick={() => onNavigate?.(kpi.view)}
           style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            color: '#64748b',
-            display: 'block',
-            letterSpacing: '0.04em',
+            backgroundColor: kpi.bg,
+            border: `1px solid ${kpi.border}`,
+            borderRadius: '8px',
+            padding: '8px 10px',
+            textAlign: 'center',
+            cursor: onNavigate ? 'pointer' : 'default',
+            width: '100%',
           }}
         >
-          Orders
-        </span>
-        <span
-          style={{
-            fontSize: '18px',
-            fontWeight: 800,
-            color: '#0f172a',
-            lineHeight: 1.2,
-          }}
-        >
-          {loading ? '…' : ordersCount}
-        </span>
-      </div>
-
-      {/* Box 2: Cash / Collections */}
-      <div
-        style={{
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #bbf7d0',
-          borderRadius: '8px',
-          padding: '8px 10px',
-          textAlign: 'center',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            color: '#15803d',
-            display: 'block',
-            letterSpacing: '0.04em',
-          }}
-        >
-          Cash
-        </span>
-        <span
-          style={{
-            fontSize: '18px',
-            fontWeight: 800,
-            color: '#166534',
-            lineHeight: 1.2,
-          }}
-        >
-          {loading ? '…' : `₹${cashTotal}`}
-        </span>
-      </div>
-
-      {/* Box 3: Pending */}
-      <div
-        style={{
-          backgroundColor: pendingCount > 0 ? '#fffbeb' : '#f8fafc',
-          border: pendingCount > 0 ? '1px solid #fde68a' : '1px solid #e2e8f0',
-          borderRadius: '8px',
-          padding: '8px 10px',
-          textAlign: 'center',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            color: pendingCount > 0 ? '#b45309' : '#64748b',
-            display: 'block',
-            letterSpacing: '0.04em',
-          }}
-        >
-          Pending
-        </span>
-        <span
-          style={{
-            fontSize: '18px',
-            fontWeight: 800,
-            color: pendingCount > 0 ? '#b45309' : '#0f172a',
-            lineHeight: 1.2,
-          }}
-        >
-          {loading ? '…' : pendingCount}
-        </span>
-      </div>
-
-      {/* Box 4: Pages */}
-      <div
-        style={{
-          backgroundColor: '#f8fafc',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          padding: '8px 10px',
-          textAlign: 'center',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            color: '#64748b',
-            display: 'block',
-            letterSpacing: '0.04em',
-          }}
-        >
-          Pages
-        </span>
-        <span
-          style={{
-            fontSize: '18px',
-            fontWeight: 800,
-            color: '#0f172a',
-            lineHeight: 1.2,
-          }}
-        >
-          {loading ? '…' : totalPages}
-        </span>
-      </div>
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              color: kpi.subColor,
+              display: 'block',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {kpi.label}
+          </span>
+          <span
+            style={{
+              fontSize: '18px',
+              fontWeight: 800,
+              color: kpi.color,
+              lineHeight: 1.2,
+            }}
+          >
+            {kpi.val}
+          </span>
+        </button>
+      ))}
     </div>
   );
 }

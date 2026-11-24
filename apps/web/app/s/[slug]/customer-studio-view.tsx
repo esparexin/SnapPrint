@@ -114,25 +114,6 @@ export function CustomerStudioView({
 
       <PrintRateCard printRates={studio.printRates} />
 
-      {studio.isAcceptingOrders === false && (
-        <div
-          role="alert"
-          style={{
-            marginBottom: '20px',
-            padding: '14px 16px',
-            backgroundColor: '#fffbeb',
-            border: '1px solid #fde68a',
-            borderRadius: '8px',
-            color: '#92400e',
-            fontSize: '14px',
-            lineHeight: 1.5,
-          }}
-        >
-          <strong>⚠️ Printing Hardware Offline:</strong> This shop is currently unable to accept new
-          print orders because printing hardware is offline. Please try again shortly.
-        </div>
-      )}
-
       {session && (
         <DocumentPrintWorkflow
           slug={slug}
@@ -141,6 +122,7 @@ export function CustomerStudioView({
           token={session.token}
           payment={studio.payment}
           isAcceptingOrders={studio.isAcceptingOrders !== false}
+          printRates={studio.printRates}
         />
       )}
 

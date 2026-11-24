@@ -1,9 +1,15 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { DocumentPrintConfig, OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
+import {
+  DocumentPrintConfig,
+  OrderRecord,
+  PublicPaymentSettings,
+  StudioPrintRatesContract,
+} from '@snapprint/contracts';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
+import { createDefaultConfig } from './document-print-workflow-helpers';
 import { OrderConfirmationView } from './order-confirmation-view';
 import { OrderSummaryCard } from './order-summary-card';
 import { PhotoUploader, UploadedDocInfo } from './photo-uploader';
@@ -15,18 +21,8 @@ interface DocumentPrintWorkflowProps {
   token: string;
   payment?: PublicPaymentSettings;
   isAcceptingOrders?: boolean;
+  printRates?: StudioPrintRatesContract;
 }
-
-const createDefaultConfig = (assetId: string): DocumentPrintConfig => ({
-  assetId,
-  paperSize: 'A4',
-  colorMode: 'black_and_white',
-  sides: 'single_sided',
-  orientation: 'portrait',
-  scaling: 'fit_to_page',
-  pageSelection: 'all',
-  copies: 1,
-});
 
 export function DocumentPrintWorkflow({
   slug,
@@ -35,6 +31,7 @@ export function DocumentPrintWorkflow({
   token,
   payment,
   isAcceptingOrders = true,
+  printRates,
 }: DocumentPrintWorkflowProps) {
   const [docs, setDocs] = useState<UploadedDocInfo[]>([]);
   const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
@@ -112,6 +109,7 @@ export function DocumentPrintWorkflow({
               config={configs[idx] || createDefaultConfig(doc.assetId)}
               filename={doc.filename}
               pageCount={doc.pageCount}
+              printRates={printRates}
               onUpdate={(updated) => handleUpdateConfig(idx, updated)}
               onPreview={() =>
                 setPreviewDoc({ doc, config: configs[idx] || createDefaultConfig(doc.assetId) })

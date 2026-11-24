@@ -66,6 +66,13 @@ describe('Platform Admin Routes & Authorization', () => {
     expect(studioOne.printerCount).toBe(1);
     expect(studioOne.payment?.enableCounterPayment).toBe(true);
     expect(studioOne.payment?.enableOnlinePayment).toBe(true);
+    expect(studioOne.subscription).toBeDefined();
+    expect(studioOne.subscription?.plan).toBe('quarterly');
+    expect(studioOne.subscription?.status).toBe('active');
+
+    const studioTwo = allBody.studios.find((s: { id: string }) => s.id === 'studio_two');
+    expect(studioTwo).toBeDefined();
+    expect(studioTwo.subscription).toBeUndefined();
     await app.close();
   });
 

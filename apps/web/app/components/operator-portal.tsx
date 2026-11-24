@@ -119,6 +119,7 @@ export function OperatorPortal({
         activeView={activeView}
         onNavigate={setActiveView}
         onClosePortal={onClosePortal}
+        studioName={activeStudioId ? studioNames[activeStudioId] : undefined}
       />
 
       {errorBanner && (

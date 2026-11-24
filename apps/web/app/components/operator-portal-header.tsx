@@ -1,16 +1,9 @@
 'use client';
 
 import React from 'react';
+import { OperatorView, VIEW_TITLES } from './operator-portal-styles';
 
-export type OperatorView =
-  | 'hub'
-  | 'orders'
-  | 'printers'
-  | 'qr'
-  | 'profile'
-  | 'payment'
-  | 'staff'
-  | 'setup';
+export type { OperatorView };
 
 interface OperatorPortalHeaderProps {
   userName: string;
@@ -21,18 +14,8 @@ interface OperatorPortalHeaderProps {
   activeView?: OperatorView;
   onNavigate?: (view: OperatorView) => void;
   onClosePortal?: () => void;
+  studioName?: string;
 }
-
-const VIEW_TITLES: Record<OperatorView, string> = {
-  hub: 'SnapPrint Operator Portal',
-  orders: 'Order Fulfillment Queue',
-  printers: 'Printer Fleet & Pairing',
-  qr: 'Permanent Counter QR Code',
-  profile: 'Shop Profile & Capabilities',
-  payment: 'Payment & Rate Settings',
-  staff: 'Staff & Team Roster',
-  setup: 'Shop Setup Wizard',
-};
 
 export function OperatorPortalHeader({
   userName,
@@ -43,8 +26,12 @@ export function OperatorPortalHeader({
   activeView = 'hub',
   onNavigate,
   onClosePortal,
+  studioName,
 }: OperatorPortalHeaderProps) {
   const isSubView = activeView !== 'hub';
+  const headingTitle = isSubView
+    ? VIEW_TITLES[activeView] || 'Operator Portal'
+    : studioName || 'SnapPrint Operator Portal';
 
   return (
     <header
@@ -80,7 +67,7 @@ export function OperatorPortalHeader({
         )}
         <div>
           <h1 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#111827' }}>
-            {VIEW_TITLES[activeView] || 'Operator Portal'}
+            {headingTitle}
           </h1>
           <p
             style={{

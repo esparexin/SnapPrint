@@ -10,6 +10,7 @@ export interface AdminShopTableProps {
   loading: boolean;
   onInspect: (studio: PlatformStudioItem) => void;
   onManageStatus: (studio: PlatformStudioItem) => void;
+  onManageSubscription?: (studio: PlatformStudioItem) => void;
   onFilterChange: (status?: StudioStatus, search?: string) => void;
   statusFilter?: string;
   onStatusFilterChange?: (status: string) => void;
@@ -20,6 +21,7 @@ export function AdminShopTable({
   loading,
   onInspect,
   onManageStatus,
+  onManageSubscription,
   onFilterChange,
   statusFilter = 'all',
   onStatusFilterChange,
@@ -77,6 +79,7 @@ export function AdminShopTable({
               <th style={adminTableStyles.th}>Studio Name</th>
               <th style={adminTableStyles.th}>Identifier / Slug</th>
               <th style={adminTableStyles.th}>Status</th>
+              <th style={adminTableStyles.th}>Subscription</th>
               <th style={adminTableStyles.th}>Printers & Payments</th>
               <th style={adminTableStyles.th}>Owner & Contact</th>
               <th style={adminTableStyles.th}>Created</th>
@@ -86,13 +89,13 @@ export function AdminShopTable({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={adminTableStyles.emptyCell}>
+                <td colSpan={8} style={adminTableStyles.emptyCell}>
                   Loading studios directory...
                 </td>
               </tr>
             ) : studios.length === 0 ? (
               <tr>
-                <td colSpan={7} style={adminTableStyles.emptyCell}>
+                <td colSpan={8} style={adminTableStyles.emptyCell}>
                   No studios found matching the criteria.
                 </td>
               </tr>
@@ -103,6 +106,7 @@ export function AdminShopTable({
                   studio={s}
                   onInspect={onInspect}
                   onManageStatus={onManageStatus}
+                  onManageSubscription={onManageSubscription}
                 />
               ))
             )}

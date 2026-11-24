@@ -45,10 +45,18 @@ describe('platform-admin contracts', () => {
         enableOnlinePayment: true,
         isRazorpayConfirmed: true,
       },
+      subscription: {
+        plan: 'quarterly',
+        status: 'active',
+        expiresAt: '2027-02-18T10:00:00.000Z',
+      },
       createdAt: '2026-11-20T10:00:00.000Z',
       updatedAt: '2026-11-23T10:00:00.000Z',
     };
     expect(PlatformStudioItemSchema.parse(valid)).toEqual(valid);
+
+    const withoutSub = { ...valid, subscription: undefined };
+    expect(PlatformStudioItemSchema.parse(withoutSub)).toEqual(withoutSub);
 
     const invalidSlug = { ...valid, slug: 'INVALID SLUG!' };
     expect(() => PlatformStudioItemSchema.parse(invalidSlug)).toThrow();
