@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { adminLayoutStyles } from './admin-layout-styles';
-import { AdminLoginCard } from './admin-login-card';
+import { AdminNoAdminCard } from './admin-no-admin-card';
 import { AdminPortalView } from './admin-portal-view';
 
 export default function PlatformAdminPage() {
@@ -32,43 +32,19 @@ export default function PlatformAdminPage() {
       <div style={adminLayoutStyles.centeredScreen}>
         <div style={{ textAlign: 'center' }}>
           <div style={adminLayoutStyles.spinner} />
-          <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
-            Verifying admin credentials...
-          </p>
         </div>
       </div>
     );
   }
 
-  if (!auth) {
-    return (
-      <div style={adminLayoutStyles.centeredScreen}>
-        <AdminLoginCard onSuccess={setAuth} />
-      </div>
-    );
-  }
-
-  const isPlatformAdmin = auth.memberships.some(
+  const isPlatformAdmin = auth?.memberships.some(
     (m) => m.role === 'platform_admin' && m.status === 'active'
   );
 
-  if (!isPlatformAdmin) {
+  if (!auth || !isPlatformAdmin) {
     return (
       <div style={adminLayoutStyles.centeredScreen}>
-        <div style={{ ...adminLayoutStyles.authCard, borderColor: '#fecaca' }}>
-          <div style={adminLayoutStyles.errorIcon}>!</div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
-            Access Denied (403)
-          </h2>
-          <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '1.5rem' }}>
-            Your account ({auth.user.email}) does not possess the{' '}
-            <code style={adminLayoutStyles.codePill}>platform_admin</code> role required to access
-            this workspace.
-          </p>
-          <button type="button" onClick={handleLogout} style={adminLayoutStyles.btnBlockSecondary}>
-            Sign Out & Switch Account
-          </button>
-        </div>
+        <AdminNoAdminCard />
       </div>
     );
   }
