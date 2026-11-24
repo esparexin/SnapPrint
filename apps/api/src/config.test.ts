@@ -12,7 +12,9 @@ describe('API Configuration', () => {
     expect(config.logLevel).toBe('info');
     expect(config.sessionSecret).toBe(INSECURE_DEV_SESSION_SECRET);
     expect(config.cookieSecret).toBe(INSECURE_DEV_COOKIE_SECRET);
-    expect(config.corsAllowedOrigins).toBe('http://localhost:3000,http://127.0.0.1:3000');
+    expect(config.corsAllowedOrigins).toBe(
+      'http://localhost:3000,http://127.0.0.1:3000,https://snap.palnadu.dev'
+    );
     expect(config.trustProxy).toBe(false);
     expect(config.cookieSecure).toBe(false);
     expect(config.rateLimitMax).toBe(100);

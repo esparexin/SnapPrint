@@ -7,6 +7,7 @@ import { assetRoutes } from './asset-routes.js';
 import { authLoginOtpRoutes } from './auth-login-otp-routes.js';
 import { authRegistrationRoutes } from './auth-registration-routes.js';
 import { authRoutes } from './auth.js';
+import { buildCorsOptions } from './cors.js';
 import { loadConfig } from './config.js';
 import { closeDb, connectDb } from './db.js';
 import { createEmailService } from './email/email-service.js';
@@ -55,10 +56,7 @@ app.addHook('onSend', async (_request, reply) => {
   }
 });
 
-app.register(cors, {
-  origin: config.corsAllowedOrigins.split(',').map((origin) => origin.trim()),
-  credentials: true,
-});
+app.register(cors, buildCorsOptions(config.corsAllowedOrigins));
 
 app.register(rateLimit, {
   max: config.rateLimitMax,

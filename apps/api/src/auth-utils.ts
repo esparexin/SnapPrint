@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { FastifyReply } from 'fastify';
 import { Db } from 'mongodb';
+import { isOriginAllowed } from './cors.js';
 import { createOperatorSession } from './repositories/operator-session.repository.js';
 
 export const OPERATOR_COOKIE_NAME_PROD = '__Host-snapprint_op';
@@ -50,31 +51,7 @@ export function validateOrigin(
   originHeader: string | undefined,
   allowedOriginsStr: string
 ): boolean {
-  if (!originHeader) {
-    // Non-browser or direct requests without Origin header are permitted
-    return true;
-  }
-  const trimmed = originHeader.trim();
-  if (trimmed === 'null' || trimmed === '') {
-    return false;
-  }
-  try {
-    const parsedOrigin = new URL(trimmed).origin.toLowerCase();
-    const allowed = allowedOriginsStr
-      .split(',')
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean)
-      .map((s) => {
-        try {
-          return new URL(s).origin.toLowerCase();
-        } catch {
-          return s;
-        }
-      });
-    return allowed.includes(parsedOrigin);
-  } catch {
-    return false;
-  }
+  return isOriginAllowed(originHeader, allowedOriginsStr);
 }
 
 /**
