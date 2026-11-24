@@ -28,7 +28,7 @@ describe('Studio Names & Context Formatting', () => {
       {
         userId: 'u1',
         studioId: 'studio_abc',
-        role: 'studio_operator',
+        role: 'studio_staff',
         status: 'active',
         createdAt: '2026-11-20T00:00:00.000Z',
       },

@@ -43,10 +43,7 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const db = getEffectiveDb();
       const studio = await verifyStudioSessionOwnership(
-        db,
-        request.params.slug,
-        session.studioId,
-        reply
+        db, request.params.slug, session.studioId, reply
       );
       if (!studio) return;
 
@@ -76,7 +73,10 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       }
 
       try {
-        const quote = calculateOrderQuote({ items: itemsWithMeta });
+        const quote = calculateOrderQuote({
+          items: itemsWithMeta,
+          rates: studio.settings.printRates as any,
+        });
         return reply.status(200).send(QuoteResponseSchema.parse(quote));
       } catch (err) {
         return reply.status(400).send({
@@ -97,10 +97,7 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const db = getEffectiveDb();
       const studio = await verifyStudioSessionOwnership(
-        db,
-        request.params.slug,
-        session.studioId,
-        reply
+        db, request.params.slug, session.studioId, reply
       );
       if (!studio) return;
 
@@ -145,7 +142,10 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         });
       }
 
-      const quote = calculateOrderQuote({ items: itemsWithMeta });
+      const quote = calculateOrderQuote({
+        items: itemsWithMeta,
+        rates: studio.settings.printRates as any,
+      });
       const nowIso = new Date().toISOString();
       const orderId = 'ord_' + randomUUID();
       const orderNumber = 'ORD-' + randomUUID().substring(0, 6).toUpperCase();

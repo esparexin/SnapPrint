@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Studio } from '@snapprint/contracts';
+import { Studio, StudioPrintRatesContract } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
 import { ShopPaymentModalFooter } from './shop-payment-modal-footer';
 import { ShopPaymentModalHeader } from './shop-payment-modal-header';
 import { ShopPaymentPolicyFields } from './shop-payment-policy-fields';
+import { ShopPrintRatesFields } from './shop-print-rates-fields';
 import { ShopRazorpayForm } from './shop-razorpay-form';
 
 interface ShopPaymentModalProps {
@@ -19,20 +20,20 @@ interface ShopPaymentModalProps {
 
 export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopPaymentModalProps) {
   const initialSettings = studio.settings;
-  const initialPayment = (
-    studio as unknown as {
-      payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string };
-    }
-  ).payment;
+  const initialPayment = (studio as unknown as { payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string } }).payment;
 
   const [paymentPolicy, setPaymentPolicy] = useState<'payment_required' | 'pay_at_counter'>(
     initialSettings?.paymentPolicy || 'payment_required'
   );
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(
-    initialSettings?.onlinePaymentEnabled ?? true
-  );
-  const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(
-    initialSettings?.counterPaymentEnabled ?? true
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(initialSettings?.onlinePaymentEnabled ?? true);
+  const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(initialSettings?.counterPaymentEnabled ?? true);
+  const [printRates, setPrintRates] = useState<StudioPrintRatesContract>(
+    initialSettings?.printRates || {
+      A4: {
+        black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+        color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+      },
+    }
   );
   const [keyId, setKeyId] = useState(initialPayment?.razorpayKeyId || '');
   const [isConfirmed, setIsConfirmed] = useState(initialPayment?.isRazorpayConfirmed ?? false);
@@ -48,6 +49,7 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
         paymentPolicy,
         onlinePaymentEnabled,
         counterPaymentEnabled,
+        printRates,
       });
 
       await updateProfileApi(studioId, {
@@ -123,6 +125,8 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
               counterPaymentEnabled={counterPaymentEnabled}
               setCounterPaymentEnabled={setCounterPaymentEnabled}
             />
+
+            <ShopPrintRatesFields printRates={printRates} onChange={setPrintRates} />
 
             <ShopRazorpayForm
               studioId={studioId}
