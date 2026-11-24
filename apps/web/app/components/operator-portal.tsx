@@ -66,6 +66,7 @@ export function OperatorPortal({
       setSelectedStudioId(null);
       setActiveView('hub');
       onAuthChange?.(null);
+      if (typeof window !== 'undefined') window.location.href = '/';
     } catch (err) {
       setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.');
     } finally {

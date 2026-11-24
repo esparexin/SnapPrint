@@ -5,6 +5,7 @@ import { DocumentPrintConfig, OrderRecord, QuoteResponse } from '@snapprint/cont
 import { OrderApiError, requestPrintQuote, submitPrintOrder } from '../../../src/order-client';
 import { OrderCustomerForm } from './order-customer-form';
 import { OrderItemsBreakdown } from './order-items-breakdown';
+import { OrderStickyCtaBar } from './order-sticky-cta-bar';
 
 interface OrderSummaryCardProps {
   slug: string;
@@ -175,40 +176,14 @@ export function OrderSummaryCard({
         onChangePhone={setCustomerPhone}
       />
 
-      <button
-        type="button"
-        onClick={handleSubmitOrder}
-        disabled={submitting || !quote || loadingQuote || isAcceptingOrders === false}
-        style={{
-          width: '100%',
-          padding: '12px 16px',
-          backgroundColor:
-            submitting || !quote || loadingQuote || isAcceptingOrders === false
-              ? '#94a3b8'
-              : '#0284c7',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '15px',
-          fontWeight: 700,
-          cursor:
-            submitting || !quote || loadingQuote || isAcceptingOrders === false
-              ? 'not-allowed'
-              : 'pointer',
-          position: 'sticky',
-          bottom: '12px',
-          zIndex: 10,
-          boxShadow: '0 4px 10px rgba(2, 132, 199, 0.3)',
-        }}
-      >
-        {isAcceptingOrders === false
-          ? '⚠️ Printer Offline'
-          : submitting
-            ? 'Submitting Order...'
-            : loadingQuote
-              ? 'Calculating Total...'
-              : '🖨️ Print'}
-      </button>
+      <OrderStickyCtaBar
+        quote={quote}
+        loadingQuote={loadingQuote}
+        submitting={submitting}
+        isAcceptingOrders={isAcceptingOrders}
+        onSubmit={handleSubmitOrder}
+      />
+      <div style={{ height: '70px' }} aria-hidden="true" />
     </div>
   );
 }
