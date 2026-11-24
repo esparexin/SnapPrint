@@ -25,6 +25,7 @@ import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { platformAdminRoutes } from './platform-admin-routes.js';
+import { subscriptionRoutes } from './subscription-routes.js';
 import { initializeStorageService } from './storage/storage-service.js';
 import { webhookRoutes } from './webhook-routes.js';
 
@@ -100,6 +101,7 @@ app.register(orderRoutes);
 app.register(paymentRoutes);
 app.register(operatorPaymentRoutes);
 app.register(platformAdminRoutes);
+app.register(subscriptionRoutes);
 app.register(webhookRoutes);
 
 const signals = ['SIGINT', 'SIGTERM'] as const;
