@@ -1,3 +1,5 @@
+import { writeFileSync } from 'node:fs';
+import { PrintJobRecord, PrintJobStatus } from '@snapprint/contracts';
 import { DiscoveredPrinter } from './spooler-adapter.js';
 
 export interface EnrollResult {
@@ -121,5 +123,92 @@ export class AgentClient {
     }
 
     return { timestamp: data?.timestamp || new Date().toISOString() };
+  }
+
+  async fetchPendingJobs(deviceToken: string): Promise<PrintJobRecord[]> {
+    const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/pending`;
+    const res = await this.fetchImpl(url, {
+      method: 'GET',
+      headers: {
+        'x-device-token': deviceToken,
+      },
+    });
+
+    const data = (await res.json().catch(() => null)) as {
+      jobs?: PrintJobRecord[];
+      message?: string;
+      code?: string;
+    } | null;
+
+    if (!res.ok || !Array.isArray(data?.jobs)) {
+      throw new AgentClientError(
+        data?.message || 'Failed to fetch pending jobs',
+        res.status,
+        data?.code
+      );
+    }
+
+    return data.jobs;
+  }
+
+  async downloadJobDocument(
+    deviceToken: string,
+    jobId: string,
+    targetPath: string
+  ): Promise<void> {
+    const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/${encodeURIComponent(jobId)}/document`;
+    const res = await this.fetchImpl(url, {
+      method: 'GET',
+      headers: {
+        'x-device-token': deviceToken,
+      },
+    });
+
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as {
+        message?: string;
+        code?: string;
+      } | null;
+      throw new AgentClientError(
+        data?.message || `Failed to download job document for job ${jobId}`,
+        res.status,
+        data?.code
+      );
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    writeFileSync(targetPath, Buffer.from(arrayBuffer));
+  }
+
+  async updateJobStatus(
+    deviceToken: string,
+    jobId: string,
+    status: PrintJobStatus,
+    errorMessage?: string
+  ): Promise<void> {
+    const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/${encodeURIComponent(jobId)}/status`;
+    const res = await this.fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-device-token': deviceToken,
+      },
+      body: JSON.stringify({
+        status,
+        errorMessage,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as {
+        message?: string;
+        code?: string;
+      } | null;
+      throw new AgentClientError(
+        data?.message || `Failed to update job status for job ${jobId}`,
+        res.status,
+        data?.code
+      );
+    }
   }
 }

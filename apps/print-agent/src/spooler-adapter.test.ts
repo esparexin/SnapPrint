@@ -128,5 +128,36 @@ printer HP_LaserJet_1020 is idle. enabled since Mon 23 Nov 2026 10:00:00 AM IST
       expect(printers[0].isColorSupported).toBe(true);
       expect(printers[0].isDefault).toBe(true);
     });
+
+    it('executes silent Start-Process command on win32', async () => {
+      const executedCommands: string[] = [];
+      const mockExec = async (cmd: string) => {
+        executedCommands.push(cmd);
+        return { stdout: '', stderr: '' };
+      };
+
+      const adapter = createSystemSpoolerAdapter({ platform: 'win32', execAsync: mockExec });
+      await adapter.printFile('HP LaserJet Pro M126nw', 'C:\\temp\\invoice.pdf', { copies: 2 });
+
+      expect(executedCommands).toHaveLength(2);
+      expect(executedCommands[0]).toContain('Start-Process');
+      expect(executedCommands[0]).toContain('-Verb PrintTo');
+      expect(executedCommands[0]).toContain('HP LaserJet Pro M126nw');
+      expect(executedCommands[0]).toContain('C:\\temp\\invoice.pdf');
+    });
+
+    it('executes lp command on darwin/linux', async () => {
+      const executedCommands: string[] = [];
+      const mockExec = async (cmd: string) => {
+        executedCommands.push(cmd);
+        return { stdout: '', stderr: '' };
+      };
+
+      const adapter = createSystemSpoolerAdapter({ platform: 'darwin', execAsync: mockExec });
+      await adapter.printFile('Epson_L3150', '/tmp/ticket.pdf', { copies: 3 });
+
+      expect(executedCommands).toHaveLength(1);
+      expect(executedCommands[0]).toBe('lp -d "Epson_L3150" -n 3 "/tmp/ticket.pdf"');
+    });
   });
 });
