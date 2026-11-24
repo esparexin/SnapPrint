@@ -1,30 +1,63 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PlatformUserItem } from '@snapprint/contracts';
 import { adminTableStyles } from './admin-table-styles';
+import { AdminUserFilterTabs, ScopeFilter } from './admin-user-filter-tabs';
+import { AdminUserTableRow } from './admin-user-table-row';
 
 export interface AdminUserTableProps {
   users: PlatformUserItem[];
   loading: boolean;
+  currentUserId?: string;
+  togglingUserId?: string | null;
+  onOpenCreateAdmin: () => void;
+  onToggleStatus: (userId: string, targetStatus: 'active' | 'suspended') => void;
 }
 
-const roleStyles: Record<string, { bg: string; color: string; label: string }> = {
-  platform_admin: { bg: '#f3e8ff', color: '#6b21a8', label: 'Platform Admin' },
-  studio_owner: { bg: '#e0f2fe', color: '#0369a1', label: 'Studio Owner' },
-  studio_staff: { bg: '#f1f5f9', color: '#334155', label: 'Studio Staff' },
-};
+export function AdminUserTable({
+  users,
+  loading,
+  currentUserId,
+  togglingUserId,
+  onOpenCreateAdmin,
+  onToggleStatus,
+}: AdminUserTableProps) {
+  const [filter, setFilter] = useState<ScopeFilter>('all');
 
-export function AdminUserTable({ users, loading }: AdminUserTableProps) {
+  const filteredUsers = users.filter((u) => {
+    if (filter === 'platform_admin') return u.role === 'platform_admin';
+    if (filter === 'tenant') return u.role !== 'platform_admin';
+    return true;
+  });
+
   return (
     <div style={adminTableStyles.card}>
       <div style={adminTableStyles.cardHeader}>
         <div>
-          <h2 style={adminTableStyles.cardTitle}>System Users & RBAC Directory</h2>
+          <h2 style={adminTableStyles.cardTitle}>Users & RBAC Directory</h2>
           <p style={adminTableStyles.cardSubtext}>
-            Governance and role visibility across all registered operators and platform
-            administrators
+            Distinct governance for platform administrators and tenant/studio operators
           </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <AdminUserFilterTabs users={users} filter={filter} onSelect={setFilter} />
+          <button
+            type="button"
+            onClick={onOpenCreateAdmin}
+            style={{
+              padding: '0.45rem 0.85rem',
+              backgroundColor: '#0284c7',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '0.5rem',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            + Create Platform Admin
+          </button>
         </div>
       </div>
 
@@ -38,79 +71,32 @@ export function AdminUserTable({ users, loading }: AdminUserTableProps) {
               <th style={adminTableStyles.th}>Context Scope</th>
               <th style={adminTableStyles.th}>Status</th>
               <th style={adminTableStyles.th}>Registered</th>
+              <th style={adminTableStyles.thRight}>Action</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td
-                  colSpan={6}
-                  style={{ ...adminTableStyles.td, textAlign: 'center', color: '#64748b' }}
-                >
-                  Loading system users...
+                <td colSpan={7} style={adminTableStyles.emptyCell}>
+                  Loading users directory...
                 </td>
               </tr>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  style={{ ...adminTableStyles.td, textAlign: 'center', color: '#64748b' }}
-                >
-                  No users found matching the criteria.
+                <td colSpan={7} style={adminTableStyles.emptyCell}>
+                  No users found in this category.
                 </td>
               </tr>
             ) : (
-              users.map((u) => {
-                const badge = roleStyles[u.role] || roleStyles.studio_staff;
-                return (
-                  <tr key={u.id}>
-                    <td style={adminTableStyles.tdBold}>
-                      <div>{u.email}</div>
-                      <div
-                        style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'monospace' }}
-                      >
-                        {u.id}
-                      </div>
-                    </td>
-                    <td style={adminTableStyles.td}>{u.name}</td>
-                    <td style={adminTableStyles.td}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '0.375rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          backgroundColor: badge.bg,
-                          color: badge.color,
-                        }}
-                      >
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td style={adminTableStyles.td}>
-                      <code style={{ fontSize: '0.75rem', color: '#475569' }}>
-                        {u.studioId ||
-                          (u.role === 'platform_admin' ? 'platform_scope' : 'unassigned')}
-                      </code>
-                    </td>
-                    <td style={adminTableStyles.td}>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 500,
-                          color: u.status === 'active' ? '#16a34a' : '#dc2626',
-                        }}
-                      >
-                        {u.status}
-                      </span>
-                    </td>
-                    <td style={adminTableStyles.td}>
-                      {new Date(u.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                );
-              })
+              filteredUsers.map((u) => (
+                <AdminUserTableRow
+                  key={u.id}
+                  user={u}
+                  currentUserId={currentUserId}
+                  isToggling={togglingUserId === u.id}
+                  onToggleStatus={onToggleStatus}
+                />
+              ))
             )}
           </tbody>
         </table>
