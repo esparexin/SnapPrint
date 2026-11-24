@@ -19,15 +19,32 @@ export interface WebhookRouteOptions {
   gateway?: PaymentGatewayService;
 }
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    rawBody?: Buffer;
+  }
+}
+
 export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app, opts) => {
   const config = opts?.config ?? loadConfig();
   const getEffectiveDb = (): Db => opts?.db ?? getDb();
   const gateway = opts?.gateway ?? createPaymentGatewayService(config);
 
+  app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
+    try {
+      req.rawBody = body as Buffer;
+      const json = JSON.parse(body.toString('utf8'));
+      done(null, json);
+    } catch (err) {
+      done(err as Error, undefined);
+    }
+  });
+
   app.post('/webhooks/razorpay', async (request, reply) => {
     const signature = (request.headers['x-razorpay-signature'] as string) || '';
     const rawPayload =
-      typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
+      request.rawBody ??
+      (typeof request.body === 'string' ? request.body : JSON.stringify(request.body));
 
     const isValid = gateway.verifyWebhookSignature(rawPayload, signature);
     if (!isValid) {

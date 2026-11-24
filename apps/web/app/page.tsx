@@ -123,11 +123,17 @@ export default function HomePage() {
           footerLinks={[
             {
               label: 'Privacy Policy',
+              href: '/privacy',
               onClick: () => setShowPrivacyModal(true),
             },
             {
               label: 'Terms & Conditions',
+              href: '/terms',
               onClick: () => setShowTermsModal(true),
+            },
+            {
+              label: 'Refund Policy',
+              href: '/refunds',
             },
           ]}
         />

@@ -24,10 +24,12 @@ import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { platformAdminRoutes } from './platform-admin-routes.js';
+import { initializeStorageService } from './storage/storage-service.js';
 import { webhookRoutes } from './webhook-routes.js';
 
 const config = loadConfig();
 const emailService = createEmailService(config);
+initializeStorageService(config);
 
 const app = fastify({
   trustProxy: config.trustProxy,
@@ -43,6 +45,15 @@ const app = fastify({
 });
 
 app.setErrorHandler(handleApiError);
+
+app.addHook('onSend', async (_request, reply) => {
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('X-Frame-Options', 'DENY');
+  reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (config.nodeEnv === 'production') {
+    reply.header('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  }
+});
 
 app.register(cors, {
   origin: config.corsAllowedOrigins.split(',').map((origin) => origin.trim()),

@@ -14,6 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://snap.palnadu.dev'),
   title: 'SnapPrint — Digital Xerox & Print Cloud',
   description:
     'Multi-tenant photo printing and digital document Xerox SaaS platform. Zero-login QR mobile ordering and direct desktop printer spooling.',
@@ -23,6 +24,25 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: 'any' },
     ],
     apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  openGraph: {
+    title: 'SnapPrint — Digital Xerox & Print Cloud',
+    description:
+      'Multi-tenant photo printing and digital document Xerox SaaS platform. Zero-login QR mobile ordering and direct desktop printer spooling.',
+    url: 'https://snap.palnadu.dev',
+    siteName: 'SnapPrint',
+    images: [
+      { url: '/brand/snapprint-logo.png', width: 1200, height: 630, alt: 'SnapPrint Cloud' },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SnapPrint — Digital Xerox & Print Cloud',
+    description:
+      'Multi-tenant photo printing and digital document Xerox SaaS platform. Zero-login QR mobile ordering and direct desktop printer spooling.',
+    images: ['/brand/snapprint-logo.png'],
   },
 };
 
