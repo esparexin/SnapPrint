@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createPlatformAdminUser,
   getPlatformMetrics,
+  getPlatformStudioDetails,
   listPlatformAuditLogs,
   listPlatformStudios,
   PlatformAdminApiError,
   updatePlatformStudioStatus,
+  updatePlatformUserStatus,
 } from './platform-admin-client.js';
 
 describe('platform-admin-client', () => {
@@ -89,6 +92,83 @@ describe('platform-admin-client', () => {
         method: 'PATCH',
         body: JSON.stringify({ status: 'suspended', reason: 'Non-payment' }),
       })
+    );
+  });
+
+  it('creates platform admin user via POST', async () => {
+    const mockResponse = {
+      success: true,
+      user: {
+        id: 'user_admin',
+        email: 'admin@snapprint.in',
+        name: 'Admin User',
+        status: 'active',
+        role: 'platform_admin',
+        createdAt: '2026-11-24T00:00:00.000Z',
+      },
+    };
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    const result = await createPlatformAdminUser(
+      { email: 'admin@snapprint.in', name: 'Admin User' },
+      mockFetch
+    );
+    expect(result).toEqual(mockResponse);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:3001/admin/users',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'admin@snapprint.in', name: 'Admin User' }),
+      })
+    );
+  });
+
+  it('updates platform user status via PATCH', async () => {
+    const mockResponse = { success: true, userId: 'user_01', status: 'suspended' };
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    const result = await updatePlatformUserStatus('user_01', 'suspended', mockFetch);
+    expect(result).toEqual(mockResponse);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:3001/admin/users/user_01/status',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'suspended' }),
+      })
+    );
+  });
+
+  it('gets platform studio details via GET', async () => {
+    const mockResponse = {
+      studio: {
+        id: 'studio_01',
+        slug: 'koramangala-xerox',
+        name: 'Koramangala Xerox',
+        status: 'active',
+        createdAt: '2026-11-20T00:00:00.000Z',
+        updatedAt: '2026-11-23T00:00:00.000Z',
+      },
+      owner: null,
+      printers: [],
+      devices: [],
+    };
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    const result = await getPlatformStudioDetails('studio_01', mockFetch);
+    expect(result).toEqual(mockResponse);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:3001/admin/studios/studio_01/details',
+      expect.objectContaining({ method: 'GET' })
     );
   });
 

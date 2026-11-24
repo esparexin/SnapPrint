@@ -1,11 +1,15 @@
 import {
+  CreatePlatformAdminUserRequest,
   ListPlatformAuditLogsResponse,
   ListPlatformStudiosQuery,
   ListPlatformStudiosResponse,
   ListPlatformUsersResponse,
   PlatformMetricsResponse,
+  PlatformStudioDetailsResponse,
   PlatformStudioItem,
+  PlatformUserItem,
   UpdatePlatformStudioStatusRequest,
+  UpdatePlatformUserStatusRequest,
 } from '@snapprint/contracts';
 
 import { getApiBaseUrl } from './auth-client.js';
@@ -114,6 +118,46 @@ export async function listPlatformUsers(
 ): Promise<ListPlatformUsersResponse> {
   return requestJson<ListPlatformUsersResponse>(
     `/admin/users?limit=${encodeURIComponent(limit)}`,
+    { method: 'GET' },
+    customFetch
+  );
+}
+
+export async function createPlatformAdminUser(
+  payload: CreatePlatformAdminUserRequest,
+  customFetch: typeof fetch = fetch
+): Promise<{ success: boolean; user: PlatformUserItem }> {
+  return requestJson<{ success: boolean; user: PlatformUserItem }>(
+    '/admin/users',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    customFetch
+  );
+}
+
+export async function updatePlatformUserStatus(
+  userId: string,
+  status: 'active' | 'suspended',
+  customFetch: typeof fetch = fetch
+): Promise<{ success: boolean; userId: string; status: 'active' | 'suspended' }> {
+  return requestJson<{ success: boolean; userId: string; status: 'active' | 'suspended' }>(
+    `/admin/users/${encodeURIComponent(userId)}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status } satisfies UpdatePlatformUserStatusRequest),
+    },
+    customFetch
+  );
+}
+
+export async function getPlatformStudioDetails(
+  studioId: string,
+  customFetch: typeof fetch = fetch
+): Promise<PlatformStudioDetailsResponse> {
+  return requestJson<PlatformStudioDetailsResponse>(
+    `/admin/studios/${encodeURIComponent(studioId)}/details`,
     { method: 'GET' },
     customFetch
   );
