@@ -3,6 +3,7 @@
 import React from 'react';
 import { Studio } from '@snapprint/contracts';
 import { StudioOnboardingProfile } from '../../src/studio-client';
+import { OperatorView } from './operator-portal-header';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PrinterManagementModal } from './printer-management-modal';
 import { SetupWizardModal } from './setup-wizard-modal';
@@ -14,19 +15,21 @@ import { StudioQrModal } from './studio-qr-modal';
 export interface PortalModalsProps {
   studioId?: string;
   studioName?: string;
-  showQrModal: boolean;
-  showOrdersModal: boolean;
-  showPrintersModal: boolean;
-  showSetupModal: boolean;
-  showStaffModal: boolean;
-  showProfileModal: boolean;
+  activeView?: OperatorView;
+  onBackToHub?: () => void;
+  showQrModal?: boolean;
+  showOrdersModal?: boolean;
+  showPrintersModal?: boolean;
+  showSetupModal?: boolean;
+  showStaffModal?: boolean;
+  showProfileModal?: boolean;
   showPaymentModal?: boolean;
-  onCloseQr: () => void;
-  onCloseOrders: () => void;
-  onClosePrinters: () => void;
-  onCloseSetup: () => void;
-  onCloseStaff: () => void;
-  onCloseProfile: () => void;
+  onCloseQr?: () => void;
+  onCloseOrders?: () => void;
+  onClosePrinters?: () => void;
+  onCloseSetup?: () => void;
+  onCloseStaff?: () => void;
+  onCloseProfile?: () => void;
   onClosePayment?: () => void;
   onSetupComplete: (saved: StudioOnboardingProfile | null) => void;
 }
@@ -34,6 +37,8 @@ export interface PortalModalsProps {
 export function PortalModals({
   studioId,
   studioName,
+  activeView,
+  onBackToHub,
   showQrModal,
   showOrdersModal,
   showPrintersModal,
@@ -50,7 +55,8 @@ export function PortalModals({
   onClosePayment,
   onSetupComplete,
 }: PortalModalsProps) {
-  if (!studioId && !showSetupModal) return null;
+  const isSetup = activeView === 'setup' || showSetupModal;
+  if (!studioId && !isSetup) return null;
 
   const currentStudio: Studio | null = studioId
     ? {
@@ -69,63 +75,72 @@ export function PortalModals({
       }
     : null;
 
+  const handleClose = (fn?: () => void) => {
+    fn?.();
+    onBackToHub?.();
+  };
+
   return (
     <>
       {studioId && currentStudio && (
         <>
-          {showQrModal && (
+          {(activeView === 'qr' || showQrModal) && (
             <StudioQrModal
               studio={{ id: studioId, slug: currentStudio.slug, name: currentStudio.name }}
-              onClose={onCloseQr}
+              onClose={() => handleClose(onCloseQr)}
             />
           )}
-
-          {showOrdersModal && (
+          {(activeView === 'orders' || showOrdersModal) && (
             <OrderFulfillmentModal
               studioId={studioId}
               studioName={currentStudio.name}
-              onClose={onCloseOrders}
+              onClose={() => handleClose(onCloseOrders)}
+              inShell={activeView === 'orders'}
             />
           )}
-
-          {showPrintersModal && (
+          {(activeView === 'printers' || showPrintersModal) && (
             <PrinterManagementModal
               studioId={studioId}
               studioName={currentStudio.name}
-              onClose={onClosePrinters}
+              onClose={() => handleClose(onClosePrinters)}
+              inShell={activeView === 'printers'}
             />
           )}
-
-          {showStaffModal && (
+          {(activeView === 'staff' || showStaffModal) && (
             <StaffManagementModal
               studioId={studioId}
               studioName={currentStudio.name}
-              onClose={onCloseStaff}
+              onClose={() => handleClose(onCloseStaff)}
             />
           )}
-
-          {showProfileModal && (
+          {(activeView === 'profile' || showProfileModal) && (
             <ShopProfileModal
               studioId={studioId}
               studio={currentStudio}
-              onClose={onCloseProfile}
-              onUpdated={() => onCloseProfile()}
+              onClose={() => handleClose(onCloseProfile)}
+              onUpdated={() => handleClose(onCloseProfile)}
             />
           )}
-
-          {showPaymentModal && onClosePayment && (
+          {(activeView === 'payment' || showPaymentModal) && (
             <ShopPaymentModal
               studioId={studioId}
               studio={currentStudio}
-              onClose={onClosePayment}
-              onUpdated={() => onClosePayment()}
+              onClose={() => handleClose(onClosePayment)}
+              onUpdated={() => handleClose(onClosePayment)}
             />
           )}
         </>
       )}
 
-      {showSetupModal && (
-        <SetupWizardModal studioId={studioId} onComplete={onSetupComplete} onClose={onCloseSetup} />
+      {isSetup && (
+        <SetupWizardModal
+          studioId={studioId}
+          onComplete={(saved) => {
+            onSetupComplete(saved);
+            onBackToHub?.();
+          }}
+          onClose={() => handleClose(onCloseSetup)}
+        />
       )}
     </>
   );

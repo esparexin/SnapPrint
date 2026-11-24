@@ -13,12 +13,14 @@ interface OrderFulfillmentModalProps {
   studioId: string;
   studioName: string;
   onClose: () => void;
+  inShell?: boolean;
 }
 
 export function OrderFulfillmentModal({
   studioId,
   studioName,
   onClose,
+  inShell = false,
 }: OrderFulfillmentModalProps) {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,10 +71,43 @@ export function OrderFulfillmentModal({
   }
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen: true,
+    isOpen: !inShell,
     onClose,
     enableSwipeDown: true,
   });
+
+  const content = (
+    <>
+      <OrderFulfillmentHeader
+        studioName={studioName}
+        orderCount={orders.length}
+        loading={loading}
+        onRefresh={loadOrders}
+        onClose={onClose}
+      />
+      <OrderQueueFilterBar statusFilter={statusFilter} onSelectStatus={setStatusFilter} />
+      <OrderFulfillmentList
+        orders={orders}
+        loading={loading}
+        error={error}
+        updatingId={updatingId}
+        onStatusChange={handleStatusChange}
+        onRecordPayment={(ord) => setPaymentOrder(ord)}
+      />
+      {paymentOrder && (
+        <CounterPaymentModal
+          studioId={studioId}
+          order={paymentOrder}
+          onClose={() => setPaymentOrder(null)}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
+    </>
+  );
+
+  if (inShell) {
+    return <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>{content}</div>;
+  }
 
   return (
     <div
@@ -88,33 +123,7 @@ export function OrderFulfillmentModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <OrderFulfillmentHeader
-          studioName={studioName}
-          orderCount={orders.length}
-          loading={loading}
-          onRefresh={loadOrders}
-          onClose={onClose}
-        />
-
-        <OrderQueueFilterBar statusFilter={statusFilter} onSelectStatus={setStatusFilter} />
-
-        <OrderFulfillmentList
-          orders={orders}
-          loading={loading}
-          error={error}
-          updatingId={updatingId}
-          onStatusChange={handleStatusChange}
-          onRecordPayment={(ord) => setPaymentOrder(ord)}
-        />
-
-        {paymentOrder && (
-          <CounterPaymentModal
-            studioId={studioId}
-            order={paymentOrder}
-            onClose={() => setPaymentOrder(null)}
-            onPaymentSuccess={handlePaymentSuccess}
-          />
-        )}
+        {content}
       </div>
     </div>
   );

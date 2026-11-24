@@ -2,13 +2,37 @@
 
 import React from 'react';
 
+export type OperatorView =
+  | 'hub'
+  | 'orders'
+  | 'printers'
+  | 'qr'
+  | 'profile'
+  | 'payment'
+  | 'staff'
+  | 'setup';
+
 interface OperatorPortalHeaderProps {
   userName: string;
   userEmail: string;
   isPlatformAdmin: boolean;
   logoutLoading: boolean;
   onLogout: () => void;
+  activeView?: OperatorView;
+  onNavigate?: (view: OperatorView) => void;
+  onClosePortal?: () => void;
 }
+
+const VIEW_TITLES: Record<OperatorView, string> = {
+  hub: 'SnapPrint Operator Portal',
+  orders: 'Order Fulfillment Queue',
+  printers: 'Printer Fleet & Pairing',
+  qr: 'Permanent Counter QR Code',
+  profile: 'Shop Profile & Capabilities',
+  payment: 'Payment & Rate Settings',
+  staff: 'Staff & Team Roster',
+  setup: 'Shop Setup Wizard',
+};
 
 export function OperatorPortalHeader({
   userName,
@@ -16,56 +40,75 @@ export function OperatorPortalHeader({
   isPlatformAdmin,
   logoutLoading,
   onLogout,
+  activeView = 'hub',
+  onNavigate,
+  onClosePortal,
 }: OperatorPortalHeaderProps) {
+  const isSubView = activeView !== 'hub';
+
   return (
     <header
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         flexWrap: 'wrap',
         gap: '0.75rem',
         marginBottom: '1.25rem',
+        paddingBottom: '0.75rem',
+        borderBottom: '1px solid #e5e7eb',
       }}
     >
-      <div style={{ minWidth: 0, flex: '1 1 200px' }}>
-        <h1
-          style={{
-            fontSize: '1.25rem',
-            fontWeight: 700,
-            margin: 0,
-            color: '#111827',
-            lineHeight: 1.25,
-          }}
-        >
-          SnapPrint Operator Portal
-        </h1>
-        <p
-          style={{
-            margin: '0.25rem 0 0',
-            color: '#6b7280',
-            fontSize: '0.8125rem',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Signed in as <strong>{userName}</strong> ({userEmail})
-        </p>
+      <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {isSubView && onNavigate && (
+          <button
+            type="button"
+            onClick={() => onNavigate('hub')}
+            style={{
+              padding: '0.35rem 0.65rem',
+              backgroundColor: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '0.375rem',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              color: '#334155',
+              cursor: 'pointer',
+            }}
+          >
+            ← Dashboard
+          </button>
+        )}
+        <div>
+          <h1 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#111827' }}>
+            {VIEW_TITLES[activeView] || 'Operator Portal'}
+          </h1>
+          <p
+            style={{
+              margin: '0.15rem 0 0',
+              color: '#6b7280',
+              fontSize: '0.8rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Signed in as <strong>{userName}</strong> ({userEmail})
+          </p>
+        </div>
       </div>
+
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
         {isPlatformAdmin && (
           <a
             href="/admin"
             style={{
-              padding: '0.35rem 0.75rem',
+              padding: '0.35rem 0.65rem',
               backgroundColor: '#0284c7',
               color: '#ffffff',
               borderRadius: '0.375rem',
-              fontSize: '0.8125rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               textDecoration: 'none',
-              whiteSpace: 'nowrap',
             }}
           >
             Admin Workspace →
@@ -82,13 +125,23 @@ export function OperatorPortalHeader({
             border: 'none',
             borderRadius: '0.375rem',
             cursor: logoutLoading ? 'not-allowed' : 'pointer',
-            fontSize: '0.8125rem',
+            fontSize: '0.8rem',
             fontWeight: 500,
-            whiteSpace: 'nowrap',
           }}
         >
           {logoutLoading ? 'Signing out...' : 'Sign Out'}
         </button>
+        {onClosePortal && (
+          <button
+            type="button"
+            onClick={onClosePortal}
+            aria-label="Close Portal"
+            className="dialog-close-btn"
+            style={{ minWidth: '32px', minHeight: '32px', fontSize: '1.1rem' }}
+          >
+            ✕
+          </button>
+        )}
       </div>
     </header>
   );

@@ -37,6 +37,11 @@ export default function HomePage() {
     };
   }, []);
 
+  const openPortalWithMode = (mode: 'email_otp' | 'register') => {
+    setPortalMode(mode);
+    setShowPortalModal(true);
+  };
+
   const handleLogout = async () => {
     await logoutOperator().catch(() => {});
     setAuth(null);
@@ -45,14 +50,8 @@ export default function HomePage() {
 
   const topNav = buildHomeTopNav({
     auth,
-    onOpenLogin: () => {
-      setPortalMode('email_otp');
-      setShowPortalModal(true);
-    },
-    onOpenRegister: () => {
-      setPortalMode('register');
-      setShowPortalModal(true);
-    },
+    onOpenLogin: () => openPortalWithMode('email_otp'),
+    onOpenRegister: () => openPortalWithMode('register'),
     onOpenPortal: () => setShowPortalModal(true),
     onLogout: handleLogout,
   });
@@ -149,8 +148,12 @@ export default function HomePage() {
       </main>
 
       {showPortalModal && (
-        <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="420px">
-          <OperatorPortal initialMode={portalMode} onAuthChange={(newAuth) => setAuth(newAuth)} />
+        <InfoModal onClose={() => setShowPortalModal(false)} maxWidth={auth ? '960px' : '420px'}>
+          <OperatorPortal
+            initialMode={portalMode}
+            onAuthChange={setAuth}
+            onClosePortal={() => setShowPortalModal(false)}
+          />
         </InfoModal>
       )}
 
