@@ -1,17 +1,22 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Db } from 'mongodb';
 import {
+  CreatePlatformAdminUserRequestSchema,
   ListPlatformStudiosQuerySchema,
   StudioIdSchema,
   UpdatePlatformStudioStatusRequestSchema,
+  UpdatePlatformUserStatusRequestSchema,
 } from '@snapprint/contracts';
 import { getDb } from './db.js';
 import { requirePlatformAdminAuth } from './plugins/authorization.js';
 import {
+  createPlatformAdminUser,
   getPlatformMetrics,
+  getPlatformStudioDetails,
   listPlatformAuditLogs,
   listPlatformStudios,
   listPlatformUsers,
+  updatePlatformUserStatus,
   updateStudioStatusWithAudit,
 } from './repositories/platform-admin.repository.js';
 
@@ -94,4 +99,64 @@ export const platformAdminRoutes: FastifyPluginAsync<PlatformAdminRoutesOptions>
     const result = await listPlatformUsers(db, limit);
     return reply.status(200).send(result);
   });
+
+  fastify.post('/admin/users', { preHandler: [adminAuth] }, async (request, reply) => {
+    const db = getActiveDb();
+    const body = CreatePlatformAdminUserRequestSchema.parse(request.body);
+    const actorId = request.operator?.user.id || 'system';
+    const user = await createPlatformAdminUser(db, body, actorId);
+    return reply.status(201).send({ success: true, user });
+  });
+
+  fastify.patch(
+    '/admin/users/:userId/status',
+    { preHandler: [adminAuth] },
+    async (request, reply) => {
+      const db = getActiveDb();
+      const params = request.params as { userId: string };
+      const body = UpdatePlatformUserStatusRequestSchema.parse(request.body);
+      const actorId = request.operator?.user.id || 'system';
+
+      try {
+        const result = await updatePlatformUserStatus(db, params.userId, body.status, actorId);
+        return reply.status(200).send(result);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const isSelf = msg.includes('SELF_SUSPENSION_PREVENTED');
+        return reply.status(isSelf ? 400 : 404).send({
+          statusCode: isSelf ? 400 : 404,
+          code: isSelf ? 'SELF_SUSPENSION_PREVENTED' : 'USER_NOT_FOUND',
+          message: msg,
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    '/admin/studios/:studioId/details',
+    { preHandler: [adminAuth] },
+    async (request, reply) => {
+      const db = getActiveDb();
+      const params = request.params as { studioId: string };
+      const studioIdResult = StudioIdSchema.safeParse(params.studioId);
+      if (!studioIdResult.success) {
+        return reply.status(400).send({
+          statusCode: 400,
+          code: 'INVALID_STUDIO_ID',
+          message: 'Invalid studioId format.',
+        });
+      }
+
+      const details = await getPlatformStudioDetails(db, studioIdResult.data);
+      if (!details) {
+        return reply.status(404).send({
+          statusCode: 404,
+          code: 'STUDIO_NOT_FOUND',
+          message: `Studio '${studioIdResult.data}' was not found.`,
+        });
+      }
+
+      return reply.status(200).send(details);
+    }
+  );
 };

@@ -194,4 +194,50 @@ describe('Platform Admin Routes & Authorization', () => {
     expect(body.users.some((u: { role: string }) => u.role === 'studio_owner')).toBe(true);
     await app.close();
   });
+
+  it('POST /admin/users creates a new platform admin user and audit log', async () => {
+    const { app, login } = await seedPlatformEnvironment();
+    const adminCookie = await login('superadmin@snapprint.in');
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/admin/users',
+      payload: { email: 'newadmin@snapprint.in', name: 'New Superadmin' },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(body.user.role).toBe('platform_admin');
+    expect(body.user.email).toBe('newadmin@snapprint.in');
+
+    // Verify self-suspension guard
+    const selfRes = await app.inject({
+      method: 'PATCH',
+      url: '/admin/users/admin_user/status',
+      payload: { status: 'suspended' },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(selfRes.statusCode).toBe(400);
+    expect(JSON.parse(selfRes.payload).code).toBe('SELF_SUSPENSION_PREVENTED');
+    await app.close();
+  });
+
+  it('GET /admin/studios/:id/details returns complete studio, owner and printer fleet', async () => {
+    const { app, login } = await seedPlatformEnvironment();
+    const adminCookie = await login('superadmin@snapprint.in');
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/admin/studios/studio_one/details',
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.studio.id).toBe('studio_one');
+    expect(body.studio.currency).toBe('INR');
+    expect(Array.isArray(body.printers)).toBe(true);
+    expect(Array.isArray(body.devices)).toBe(true);
+    await app.close();
+  });
 });
