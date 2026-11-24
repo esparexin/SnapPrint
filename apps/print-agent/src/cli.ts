@@ -28,11 +28,19 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
 
     try {
       console.log(`Enrolling shop device with code: ${pairingCode.trim().toUpperCase()}...`);
-      const enrollResult = await client.enroll(pairingCode, hostname());
+      const host = hostname();
+      const rawPlat = process.platform;
+      const osPlatform =
+        rawPlat === 'win32' || rawPlat === 'darwin' || rawPlat === 'linux' ? rawPlat : 'linux';
+      const enrollResult = await client.enroll(pairingCode, host, {
+        hostname: host,
+        agentVersion: '0.1.0',
+        osPlatform,
+      });
       config.deviceToken = enrollResult.deviceToken;
       config.studioId = enrollResult.studioId;
       config.deviceId = enrollResult.deviceId;
-      config.deviceFriendlyName = hostname();
+      config.deviceFriendlyName = host;
       saveAgentConfig(config);
       console.log(`Device enrolled successfully!`);
       console.log(`  Studio ID: ${enrollResult.studioId}`);

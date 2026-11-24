@@ -27,20 +27,38 @@ export class AgentClientError extends Error {
   }
 }
 
+export interface EnrollOptions {
+  agentVersion?: string;
+  hostname?: string;
+  osPlatform?: 'win32' | 'darwin' | 'linux';
+}
+
 export class AgentClient {
   constructor(
     private readonly apiUrl: string,
     private readonly fetchImpl: typeof fetch = fetch
   ) {}
 
-  async enroll(pairingCode: string, friendlyName?: string): Promise<EnrollResult> {
+  async enroll(
+    pairingCode: string,
+    friendlyName?: string,
+    options?: EnrollOptions
+  ): Promise<EnrollResult> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/enroll`;
+    const rawPlat = options?.osPlatform || process.platform;
+    const osPlatform: 'win32' | 'darwin' | 'linux' =
+      rawPlat === 'win32' || rawPlat === 'darwin' || rawPlat === 'linux' ? rawPlat : 'linux';
+    const host = (options?.hostname || friendlyName || 'shop-pc').trim().slice(0, 128);
+    const agentVersion = (options?.agentVersion || '0.1.0').trim().slice(0, 32);
+
     const res = await this.fetchImpl(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pairingCode: pairingCode.trim().toUpperCase(),
-        friendlyName: friendlyName?.trim(),
+        agentVersion,
+        hostname: host,
+        osPlatform,
       }),
     });
 
@@ -72,6 +90,7 @@ export class AgentClient {
     printers: DiscoveredPrinter[]
   ): Promise<SyncPrintersResult> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/sync-printers`;
+    const now = new Date().toISOString();
     const res = await this.fetchImpl(url, {
       method: 'POST',
       headers: {
@@ -79,13 +98,26 @@ export class AgentClient {
         'x-device-token': deviceToken,
       },
       body: JSON.stringify({
-        printers: printers.map((p) => ({
-          name: p.name,
-          driverName: p.driverName,
-          isColorSupported: p.isColorSupported,
-          supportedPaperSizes: p.supportedPaperSizes,
-          isDefaultOsPrinter: p.isDefault,
-        })),
+        timestamp: now,
+        printers: printers.map((p) => {
+          const rawId = p.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+          const cleanId = rawId.length >= 3 ? rawId : `printer_${rawId}`;
+          const printerId = cleanId.slice(0, 60);
+          return {
+            printerId,
+            name: p.name.slice(0, 120),
+            driverName: (p.driverName || p.name).slice(0, 160),
+            connectionType: 'unknown',
+            isColorSupported: Boolean(p.isColorSupported),
+            supportedPaperSizes:
+              p.supportedPaperSizes && p.supportedPaperSizes.length > 0
+                ? p.supportedPaperSizes
+                : ['A4'],
+            status: 'online',
+            isDefaultOsPrinter: Boolean(p.isDefault),
+            lastSeenAt: now,
+          };
+        }),
       }),
     });
 
