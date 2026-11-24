@@ -28,6 +28,7 @@ import { platformAdminRoutes } from './platform-admin-routes.js';
 import { subscriptionRoutes } from './subscription-routes.js';
 import { initializeStorageService } from './storage/storage-service.js';
 import { webhookRoutes } from './webhook-routes.js';
+import { agentDownloadRoutes } from './agent-download-routes.js';
 
 const config = loadConfig();
 const emailService = createEmailService(config);
@@ -103,6 +104,7 @@ app.register(operatorPaymentRoutes);
 app.register(platformAdminRoutes);
 app.register(subscriptionRoutes);
 app.register(webhookRoutes);
+app.register(agentDownloadRoutes);
 
 const signals = ['SIGINT', 'SIGTERM'] as const;
 

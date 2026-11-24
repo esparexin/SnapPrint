@@ -23,6 +23,7 @@ import { printerRoutes } from './printer-routes.js';
 import { platformAdminRoutes } from './platform-admin-routes.js';
 import { subscriptionRoutes } from './subscription-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
+import { agentDownloadRoutes } from './agent-download-routes.js';
 import { MemoryStorageService, StorageService } from './storage/storage-service.js';
 
 export interface TestAuthContext extends MockCollections {
@@ -81,6 +82,7 @@ export async function createTestApp(
   await app.register(platformAdminRoutes, { getCustomDb: () => mock.db });
   await app.register(subscriptionRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(webhookRoutes, { db: mock.db, config: testConfig, gateway });
+  await app.register(agentDownloadRoutes);
   await app.ready();
 
   return {
