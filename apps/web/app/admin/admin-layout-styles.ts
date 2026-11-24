@@ -1,4 +1,5 @@
 import { CSSProperties } from 'react';
+import { adminModalStyles } from './admin-modal-styles';
 
 const btnBase: CSSProperties = {
   display: 'inline-block',
@@ -214,34 +215,5 @@ export const adminLayoutStyles: Record<string, CSSProperties> = {
     marginBottom: '1.5rem',
     fontSize: '0.875rem',
   },
-  dialogBox: {
-    maxWidth: '28rem',
-    padding: '1.5rem',
-    fontFamily: 'var(--font-family)',
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1rem',
-  },
-  modalTitle: {
-    fontSize: '1.125rem',
-    fontWeight: 700,
-    margin: 0,
-    color: '#0f172a',
-  },
-  modalCloseBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: '1.25rem',
-    cursor: 'pointer',
-    color: '#94a3b8',
-  },
-  modalActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '0.75rem',
-    paddingTop: '0.5rem',
-  },
+  ...adminModalStyles,
 };

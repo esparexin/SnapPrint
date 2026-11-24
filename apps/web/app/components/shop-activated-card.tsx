@@ -10,9 +10,6 @@ interface ShopActivatedCardProps {
 export function ShopActivatedCard({ publicUrl, onGoToDashboard }: ShopActivatedCardProps) {
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wizard-success-heading"
       style={{
         background: '#ffffff',
         borderRadius: '0.75rem',

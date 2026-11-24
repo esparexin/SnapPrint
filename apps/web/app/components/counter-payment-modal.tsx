@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { OrderRecord } from '@snapprint/contracts';
 import { recordOperatorCounterPayment } from '../../src/payment-client';
 import { useDialog } from '../hooks/use-dialog';
+import { CounterPaymentBillCard } from './counter-payment-bill-card';
 import {
   counterPaymentModalStyles as styles,
   getMethodBtnStyle as methodBtnStyle,
@@ -57,8 +58,8 @@ export function CounterPaymentModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="dialog-overlay"
-      style={{ zIndex: 10000 }}
+      aria-labelledby="counter-payment-title"
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div
@@ -68,49 +69,18 @@ export function CounterPaymentModal({
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div style={styles.header}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+          <h3
+            id="counter-payment-title"
+            style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}
+          >
             Collect Counter Payment
           </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '18px',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
-          >
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
             ✕
           </button>
         </div>
 
-        <div style={styles.infoBox}>
-          <div>
-            <strong>Order:</strong> #{order.orderNumber} ({order.customerName || 'Walk-in Customer'}
-            )
-          </div>
-          <div style={{ marginTop: '4px', color: '#64748b' }}>
-            Predefined print charges calculate the exact bill. No manual amount entry needed.
-          </div>
-        </div>
-
-        <div style={styles.amountBox}>
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#15803d',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-            }}
-          >
-            Exact Bill to Collect
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 800, color: '#166534', marginTop: '4px' }}>
-            ₹{formattedRemaining}
-          </div>
-        </div>
+        <CounterPaymentBillCard order={order} formattedRemaining={formattedRemaining} />
 
         {error && <div style={styles.errorBox}>{error}</div>}
 

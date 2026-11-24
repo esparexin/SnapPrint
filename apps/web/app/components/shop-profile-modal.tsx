@@ -6,6 +6,8 @@ import { validateOptionalIndianMobile } from '../../src/mobile-validator';
 import { updateStudioProfile } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
 import { ShopProfileFields } from './shop-profile-fields';
+import { ShopProfileModalFooter } from './shop-profile-modal-footer';
+import { ShopProfileModalHeader } from './shop-profile-modal-header';
 
 interface ShopProfileModalProps {
   studioId: string;
@@ -62,52 +64,19 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
       aria-modal="true"
       aria-labelledby="profile-modal-title"
       className="dialog-overlay"
-      style={{ zIndex: 60 }}
       onClick={handleBackdropClick}
     >
       <div
         className="dialog-content"
-        style={{
-          maxWidth: '500px',
-          padding: '24px',
-        }}
+        style={{ maxWidth: '500px', padding: '24px' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px',
-          }}
-        >
-          <div>
-            <h2
-              id="profile-modal-title"
-              style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}
-            >
-              Shop Profile & Operations
-            </h2>
-            <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>
-              {studio.name} ({studio.slug})
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
-          >
-            ✕
-          </button>
-        </div>
+        <ShopProfileModalHeader
+          studioName={studio.name}
+          studioSlug={studio.slug}
+          onClose={onClose}
+        />
 
         {error && (
           <div
@@ -140,43 +109,7 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
             setAddress={setAddress}
           />
 
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                flex: 1,
-                padding: '9px 14px',
-                backgroundColor: '#f1f5f9',
-                color: '#334155',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                flex: 1,
-                padding: '9px 14px',
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                opacity: saving ? 0.7 : 1,
-              }}
-            >
-              {saving ? 'Saving…' : 'Save Changes'}
-            </button>
-          </div>
+          <ShopProfileModalFooter saving={saving} onClose={onClose} />
         </form>
       </div>
     </div>

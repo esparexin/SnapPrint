@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { AgentPairingKeyResponse, generateAgentPairingKey } from '../../src/printer-client';
+import { AgentPairingCodeCard } from './agent-pairing-code-card';
+import { AgentPairingModalFooter } from './agent-pairing-modal-footer';
 import { useDialog } from '../hooks/use-dialog';
 
 interface AgentPairingModalProps {
@@ -40,7 +42,7 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
+      /* Fallback */
     }
   };
 
@@ -55,16 +57,12 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
       role="dialog"
       aria-modal="true"
       aria-labelledby="agent-pairing-title"
-      className="dialog-overlay"
-      style={{ zIndex: 60 }}
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div
         className="dialog-content"
-        style={{
-          maxWidth: '480px',
-          padding: '24px',
-        }}
+        style={{ maxWidth: '480px', padding: '24px' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
@@ -75,18 +73,7 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
           >
             Pair Shop PC Print Agent
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
-          >
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
             ✕
           </button>
         </div>
@@ -117,120 +104,14 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
             Generating secure pairing key...
           </div>
         ) : keyData ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              backgroundColor: '#f8fafc',
-              padding: '16px',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  color: '#64748b',
-                }}
-              >
-                15-Minute One-Time Pairing Code
-              </span>
-              <div
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: '1.75rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.1em',
-                  color: '#0284c7',
-                  padding: '8px 0',
-                }}
-              >
-                {keyData.code}
-              </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                Expires in 15 minutes (Single redemption)
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCopy}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                backgroundColor: copied ? '#16a34a' : '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-              }}
-            >
-              {copied ? '✓ Copied Code!' : 'Copy Code'}
-            </button>
-          </div>
+          <AgentPairingCodeCard code={keyData.code} copied={copied} onCopy={handleCopy} />
         ) : null}
 
-        <div
-          style={{
-            marginTop: '20px',
-            padding: '12px',
-            backgroundColor: '#f1f5f9',
-            borderRadius: '6px',
-            fontSize: '0.8125rem',
-            color: '#334155',
-            lineHeight: 1.5,
-          }}
-        >
-          <strong>Setup Steps on Shop Computer:</strong>
-          <ol style={{ margin: '6px 0 0', paddingLeft: '20px' }}>
-            <li>Open the SnapPrint Agent on your Windows/Mac shop computer.</li>
-            <li>
-              Run command: <code>pnpm agent:pair</code> or launch the tray app.
-            </li>
-            <li>Paste this pairing code when prompted to link your printers.</li>
-          </ol>
-        </div>
-
-        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={requestPairingKey}
-            disabled={loading}
-            style={{
-              padding: '8px 14px',
-              backgroundColor: '#f1f5f9',
-              color: '#334155',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Regenerate
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#0f172a',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Done
-          </button>
-        </div>
+        <AgentPairingModalFooter
+          loading={loading}
+          onRequestPairingKey={requestPairingKey}
+          onClose={onClose}
+        />
       </div>
     </div>
   );

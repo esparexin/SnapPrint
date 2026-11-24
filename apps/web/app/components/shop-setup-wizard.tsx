@@ -7,6 +7,8 @@ import { ShopActivationStep } from './shop-activation-step';
 import { ShopCapabilitiesStep } from './shop-capabilities-step';
 import { ShopDetailsStep } from './shop-details-step';
 import { ShopPaymentStep } from './shop-payment-step';
+import { ShopSetupHeader } from './shop-setup-header';
+import { ShopSetupStepper } from './shop-setup-stepper';
 
 interface ShopSetupWizardProps {
   initialStudio?: StudioOnboardingProfile | { id: string };
@@ -43,9 +45,6 @@ export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSet
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wizard-title"
       style={{
         background: '#ffffff',
         borderRadius: '0.75rem',
@@ -60,80 +59,10 @@ export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSet
         width: '100%',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <div>
-          <h2
-            id="wizard-title"
-            style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#111827' }}
-          >
-            Shop Onboarding & Guided Setup
-          </h2>
-          <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.8125rem' }}>
-            Configure your shop profile, limits, and payment methods in 4 quick steps.
-          </p>
-        </div>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            aria-label="Close setup wizard"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#9ca3af',
-            }}
-          >
-            ✕
-          </button>
-        )}
-      </div>
+      <ShopSetupHeader onCancel={onCancel} />
 
-      {/* Stepper Progress */}
-      <nav
-        aria-label="Setup steps"
-        style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}
-      >
-        {steps.map((s) => {
-          const isActive = currentStep === s.num;
-          const isDone = currentStep > s.num;
-          return (
-            <div
-              key={s.num}
-              style={{
-                flex: 1,
-                padding: '0.5rem 0.25rem',
-                borderBottom: `3px solid ${isActive ? '#0284c7' : isDone ? '#10b981' : '#e5e7eb'}`,
-                textAlign: 'center',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: isActive || isDone ? 700 : 500,
-                  color: isActive ? '#0284c7' : isDone ? '#10b981' : '#9ca3af',
-                  display: 'block',
-                }}
-              >
-                {isDone ? `✓ Step ${s.num}` : `Step ${s.num}`}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: '#4b5563', display: 'block' }}>
-                {s.title}
-              </span>
-            </div>
-          );
-        })}
-      </nav>
+      <ShopSetupStepper currentStep={currentStep} steps={steps} />
 
-      {/* Step Contents */}
       {currentStep === 1 && (
         <ShopDetailsStep
           studioId={studio?.id}

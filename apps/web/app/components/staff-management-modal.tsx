@@ -5,6 +5,7 @@ import { StaffMember } from '@snapprint/contracts';
 import { fetchStudioStaff, inviteStudioStaff, revokeStudioStaff } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
 import { StaffInviteForm } from './staff-invite-form';
+import { StaffManagementHeader } from './staff-management-header';
 import { StaffRosterList } from './staff-roster-list';
 
 interface StaffManagementModalProps {
@@ -84,55 +85,15 @@ export function StaffManagementModal({ studioId, studioName, onClose }: StaffMan
       aria-modal="true"
       aria-labelledby="staff-modal-title"
       className="dialog-overlay"
-      style={{ zIndex: 60 }}
       onClick={handleBackdropClick}
     >
       <div
         className="dialog-content"
-        style={{
-          maxWidth: '520px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
+        style={{ maxWidth: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            <h2
-              id="staff-modal-title"
-              style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#0f172a' }}
-            >
-              Staff & Permissions
-            </h2>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-              {studioName || 'Studio Workspace'}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
-          >
-            ✕
-          </button>
-        </div>
+        <StaffManagementHeader studioName={studioName} onClose={onClose} />
 
         <div style={{ padding: '20px', overflowY: 'auto' }}>
           {error && (

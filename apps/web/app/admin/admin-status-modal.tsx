@@ -5,6 +5,7 @@ import { PlatformStudioItem, StudioStatus } from '@snapprint/contracts';
 import { updatePlatformStudioStatus } from '../../src/platform-admin-client';
 import { useDialog } from '../hooks/use-dialog';
 import { adminLayoutStyles } from './admin-layout-styles';
+import { AdminStatusActions } from './admin-status-actions';
 import { adminTableStyles } from './admin-table-styles';
 
 export interface AdminStatusModalProps {
@@ -62,8 +63,8 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="admin-status-title"
       className="dialog-overlay"
-      style={{ zIndex: 50 }}
       onClick={handleBackdropClick}
     >
       <div
@@ -73,7 +74,9 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div style={adminLayoutStyles.modalHeader}>
-          <h3 style={adminLayoutStyles.modalTitle}>Manage Studio Status</h3>
+          <h3 id="admin-status-title" style={adminLayoutStyles.modalTitle}>
+            Manage Studio Status
+          </h3>
           <button
             type="button"
             onClick={onClose}
@@ -124,23 +127,7 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
             />
           </div>
 
-          <div style={adminLayoutStyles.modalActions}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              style={adminLayoutStyles.btnSecondary}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              style={{ ...adminLayoutStyles.btnPrimary, opacity: submitting ? 0.6 : 1 }}
-            >
-              {submitting ? 'Updating...' : 'Save Status'}
-            </button>
-          </div>
+          <AdminStatusActions submitting={submitting} onClose={onClose} />
         </form>
       </div>
     </div>
