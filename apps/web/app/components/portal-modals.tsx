@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Studio } from '@snapprint/contracts';
 import { StudioOnboardingProfile } from '../../src/studio-client';
+import { fetchStudio } from '../../src/workspace-client';
 import { OperatorView } from './operator-portal-header';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PrinterManagementModal } from './printer-management-modal';
@@ -12,9 +13,17 @@ import { ShopPaymentModal } from './shop-payment-modal';
 import { StaffManagementModal } from './staff-management-modal';
 import { StudioQrModal } from './studio-qr-modal';
 
+const EMPTY_SETTINGS = {
+  currency: 'INR',
+  maxActivePrinters: 2,
+  autoApproveOrders: false,
+  isAcceptingOrders: true,
+};
+
 export interface PortalModalsProps {
   studioId?: string;
   studioName?: string;
+  studioSlug?: string;
   activeView?: OperatorView;
   onBackToHub?: () => void;
   showQrModal?: boolean;
@@ -34,46 +43,37 @@ export interface PortalModalsProps {
   onSetupComplete: (saved: StudioOnboardingProfile | null) => void;
 }
 
-export function PortalModals({
-  studioId,
-  studioName,
-  activeView,
-  onBackToHub,
-  showQrModal,
-  showOrdersModal,
-  showPrintersModal,
-  showSetupModal,
-  showStaffModal,
-  showProfileModal,
-  showPaymentModal,
-  onCloseQr,
-  onCloseOrders,
-  onClosePrinters,
-  onCloseSetup,
-  onCloseStaff,
-  onCloseProfile,
-  onClosePayment,
-  onSetupComplete,
-}: PortalModalsProps) {
-  const isSetup = activeView === 'setup' || showSetupModal;
+export function PortalModals(props: PortalModalsProps) {
+  const { studioId, studioName, studioSlug, activeView, onBackToHub, onSetupComplete } = props;
+  const isSetup = activeView === 'setup' || props.showSetupModal;
+  const [fetchedStudio, setFetchedStudio] = useState<Studio | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!studioId) return setFetchedStudio(null);
+    fetchStudio(studioId)
+      .then((data) => mounted && data?.studio && setFetchedStudio(data.studio))
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [studioId]);
+
   if (!studioId && !isSetup) return null;
 
-  const currentStudio: Studio | null = studioId
-    ? {
-        id: studioId,
-        slug: studioId.replace(/^studio_/, '').replace(/_/g, '-'),
-        name: studioName || `Studio ${studioId}`,
-        status: 'active',
-        settings: {
-          currency: 'INR',
-          maxActivePrinters: 2,
-          autoApproveOrders: false,
-          isAcceptingOrders: true,
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-    : null;
+  const currentStudio: Studio | null =
+    fetchedStudio ||
+    (studioId
+      ? {
+          id: studioId,
+          slug: studioSlug || '',
+          name: studioName || `Studio ${studioId}`,
+          status: 'active',
+          settings: EMPTY_SETTINGS,
+          createdAt: '',
+          updatedAt: '',
+        }
+      : null);
 
   const handleClose = (fn?: () => void) => {
     fn?.();
@@ -84,49 +84,53 @@ export function PortalModals({
     <>
       {studioId && currentStudio && (
         <>
-          {(activeView === 'qr' || showQrModal) && (
+          {(activeView === 'qr' || props.showQrModal) && (
             <StudioQrModal
-              studio={{ id: studioId, slug: currentStudio.slug, name: currentStudio.name }}
-              onClose={() => handleClose(onCloseQr)}
+              studio={{
+                id: studioId,
+                slug: currentStudio.slug || studioSlug,
+                name: currentStudio.name,
+              }}
+              onClose={() => handleClose(props.onCloseQr)}
             />
           )}
-          {(activeView === 'orders' || showOrdersModal) && (
+          {(activeView === 'orders' || props.showOrdersModal) && (
             <OrderFulfillmentModal
               studioId={studioId}
               studioName={currentStudio.name}
-              onClose={() => handleClose(onCloseOrders)}
+              onClose={() => handleClose(props.onCloseOrders)}
               inShell={activeView === 'orders'}
             />
           )}
-          {(activeView === 'printers' || showPrintersModal) && (
+          {(activeView === 'printers' || props.showPrintersModal) && (
             <PrinterManagementModal
               studioId={studioId}
               studioName={currentStudio.name}
-              onClose={() => handleClose(onClosePrinters)}
+              onClose={() => handleClose(props.onClosePrinters)}
               inShell={activeView === 'printers'}
             />
           )}
-          {(activeView === 'staff' || showStaffModal) && (
+          {(activeView === 'staff' || props.showStaffModal) && (
             <StaffManagementModal
               studioId={studioId}
               studioName={currentStudio.name}
-              onClose={() => handleClose(onCloseStaff)}
+              onClose={() => handleClose(props.onCloseStaff)}
             />
           )}
-          {(activeView === 'profile' || showProfileModal) && (
+          {(activeView === 'profile' || props.showProfileModal) && (
             <ShopProfileModal
               studioId={studioId}
               studio={currentStudio}
-              onClose={() => handleClose(onCloseProfile)}
-              onUpdated={() => handleClose(onCloseProfile)}
+              onClose={() => handleClose(props.onCloseProfile)}
+              onUpdated={() => handleClose(props.onCloseProfile)}
             />
           )}
-          {(activeView === 'payment' || showPaymentModal) && (
+          {(activeView === 'payment' || props.showPaymentModal) && (
             <ShopPaymentModal
               studioId={studioId}
               studio={currentStudio}
-              onClose={() => handleClose(onClosePayment)}
-              onUpdated={() => handleClose(onClosePayment)}
+              onClose={() => handleClose(props.onClosePayment)}
+              onUpdated={() => handleClose(props.onClosePayment)}
             />
           )}
         </>
@@ -135,11 +139,8 @@ export function PortalModals({
       {isSetup && (
         <SetupWizardModal
           studioId={studioId}
-          onComplete={(saved) => {
-            onSetupComplete(saved);
-            onBackToHub?.();
-          }}
-          onClose={() => handleClose(onCloseSetup)}
+          onComplete={(saved) => (onSetupComplete(saved), onBackToHub?.())}
+          onClose={() => handleClose(props.onCloseSetup)}
         />
       )}
     </>

@@ -84,6 +84,17 @@ export async function fetchStudioStaff(
   );
 }
 
+export async function fetchStudio(
+  studioId: string,
+  customFetch?: typeof fetch
+): Promise<{ studio: Studio; role: string; permissions: string[] }> {
+  return requestJson<{ studio: Studio; role: string; permissions: string[] }>(
+    `/studios/${encodeURIComponent(studioId)}`,
+    { method: 'GET' },
+    customFetch
+  );
+}
+
 export async function inviteStudioStaff(
   studioId: string,
   payload: InviteStaffRequest,
