@@ -23,7 +23,7 @@ export function OperatorStudioHub({ studioId, can, onNavigate }: OperatorStudioH
             studioId={studioId}
             onOpenPairing={() => onNavigate('printers')}
           />
-          <WorkspaceKpiBar studioId={studioId} />
+          <WorkspaceKpiBar studioId={studioId} onNavigate={onNavigate} />
         </>
       )}
       <section>
