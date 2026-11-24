@@ -21,6 +21,9 @@ export interface PrintJobDocument {
   filename: string;
   pageRange?: string;
   status: PrintJobStatus;
+  claimedByDeviceId?: string;
+  claimedAt?: Date;
+  leaseExpiresAt?: Date;
   errorMessage?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +46,12 @@ export function toPrintJobRecord(doc: PrintJobDocument): PrintJobRecord {
     filename: doc.filename,
     pageRange: doc.pageRange,
     status: doc.status,
+    claimedByDeviceId: doc.claimedByDeviceId,
+    leaseExpiresAt: doc.leaseExpiresAt
+      ? doc.leaseExpiresAt instanceof Date
+        ? doc.leaseExpiresAt.toISOString()
+        : new Date(doc.leaseExpiresAt).toISOString()
+      : undefined,
     errorMessage: doc.errorMessage,
     createdAt:
       doc.createdAt instanceof Date
@@ -117,9 +126,14 @@ export async function updatePrintJobStatus(
   db: Db,
   jobId: string,
   status: PrintJobStatus,
-  errorMessage?: string
+  errorMessage?: string,
+  deviceId?: string
 ): Promise<boolean> {
   const now = new Date();
+  const filter: Record<string, unknown> = { jobId };
+  if (deviceId) {
+    filter.$or = [{ claimedByDeviceId: deviceId }, { claimedByDeviceId: { $exists: false } }];
+  }
   const setPayload: Partial<PrintJobDocument> = {
     status,
     updatedAt: now,
@@ -133,10 +147,12 @@ export async function updatePrintJobStatus(
 
   const res = await db
     .collection<PrintJobDocument>(PRINT_JOBS_COLLECTION)
-    .updateOne({ jobId }, { $set: setPayload });
+    .updateOne(filter, { $set: setPayload });
 
   return res.modifiedCount > 0;
 }
+
+export * from './print-job-claim.repository.js';
 
 export async function autoDispatchOrderPrintJobs(
   db: Db,

@@ -34,18 +34,27 @@ function matchComparisonOp(actual: unknown, op: string, target: unknown): boolea
   const a = toComparableNumber(actual);
   const b = toComparableNumber(target);
   if (Number.isNaN(a) || Number.isNaN(b)) return false;
-  if (op === '$gt') return a > b;
-  if (op === '$gte') return a >= b;
-  if (op === '$lt') return a < b;
-  if (op === '$lte') return a <= b;
-  return false;
+  return op === '$gt'
+    ? a > b
+    : op === '$gte'
+      ? a >= b
+      : op === '$lt'
+        ? a < b
+        : op === '$lte'
+          ? a <= b
+          : false;
 }
 
 function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
   for (const [k, v] of Object.entries(filter)) {
     if (v === undefined) continue;
+    if (k === '$or' && Array.isArray(v)) {
+      if (!v.some((sub) => matchDoc(item, sub as Record<string, unknown>))) return false;
+      continue;
+    }
     if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, unknown>;
+      if ('$exists' in obj && (item[k] !== undefined) !== Boolean(obj.$exists)) return false;
       if ('$in' in obj && Array.isArray(obj.$in)) {
         if (!obj.$in.includes(item[k])) return false;
         continue;
@@ -59,9 +68,7 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
       }
       if (handledOp) continue;
     }
-    if (item[k] !== v) {
-      return false;
-    }
+    if (item[k] !== v) return false;
   }
   return true;
 }
@@ -69,15 +76,26 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
 function compareSortValues(left: unknown, right: unknown): number {
   const a = left instanceof Date ? left.getTime() : left;
   const b = right instanceof Date ? right.getTime() : right;
-
   if (a === b || (a == null && b == null)) return 0;
-  if (a == null) return -1;
-  if (b == null) return 1;
-  if (typeof a === 'number' && typeof b === 'number') return a < b ? -1 : 1;
-  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : 1;
-  if (typeof a === 'boolean' && typeof b === 'boolean') return a ? 1 : -1;
+  return a == null ? -1 : b == null ? 1 : a < b ? -1 : 1;
+}
 
-  throw new TypeError('Mock database sort values must have matching scalar types');
+function applyUpdate(item: Record<string, unknown>, update: Record<string, unknown>) {
+  if (update.$set) Object.assign(item, update.$set);
+  if (update.$inc) {
+    for (const [k, v] of Object.entries(update.$inc as Record<string, number>)) {
+      item[k] = ((item[k] as number) ?? 0) + v;
+    }
+  }
+  if (update.$push) {
+    for (const [k, v] of Object.entries(update.$push as Record<string, unknown>)) {
+      if (!Array.isArray(item[k])) item[k] = [];
+      (item[k] as unknown[]).push(v);
+    }
+  }
+  if (update.$unset) {
+    for (const k of Object.keys(update.$unset as Record<string, unknown>)) delete item[k];
+  }
 }
 
 export function createMockDb(): { db: Db } & MockCollections {
@@ -134,40 +152,29 @@ export function createMockDb(): { db: Db } & MockCollections {
         },
         async updateOne(
           filter: Record<string, unknown>,
-          update: { $set?: Record<string, unknown>; $inc?: Record<string, number> }
+          update: Record<string, unknown>,
+          options?: { upsert?: boolean }
         ) {
           const item = list.find((i) => matchDoc(i, filter));
-          if (!item) return { matchedCount: 0, modifiedCount: 0 };
-          if (update.$set) Object.assign(item, update.$set);
-          if (update.$inc) {
-            for (const [k, v] of Object.entries(update.$inc)) {
-              item[k] = ((item[k] as number) ?? 0) + v;
+          if (!item) {
+            if (options?.upsert) {
+              list.push({ ...filter, ...((update.$set as Record<string, unknown>) || {}) });
+              return {
+                matchedCount: 0,
+                modifiedCount: 1,
+                upsertedCount: 1,
+                upsertedId: 'upserted',
+              };
             }
+            return { matchedCount: 0, modifiedCount: 0 };
           }
+          applyUpdate(item, update);
           return { matchedCount: 1, modifiedCount: 1 };
         },
-        async findOneAndUpdate(
-          filter: Record<string, unknown>,
-          update: {
-            $set?: Record<string, unknown>;
-            $inc?: Record<string, number>;
-            $push?: Record<string, unknown>;
-          }
-        ) {
+        async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>) {
           const item = list.find((i) => matchDoc(i, filter));
           if (!item) return null;
-          if (update.$set) Object.assign(item, update.$set);
-          if (update.$inc) {
-            for (const [k, v] of Object.entries(update.$inc)) {
-              item[k] = ((item[k] as number) ?? 0) + v;
-            }
-          }
-          if (update.$push) {
-            for (const [k, v] of Object.entries(update.$push)) {
-              if (!Array.isArray(item[k])) item[k] = [];
-              (item[k] as unknown[]).push(v);
-            }
-          }
+          applyUpdate(item, update);
           return { ...item };
         },
         find(filter: Record<string, unknown>) {
@@ -205,14 +212,9 @@ export function createMockDb(): { db: Db } & MockCollections {
           list.splice(idx, 1);
           return { deletedCount: 1 };
         },
-        async updateMany(
-          filter: Record<string, unknown>,
-          update: { $set?: Record<string, unknown> }
-        ) {
+        async updateMany(filter: Record<string, unknown>, update: Record<string, unknown>) {
           const matched = list.filter((i) => matchDoc(i, filter));
-          for (const item of matched) {
-            if (update.$set) Object.assign(item, update.$set);
-          }
+          for (const item of matched) applyUpdate(item, update);
           return { matchedCount: matched.length, modifiedCount: matched.length };
         },
         async createIndexes() {
