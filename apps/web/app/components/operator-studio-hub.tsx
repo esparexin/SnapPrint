@@ -2,15 +2,13 @@
 
 import React from 'react';
 import { Permission } from '@snapprint/contracts';
-import { ModuleCards } from './module-cards';
 import { OfflineHardwareAlertBanner } from './offline-hardware-alert-banner';
 import { OperatorView } from './operator-portal-header';
-import { portalStyles } from './operator-portal-styles';
 import { WorkspaceKpiBar } from './workspace-kpi-bar';
 
 interface OperatorStudioHubProps {
   studioId?: string;
-  can: (permission: Permission) => boolean;
+  can?: (permission: Permission) => boolean;
   onNavigate: (view: OperatorView) => void;
 }
 
@@ -21,9 +19,10 @@ const QUICK_TABS: { id: OperatorView; label: string; icon: string }[] = [
   { id: 'payment', label: 'Payments', icon: '💰' },
   { id: 'profile', label: 'Settings', icon: '🏪' },
   { id: 'staff', label: 'Staff', icon: '👥' },
+  { id: 'setup', label: 'Setup Guide', icon: '⚙️' },
 ];
 
-export function OperatorStudioHub({ studioId, can, onNavigate }: OperatorStudioHubProps) {
+export function OperatorStudioHub({ studioId, onNavigate }: OperatorStudioHubProps) {
   return (
     <>
       {studioId && (
@@ -74,20 +73,6 @@ export function OperatorStudioHub({ studioId, can, onNavigate }: OperatorStudioH
           </button>
         ))}
       </div>
-
-      <section>
-        <h2 style={portalStyles.sectionHeading}>Shop Controls</h2>
-        <ModuleCards
-          can={can}
-          onOpenQrModal={() => onNavigate('qr')}
-          onOpenOrdersModal={() => onNavigate('orders')}
-          onOpenSetupModal={() => onNavigate('setup')}
-          onOpenPrintersModal={() => onNavigate('printers')}
-          onOpenStaffModal={() => onNavigate('staff')}
-          onOpenProfileModal={() => onNavigate('profile')}
-          onOpenPaymentModal={() => onNavigate('payment')}
-        />
-      </section>
     </>
   );
 }
