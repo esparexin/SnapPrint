@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { FastifyInstance } from 'fastify';
 import { describe, expect, it } from 'vitest';
 import { createTestApp } from './auth-test-helper.js';
 
@@ -7,7 +8,7 @@ describe('Razorpay Webhook Routes', () => {
   const sign = (body: string) =>
     crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
 
-  const postWebhook = (app: any, body: string, sig?: string) =>
+  const postWebhook = (app: FastifyInstance, body: string, sig?: string) =>
     app.inject({
       method: 'POST',
       url: '/webhooks/razorpay',
