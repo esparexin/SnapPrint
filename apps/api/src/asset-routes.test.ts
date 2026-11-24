@@ -131,4 +131,32 @@ describe('Secure Document & Photo Upload Lifecycle', () => {
     expect(body.code).toBe('INVALID_FILE_SIGNATURE');
     expect(ctx.photoAssets).toHaveLength(0);
   });
+
+  it('serves document preview via query token authentication', async () => {
+    const { ctx, slug, sessionId, token } = await seedTestSession();
+
+    const pdfContent = Buffer.from(
+      '%PDF-1.4\n1 0 obj\n<< /Type /Pages /Count 1 /Kids [] >>\nendobj\ntrailer\n%%EOF'
+    );
+    const multipart = buildMultipart('sample.pdf', 'application/pdf', pdfContent);
+
+    const uploadRes = await ctx.app.inject({
+      method: 'POST',
+      url: `/public/studios/${slug}/sessions/${sessionId}/assets/upload`,
+      headers: { authorization: `Bearer ${token}`, ...multipart.headers },
+      payload: multipart.payload,
+    });
+    expect(uploadRes.statusCode).toBe(201);
+    const asset = JSON.parse(uploadRes.payload);
+
+    // Preview via ?token= query parameter (for img / iframe tags)
+    const previewRes = await ctx.app.inject({
+      method: 'GET',
+      url: `/public/studios/${slug}/sessions/${sessionId}/assets/${asset.assetId}/preview?token=${token}`,
+    });
+
+    expect(previewRes.statusCode).toBe(200);
+    expect(previewRes.headers['content-type']).toBe('application/pdf');
+    expect(previewRes.rawPayload).toEqual(pdfContent);
+  });
 });

@@ -7,7 +7,10 @@ import { findStudioBySlug } from './repositories/studio.repository.js';
 import { SessionTokenPayload, verifySessionToken } from './session-token.js';
 
 export function authenticateCustomerSession(
-  request: FastifyRequest<{ Params: { slug: string; sessionId: string } }>,
+  request: FastifyRequest<{
+    Params: { slug: string; sessionId: string };
+    Querystring?: { token?: string; [key: string]: unknown };
+  }>,
   reply: FastifyReply,
   sessionSecret: string
 ): SessionTokenPayload | null {
@@ -18,6 +21,8 @@ export function authenticateCustomerSession(
     token = authHeader.substring(7).trim();
   } else if (typeof request.headers['x-session-token'] === 'string') {
     token = request.headers['x-session-token'].trim();
+  } else if (request.query && typeof (request.query as { token?: unknown }).token === 'string') {
+    token = ((request.query as { token?: string }).token || '').trim();
   }
 
   if (!token) {

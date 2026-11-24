@@ -7,6 +7,7 @@ import {
   LocalDiskStorageService,
   MemoryStorageService,
 } from './storage-service.js';
+import { CloudinaryStorageService } from './cloudinary-storage-service.js';
 
 describe('Storage Service Implementation', () => {
   it('stores, retrieves and deletes private assets securely in memory', async () => {
@@ -58,6 +59,15 @@ describe('Storage Service Implementation', () => {
 
     const devStorage = createStorageService({ nodeEnv: 'development' });
     expect(devStorage).toBeInstanceOf(MemoryStorageService);
+  });
+
+  it('factory selects CloudinaryStorageService when Cloudinary credentials are provided', () => {
+    const storage = createStorageService({
+      cloudinaryCloudName: 'test_cloud',
+      cloudinaryApiKey: '1234567890',
+      cloudinaryApiSecret: 'test_secret',
+    });
+    expect(storage).toBeInstanceOf(CloudinaryStorageService);
   });
 
   it('MemoryStorageService strictly forbids production instantiation without explicit opt-in', () => {

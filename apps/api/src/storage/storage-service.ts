@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { CloudinaryStorageService } from './cloudinary-storage-service.js';
 
 export interface StorageService {
   put(storageKey: string, data: Uint8Array, mimeType: string): Promise<void>;
@@ -84,17 +85,38 @@ export function setStorageService(service: StorageService): void {
 export interface StorageConfig {
   nodeEnv?: string;
   storageBaseDir?: string;
+  cloudinaryCloudName?: string;
+  cloudinaryApiKey?: string;
+  cloudinaryApiSecret?: string;
+  cloudinaryFolder?: string;
 }
 
-export function createStorageService(config: StorageConfig = {}): StorageService {
+export function createStorageService(
+  config: StorageConfig = {},
+  customFetch: typeof fetch = fetch
+): StorageService {
+  if (config.cloudinaryCloudName && config.cloudinaryApiKey && config.cloudinaryApiSecret) {
+    return new CloudinaryStorageService(
+      {
+        cloudName: config.cloudinaryCloudName,
+        apiKey: config.cloudinaryApiKey,
+        apiSecret: config.cloudinaryApiSecret,
+        folder: config.cloudinaryFolder,
+      },
+      customFetch
+    );
+  }
   if (config.nodeEnv === 'production') {
     return new LocalDiskStorageService(config.storageBaseDir);
   }
   return new MemoryStorageService(true);
 }
 
-export function initializeStorageService(config: StorageConfig = {}): StorageService {
-  const service = createStorageService(config);
+export function initializeStorageService(
+  config: StorageConfig = {},
+  customFetch: typeof fetch = fetch
+): StorageService {
+  const service = createStorageService(config, customFetch);
   setStorageService(service);
   return service;
 }

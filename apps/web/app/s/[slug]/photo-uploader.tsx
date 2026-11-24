@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { AllowedMimeType, AllowedMimeTypes, UploadLimits } from '@snapprint/contracts';
 import {
   deleteSessionPhoto,
+  getPhotoPreviewUrl,
   listSessionPhotos,
   requestUploadIntent,
   uploadPhotoBinary,
@@ -37,7 +38,7 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
         const mapped: UploadItem[] = assets.map((a) => ({
           id: a.assetId,
           file: new File([], a.originalFilename, { type: a.mimeType }),
-          previewUrl: `/public/studios/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(sessionId)}/assets/${encodeURIComponent(a.assetId)}/preview`,
+          previewUrl: getPhotoPreviewUrl(slug, sessionId, a.assetId, token),
           status: 'completed',
           assetId: a.assetId,
           widthPx: a.widthPx,
@@ -206,7 +207,6 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
         onFilesSelected={handleFilesSelected}
         disabled={items.length >= UploadLimits.maxFilesPerSession}
       />
-
       {items.length > 0 && (
         <div>
           {items.map((item) => (
