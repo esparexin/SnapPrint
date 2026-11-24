@@ -25,12 +25,8 @@ describe('validateIndianMobile', () => {
   });
 
   it('rejects numbers starting with invalid digits (0-5)', () => {
-    expect(validateIndianMobile('0123456789')).toBe(
-      'Mobile number must start with 6, 7, 8, or 9.'
-    );
-    expect(validateIndianMobile('5123456789')).toBe(
-      'Mobile number must start with 6, 7, 8, or 9.'
-    );
+    expect(validateIndianMobile('0123456789')).toBe('Mobile number must start with 6, 7, 8, or 9.');
+    expect(validateIndianMobile('5123456789')).toBe('Mobile number must start with 6, 7, 8, or 9.');
   });
 
   it('rejects repeated digits like 0000000000 or 9999999999', () => {
@@ -43,9 +39,7 @@ describe('validateIndianMobile', () => {
   });
 
   it('rejects sequential digits', () => {
-    expect(validateIndianMobile('1234567890')).toBe(
-      'Mobile number must start with 6, 7, 8, or 9.'
-    );
+    expect(validateIndianMobile('1234567890')).toBe('Mobile number must start with 6, 7, 8, or 9.');
     expect(validateIndianMobile('9876543210')).toBe(
       'Please enter a valid mobile number (sequential numbers not allowed).'
     );

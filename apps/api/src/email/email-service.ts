@@ -89,8 +89,7 @@ export function createEmailService(config: AppConfig): EmailService {
   }
 
   const isZeptoConfigured =
-    Boolean(config.zeptoMailApiToken) &&
-    config.zeptoMailApiToken !== 'your_zeptomail_api_token';
+    Boolean(config.zeptoMailApiToken) && config.zeptoMailApiToken !== 'your_zeptomail_api_token';
 
   if (isZeptoConfigured) {
     if (!config.zeptoMailFromEmail) {

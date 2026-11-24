@@ -19,11 +19,7 @@ export default async function StudioLandingPage({ params }: StudioLandingPagePro
 
   return (
     <main style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      <CustomerStudioView
-        slug={slug}
-        initialStudio={initialStudio}
-        initialError={initialError}
-      />
+      <CustomerStudioView slug={slug} initialStudio={initialStudio} initialError={initialError} />
     </main>
   );
 }

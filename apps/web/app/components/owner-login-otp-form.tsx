@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { AuthResponse, OTP_LENGTH, OtpCodeSchema, z } from '@snapprint/contracts';
 import { AuthApiError, requestOwnerLoginOtp, verifyOwnerLoginOtp } from '../../src/auth-client';
 import { OtpInputStep } from './otp-input-step';
+import { OwnerLoginEmailStep } from './owner-login-email-step';
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AuthApiError) return err.message;
@@ -142,7 +143,11 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
           <div>{errorMessage}</div>
           {isUnregistered && (
             <div style={{ marginTop: '0.5rem' }}>
-              <button type="button" onClick={() => onSwitchToRegister(email)} style={registerLinkStyle}>
+              <button
+                type="button"
+                onClick={() => onSwitchToRegister(email)}
+                style={registerLinkStyle}
+              >
                 Register your shop now →
               </button>
             </div>
@@ -151,53 +156,12 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
       )}
 
       {step === 'email' ? (
-        <form onSubmit={handleRequestOtp} noValidate>
-          <div style={{ marginBottom: '1rem' }}>
-            <label
-              htmlFor="owner-email"
-              style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                marginBottom: '0.25rem',
-              }}
-            >
-              Business Email
-            </label>
-            <input
-              id="owner-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isSubmitting}
-              placeholder="owner@printshop.com"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            style={{
-              width: '100%',
-              padding: '0.625rem',
-              background: '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '0.375rem',
-              fontWeight: 500,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSubmitting ? 'Sending Code...' : 'Send Login Code'}
-          </button>
-        </form>
+        <OwnerLoginEmailStep
+          email={email}
+          isSubmitting={isSubmitting}
+          onEmailChange={setEmail}
+          onSubmit={handleRequestOtp}
+        />
       ) : (
         <OtpInputStep
           otpCode={otpCode}

@@ -17,10 +17,7 @@ import {
   findOrderBySessionAndId,
   findOrderByStudioAndIdempotency,
 } from './repositories/order.repository.js';
-import {
-  findPhotoAssetById,
-  findPhotoAssetsByIds,
-} from './repositories/photo-asset.repository.js';
+import { findPhotoAssetsByIds } from './repositories/photo-asset.repository.js';
 import { StorageService } from './storage/storage-service.js';
 
 export interface OrderRouteOptions {
