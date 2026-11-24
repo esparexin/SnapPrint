@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { OrderRecord, OrderStatus } from '@snapprint/contracts';
 import { fetchOperatorOrderQueue, updateOperatorOrderStatus } from '../../src/order-client';
+import { useDialog } from '../hooks/use-dialog';
 import { CounterPaymentModal } from './counter-payment-modal';
 import { OrderQueueItem } from './order-queue-item';
 
@@ -67,33 +68,30 @@ export function OrderFulfillmentModal({
     setOrders((prev) => prev.map((o) => (o.orderId === updatedOrder.orderId ? updatedOrder : o)));
   }
 
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: true,
+  });
+
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.75)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-        zIndex: 9999,
-      }}
-      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      className="dialog-overlay"
+      style={{ zIndex: 9999 }}
+      onClick={handleBackdropClick}
     >
       <div
+        className="dialog-content"
         style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          width: '100%',
           maxWidth: '850px',
-          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div
           style={{
             padding: '16px 20px',

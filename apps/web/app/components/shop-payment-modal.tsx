@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Studio } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
+import { useDialog } from '../hooks/use-dialog';
 import { ShopPaymentPolicyFields } from './shop-payment-policy-fields';
 import { ShopRazorpayForm } from './shop-razorpay-form';
 
@@ -65,35 +66,32 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
     }
   };
 
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: true,
+  });
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-modal-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-        zIndex: 60,
-      }}
+      className="dialog-overlay"
+      style={{ zIndex: 60 }}
+      onClick={handleBackdropClick}
     >
       <div
+        className="dialog-content"
         style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          width: '100%',
           maxWidth: '520px',
-          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
           overflow: 'hidden',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div
           style={{
             padding: '16px 20px',

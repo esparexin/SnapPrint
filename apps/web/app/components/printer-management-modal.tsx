@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { PrinterRole } from '@snapprint/contracts';
 import { fetchStudioPrinters, StudioPrinter, updatePrinterRole } from '../../src/printer-client';
+import { useDialog } from '../hooks/use-dialog';
 import { AgentPairingModal } from './agent-pairing-modal';
 import { EmptyPrinterState } from './empty-printer-state';
 import { PrinterRowItem } from './printer-row-item';
@@ -60,34 +61,25 @@ export function PrinterManagementModal({
     }
   };
 
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: true,
+  });
+
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-        zIndex: 50,
-      }}
-    >
+    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
       <div
+        className="dialog-content"
         style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          width: '100%',
           maxWidth: '720px',
-          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
           overflow: 'hidden',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div
           style={{
             padding: '16px 24px',

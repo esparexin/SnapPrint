@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDialog } from '../hooks/use-dialog';
 
 interface InfoModalProps {
   title?: string;
@@ -8,41 +9,24 @@ interface InfoModalProps {
 }
 
 export function InfoModal({ title, onClose, children, maxWidth = '540px' }: InfoModalProps) {
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: true,
+  });
+
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        backgroundColor: 'rgba(15, 23, 42, 0.7)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-    >
+    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
       <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          maxWidth,
-          width: '100%',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          padding: '2rem',
-          position: 'relative',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          color: '#0f172a',
-          fontFamily: 'var(--font-family)',
-        }}
+        className="dialog-content"
+        style={{ maxWidth, padding: '2rem' }}
+        onClick={(e) => e.stopPropagation()}
       >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close Dialog"
+          aria-label="Close dialog"
           style={{
             position: 'absolute',
             top: '1rem',
