@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PlatformMetricsResponse } from '@snapprint/contracts';
+import { adminTableStyles } from './admin-table-styles';
 
 export interface AdminKpiGridProps {
   metrics: PlatformMetricsResponse | null;
@@ -11,9 +12,17 @@ export interface AdminKpiGridProps {
 export function AdminKpiGrid({ metrics, loading }: AdminKpiGridProps) {
   if (loading && !metrics) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div style={adminTableStyles.kpiGrid}>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+          <div
+            key={i}
+            style={{
+              height: '6rem',
+              backgroundColor: '#e2e8f0',
+              borderRadius: '0.75rem',
+              opacity: 0.6,
+            }}
+          />
         ))}
       </div>
     );
@@ -32,46 +41,50 @@ export function AdminKpiGrid({ metrics, loading }: AdminKpiGridProps) {
       title: 'Total Studios',
       value: metrics?.totalStudios ?? 0,
       subtext: `${metrics?.activeStudios ?? 0} currently active`,
-      badgeColor: 'bg-blue-100 text-blue-800',
+      bg: '#eff6ff',
+      color: '#1d4ed8',
     },
     {
       title: 'Pending Onboarding',
       value: metrics?.onboardingStudios ?? 0,
       subtext: 'Awaiting setup or review',
-      badgeColor: 'bg-amber-100 text-amber-800',
+      bg: '#fffbeb',
+      color: '#b45309',
     },
     {
       title: 'Suspended Studios',
       value: metrics?.suspendedStudios ?? 0,
       subtext: 'Halted for compliance',
-      badgeColor:
-        (metrics?.suspendedStudios ?? 0) > 0
-          ? 'bg-red-100 text-red-800'
-          : 'bg-gray-100 text-gray-700',
+      bg: (metrics?.suspendedStudios ?? 0) > 0 ? '#fef2f2' : '#f1f5f9',
+      color: (metrics?.suspendedStudios ?? 0) > 0 ? '#b91c1c' : '#475569',
     },
     {
       title: 'Total GMV Volume',
       value: formatCurrency(metrics?.totalPaidVolumeMinor ?? 0),
       subtext: `${metrics?.totalOrdersCount ?? 0} total platform orders`,
-      badgeColor: 'bg-emerald-100 text-emerald-800',
+      bg: '#ecfdf5',
+      color: '#047857',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div style={adminTableStyles.kpiGrid}>
       {cards.map((card) => (
-        <div
-          key={card.title}
-          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500">{card.title}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${card.badgeColor}`}>
+        <div key={card.title} style={adminTableStyles.kpiCard}>
+          <div style={adminTableStyles.kpiHeader}>
+            <span style={adminTableStyles.kpiTitle}>{card.title}</span>
+            <span
+              style={{
+                ...adminTableStyles.kpiBadge,
+                backgroundColor: card.bg,
+                color: card.color,
+              }}
+            >
               KPI
             </span>
           </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">{card.value}</div>
-          <p className="text-xs text-gray-500">{card.subtext}</p>
+          <div style={adminTableStyles.kpiValue}>{card.value}</div>
+          <p style={adminTableStyles.kpiSubtext}>{card.subtext}</p>
         </div>
       ))}
     </div>

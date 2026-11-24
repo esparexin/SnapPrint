@@ -1,16 +1,32 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { AuthApiError, fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { resolveStudioAuthorization } from '../../src/studio-authorization';
 import { ModuleCards } from './module-cards';
 import { OperatorPortalHeader } from './operator-portal-header';
+import { PlatformScopeHub } from './platform-scope-hub';
 import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
 import { WorkspaceKpiBar } from './workspace-kpi-bar';
+
+const portalStyles: Record<string, CSSProperties> = {
+  wrapper: { width: '100%', maxWidth: '800px', margin: '0 auto', fontFamily: 'var(--font-family)' },
+  loading: { textAlign: 'center', padding: '3rem', fontFamily: 'var(--font-family)' },
+  alert: {
+    padding: '0.75rem 1rem',
+    background: '#fee2e2',
+    border: '1px solid #f87171',
+    borderRadius: '0.375rem',
+    color: '#991b1b',
+    marginBottom: '1.5rem',
+    fontSize: '0.875rem',
+  },
+  sectionHeading: { fontSize: '1.25rem', fontWeight: 600, margin: '0 0 1rem' },
+};
 
 export interface OperatorPortalProps {
   initialMode?: 'password' | 'email_otp' | 'register';
@@ -32,24 +48,15 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
 
   useEffect(() => {
     let mounted = true;
-    async function hydrateSession() {
-      try {
-        const currentAuth = await fetchCurrentUser();
-        if (mounted) setAuth(currentAuth);
-      } catch (err) {
-        if (mounted) {
+    fetchCurrentUser()
+      .then((user) => mounted && setAuth(user))
+      .catch((err) => {
+        if (mounted)
           setErrorBanner(
-            err instanceof AuthApiError
-              ? err.message
-              : 'Failed to verify session status. Check network connection.'
+            err instanceof AuthApiError ? err.message : 'Session verification failed.'
           );
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    hydrateSession();
+      })
+      .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
@@ -64,9 +71,7 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
       setAuth(null);
       setSelectedStudioId(null);
     } catch (err) {
-      setErrorBanner(
-        err instanceof AuthApiError ? err.message : 'Logout encountered an error. Please try again.'
-      );
+      setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.');
     } finally {
       setLogoutLoading(false);
     }
@@ -74,10 +79,7 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
 
   if (loading) {
     return (
-      <div
-        role="status"
-        style={{ textAlign: 'center', padding: '3rem', fontFamily: 'var(--font-family)' }}
-      >
+      <div role="status" style={portalStyles.loading}>
         <p style={{ fontSize: '1.125rem', color: '#4b5563' }}>Verifying operator session...</p>
       </div>
     );
@@ -97,16 +99,12 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
   }
 
   const authState = resolveStudioAuthorization(auth, selectedStudioId);
+  const isPlatformScope = authState.selectedStudioId === 'platform_scope';
+  const activeStudioId =
+    !isPlatformScope && authState.selectedStudioId ? authState.selectedStudioId : undefined;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        maxWidth: '800px',
-        margin: '0 auto',
-        fontFamily: 'var(--font-family)',
-      }}
-    >
+    <div style={portalStyles.wrapper}>
       <OperatorPortalHeader
         userName={auth.user.name}
         userEmail={auth.user.email}
@@ -118,18 +116,7 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
       />
 
       {errorBanner && (
-        <div
-          role="alert"
-          style={{
-            padding: '0.75rem 1rem',
-            background: '#fee2e2',
-            border: '1px solid #f87171',
-            borderRadius: '0.375rem',
-            color: '#991b1b',
-            marginBottom: '1.5rem',
-            fontSize: '0.875rem',
-          }}
-        >
+        <div role="alert" style={portalStyles.alert}>
           {errorBanner}
         </div>
       )}
@@ -152,29 +139,32 @@ export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProp
             effectiveRole={authState.effectiveRole}
           />
 
-          {authState.selectedStudioId && <WorkspaceKpiBar studioId={authState.selectedStudioId} />}
-
-          <section>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 1rem' }}>
-              Studio Modules (Permission-Gated)
-            </h2>
-            <ModuleCards
-              can={authState.can}
-              onOpenQrModal={() => setShowQrModal(true)}
-              onOpenOrdersModal={() => setShowOrdersModal(true)}
-              onOpenSetupModal={() => setShowSetupModal(true)}
-              onOpenPrintersModal={() => setShowPrintersModal(true)}
-              onOpenStaffModal={() => setShowStaffModal(true)}
-              onOpenProfileModal={() => setShowProfileModal(true)}
-              onOpenPaymentModal={() => setShowPaymentModal(true)}
-            />
-          </section>
+          {isPlatformScope ? (
+            <PlatformScopeHub onOpenWizard={() => setShowSetupModal(true)} />
+          ) : (
+            <>
+              {activeStudioId && <WorkspaceKpiBar studioId={activeStudioId} />}
+              <section>
+                <h2 style={portalStyles.sectionHeading}>Studio Modules (Permission-Gated)</h2>
+                <ModuleCards
+                  can={authState.can}
+                  onOpenQrModal={() => setShowQrModal(true)}
+                  onOpenOrdersModal={() => setShowOrdersModal(true)}
+                  onOpenSetupModal={() => setShowSetupModal(true)}
+                  onOpenPrintersModal={() => setShowPrintersModal(true)}
+                  onOpenStaffModal={() => setShowStaffModal(true)}
+                  onOpenProfileModal={() => setShowProfileModal(true)}
+                  onOpenPaymentModal={() => setShowPaymentModal(true)}
+                />
+              </section>
+            </>
+          )}
         </div>
       )}
 
       <PortalModals
-        studioId={authState.selectedStudioId || undefined}
-        studioName={authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined}
+        studioId={activeStudioId}
+        studioName={activeStudioId ? `Studio ${activeStudioId}` : undefined}
         showQrModal={showQrModal}
         showOrdersModal={showOrdersModal}
         showPrintersModal={showPrintersModal}

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthResponse } from '@snapprint/contracts';
 import { fetchCurrentUser, logoutOperator } from '../../src/auth-client';
+import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminPortalView } from './admin-portal-view';
 
 export default function PlatformAdminPage() {
@@ -12,41 +13,28 @@ export default function PlatformAdminPage() {
 
   useEffect(() => {
     let mounted = true;
-    async function init() {
-      try {
-        const userAuth = await fetchCurrentUser();
-        if (mounted) setAuth(userAuth);
-      } catch {
-        if (mounted) setAuth(null);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    init();
+    fetchCurrentUser()
+      .then((user) => mounted && setAuth(user))
+      .catch(() => mounted && setAuth(null))
+      .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await logoutOperator();
-      setAuth(null);
-    } catch {
-      // Continue to unauthenticated state on logout
-      setAuth(null);
-    }
+    await logoutOperator().catch(() => {});
+    setAuth(null);
   };
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-gray-50 p-4"
-        style={{ fontFamily: 'var(--font-family)' }}
-      >
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500 font-medium">Verifying admin credentials...</p>
+      <div style={adminLayoutStyles.centeredScreen}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={adminLayoutStyles.spinner} />
+          <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
+            Verifying admin credentials...
+          </p>
         </div>
       </div>
     );
@@ -54,22 +42,16 @@ export default function PlatformAdminPage() {
 
   if (!auth) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-gray-50 p-4"
-        style={{ fontFamily: 'var(--font-family)' }}
-      >
-        <div className="max-w-md w-full bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-lg">
-            SP
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Platform Administration</h2>
-          <p className="text-sm text-gray-600 mb-6">
+      <div style={adminLayoutStyles.centeredScreen}>
+        <div style={adminLayoutStyles.authCard}>
+          <div style={adminLayoutStyles.authIcon}>SP</div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
+            Platform Administration
+          </h2>
+          <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '1.5rem' }}>
             Authentication is required to access the SnapPrint administrative governance portal.
           </p>
-          <Link
-            href="/"
-            className="inline-block w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition"
-          >
+          <Link href="/" style={adminLayoutStyles.btnBlock}>
             Sign In with Admin Account
           </Link>
         </div>
@@ -83,33 +65,25 @@ export default function PlatformAdminPage() {
 
   if (!isPlatformAdmin) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-gray-50 p-4"
-        style={{ fontFamily: 'var(--font-family)' }}
-      >
-        <div className="max-w-md w-full bg-white rounded-xl shadow-md border border-red-200 p-8 text-center">
-          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">
-            !
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied (403)</h2>
-          <p className="text-sm text-gray-600 mb-6">
+      <div style={adminLayoutStyles.centeredScreen}>
+        <div style={{ ...adminLayoutStyles.authCard, borderColor: '#fecaca' }}>
+          <div style={adminLayoutStyles.errorIcon}>!</div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
+            Access Denied (403)
+          </h2>
+          <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '1.5rem' }}>
             Your account ({auth.user.email}) does not possess the{' '}
-            <code className="bg-red-50 text-red-700 px-1 py-0.5 rounded font-mono text-xs">
-              platform_admin
-            </code>{' '}
-            role required to access this workspace.
+            <code style={adminLayoutStyles.codePill}>platform_admin</code> role required to access
+            this workspace.
           </p>
-          <div className="space-y-3">
-            <Link
-              href="/"
-              className="inline-block w-full py-2.5 px-4 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg text-sm transition"
-            >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <Link href="/" style={adminLayoutStyles.btnBlock}>
               Return to Shop Workspace
             </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-block w-full py-2 px-4 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition"
+              style={adminLayoutStyles.btnBlockSecondary}
             >
               Sign Out
             </button>

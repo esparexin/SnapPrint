@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { PlatformStudioItem, StudioStatus } from '@snapprint/contracts';
+import { adminTableStyles, statusBadges } from './admin-table-styles';
 
 export interface AdminShopTableProps {
   studios: PlatformStudioItem[];
@@ -19,58 +20,39 @@ export function AdminShopTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const handleSearchChange = (val: string) => {
+  const onSearch = (val: string) => {
     setSearchTerm(val);
-    onFilterChange(
-      statusFilter === 'all' ? undefined : (statusFilter as StudioStatus),
-      val.trim() || undefined
-    );
+    const filter = statusFilter === 'all' ? undefined : (statusFilter as StudioStatus);
+    onFilterChange(filter, val.trim() || undefined);
   };
 
-  const handleStatusChange = (val: string) => {
+  const onStatus = (val: string) => {
     setStatusFilter(val);
-    onFilterChange(
-      val === 'all' ? undefined : (val as StudioStatus),
-      searchTerm.trim() || undefined
-    );
-  };
-
-  const getStatusBadge = (status: StudioStatus) => {
-    switch (status) {
-      case 'active':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'onboarding':
-      case 'pending_review':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'suspended':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'closed':
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+    const filter = val === 'all' ? undefined : (val as StudioStatus);
+    onFilterChange(filter, searchTerm.trim() || undefined);
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-8">
-      <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row gap-4 items-center justify-between">
+    <div style={adminTableStyles.card}>
+      <div style={adminTableStyles.cardHeader}>
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Tenant Directory</h2>
-          <p className="text-xs text-gray-500">
+          <h2 style={adminTableStyles.cardTitle}>Tenant Directory</h2>
+          <p style={adminTableStyles.cardSubtext}>
             Overview and compliance governance across all registered print studios
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+        <div style={adminTableStyles.filterGroup}>
           <input
             type="text"
             placeholder="Search by name or slug..."
             value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-full sm:w-60 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            onChange={(e) => onSearch(e.target.value)}
+            style={adminTableStyles.searchInput}
           />
           <select
             value={statusFilter}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            onChange={(e) => onStatus(e.target.value)}
+            style={adminTableStyles.input}
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -82,69 +64,79 @@ export function AdminShopTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-50 text-xs text-gray-700 uppercase font-semibold border-b border-gray-200">
+      <div style={{ overflowX: 'auto' }}>
+        <table style={adminTableStyles.table}>
+          <thead style={adminTableStyles.thead}>
             <tr>
-              <th className="px-6 py-3">Studio Name</th>
-              <th className="px-6 py-3">Identifier / Slug</th>
-              <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3">Contact</th>
-              <th className="px-6 py-3">Created</th>
-              <th className="px-6 py-3 text-right">Action</th>
+              <th style={adminTableStyles.th}>Studio Name</th>
+              <th style={adminTableStyles.th}>Identifier / Slug</th>
+              <th style={adminTableStyles.th}>Status</th>
+              <th style={adminTableStyles.th}>Contact</th>
+              <th style={adminTableStyles.th}>Created</th>
+              <th style={adminTableStyles.thRight}>Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={6} style={adminTableStyles.emptyCell}>
                   Loading studios directory...
                 </td>
               </tr>
             ) : studios.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={6} style={adminTableStyles.emptyCell}>
                   No studios found matching the criteria.
                 </td>
               </tr>
             ) : (
-              studios.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-50/75 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900">{s.name}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">
-                    <div>{s.id}</div>
-                    <div className="text-gray-400">/{s.slug}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 text-xs font-medium border rounded-full ${getStatusBadge(
-                        s.status
-                      )}`}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-xs">
-                    {s.contactEmail && <div>{s.contactEmail}</div>}
-                    {s.contactPhone && <div className="text-gray-400">{s.contactPhone}</div>}
-                    {!s.contactEmail && !s.contactPhone && (
-                      <span className="text-gray-400 italic">None</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-xs text-gray-500">
-                    {new Date(s.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onManageStatus(s)}
-                      className="px-3 py-1 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition"
-                    >
-                      Manage
-                    </button>
-                  </td>
-                </tr>
-              ))
+              studios.map((s) => {
+                const b = statusBadges[s.status] || statusBadges.closed;
+                return (
+                  <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={adminTableStyles.tdBold}>{s.name}</td>
+                    <td style={adminTableStyles.tdMono}>
+                      <div>{s.id}</div>
+                      <div style={{ color: '#94a3b8' }}>/{s.slug}</div>
+                    </td>
+                    <td style={adminTableStyles.td}>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          padding: '0.2rem 0.6rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          borderRadius: '9999px',
+                          backgroundColor: b.bg,
+                          color: b.color,
+                          border: `1px solid ${b.border}`,
+                        }}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
+                    <td style={adminTableStyles.tdContact}>
+                      {s.contactEmail && <div>{s.contactEmail}</div>}
+                      {s.contactPhone && <div style={{ color: '#94a3b8' }}>{s.contactPhone}</div>}
+                      {!s.contactEmail && !s.contactPhone && (
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>None</span>
+                      )}
+                    </td>
+                    <td style={adminTableStyles.tdMuted}>
+                      {new Date(s.createdAt).toLocaleDateString()}
+                    </td>
+                    <td style={adminTableStyles.tdRight}>
+                      <button
+                        type="button"
+                        onClick={() => onManageStatus(s)}
+                        style={adminTableStyles.input}
+                      >
+                        Manage
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
