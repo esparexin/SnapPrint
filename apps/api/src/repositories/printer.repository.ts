@@ -70,11 +70,17 @@ export async function findPairingKey(
   return db.collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION).findOne({ code });
 }
 
-export async function consumePairingKey(db: Db, code: string): Promise<boolean> {
-  const res = await db
+export async function consumePairingKey(
+  db: Db,
+  code: string,
+  now: Date = new Date()
+): Promise<AgentPairingKeyDocument | null> {
+  return db
     .collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION)
-    .updateOne({ code, status: 'active' }, { $set: { status: 'consumed' } });
-  return res.modifiedCount > 0;
+    .findOneAndUpdate(
+      { code, status: 'active', expiresAt: { $gte: now } },
+      { $set: { status: 'consumed' } }
+    );
 }
 
 export async function registerAgentDevice(
