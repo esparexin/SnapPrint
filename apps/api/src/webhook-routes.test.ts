@@ -7,6 +7,7 @@ describe('Razorpay Webhook Routes', () => {
 
   const setupFixture = async () => {
     const ctx = await createTestApp();
+    const now = new Date();
     const studio = {
       id: 'studio_test_wh',
       slug: 'wh-print',
@@ -20,8 +21,8 @@ describe('Razorpay Webhook Routes', () => {
         onlinePaymentEnabled: true,
         counterPaymentEnabled: true,
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     ctx.studios.push(studio);
 
@@ -40,8 +41,8 @@ describe('Razorpay Webhook Routes', () => {
       status: 'submitted' as const,
       paidAmountMinor: 0,
       paymentStatus: 'UNPAID' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     ctx.orders.push(order);
 
@@ -55,8 +56,8 @@ describe('Razorpay Webhook Routes', () => {
       currency: 'INR' as const,
       status: 'CREATED' as const,
       gatewayOrderId: 'order_rzp_wh_12345',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     ctx.payments.push(payment);
 
@@ -85,12 +86,7 @@ describe('Razorpay Webhook Routes', () => {
       event: 'payment.captured',
       payload: {
         payment: {
-          entity: {
-            id: 'pay_rzp_captured_999',
-            order_id: payment.gatewayOrderId,
-            amount: 1000,
-            status: 'captured',
-          },
+          entity: { id: 'pay_rzp_captured_999', order_id: payment.gatewayOrderId, amount: 1000, status: 'captured' },
         },
       },
     };
@@ -142,14 +138,7 @@ describe('Razorpay Webhook Routes', () => {
       id: 'evt_rzp_wh_failed_888',
       event: 'payment.failed',
       payload: {
-        payment: {
-          entity: {
-            id: 'pay_rzp_fail_888',
-            order_id: payment.gatewayOrderId,
-            amount: 1000,
-            status: 'failed',
-          },
-        },
+        payment: { entity: { id: 'pay_rzp_fail_888', order_id: payment.gatewayOrderId, amount: 1000, status: 'failed' } },
       },
     };
 
@@ -189,14 +178,7 @@ describe('Razorpay Webhook Routes', () => {
       id: eventId,
       event: 'payment.captured',
       payload: {
-        payment: {
-          entity: {
-            id: 'pay_rzp_retry_999',
-            order_id: payment.gatewayOrderId,
-            amount: 1000,
-            status: 'captured',
-          },
-        },
+        payment: { entity: { id: 'pay_rzp_retry_999', order_id: payment.gatewayOrderId, amount: 1000, status: 'captured' } },
       },
     };
 
@@ -221,5 +203,46 @@ describe('Razorpay Webhook Routes', () => {
     expect(updatedPayment?.status).toBe('SUCCEEDED');
     const updatedOrder = ctx.orders.find((o) => o.orderId === order.orderId);
     expect(updatedOrder?.paidAmountMinor).toBe(1000);
+  });
+
+  it('processes valid webhook with formatted whitespace preserving raw body HMAC signature', async () => {
+    const { ctx, payment } = await setupFixture();
+
+    const formattedRawBody = JSON.stringify(
+      {
+        id: 'evt_rzp_formatted_123',
+        event: 'payment.captured',
+        payload: {
+          payment: {
+            entity: {
+              id: 'pay_rzp_formatted_123',
+              order_id: payment.gatewayOrderId,
+              amount: 1000,
+              status: 'captured',
+            },
+          },
+        },
+      },
+      null,
+      2
+    );
+
+    const validSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(Buffer.from(formattedRawBody, 'utf8'))
+      .digest('hex');
+
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/webhooks/razorpay',
+      headers: {
+        'x-razorpay-signature': validSignature,
+        'content-type': 'application/json',
+      },
+      payload: formattedRawBody,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).received).toBe(true);
   });
 });
