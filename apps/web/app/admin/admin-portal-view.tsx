@@ -17,13 +17,11 @@ import {
   updatePlatformUserStatus,
 } from '../../src/platform-admin-client';
 import { AdminAuditTable } from './admin-audit-table';
-import { AdminCreateUserModal } from './admin-create-user-modal';
 import { AdminKpiGrid } from './admin-kpi-grid';
 import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminPortalHeader, AdminTabType } from './admin-portal-header';
+import { AdminPortalModals } from './admin-portal-modals';
 import { AdminShopTable } from './admin-shop-table';
-import { AdminStatusModal } from './admin-status-modal';
-import { AdminTenantDetailsModal } from './admin-tenant-details-modal';
 import { AdminUserTable } from './admin-user-table';
 
 export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void }) {
@@ -38,6 +36,8 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
   const [inspectStudio, setInspectStudio] = useState<PlatformStudioItem | null>(null);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadData = useCallback(async (stFilter?: StudioStatus, scFilter?: string) => {
     setLoading(true);
@@ -77,6 +77,11 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
     }
   };
 
+  const handleKpiFilter = (flt: StudioStatus | 'all') => {
+    setStatusFilter(flt);
+    loadData(flt === 'all' ? undefined : flt, searchTerm || undefined);
+  };
+
   return (
     <div style={adminLayoutStyles.pageWrapper}>
       <AdminPortalHeader
@@ -90,13 +95,24 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
         {error && <div style={adminLayoutStyles.errorBanner}>{error}</div>}
         {(activeTab === 'overview' || activeTab === 'studios') && (
           <>
-            <AdminKpiGrid metrics={metrics} loading={loading} />
+            <AdminKpiGrid
+              metrics={metrics}
+              loading={loading}
+              selectedFilter={statusFilter}
+              onSelectFilter={handleKpiFilter}
+            />
             <AdminShopTable
               studios={studios}
               loading={loading}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
               onInspect={setInspectStudio}
               onManageStatus={setSelectedStudio}
-              onFilterChange={(st, sc) => loadData(st, sc)}
+              onFilterChange={(st, sc) => {
+                setStatusFilter(st || 'all');
+                setSearchTerm(sc || '');
+                loadData(st, sc);
+              }}
             />
           </>
         )}
@@ -113,28 +129,15 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
         {(activeTab === 'overview' || activeTab === 'audit') && (
           <AdminAuditTable logs={auditLogs} loading={loading} />
         )}
-        {selectedStudio && (
-          <AdminStatusModal
-            studio={selectedStudio}
-            isOpen={Boolean(selectedStudio)}
-            onClose={() => setSelectedStudio(null)}
-            onUpdated={() => loadData()}
-          />
-        )}
-        {inspectStudio && (
-          <AdminTenantDetailsModal
-            studio={inspectStudio}
-            isOpen={Boolean(inspectStudio)}
-            onClose={() => setInspectStudio(null)}
-          />
-        )}
-        {showCreateAdmin && (
-          <AdminCreateUserModal
-            isOpen={showCreateAdmin}
-            onClose={() => setShowCreateAdmin(false)}
-            onCreated={() => loadData()}
-          />
-        )}
+        <AdminPortalModals
+          selectedStudio={selectedStudio}
+          inspectStudio={inspectStudio}
+          showCreateAdmin={showCreateAdmin}
+          onCloseSelected={() => setSelectedStudio(null)}
+          onCloseInspect={() => setInspectStudio(null)}
+          onCloseCreate={() => setShowCreateAdmin(false)}
+          onReload={() => loadData()}
+        />
       </main>
     </div>
   );

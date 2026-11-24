@@ -8,6 +8,20 @@ interface StudioSelectorProps {
   selectedStudioId: string | null;
   onSelectStudio: (studioId: string) => void;
   effectiveRole: UserRole | null;
+  studioNames?: Record<string, string>;
+}
+
+export function formatStudioOptionLabel(
+  membership: { studioId?: string | null },
+  studioNames: Record<string, string> = {}
+): string {
+  if (!membership.studioId || membership.studioId === 'platform_scope') {
+    return 'Platform Administration';
+  }
+  const friendlyName = studioNames[membership.studioId];
+  return friendlyName
+    ? `${friendlyName} (${membership.studioId})`
+    : `Studio: ${membership.studioId}`;
 }
 
 export function StudioSelector({
@@ -15,6 +29,7 @@ export function StudioSelector({
   selectedStudioId,
   onSelectStudio,
   effectiveRole,
+  studioNames = {},
 }: StudioSelectorProps) {
   return (
     <section
@@ -62,7 +77,7 @@ export function StudioSelector({
           >
             {activeMemberships.map((m) => (
               <option key={m.studioId || 'platform'} value={m.studioId || 'platform_scope'}>
-                {m.studioId ? `Studio: ${m.studioId}` : 'Platform Administration'}
+                {formatStudioOptionLabel(m, studioNames)}
               </option>
             ))}
           </select>

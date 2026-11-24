@@ -4,17 +4,10 @@ interface HomeNavOptions {
   auth: AuthResponse | null;
   onOpenLogin: () => void;
   onOpenRegister: () => void;
-  onOpenPortal: () => void;
   onLogout: () => void;
 }
 
-export function buildHomeTopNav({
-  auth,
-  onOpenLogin,
-  onOpenRegister,
-  onOpenPortal,
-  onLogout,
-}: HomeNavOptions) {
+export function buildHomeTopNav({ auth, onOpenLogin, onOpenRegister, onLogout }: HomeNavOptions) {
   const isSuper = Boolean(
     auth?.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active')
   );
@@ -25,7 +18,7 @@ export function buildHomeTopNav({
       ? [
           isSuper
             ? { label: 'Admin Workspace', href: '/admin', variant: 'text' as const }
-            : { label: 'Shop Portal', onClick: onOpenPortal, variant: 'text' as const },
+            : { label: 'Shop Portal', href: '/portal', variant: 'text' as const },
           { label: 'Sign Out', onClick: onLogout, variant: 'button' as const },
         ]
       : [

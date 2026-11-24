@@ -67,6 +67,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       contactPhone: studio.settings.contactPhone,
       contactEmail: studio.settings.contactEmail,
       isAcceptingOrders: avail.allowed,
+      printRates: studio.settings.printRates,
       payment: doc.payment
         ? {
             enableCounterPayment: doc.payment.enableCounterPayment ?? true,

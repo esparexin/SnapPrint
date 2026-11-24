@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { Db } from 'mongodb';
 import {
+  AdminOverrideSubscriptionRequestSchema,
   CreatePlatformAdminUserRequestSchema,
   ListPlatformStudiosQuerySchema,
   StudioIdSchema,
@@ -19,6 +20,7 @@ import {
   updatePlatformUserStatus,
   updateStudioStatusWithAudit,
 } from './repositories/platform-admin.repository.js';
+import { overridePlatformStudioSubscription } from './repositories/platform-subscription-override.repository.js';
 
 export interface PlatformAdminRoutesOptions {
   getCustomDb?: () => Db;
@@ -157,6 +159,37 @@ export const platformAdminRoutes: FastifyPluginAsync<PlatformAdminRoutesOptions>
       }
 
       return reply.status(200).send(details);
+    }
+  );
+
+  fastify.post(
+    '/admin/studios/:studioId/subscription',
+    { preHandler: [adminAuth] },
+    async (request, reply) => {
+      const db = getActiveDb();
+      const params = request.params as { studioId: string };
+      const studioIdResult = StudioIdSchema.safeParse(params.studioId);
+      if (!studioIdResult.success) {
+        return reply.status(400).send({
+          statusCode: 400,
+          code: 'INVALID_STUDIO_ID',
+          message: 'Invalid studioId format.',
+        });
+      }
+
+      const body = AdminOverrideSubscriptionRequestSchema.parse(request.body);
+      const actorId = request.operator?.user.id || 'system';
+      const updated = await overridePlatformStudioSubscription(
+        db,
+        studioIdResult.data,
+        body,
+        actorId
+      );
+
+      return reply.status(200).send({
+        success: true,
+        subscription: updated,
+      });
     }
   );
 };

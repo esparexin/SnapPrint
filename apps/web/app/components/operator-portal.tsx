@@ -11,6 +11,7 @@ import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
+import { useStudioNames } from './use-studio-names';
 import { portalStyles } from './operator-portal-styles';
 
 export interface OperatorPortalProps {
@@ -100,6 +101,7 @@ export function OperatorPortal({
   }
 
   const authState = resolveStudioAuthorization(auth, selectedStudioId);
+  const studioNames = useStudioNames(auth?.memberships);
   const isPlatformScope = authState.selectedStudioId === 'platform_scope';
   const activeStudioId =
     !isPlatformScope && authState.selectedStudioId ? authState.selectedStudioId : undefined;
@@ -143,6 +145,7 @@ export function OperatorPortal({
                 selectedStudioId={authState.selectedStudioId}
                 onSelectStudio={setSelectedStudioId}
                 effectiveRole={authState.effectiveRole}
+                studioNames={studioNames}
               />
 
               {isPlatformScope ? (
@@ -158,7 +161,11 @@ export function OperatorPortal({
           ) : (
             <PortalModals
               studioId={activeStudioId}
-              studioName={activeStudioId ? `Studio ${activeStudioId}` : undefined}
+              studioName={
+                activeStudioId
+                  ? studioNames[activeStudioId] || `Studio ${activeStudioId}`
+                  : undefined
+              }
               activeView={activeView}
               onBackToHub={() => setActiveView('hub')}
               onSetupComplete={async (saved) => {

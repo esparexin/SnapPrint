@@ -7,7 +7,7 @@ interface PrinterFleetHeaderProps {
   studioId: string;
   studioName?: string;
   onOpenPairing: () => void;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function PrinterFleetHeader({
@@ -86,9 +86,11 @@ export function PrinterFleetHeader({
         >
           + Pair PC Agent
         </button>
-        <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
-          ✕
-        </button>
+        {onClose && (
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+            ✕
+          </button>
+        )}
       </div>
     </div>
   );

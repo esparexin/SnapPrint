@@ -79,4 +79,16 @@ describe('Tenant Contracts', () => {
       false
     );
   });
+
+  it('validates studio print rates contract', () => {
+    const validRates = {
+      A4: {
+        black_and_white: { singleSidedMinor: 250, doubleSidedMinor: 400 },
+        color: { singleSidedMinor: 1500, doubleSidedMinor: 2500 },
+      },
+    };
+    const parsed = StudioSettingsSchema.safeParse({ printRates: validRates });
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.printRates?.A4?.black_and_white?.singleSidedMinor).toBe(250);
+  });
 });

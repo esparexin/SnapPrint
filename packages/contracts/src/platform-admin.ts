@@ -6,6 +6,7 @@ import {
   StudioStatusSchema,
 } from './tenant.js';
 import { ShopLocationSchema, ShopPaymentSettingsSchema } from './shop-onboarding.js';
+import { SubscriptionPlanIdSchema, SubscriptionStatusSchema } from './subscription.js';
 
 export const PlatformMetricsResponseSchema = z.object({
   totalStudios: z.number().int().nonnegative(),
@@ -30,6 +31,8 @@ export const PlatformStudioItemSchema = z.object({
   contactPhone: z.string().optional(),
   contactEmail: z.string().email().optional(),
   isAcceptingOrders: z.boolean().optional(),
+  printerCount: z.number().int().nonnegative().optional(),
+  payment: ShopPaymentSettingsSchema.optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -113,6 +116,29 @@ export const UpdatePlatformUserStatusRequestSchema = z.object({
 });
 export type UpdatePlatformUserStatusRequest = z.infer<typeof UpdatePlatformUserStatusRequestSchema>;
 
+export const AdminOverrideSubscriptionRequestSchema = z.object({
+  plan: SubscriptionPlanIdSchema,
+  durationDays: z.coerce.number().int().positive().max(3650).optional(),
+  reason: z.string().trim().min(3).max(500),
+});
+export type AdminOverrideSubscriptionRequest = z.infer<
+  typeof AdminOverrideSubscriptionRequestSchema
+>;
+
+export const AdminOverrideSubscriptionResponseSchema = z.object({
+  success: z.boolean(),
+  subscription: z.object({
+    plan: SubscriptionPlanIdSchema,
+    status: SubscriptionStatusSchema,
+    startsAt: z.string(),
+    expiresAt: z.string(),
+    updatedAt: z.string(),
+  }),
+});
+export type AdminOverrideSubscriptionResponse = z.infer<
+  typeof AdminOverrideSubscriptionResponseSchema
+>;
+
 export const PlatformStudioDetailsResponseSchema = z.object({
   studio: PlatformStudioItemSchema.extend({
     tagline: z.string().optional(),
@@ -156,5 +182,21 @@ export const PlatformStudioDetailsResponseSchema = z.object({
       createdAt: z.string(),
     })
   ),
+  subscription: z
+    .object({
+      plan: SubscriptionPlanIdSchema,
+      status: SubscriptionStatusSchema,
+      startsAt: z.string().optional(),
+      expiresAt: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  printStats: z
+    .object({
+      totalCompletedPrints: z.number().int().nonnegative(),
+      colorPrints: z.number().int().nonnegative(),
+      bwPrints: z.number().int().nonnegative(),
+    })
+    .optional(),
 });
 export type PlatformStudioDetailsResponse = z.infer<typeof PlatformStudioDetailsResponseSchema>;

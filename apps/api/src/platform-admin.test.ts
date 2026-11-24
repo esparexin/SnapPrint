@@ -1,95 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { hashPassword } from '@snapprint/domain';
-import { createTestApp } from './auth-test-helper.js';
+import { seedPlatformEnvironment } from './platform-admin-test-helper.js';
 
 describe('Platform Admin Routes & Authorization', () => {
-  async function seedPlatformEnvironment() {
-    const ctx = await createTestApp();
-    const hash = await hashPassword('Password123!');
-
-    // Admin user
-    ctx.users.push({
-      id: 'admin_user',
-      email: 'superadmin@snapprint.in',
-      name: 'Super Admin',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date('2026-11-20T10:00:00.000Z'),
-      updatedAt: new Date('2026-11-20T10:00:00.000Z'),
-    });
-    ctx.memberships.push({
-      userId: 'admin_user',
-      studioId: null,
-      role: 'platform_admin',
-      status: 'active',
-      createdAt: new Date('2026-11-20T10:00:00.000Z'),
-    });
-
-    // Regular studio owner
-    ctx.users.push({
-      id: 'owner_user',
-      email: 'owner@example.com',
-      name: 'Shop Owner',
-      passwordHash: hash,
-      status: 'active',
-      createdAt: new Date('2026-11-20T10:00:00.000Z'),
-      updatedAt: new Date('2026-11-20T10:00:00.000Z'),
-    });
-    ctx.memberships.push({
-      userId: 'owner_user',
-      studioId: 'studio_one',
-      role: 'studio_owner',
-      status: 'active',
-      createdAt: new Date('2026-11-20T10:00:00.000Z'),
-    });
-
-    // Studios
-    ctx.studios.push(
-      {
-        id: 'studio_one',
-        slug: 'studio-one',
-        name: 'Studio One',
-        status: 'active',
-        settings: { currency: 'INR', maxActivePrinters: 2, autoApproveOrders: false },
-        createdAt: new Date('2026-11-20T10:00:00.000Z'),
-        updatedAt: new Date('2026-11-20T10:00:00.000Z'),
-      },
-      {
-        id: 'studio_two',
-        slug: 'studio-two',
-        name: 'Studio Two',
-        status: 'onboarding',
-        settings: { currency: 'INR', maxActivePrinters: 2, autoApproveOrders: false },
-        createdAt: new Date('2026-11-21T10:00:00.000Z'),
-        updatedAt: new Date('2026-11-21T10:00:00.000Z'),
-      }
-    );
-
-    // Payments
-    ctx.payments.push({
-      paymentId: 'pay_001',
-      studioId: 'studio_one',
-      orderId: 'ord_001',
-      amountMinor: 25000,
-      currency: 'INR',
-      status: 'SUCCEEDED',
-      method: 'razorpay',
-      createdAt: new Date('2026-11-22T10:00:00.000Z'),
-      updatedAt: new Date('2026-11-22T10:00:00.000Z'),
-    });
-
-    const login = async (email: string) => {
-      const res = await ctx.app.inject({
-        method: 'POST',
-        url: '/auth/login',
-        payload: { email, password: 'Password123!' },
-      });
-      return res.cookies[0];
-    };
-
-    return { ...ctx, login };
-  }
-
   it('rejects unauthenticated requests to /admin endpoints with 401', async () => {
     const { app } = await seedPlatformEnvironment();
     const res = await app.inject({ method: 'GET', url: '/admin/metrics' });
@@ -142,6 +54,18 @@ describe('Platform Admin Routes & Authorization', () => {
     const body = JSON.parse(listRes.payload);
     expect(body.studios.length).toBe(1);
     expect(body.studios[0].id).toBe('studio_two');
+
+    const allRes = await app.inject({
+      method: 'GET',
+      url: '/admin/studios',
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    const allBody = JSON.parse(allRes.payload);
+    const studioOne = allBody.studios.find((s: { id: string }) => s.id === 'studio_one');
+    expect(studioOne).toBeDefined();
+    expect(studioOne.printerCount).toBe(1);
+    expect(studioOne.payment?.enableCounterPayment).toBe(true);
+    expect(studioOne.payment?.enableOnlinePayment).toBe(true);
     await app.close();
   });
 
@@ -236,8 +160,42 @@ describe('Platform Admin Routes & Authorization', () => {
     const body = JSON.parse(res.payload);
     expect(body.studio.id).toBe('studio_one');
     expect(body.studio.currency).toBe('INR');
+    expect(body.studio.printerCount).toBe(1);
+    expect(body.studio.payment?.enableCounterPayment).toBe(true);
+    expect(body.subscription).toBeDefined();
+    expect(body.subscription.plan).toBe('quarterly');
+    expect(body.subscription.status).toBe('active');
     expect(Array.isArray(body.printers)).toBe(true);
+    expect(body.printers).toHaveLength(1);
     expect(Array.isArray(body.devices)).toBe(true);
+    expect(body.printStats).toBeDefined();
+    expect(body.printStats.totalCompletedPrints).toBeGreaterThanOrEqual(0);
+    expect(body.printStats.colorPrints).toBeGreaterThanOrEqual(0);
+    expect(body.printStats.bwPrints).toBeGreaterThanOrEqual(0);
+    await app.close();
+  });
+
+  it('POST /admin/studios/:id/subscription overrides studio subscription with audit log', async () => {
+    const { app, login } = await seedPlatformEnvironment();
+    const adminCookie = await login('superadmin@snapprint.in');
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/admin/studios/studio_one/subscription',
+      payload: {
+        plan: 'yearly',
+        durationDays: 365,
+        reason: 'VIP partner upgrade grant',
+      },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(body.subscription.plan).toBe('yearly');
+    expect(body.subscription.status).toBe('active');
+    expect(new Date(body.subscription.expiresAt).getTime()).toBeGreaterThan(Date.now());
     await app.close();
   });
 });

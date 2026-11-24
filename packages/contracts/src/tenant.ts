@@ -21,6 +21,18 @@ export const StudioStatusSchema = z.enum([
 
 export type StudioStatus = z.infer<typeof StudioStatusSchema>;
 
+export const SheetPricingRateSchema = z.object({
+  singleSidedMinor: z.number().int().nonnegative(),
+  doubleSidedMinor: z.number().int().nonnegative(),
+});
+export type SheetPricingRateContract = z.infer<typeof SheetPricingRateSchema>;
+
+export const StudioPrintRatesSchema = z.record(
+  z.string(),
+  z.record(z.string(), SheetPricingRateSchema)
+);
+export type StudioPrintRatesContract = z.infer<typeof StudioPrintRatesSchema>;
+
 export const StudioSettingsSchema = z.object({
   currency: z.string().length(3).default('INR'),
   contactPhone: z.string().min(5).max(20).optional(),
@@ -34,6 +46,7 @@ export const StudioSettingsSchema = z.object({
   onlinePaymentEnabled: z.boolean().default(true).optional(),
   counterPaymentEnabled: z.boolean().default(true).optional(),
   isAcceptingOrders: z.boolean().default(true).optional(),
+  printRates: StudioPrintRatesSchema.optional(),
 });
 
 export type StudioSettings = z.infer<typeof StudioSettingsSchema>;
@@ -82,6 +95,7 @@ export const PublicStudioSchema = z.object({
   contactEmail: z.string().email().optional(),
   isAcceptingOrders: z.boolean().default(true).optional(),
   payment: PublicPaymentSettingsSchema.optional(),
+  printRates: StudioPrintRatesSchema.optional(),
 });
 
 export type PublicStudio = z.infer<typeof PublicStudioSchema>;

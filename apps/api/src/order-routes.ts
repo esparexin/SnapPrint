@@ -7,7 +7,7 @@ import {
   QuoteRequestSchema,
   QuoteResponseSchema,
 } from '@snapprint/contracts';
-import { calculateOrderQuote } from '@snapprint/domain';
+import { calculateOrderQuote, PricingMatrix } from '@snapprint/domain';
 import { authenticateCustomerSession, verifyStudioSessionOwnership } from './asset-auth.js';
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
@@ -42,12 +42,8 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       if (!session) return;
 
       const db = getEffectiveDb();
-      const studio = await verifyStudioSessionOwnership(
-        db,
-        request.params.slug,
-        session.studioId,
-        reply
-      );
+      const { slug } = request.params;
+      const studio = await verifyStudioSessionOwnership(db, slug, session.studioId, reply);
       if (!studio) return;
 
       const bodyResult = QuoteRequestSchema.safeParse(request.body);
@@ -76,7 +72,10 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       }
 
       try {
-        const quote = calculateOrderQuote({ items: itemsWithMeta });
+        const quote = calculateOrderQuote({
+          items: itemsWithMeta,
+          rates: studio.settings.printRates as PricingMatrix | undefined,
+        });
         return reply.status(200).send(QuoteResponseSchema.parse(quote));
       } catch (err) {
         return reply.status(400).send({
@@ -96,12 +95,8 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       if (!session) return;
 
       const db = getEffectiveDb();
-      const studio = await verifyStudioSessionOwnership(
-        db,
-        request.params.slug,
-        session.studioId,
-        reply
-      );
+      const { slug } = request.params;
+      const studio = await verifyStudioSessionOwnership(db, slug, session.studioId, reply);
       if (!studio) return;
 
       const avail = await checkStudioCheckoutAvailability(db, studio);
@@ -145,7 +140,10 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         });
       }
 
-      const quote = calculateOrderQuote({ items: itemsWithMeta });
+      const quote = calculateOrderQuote({
+        items: itemsWithMeta,
+        rates: studio.settings.printRates as PricingMatrix | undefined,
+      });
       const nowIso = new Date().toISOString();
       const orderId = 'ord_' + randomUUID();
       const orderNumber = 'ORD-' + randomUUID().substring(0, 6).toUpperCase();

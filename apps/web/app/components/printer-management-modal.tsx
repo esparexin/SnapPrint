@@ -76,7 +76,7 @@ export function PrinterManagementModal({
         studioId={studioId}
         studioName={studioName}
         onOpenPairing={() => setShowPairingModal(true)}
-        onClose={onClose}
+        onClose={inShell ? undefined : onClose}
       />
       <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
         {error && (

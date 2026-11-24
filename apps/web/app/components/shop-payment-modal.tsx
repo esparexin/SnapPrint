@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Studio } from '@snapprint/contracts';
+import { Studio, StudioPrintRatesContract } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
 import { ShopPaymentModalFooter } from './shop-payment-modal-footer';
 import { ShopPaymentModalHeader } from './shop-payment-modal-header';
 import { ShopPaymentPolicyFields } from './shop-payment-policy-fields';
+import { ShopPrintRatesFields } from './shop-print-rates-fields';
 import { ShopRazorpayForm } from './shop-razorpay-form';
 
 interface ShopPaymentModalProps {
@@ -17,25 +18,37 @@ interface ShopPaymentModalProps {
   onUpdated: (updated: Studio) => void;
 }
 
+const alertBoxStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  backgroundColor: '#fef2f2',
+  color: '#b91c1c',
+  borderRadius: '6px',
+  fontSize: '0.8125rem',
+  marginBottom: '16px',
+};
+
 export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopPaymentModalProps) {
-  const initialSettings = studio.settings;
-  const initialPayment = (
-    studio as unknown as {
-      payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string };
-    }
-  ).payment;
+  const s = studio.settings;
+  const p = (studio as { payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string } })
+    .payment;
 
   const [paymentPolicy, setPaymentPolicy] = useState<'payment_required' | 'pay_at_counter'>(
-    initialSettings?.paymentPolicy || 'payment_required'
+    s?.paymentPolicy || 'payment_required'
   );
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(
-    initialSettings?.onlinePaymentEnabled ?? true
-  );
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(s?.onlinePaymentEnabled ?? true);
   const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(
-    initialSettings?.counterPaymentEnabled ?? true
+    s?.counterPaymentEnabled ?? true
   );
-  const [keyId, setKeyId] = useState(initialPayment?.razorpayKeyId || '');
-  const [isConfirmed, setIsConfirmed] = useState(initialPayment?.isRazorpayConfirmed ?? false);
+  const [printRates, setPrintRates] = useState<StudioPrintRatesContract>(
+    s?.printRates || {
+      A4: {
+        black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+        color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+      },
+    }
+  );
+  const [keyId, setKeyId] = useState(p?.razorpayKeyId || '');
+  const [isConfirmed, setIsConfirmed] = useState(p?.isRazorpayConfirmed ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +61,7 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
         paymentPolicy,
         onlinePaymentEnabled,
         counterPaymentEnabled,
+        printRates,
       });
 
       await updateProfileApi(studioId, {
@@ -96,17 +110,7 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
 
         <div style={{ padding: '20px', overflowY: 'auto' }}>
           {error && (
-            <div
-              role="alert"
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#fef2f2',
-                color: '#b91c1c',
-                borderRadius: '6px',
-                fontSize: '0.8125rem',
-                marginBottom: '16px',
-              }}
-            >
+            <div role="alert" style={alertBoxStyle}>
               {error}
             </div>
           )}
@@ -123,6 +127,8 @@ export function ShopPaymentModal({ studioId, studio, onClose, onUpdated }: ShopP
               counterPaymentEnabled={counterPaymentEnabled}
               setCounterPaymentEnabled={setCounterPaymentEnabled}
             />
+
+            <ShopPrintRatesFields printRates={printRates} onChange={setPrintRates} />
 
             <ShopRazorpayForm
               studioId={studioId}
