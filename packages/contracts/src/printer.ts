@@ -123,4 +123,3 @@ export const AgentJobStatusUpdateRequestSchema = z.object({
   errorMessage: z.string().max(500).optional(),
 });
 export type AgentJobStatusUpdateRequest = z.infer<typeof AgentJobStatusUpdateRequestSchema>;
-

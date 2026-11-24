@@ -139,4 +139,3 @@ export async function findPhotoAssetByStudioAndAssetId(
 
   return doc ? toPhotoAssetContract(doc) : null;
 }
-

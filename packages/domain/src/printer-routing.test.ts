@@ -178,11 +178,7 @@ describe('Printer Routing Domain Logic', () => {
         ],
       };
 
-      const result = createPrintJobsForOrder(
-        order,
-        [hpBwPrinter, epsonColorPrinter],
-        nowIso
-      );
+      const result = createPrintJobsForOrder(order, [hpBwPrinter, epsonColorPrinter], nowIso);
 
       expect(result.success).toBe(true);
       expect(result.failures).toHaveLength(0);
