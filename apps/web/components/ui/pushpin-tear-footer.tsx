@@ -19,7 +19,7 @@ export default function PushpinTearFooter({
   brand = 'SnapPrint',
   name = 'Palnadu Print Cloud',
   logo,
-  logoHref = 'https://print.palnadu.dev',
+  logoHref = 'https://snap.palnadu.dev',
   topNav,
   socials = DEFAULT_SOCIALS,
   email = 'contact@snapprint.in',

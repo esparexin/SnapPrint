@@ -41,7 +41,7 @@ export type IconLink = { icon: IconName; label: string; href?: string; onClick?:
 export type FooterColumn = { title: string; links: TearLink[] };
 
 export const DEFAULT_SOCIALS: IconLink[] = [
-  { icon: 'globe', label: 'Website', href: 'https://print.palnadu.dev' },
+  { icon: 'globe', label: 'Website', href: 'https://snap.palnadu.dev' },
   { icon: 'mail', label: 'Email', href: 'mailto:contact@snapprint.in' },
 ];
 
