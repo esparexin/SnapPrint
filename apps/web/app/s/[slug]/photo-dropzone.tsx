@@ -29,7 +29,7 @@ export function PhotoDropzone({ onFilesSelected, disabled }: PhotoDropzoneProps)
   }
 
   return (
-    <div style={{ marginBottom: '24px' }}>
+    <div style={{ marginBottom: '16px' }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -47,44 +47,43 @@ export function PhotoDropzone({ onFilesSelected, disabled }: PhotoDropzoneProps)
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         style={{
-          border: `2px dashed ${isDragging ? '#0284c7' : '#cbd5e1'}`,
-          borderRadius: '12px',
-          padding: '24px 16px',
+          border: `1.5px dashed ${isDragging ? '#0284c7' : '#94a3b8'}`,
+          borderRadius: '10px',
+          padding: '16px 12px',
           textAlign: 'center',
           backgroundColor: isDragging ? '#f0f9ff' : '#ffffff',
           transition: 'all 0.2s ease',
         }}
       >
-        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📄</div>
-        <div style={{ fontWeight: 700, fontSize: '16px', color: '#0f172a' }}>
-          Upload Documents for Xerox & Printing
+        <div style={{ fontSize: '24px', marginBottom: '4px' }}>📄</div>
+        <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+          Upload Documents or Photos
         </div>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '6px 0 16px', lineHeight: 1.5 }}>
-          Drag & drop PDF documents or photos here, or use the button below.
-          <br />
+        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 12px', lineHeight: 1.4 }}>
           Supports PDF (Multi-page), JPG, PNG, WebP up to 50MB.
         </p>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
             style={{
-              padding: '10px 20px',
+              padding: '8px 18px',
               backgroundColor: '#0284c7',
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: 600,
               cursor: disabled ? 'not-allowed' : 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
+              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
             }}
           >
-            📂 Browse Documents & Files
+            📂 Browse Files & Photos
           </button>
         </div>
       </div>

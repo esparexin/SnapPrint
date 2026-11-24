@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { CustomerSessionResponse, PublicStudio } from '@snapprint/contracts';
 import {
   CustomerApiError,
@@ -34,77 +35,67 @@ export function CustomerStudioView({
 
   useEffect(() => {
     let mounted = true;
-
     async function loadStudioAndSession() {
       if (initialStudio) {
         if (initialStudio.status === 'active') {
           try {
-            const sessionData = await ensureCustomerSession(slug);
-            if (mounted) setSession(sessionData);
+            const s = await ensureCustomerSession(slug);
+            if (mounted) setSession(s);
           } catch {
-            // Non-blocking background session init
+            /* ignore */
           }
         }
         return;
       }
-
       setLoading(true);
       setError(null);
-
       try {
         const studioData = await fetchPublicStudio(slug);
         if (!mounted) return;
         setStudio(studioData);
-
         if (studioData.status === 'active') {
-          const sessionData = await ensureCustomerSession(slug);
-          if (!mounted) return;
-          setSession(sessionData);
+          const s = await ensureCustomerSession(slug);
+          if (mounted) setSession(s);
         }
       } catch (err) {
         if (!mounted) return;
-        if (err instanceof CustomerApiError) {
-          setError(err);
-        } else {
-          setError(new CustomerApiError('Failed to load shop details', 500));
-        }
+        setError(
+          err instanceof CustomerApiError ? err : new CustomerApiError('Failed to load shop details', 500)
+        );
       } finally {
         if (mounted) setLoading(false);
       }
     }
-
     loadStudioAndSession();
-
     return () => {
       mounted = false;
     };
   }, [slug, initialStudio]);
 
-  if (loading) {
-    return <CustomerStudioLoading />;
-  }
-
-  if (error || !studio) {
-    return <CustomerStudioError slug={slug} error={error} />;
-  }
-
-  if (studio.status !== 'active') {
-    return <CustomerStudioInactive studio={studio} />;
-  }
+  if (loading) return <CustomerStudioLoading />;
+  if (error || !studio) return <CustomerStudioError slug={slug} error={error} />;
+  if (studio.status !== 'active') return <CustomerStudioInactive studio={studio} />;
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 20px 48px' }}>
-      <header style={{ marginBottom: '24px', textAlign: 'center' }}>
-        <h1
-          style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}
+    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '24px 16px 48px', overflowX: 'hidden' }}>
+      <header style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <Link
+          href="/"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', marginBottom: '10px' }}
         >
+          <img src="/favicon.png" alt="SnapPrint" style={{ width: '22px', height: '22px', borderRadius: '6px' }} />
+          <span style={{ fontSize: '13px', fontWeight: 800, color: '#0284c7', letterSpacing: '-0.02em' }}>
+            SnapPrint Network
+          </span>
+        </Link>
+        <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', margin: '0 0 4px' }}>
           {studio.name}
         </h1>
-        <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 600, marginTop: '4px' }}>
+        <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 600 }}>
           Xerox & Digital Document Printing
         </div>
         {studio.contactPhone && (
-          <div style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>
+          <div style={{ color: '#64748b', fontSize: '13px', marginTop: '4px' }}>
             Shop Contact: {studio.contactPhone}
           </div>
         )}
@@ -116,58 +107,19 @@ export function CustomerStudioView({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '10px 16px',
-            marginBottom: '24px',
+            padding: '8px 12px',
+            marginBottom: '20px',
             backgroundColor: '#f0fdf4',
             border: '1px solid #dcfce7',
             borderRadius: '8px',
-            fontSize: '13px',
+            fontSize: '12px',
             color: '#166534',
           }}
         >
-          <span>✓ Private Session Active</span>
+          <span>🔒 <strong>Private Session Active</strong></span>
           <span style={{ fontWeight: 600 }}>Expires in 2 hours</span>
         </div>
       )}
-
-      {/* Available Document Print Services */}
-      <section style={{ marginBottom: '28px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#475569', marginBottom: '10px' }}>
-          Document Services & Capabilities
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <div
-            style={{
-              padding: '12px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>
-              📄 B&W and Color Xerox
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-              Crisp photocopy & high-speed printouts.
-            </div>
-          </div>
-          <div
-            style={{
-              padding: '12px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              backgroundColor: '#ffffff',
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>
-              📑 Duplex (Double-Sided)
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-              Save paper with automated back-to-back print.
-            </div>
-          </div>
-        </div>
-      </section>
 
       {session && (
         <DocumentPrintWorkflow
@@ -179,24 +131,10 @@ export function CustomerStudioView({
         />
       )}
 
-      <footer
-        style={{
-          marginTop: '36px',
-          borderTop: '1px solid #e2e8f0',
-          paddingTop: '20px',
-          textAlign: 'center',
-          fontSize: '12px',
-          color: '#94a3b8',
-        }}
-      >
+      <footer style={{ marginTop: '36px', borderTop: '1px solid #e2e8f0', paddingTop: '20px', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
         <div>
           Developed by{' '}
-          <a
-            href="https://www.palnadu.dev/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}
-          >
+          <a href="https://www.palnadu.dev/" target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}>
             Palnadu.dev
           </a>
         </div>

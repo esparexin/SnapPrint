@@ -13,6 +13,24 @@ interface DocumentConfigFormProps {
   onRemove: () => void;
 }
 
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '11px',
+  fontWeight: 600,
+  color: '#475569',
+  marginBottom: '3px',
+};
+
+const stepBtnStyle: React.CSSProperties = {
+  width: '32px',
+  height: '32px',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#f8fafc',
+  cursor: 'pointer',
+  fontWeight: 700,
+};
+
 export function DocumentConfigForm({
   config,
   filename,
@@ -21,14 +39,16 @@ export function DocumentConfigForm({
   onPreview,
   onRemove,
 }: DocumentConfigFormProps) {
+  const isSinglePage = pageCount === 1;
+
   return (
     <div
       style={{
-        padding: '16px',
+        padding: '14px',
         backgroundColor: '#ffffff',
         border: '1px solid #e2e8f0',
         borderRadius: '10px',
-        marginBottom: '16px',
+        marginBottom: '14px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
       }}
     >
@@ -36,34 +56,46 @@ export function DocumentConfigForm({
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '14px',
+          alignItems: 'center',
+          marginBottom: '12px',
+          gap: '8px',
         }}
       >
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>{filename}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: '14px',
+              color: '#0f172a',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {filename}
+          </div>
           <div
             style={{
               display: 'inline-block',
-              marginTop: '4px',
-              padding: '2px 8px',
+              marginTop: '3px',
+              padding: '1px 6px',
               backgroundColor: '#e0f2fe',
               color: '#0369a1',
               borderRadius: '4px',
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: 600,
             }}
           >
-            📄 {pageCount} {pageCount === 1 ? 'Page' : 'Pages'}
+            📄 {pageCount} {isSinglePage ? 'Page' : 'Pages'}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
           <button
             type="button"
             onClick={onPreview}
             style={{
-              padding: '4px 10px',
+              padding: '5px 10px',
               backgroundColor: '#f1f5f9',
               border: '1px solid #cbd5e1',
               borderRadius: '6px',
@@ -79,7 +111,7 @@ export function DocumentConfigForm({
             type="button"
             onClick={onRemove}
             style={{
-              padding: '4px 10px',
+              padding: '5px 10px',
               backgroundColor: '#fef2f2',
               border: '1px solid #fecaca',
               borderRadius: '6px',
@@ -89,75 +121,49 @@ export function DocumentConfigForm({
               cursor: 'pointer',
             }}
           >
-            ✕ Remove
+            🗑️ Delete
           </button>
         </div>
       </div>
 
-      <DocumentOptionsGrid config={config} onUpdate={onUpdate} />
+      <DocumentOptionsGrid config={config} pageCount={pageCount} onUpdate={onUpdate} />
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-          gap: '12px',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '10px',
           alignItems: 'flex-end',
         }}
       >
-        {/* Page Range Selection */}
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#475569',
-              marginBottom: '4px',
-            }}
-          >
-            Pages (e.g. all, 1-5, 8)
-          </label>
+        <div style={{ minWidth: 0 }}>
+          <label style={labelStyle}>Pages</label>
           <input
             type="text"
-            value={config.pageSelection}
+            value={isSinglePage ? '1' : config.pageSelection}
+            disabled={isSinglePage}
+            readOnly={isSinglePage}
             onChange={(e) => onUpdate({ ...config, pageSelection: e.target.value })}
-            placeholder="all"
+            placeholder={isSinglePage ? '1' : 'all'}
             style={{
               width: '100%',
               padding: '6px 8px',
               borderRadius: '6px',
               border: '1px solid #cbd5e1',
               fontSize: '13px',
+              backgroundColor: isSinglePage ? '#f1f5f9' : '#ffffff',
+              cursor: isSinglePage ? 'not-allowed' : 'text',
             }}
           />
         </div>
 
-        {/* Copies Counter */}
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#475569',
-              marginBottom: '4px',
-            }}
-          >
-            Copies
-          </label>
+        <div style={{ minWidth: 0 }}>
+          <label style={labelStyle}>Copies</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button
               type="button"
               onClick={() => onUpdate({ ...config, copies: Math.max(1, config.copies - 1) })}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#f8fafc',
-                cursor: 'pointer',
-                fontWeight: 700,
-              }}
+              style={stepBtnStyle}
             >
               -
             </button>
@@ -174,15 +180,7 @@ export function DocumentConfigForm({
             <button
               type="button"
               onClick={() => onUpdate({ ...config, copies: Math.min(100, config.copies + 1) })}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#f8fafc',
-                cursor: 'pointer',
-                fontWeight: 700,
-              }}
+              style={stepBtnStyle}
             >
               +
             </button>

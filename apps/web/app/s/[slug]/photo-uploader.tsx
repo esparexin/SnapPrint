@@ -35,19 +35,20 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
       try {
         const assets = await listSessionPhotos(slug, sessionId, token);
         if (!mounted) return;
-        const mapped: UploadItem[] = assets.map((a) => ({
-          id: a.assetId,
-          file: new File([], a.originalFilename, { type: a.mimeType }),
-          previewUrl: getPhotoPreviewUrl(slug, sessionId, a.assetId, token),
-          status: 'completed',
-          assetId: a.assetId,
-          widthPx: a.widthPx,
-          heightPx: a.heightPx,
-          pageCount: a.pageCount || 1,
-        }));
-        setItems(mapped);
+        setItems(
+          assets.map((a) => ({
+            id: a.assetId,
+            file: new File([], a.originalFilename, { type: a.mimeType }),
+            previewUrl: getPhotoPreviewUrl(slug, sessionId, a.assetId, token),
+            status: 'completed',
+            assetId: a.assetId,
+            widthPx: a.widthPx,
+            heightPx: a.heightPx,
+            pageCount: a.pageCount || 1,
+          }))
+        );
       } catch {
-        // Fallback silently if offline
+        /* silent */
       }
     }
     loadExisting();
@@ -55,6 +56,11 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
       mounted = false;
     };
   }, [slug, sessionId, token]);
+
+  const completedKey = items
+    .filter((i) => i.status === 'completed' && Boolean(i.assetId))
+    .map((i) => `${i.assetId}:${i.pageCount}`)
+    .join(',');
 
   useEffect(() => {
     if (!onDocumentsChange) return;
@@ -66,15 +72,13 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
         pageCount: i.pageCount || 1,
       }));
     onDocumentsChange(completedDocs);
-  }, [items, onDocumentsChange]);
+  }, [completedKey, onDocumentsChange]);
 
   async function uploadFile(item: UploadItem) {
     const abort = new AbortController();
     setItems((prev) =>
       prev.map((i) =>
-        i.id === item.id
-          ? { ...i, status: 'uploading', abortController: abort, error: undefined }
-          : i
+        i.id === item.id ? { ...i, status: 'uploading', abortController: abort, error: undefined } : i
       )
     );
 
@@ -128,31 +132,25 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
         );
         break;
       }
-
       if (file.size > UploadLimits.maxFileSize) {
         setErrorBanner(`"${file.name}" exceeds the 50MB file size limit.`);
         continue;
       }
-
       if (file.type && !AllowedMimeTypes.includes(file.type as AllowedMimeType)) {
         setErrorBanner(`"${file.name}" is not a supported document format (PDF, JPG, PNG, WebP).`);
         continue;
       }
-
-      const item: UploadItem = {
+      newItems.push({
         id: `upload_${Math.random().toString(36).substring(2)}_${Date.now()}`,
         file,
         previewUrl: URL.createObjectURL(file),
         status: 'pending',
-      };
-      newItems.push(item);
+      });
     }
 
     if (newItems.length > 0) {
       setItems((prev) => [...prev, ...newItems]);
-      for (const item of newItems) {
-        uploadFile(item);
-      }
+      newItems.forEach(uploadFile);
     }
   }
 
@@ -172,12 +170,11 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
   async function handleDelete(id: string) {
     const item = items.find((i) => i.id === id);
     if (!item) return;
-
     if (item.assetId) {
       try {
         await deleteSessionPhoto(slug, sessionId, item.assetId, token);
       } catch {
-        // Fallback
+        /* ignore */
       }
     }
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -189,13 +186,13 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
         <div
           role="alert"
           style={{
-            padding: '12px 16px',
+            padding: '10px 14px',
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
             borderRadius: '8px',
             color: '#b91c1c',
             fontSize: '13px',
-            marginBottom: '16px',
+            marginBottom: '14px',
             fontWeight: 500,
           }}
         >
@@ -207,17 +204,19 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
         onFilesSelected={handleFilesSelected}
         disabled={items.length >= UploadLimits.maxFilesPerSession}
       />
-      {items.length > 0 && (
-        <div>
-          {items.map((item) => (
-            <PhotoItemCard
-              key={item.id}
-              item={item}
-              onRetry={handleRetry}
-              onCancel={handleCancel}
-              onDelete={handleDelete}
-            />
-          ))}
+      {items.some((i) => i.status !== 'completed') && (
+        <div style={{ marginBottom: '12px' }}>
+          {items
+            .filter((i) => i.status !== 'completed')
+            .map((item) => (
+              <PhotoItemCard
+                key={item.id}
+                item={item}
+                onRetry={handleRetry}
+                onCancel={handleCancel}
+                onDelete={handleDelete}
+              />
+            ))}
         </div>
       )}
     </div>
