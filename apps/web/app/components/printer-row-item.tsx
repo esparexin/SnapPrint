@@ -21,12 +21,13 @@ export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRow
         borderRadius: '8px',
         backgroundColor: '#ffffff',
         display: 'flex',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         alignItems: 'center',
         gap: '12px',
       }}
     >
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: '1 1 240px', minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span
             style={{

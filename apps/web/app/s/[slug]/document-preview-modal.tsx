@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DocumentPrintConfig } from '@snapprint/contracts';
 import { useDialog } from '../../hooks/use-dialog';
 
@@ -24,6 +24,7 @@ export function DocumentPreviewModal({
 }: DocumentPreviewModalProps) {
   const previewUrl = `/public/studios/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(sessionId)}/assets/${encodeURIComponent(config.assetId)}/preview`;
   const isPdf = filename.toLowerCase().endsWith('.pdf');
+  const [loadingPreview, setLoadingPreview] = useState(true);
   const { handleBackdropClick, swipeHandlers } = useDialog({
     isOpen: true,
     onClose,
@@ -92,15 +93,37 @@ export function DocumentPreviewModal({
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
+            position: 'relative',
           }}
         >
+          {loadingPreview && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                position: 'absolute',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#64748b',
+                fontSize: '13px',
+                fontWeight: 500,
+              }}
+            >
+              <span style={{ fontSize: '24px' }}>📄</span>
+              <span>Loading document preview...</span>
+            </div>
+          )}
           {isPdf ? (
             <iframe
               src={previewUrl}
               title={filename}
+              onLoad={() => setLoadingPreview(false)}
               style={{
                 width: '100%',
                 height: '500px',
+                maxHeight: 'min(500px, 60vh)',
                 border: 'none',
               }}
             />
@@ -108,9 +131,11 @@ export function DocumentPreviewModal({
             <img
               src={previewUrl}
               alt={filename}
+              onLoad={() => setLoadingPreview(false)}
+              onError={() => setLoadingPreview(false)}
               style={{
                 maxWidth: '100%',
-                maxHeight: '500px',
+                maxHeight: 'min(500px, 60vh)',
                 objectFit: 'contain',
               }}
             />
