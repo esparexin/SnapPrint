@@ -3,13 +3,19 @@ import {
   ListPlatformAuditLogsResponse,
   ListPlatformStudiosQuery,
   ListPlatformStudiosResponse,
-  ListPlatformUsersResponse,
   PlatformAuditEntry,
   PlatformMetricsResponse,
   PlatformStudioItem,
   StudioStatus,
 } from '@snapprint/contracts';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
+
+export { getPlatformStudioDetails } from './platform-studio-details.repository.js';
+export {
+  createPlatformAdminUser,
+  listPlatformUsers,
+  updatePlatformUserStatus,
+} from './platform-user-admin.repository.js';
 
 export const AUDIT_LOGS_COLLECTION = 'audit_logs';
 
@@ -69,13 +75,18 @@ function toIsoString(val: unknown): string {
   return new Date().toISOString();
 }
 
-export function toPlatformStudioItem(doc: StudioDocument): PlatformStudioItem {
+export function toPlatformStudioItem(
+  doc: StudioDocument,
+  owner?: { name?: string; email?: string }
+): PlatformStudioItem {
   return {
     id: doc.id,
     slug: doc.slug,
     name: doc.name,
     status: doc.status,
     ownerUserId: doc.ownerUserId,
+    ownerName: owner?.name,
+    ownerEmail: owner?.email ?? doc.settings?.contactEmail ?? doc.contactEmail,
     contactPhone: doc.settings?.contactPhone ?? doc.contactPhone,
     contactEmail: doc.settings?.contactEmail ?? doc.contactEmail,
     isAcceptingOrders: doc.settings?.isAcceptingOrders,
@@ -117,8 +128,24 @@ export async function listPlatformStudios(
   const limit = query.limit ?? 50;
   const paginated = filtered.slice(skip, skip + limit);
 
+  const ownerUserIds = Array.from(
+    new Set(paginated.map((s) => s.ownerUserId).filter(Boolean))
+  ) as string[];
+  const owners =
+    ownerUserIds.length > 0
+      ? await db
+          .collection('users')
+          .find({ id: { $in: ownerUserIds } }, { projection: { id: 1, name: 1, email: 1 } })
+          .toArray()
+      : [];
+  const ownerMap = new Map(
+    owners.map((u) => [u.id as string, { name: u.name as string, email: u.email as string }])
+  );
+
   return {
-    studios: paginated.map(toPlatformStudioItem),
+    studios: paginated.map((s) =>
+      toPlatformStudioItem(s, s.ownerUserId ? ownerMap.get(s.ownerUserId) : undefined)
+    ),
     total,
   };
 }
@@ -193,46 +220,5 @@ export async function listPlatformAuditLogs(
   return {
     auditLogs,
     total,
-  };
-}
-
-export async function listPlatformUsers(db: Db, limit = 50): Promise<ListPlatformUsersResponse> {
-  const users = await db
-    .collection('users')
-    .find({})
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .toArray();
-
-  const userIds = users.map((u) => u.id as string);
-  const memberships = await db
-    .collection('user_memberships')
-    .find({ userId: { $in: userIds }, status: 'active' })
-    .toArray();
-
-  const membershipMap = new Map<string, { role: string; studioId?: string }>();
-  for (const m of memberships) {
-    if (!membershipMap.has(m.userId) || m.role === 'platform_admin') {
-      membershipMap.set(m.userId, { role: m.role, studioId: m.studioId });
-    }
-  }
-
-  const result = users.map((u) => {
-    const mem = membershipMap.get(u.id);
-    return {
-      id: u.id,
-      email: u.email,
-      name: u.name,
-      phone: u.phone,
-      status: (u.status || 'active') as 'active' | 'suspended' | 'pending_verification',
-      role: (mem?.role || 'studio_owner') as 'platform_admin' | 'studio_owner' | 'studio_staff',
-      studioId: mem?.studioId || null,
-      createdAt: toIsoString(u.createdAt),
-    };
-  });
-
-  return {
-    users: result,
-    total: await db.collection('users').countDocuments({}),
   };
 }

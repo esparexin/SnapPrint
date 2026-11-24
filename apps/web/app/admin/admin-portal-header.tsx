@@ -43,9 +43,6 @@ export function AdminPortalHeader({
           <button type="button" onClick={onRefresh} style={adminLayoutStyles.btnSecondary}>
             Refresh
           </button>
-          <a href="/?action=portal" style={adminLayoutStyles.btnSecondary}>
-            Shop Workspace
-          </a>
           <button type="button" onClick={onLogout} style={adminLayoutStyles.btnDanger}>
             Sign Out
           </button>

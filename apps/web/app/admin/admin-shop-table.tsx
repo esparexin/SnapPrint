@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { PlatformStudioItem, StudioStatus } from '@snapprint/contracts';
-import { adminTableStyles, statusBadges } from './admin-table-styles';
+import { AdminShopTableRow } from './admin-shop-table-row';
+import { adminTableStyles } from './admin-table-styles';
 
 export interface AdminShopTableProps {
   studios: PlatformStudioItem[];
   loading: boolean;
+  onInspect: (studio: PlatformStudioItem) => void;
   onManageStatus: (studio: PlatformStudioItem) => void;
   onFilterChange: (status?: StudioStatus, search?: string) => void;
 }
@@ -14,6 +16,7 @@ export interface AdminShopTableProps {
 export function AdminShopTable({
   studios,
   loading,
+  onInspect,
   onManageStatus,
   onFilterChange,
 }: AdminShopTableProps) {
@@ -44,7 +47,7 @@ export function AdminShopTable({
         <div style={adminTableStyles.filterGroup}>
           <input
             type="text"
-            placeholder="Search by name or slug..."
+            placeholder="Search by name, slug, or owner..."
             value={searchTerm}
             onChange={(e) => onSearch(e.target.value)}
             style={adminTableStyles.searchInput}
@@ -71,7 +74,7 @@ export function AdminShopTable({
               <th style={adminTableStyles.th}>Studio Name</th>
               <th style={adminTableStyles.th}>Identifier / Slug</th>
               <th style={adminTableStyles.th}>Status</th>
-              <th style={adminTableStyles.th}>Contact</th>
+              <th style={adminTableStyles.th}>Owner & Contact</th>
               <th style={adminTableStyles.th}>Created</th>
               <th style={adminTableStyles.thRight}>Action</th>
             </tr>
@@ -90,53 +93,14 @@ export function AdminShopTable({
                 </td>
               </tr>
             ) : (
-              studios.map((s) => {
-                const b = statusBadges[s.status] || statusBadges.closed;
-                return (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={adminTableStyles.tdBold}>{s.name}</td>
-                    <td style={adminTableStyles.tdMono}>
-                      <div>{s.id}</div>
-                      <div style={{ color: '#94a3b8' }}>/{s.slug}</div>
-                    </td>
-                    <td style={adminTableStyles.td}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '0.2rem 0.6rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          borderRadius: '9999px',
-                          backgroundColor: b.bg,
-                          color: b.color,
-                          border: `1px solid ${b.border}`,
-                        }}
-                      >
-                        {s.status}
-                      </span>
-                    </td>
-                    <td style={adminTableStyles.tdContact}>
-                      {s.contactEmail && <div>{s.contactEmail}</div>}
-                      {s.contactPhone && <div style={{ color: '#94a3b8' }}>{s.contactPhone}</div>}
-                      {!s.contactEmail && !s.contactPhone && (
-                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>None</span>
-                      )}
-                    </td>
-                    <td style={adminTableStyles.tdMuted}>
-                      {new Date(s.createdAt).toLocaleDateString()}
-                    </td>
-                    <td style={adminTableStyles.tdRight}>
-                      <button
-                        type="button"
-                        onClick={() => onManageStatus(s)}
-                        style={adminTableStyles.input}
-                      >
-                        Manage
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+              studios.map((s) => (
+                <AdminShopTableRow
+                  key={s.id}
+                  studio={s}
+                  onInspect={onInspect}
+                  onManageStatus={onManageStatus}
+                />
+              ))
             )}
           </tbody>
         </table>

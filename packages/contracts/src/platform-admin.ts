@@ -5,6 +5,7 @@ import {
   StudioSlugSchema,
   StudioStatusSchema,
 } from './tenant.js';
+import { ShopLocationSchema, ShopPaymentSettingsSchema } from './shop-onboarding.js';
 
 export const PlatformMetricsResponseSchema = z.object({
   totalStudios: z.number().int().nonnegative(),
@@ -24,6 +25,8 @@ export const PlatformStudioItemSchema = z.object({
   name: StudioNameSchema,
   status: StudioStatusSchema,
   ownerUserId: z.string().optional(),
+  ownerName: z.string().optional(),
+  ownerEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
   contactEmail: z.string().email().optional(),
   isAcceptingOrders: z.boolean().optional(),
@@ -97,3 +100,61 @@ export const ListPlatformUsersResponseSchema = z.object({
 });
 
 export type ListPlatformUsersResponse = z.infer<typeof ListPlatformUsersResponseSchema>;
+
+export const CreatePlatformAdminUserRequestSchema = z.object({
+  email: z.string().email().trim().toLowerCase(),
+  name: z.string().trim().min(1).max(120),
+  phone: z.string().trim().optional(),
+});
+export type CreatePlatformAdminUserRequest = z.infer<typeof CreatePlatformAdminUserRequestSchema>;
+
+export const UpdatePlatformUserStatusRequestSchema = z.object({
+  status: z.enum(['active', 'suspended']),
+});
+export type UpdatePlatformUserStatusRequest = z.infer<typeof UpdatePlatformUserStatusRequestSchema>;
+
+export const PlatformStudioDetailsResponseSchema = z.object({
+  studio: PlatformStudioItemSchema.extend({
+    tagline: z.string().optional(),
+    location: ShopLocationSchema.optional(),
+    currency: z.string().default('INR'),
+    maxActivePrinters: z.number().int().default(2),
+    autoApproveOrders: z.boolean().default(false),
+    payment: ShopPaymentSettingsSchema.optional(),
+  }),
+  owner: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      status: z.string(),
+      createdAt: z.string(),
+    })
+    .nullable(),
+  printers: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      driverName: z.string(),
+      role: z.string(),
+      isColorSupported: z.boolean(),
+      supportedPaperSizes: z.array(z.string()),
+      status: z.string(),
+      isDefaultOsPrinter: z.boolean(),
+      lastSeenAt: z.string(),
+    })
+  ),
+  devices: z.array(
+    z.object({
+      deviceId: z.string(),
+      hostname: z.string(),
+      osPlatform: z.string(),
+      agentVersion: z.string(),
+      status: z.string(),
+      lastHeartbeatAt: z.string(),
+      createdAt: z.string(),
+    })
+  ),
+});
+export type PlatformStudioDetailsResponse = z.infer<typeof PlatformStudioDetailsResponseSchema>;
