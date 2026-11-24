@@ -52,7 +52,9 @@ export function DocumentPrintWorkflow({
       const pKey = prev.map((c) => c.assetId).join(',');
       const nKey = updatedDocs.map((d) => d.assetId).join(',');
       if (pKey === nKey) return prev;
-      return updatedDocs.map((d) => prev.find((c) => c.assetId === d.assetId) || createDefaultConfig(d.assetId));
+      return updatedDocs.map(
+        (d) => prev.find((c) => c.assetId === d.assetId) || createDefaultConfig(d.assetId)
+      );
     });
   }, []);
 
@@ -108,7 +110,9 @@ export function DocumentPrintWorkflow({
               filename={doc.filename}
               pageCount={doc.pageCount}
               onUpdate={(updated) => handleUpdateConfig(idx, updated)}
-              onPreview={() => setPreviewDoc({ doc, config: configs[idx] || createDefaultConfig(doc.assetId) })}
+              onPreview={() =>
+                setPreviewDoc({ doc, config: configs[idx] || createDefaultConfig(doc.assetId) })
+              }
               onRemove={() => handleRemoveDoc(doc.assetId)}
             />
           ))}

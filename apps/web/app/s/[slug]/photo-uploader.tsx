@@ -48,7 +48,7 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
           }))
         );
       } catch {
-        /* silent */
+        // silent ignore
       }
     }
     loadExisting();
@@ -78,7 +78,9 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
     const abort = new AbortController();
     setItems((prev) =>
       prev.map((i) =>
-        i.id === item.id ? { ...i, status: 'uploading', abortController: abort, error: undefined } : i
+        i.id === item.id
+          ? { ...i, status: 'uploading', abortController: abort, error: undefined }
+          : i
       )
     );
 
@@ -170,13 +172,8 @@ export function PhotoUploader({ slug, sessionId, token, onDocumentsChange }: Pho
   async function handleDelete(id: string) {
     const item = items.find((i) => i.id === id);
     if (!item) return;
-    if (item.assetId) {
-      try {
-        await deleteSessionPhoto(slug, sessionId, item.assetId, token);
-      } catch {
-        /* ignore */
-      }
-    }
+    if (item.assetId)
+      await deleteSessionPhoto(slug, sessionId, item.assetId, token).catch(() => {});
     setItems((prev) => prev.filter((i) => i.id !== id));
   }
 

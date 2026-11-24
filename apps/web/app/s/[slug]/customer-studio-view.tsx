@@ -60,7 +60,9 @@ export function CustomerStudioView({
       } catch (err) {
         if (!mounted) return;
         setError(
-          err instanceof CustomerApiError ? err : new CustomerApiError('Failed to load shop details', 500)
+          err instanceof CustomerApiError
+            ? err
+            : new CustomerApiError('Failed to load shop details', 500)
         );
       } finally {
         if (mounted) setLoading(false);
@@ -77,18 +79,50 @@ export function CustomerStudioView({
   if (studio.status !== 'active') return <CustomerStudioInactive studio={studio} />;
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '24px 16px 48px', overflowX: 'hidden' }}>
+    <div
+      style={{
+        maxWidth: '640px',
+        margin: '0 auto',
+        padding: '24px 16px 48px',
+        overflowX: 'hidden',
+      }}
+    >
       <header style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Link
           href="/"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', marginBottom: '10px' }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            textDecoration: 'none',
+            marginBottom: '10px',
+          }}
         >
-          <img src="/favicon.png" alt="SnapPrint" style={{ width: '22px', height: '22px', borderRadius: '6px' }} />
-          <span style={{ fontSize: '13px', fontWeight: 800, color: '#0284c7', letterSpacing: '-0.02em' }}>
+          <img
+            src="/favicon.png"
+            alt="SnapPrint"
+            style={{ width: '22px', height: '22px', borderRadius: '6px' }}
+          />
+          <span
+            style={{
+              fontSize: '13px',
+              fontWeight: 800,
+              color: '#0284c7',
+              letterSpacing: '-0.02em',
+            }}
+          >
             SnapPrint Network
           </span>
         </Link>
-        <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', margin: '0 0 4px' }}>
+        <h1
+          style={{
+            fontSize: '26px',
+            fontWeight: 800,
+            color: '#0f172a',
+            letterSpacing: '-0.5px',
+            margin: '0 0 4px',
+          }}
+        >
           {studio.name}
         </h1>
         <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 600 }}>
@@ -116,7 +150,9 @@ export function CustomerStudioView({
             color: '#166534',
           }}
         >
-          <span>🔒 <strong>Private Session Active</strong></span>
+          <span>
+            🔒 <strong>Private Session Active</strong>
+          </span>
           <span style={{ fontWeight: 600 }}>Expires in 2 hours</span>
         </div>
       )}
@@ -131,10 +167,24 @@ export function CustomerStudioView({
         />
       )}
 
-      <footer style={{ marginTop: '36px', borderTop: '1px solid #e2e8f0', paddingTop: '20px', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
+      <footer
+        style={{
+          marginTop: '36px',
+          borderTop: '1px solid #e2e8f0',
+          paddingTop: '20px',
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#94a3b8',
+        }}
+      >
         <div>
           Developed by{' '}
-          <a href="https://www.palnadu.dev/" target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}>
+          <a
+            href="https://www.palnadu.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}
+          >
             Palnadu.dev
           </a>
         </div>
