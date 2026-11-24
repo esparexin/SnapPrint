@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   AgentEnrollmentRequestSchema,
+  AgentJobStatusUpdateRequestSchema,
   AgentPairingKeySchema,
+  AgentPendingJobsResponseSchema,
   AgentSyncPrintersRequestSchema,
   AssignedStudioPrinterSchema,
   DiscoveredPrinterSchema,
   PrinterIdSchema,
   PrinterRoleSchema,
   PrinterStatusSchema,
+  PrintJobRecordSchema,
+  PrintJobStatusSchema,
 } from './printer.js';
 
 describe('Printer Schemas (contracts)', () => {
@@ -127,6 +131,77 @@ describe('Printer Schemas (contracts)', () => {
       });
       expect(sync.printers).toHaveLength(1);
       expect(sync.printers[0].isColorSupported).toBe(true);
+    });
+  });
+
+  describe('PrintJob Contracts', () => {
+    it('validates print job status enum', () => {
+      expect(PrintJobStatusSchema.parse('pending')).toBe('pending');
+      expect(PrintJobStatusSchema.parse('processing')).toBe('processing');
+      expect(PrintJobStatusSchema.parse('completed')).toBe('completed');
+      expect(PrintJobStatusSchema.parse('failed')).toBe('failed');
+      expect(() => PrintJobStatusSchema.parse('unknown')).toThrow();
+    });
+
+    it('parses valid print job record', () => {
+      const now = new Date().toISOString();
+      const job = PrintJobRecordSchema.parse({
+        jobId: 'job_123456',
+        studioId: 'std_test',
+        orderId: 'ord_987654',
+        itemId: 'item_1',
+        assetId: 'asset_pdf_01',
+        targetPrinterId: 'prn_hp_01',
+        printerName: 'HP LaserJet Pro M126nw',
+        colorMode: 'bw',
+        paperSize: 'A4',
+        sides: 'single',
+        copies: 2,
+        filename: 'invoice.pdf',
+        createdAt: now,
+      });
+
+      expect(job.status).toBe('pending');
+      expect(job.copies).toBe(2);
+      expect(job.printerName).toBe('HP LaserJet Pro M126nw');
+    });
+
+    it('parses agent pending jobs response', () => {
+      const now = new Date().toISOString();
+      const res = AgentPendingJobsResponseSchema.parse({
+        jobs: [
+          {
+            jobId: 'job_1',
+            studioId: 'std_test',
+            orderId: 'ord_1',
+            itemId: 'itm_1',
+            assetId: 'ast_1',
+            targetPrinterId: 'prn_epson',
+            printerName: 'Epson L3150',
+            colorMode: 'color',
+            paperSize: 'A4',
+            sides: 'single',
+            copies: 1,
+            filename: 'photo.jpg',
+            createdAt: now,
+          },
+        ],
+      });
+      expect(res.jobs).toHaveLength(1);
+      expect(res.jobs[0].colorMode).toBe('color');
+    });
+
+    it('parses agent job status update request', () => {
+      const req = AgentJobStatusUpdateRequestSchema.parse({
+        status: 'completed',
+      });
+      expect(req.status).toBe('completed');
+
+      const failedReq = AgentJobStatusUpdateRequestSchema.parse({
+        status: 'failed',
+        errorMessage: 'Paper jam in tray 1',
+      });
+      expect(failedReq.errorMessage).toBe('Paper jam in tray 1');
     });
   });
 });
