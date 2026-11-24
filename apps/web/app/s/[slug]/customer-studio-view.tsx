@@ -14,7 +14,6 @@ import {
   CustomerStudioLoading,
 } from './customer-status-views';
 import { DocumentPrintWorkflow } from './document-print-workflow';
-import { PrintRateCard } from './print-rate-card';
 
 interface CustomerStudioViewProps {
   slug: string;
@@ -111,8 +110,6 @@ export function CustomerStudioView({
           <span style={{ fontWeight: 600 }}>Expires in 2 hours</span>
         </div>
       )}
-
-      <PrintRateCard printRates={studio.printRates} />
 
       {session && (
         <DocumentPrintWorkflow
