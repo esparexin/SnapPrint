@@ -62,7 +62,7 @@ export const DEFAULT_PROPS = {
   paper: '#ffffff',
   sheetInk: '#ffffff',
   seed: 7,
-  height: '100svh',
+  height: '100%',
   fontSans: 'var(--font-family)',
   className: '',
 };

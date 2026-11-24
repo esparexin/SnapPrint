@@ -24,22 +24,24 @@ export default function HomePage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100dvh',
         width: '100%',
-        backgroundColor: '#0284c7',
+        background: 'linear-gradient(to bottom, #0284c7 50%, #ffffff 50%)',
         display: 'flex',
         flexDirection: 'column',
-        overflowX: 'hidden',
+        overflow: 'hidden',
       }}
     >
       <main
         style={{
           width: '100%',
-          height: '100svh',
+          height: '100%',
           position: 'relative',
+          overflow: 'hidden',
         }}
       >
         <PushpinTearFooter
+          height="100%"
           brand={
             <img
               src="/brand/snapprint-logo.png"
@@ -73,11 +75,7 @@ export default function HomePage() {
           paperInk="#0f172a"
           seed={19}
           topNav={[
-            {
-              label: 'About',
-              href: '/about',
-              variant: 'text',
-            },
+            { label: 'About', href: '/about', variant: 'text' },
             {
               label: 'Login',
               onClick: () => {
