@@ -3,8 +3,9 @@
 import { hostname } from 'node:os';
 import { createInterface } from 'node:readline/promises';
 import { AgentClient } from './agent-client.js';
-import { loadAgentConfig, saveAgentConfig } from './config.js';
+import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
+import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
 
 export async function runCli(argv: string[] = process.argv.slice(2)): Promise<number> {
@@ -42,7 +43,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       config.deviceId = enrollResult.deviceId;
       config.deviceFriendlyName = host;
       saveAgentConfig(config);
-      console.log(`Device enrolled successfully!`);
+      console.log('Device enrolled successfully!');
       console.log(`  Studio ID: ${enrollResult.studioId}`);
       console.log(`  Device ID: ${enrollResult.deviceId}`);
 
@@ -55,6 +56,14 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       console.error(`Enrollment failed: ${err instanceof Error ? err.message : String(err)}`);
       return 1;
     }
+  }
+
+  if (command === 'unpair') {
+    unpairAgent();
+    console.log(
+      'Device credentials cleared successfully. You may now re-enroll with a new pairing code.'
+    );
+    return 0;
   }
 
   if (command === 'sync') {
@@ -78,19 +87,30 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       console.error('Error: Device not enrolled. Run "snapprint-agent enroll" first.');
       return 1;
     }
+
+    const lock = acquireInstanceLock();
+    if (!lock.acquired) {
+      console.log(
+        `SnapPrint Agent is already running (PID: ${lock.pid}). Exiting duplicate instance.`
+      );
+      return 0;
+    }
+
     const daemon = new AgentDaemon(config, client, spooler);
     await daemon.start();
 
     const handleExit = () => {
       daemon.stop();
+      releaseInstanceLock();
       process.exit(0);
     };
     process.on('SIGINT', handleExit);
     process.on('SIGTERM', handleExit);
+    process.on('exit', () => releaseInstanceLock());
     return 0;
   }
 
-  if (command === 'status') {
+  if (command === 'status' || command === 'printers') {
     console.log('SnapPrint Desktop Print Agent Status');
     console.log('-----------------------------------');
     console.log(`API URL:        ${config.apiUrl}`);
@@ -110,11 +130,12 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     return 0;
   }
 
-  console.log('Usage: snapprint-agent [enroll <code?> | sync | start | status]');
+  console.log(
+    'Usage: snapprint-agent [enroll <code?> | unpair | sync | start | status | printers]'
+  );
   return 1;
 }
 
-// Only invoke runCli if executed directly from node CLI
 if (process.argv[1]?.endsWith('cli.ts') || process.argv[1]?.endsWith('cli.js')) {
   runCli().then((code) => {
     if (code !== 0 && process.argv[2] !== 'start') {

@@ -4,6 +4,7 @@ import { basename, extname, join } from 'node:path';
 import { PrintJobRecord } from '@snapprint/contracts';
 import { AgentClient } from './agent-client.js';
 import { AgentConfig, saveAgentConfig } from './config.js';
+import { InFlightJobTracker } from './job-tracker.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
 export interface DaemonOptions {
@@ -11,78 +12,130 @@ export interface DaemonOptions {
   heartbeatIntervalMs?: number;
   jobPollIntervalMs?: number;
   configPath?: string;
+  inFlightTracker?: InFlightJobTracker;
   logger?: (msg: string) => void;
 }
 
 export class AgentDaemon {
   private isRunning = false;
+  private isRevoked = false;
   private syncTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private jobPollTimer: NodeJS.Timeout | null = null;
+  private readonly jobTracker: InFlightJobTracker;
 
   constructor(
     private config: AgentConfig,
     private readonly client: AgentClient,
     private readonly spooler: SpoolerAdapter,
     private readonly options: DaemonOptions = {}
-  ) {}
+  ) {
+    this.jobTracker = options.inFlightTracker || new InFlightJobTracker();
+  }
 
   public get running(): boolean {
     return this.isRunning;
   }
 
+  public get revoked(): boolean {
+    return this.isRevoked;
+  }
+
+  private handleAuthError(err: unknown): boolean {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      msg.includes('401') ||
+      msg.includes('DEVICE_UNAUTHORIZED') ||
+      msg.includes('DEVICE_REVOKED')
+    ) {
+      const log = this.options.logger || console.error;
+      log(
+        '[CRITICAL] Device authorization revoked by studio owner. Halting operations. Run "enroll" to re-pair.'
+      );
+      this.isRevoked = true;
+      this.stop();
+      return true;
+    }
+    return false;
+  }
+
   async syncOnce(): Promise<number> {
+    if (this.isRevoked) return 0;
     const token = this.config.deviceToken;
-    if (!token) {
-      throw new Error('Agent is not enrolled. Run enroll command with pairing code first.');
-    }
+    if (!token) throw new Error('Agent is not enrolled.');
 
-    const log = this.options.logger || console.log;
-    log('Scanning local printers and drivers...');
-    const discovered = await this.spooler.getPrinters();
-    log(`Discovered ${discovered.length} local printer(s). Uploading to cloud...`);
-
-    const result = await this.client.syncPrinters(token, discovered);
     try {
+      const discovered = await this.spooler.getPrinters();
+      const result = await this.client.syncPrinters(token, discovered);
       this.config.lastSyncAt = new Date().toISOString();
-      saveAgentConfig(this.config, this.options.configPath);
-    } catch {
-      // Non-fatal if config save fails due to filesystem permissions
+      try {
+        saveAgentConfig(this.config, this.options.configPath);
+      } catch {
+        // Non-fatal
+      }
+      return result.count;
+    } catch (err) {
+      if (this.handleAuthError(err)) return 0;
+      throw err;
     }
-    log(`Printers synced successfully (${result.count} registered).`);
-    return result.count;
   }
 
   async heartbeatOnce(): Promise<void> {
+    if (this.isRevoked) return;
     const token = this.config.deviceToken;
     if (!token) return;
 
     try {
       await this.client.sendHeartbeat(token);
     } catch (err) {
+      if (this.handleAuthError(err)) return;
       const log = this.options.logger || console.warn;
       log(`Heartbeat failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
+  async recoverUncertainJobs(): Promise<void> {
+    const token = this.config.deviceToken;
+    if (!token) return;
+
+    const interrupted = this.jobTracker.getInFlightJobs();
+    if (interrupted.length === 0) return;
+
+    const log = this.options.logger || console.warn;
+    for (const job of interrupted) {
+      log(
+        `[Job ${job.jobId}] Found interrupted print job from prior run. Marking failed (uncertain dispatch).`
+      );
+      try {
+        await this.client.updateJobStatus(
+          token,
+          job.jobId,
+          'failed',
+          'UNCERTAIN_PHYSICAL_DISPATCH: Agent restarted while print job was in flight.'
+        );
+      } catch {
+        // Best effort
+      }
+      this.jobTracker.clearInFlight(job.jobId);
+    }
+  }
+
   async pollAndExecuteJobsOnce(): Promise<number> {
+    if (this.isRevoked) return 0;
     const token = this.config.deviceToken;
     if (!token) return 0;
 
-    const log = this.options.logger || console.log;
     let jobs: PrintJobRecord[] = [];
     try {
       jobs = await this.client.fetchPendingJobs(token);
     } catch (err) {
-      log(`Job polling check failed: ${err instanceof Error ? err.message : String(err)}`);
+      if (this.handleAuthError(err)) return 0;
       return 0;
     }
 
-    if (!jobs || jobs.length === 0) {
-      return 0;
-    }
+    if (!jobs || jobs.length === 0) return 0;
 
-    log(`Received ${jobs.length} pending print job(s). Executing spooler queue...`);
+    const log = this.options.logger || console.log;
     let executedCount = 0;
 
     for (const job of jobs) {
@@ -91,24 +144,20 @@ export class AgentDaemon {
       const tempFilePath = join(tmpdir(), `snapprint_${job.jobId}_${safeBase}${cleanExt}`);
 
       try {
-        log(`[Job ${job.jobId}] Marking processing...`);
         await this.client.updateJobStatus(token, job.jobId, 'processing');
-
-        log(
-          `[Job ${job.jobId}] Downloading ${job.filename} (${job.colorMode}, ${job.copies} copy/copies)...`
-        );
         await this.client.downloadJobDocument(token, job.jobId, tempFilePath);
 
-        log(`[Job ${job.jobId}] Sending to native spooler -> ${job.printerName}...`);
+        this.jobTracker.recordInFlight(job.jobId, job.printerName, job.filename);
         await this.spooler.printFile(job.printerName, tempFilePath, {
           copies: job.copies,
           paperSize: job.paperSize,
         });
+        this.jobTracker.clearInFlight(job.jobId);
 
-        log(`[Job ${job.jobId}] Print successfully queued to hardware. Marking completed...`);
         await this.client.updateJobStatus(token, job.jobId, 'completed');
         executedCount++;
       } catch (err) {
+        this.jobTracker.clearInFlight(job.jobId);
         const errMsg = err instanceof Error ? err.message : String(err);
         log(`[Job ${job.jobId}] Printing failed: ${errMsg}`);
         try {
@@ -118,11 +167,9 @@ export class AgentDaemon {
         }
       } finally {
         try {
-          if (existsSync(tempFilePath)) {
-            unlinkSync(tempFilePath);
-          }
+          if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
         } catch {
-          // Best effort cleanup
+          // Cleanup
         }
       }
     }
@@ -133,14 +180,17 @@ export class AgentDaemon {
   async start(): Promise<void> {
     if (this.isRunning) return;
     this.isRunning = true;
+    this.isRevoked = false;
 
     const log = this.options.logger || console.log;
     log('Starting SnapPrint Desktop Print Agent Daemon...');
 
-    // Perform initial sync, heartbeat, and job poll
-    await this.syncOnce();
+    await this.recoverUncertainJobs();
+    await this.syncOnce().catch(() => {});
     await this.heartbeatOnce();
     await this.pollAndExecuteJobsOnce().catch(() => {});
+
+    if (this.isRevoked) return;
 
     const heartbeatMs = this.options.heartbeatIntervalMs ?? 30_000;
     const syncMs = this.options.syncIntervalMs ?? 300_000;
@@ -151,18 +201,12 @@ export class AgentDaemon {
     }, heartbeatMs);
 
     this.syncTimer = setInterval(() => {
-      this.syncOnce().catch((err) => {
-        log(`Periodic printer sync error: ${err instanceof Error ? err.message : String(err)}`);
-      });
+      this.syncOnce().catch(() => {});
     }, syncMs);
 
     this.jobPollTimer = setInterval(() => {
       this.pollAndExecuteJobsOnce().catch(() => {});
     }, pollMs);
-
-    log(
-      `Daemon running (Job Poller: ${pollMs / 1000}s, Heartbeat: ${heartbeatMs / 1000}s, Discovery: ${syncMs / 1000}s).`
-    );
   }
 
   stop(): void {
@@ -173,18 +217,13 @@ export class AgentDaemon {
       clearInterval(this.jobPollTimer);
       this.jobPollTimer = null;
     }
-
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
-
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
       this.syncTimer = null;
     }
-
-    const log = this.options.logger || console.log;
-    log('SnapPrint Desktop Print Agent Daemon stopped.');
   }
 }
