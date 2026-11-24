@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { PlatformStudioItem, StudioStatus } from '@snapprint/contracts';
 import { updatePlatformStudioStatus } from '../../src/platform-admin-client';
 import { useDialog } from '../hooks/use-dialog';
+import { adminLayoutStyles } from './admin-layout-styles';
+import { adminTableStyles } from './admin-table-styles';
 
 export interface AdminStatusModalProps {
   studio: PlatformStudioItem;
@@ -33,10 +35,8 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
       return;
     }
 
-    if (
-      (selectedStatus === 'suspended' || selectedStatus === 'closed') &&
-      reason.trim().length < 3
-    ) {
+    const requiresReason = selectedStatus === 'suspended' || selectedStatus === 'closed';
+    if (requiresReason && reason.trim().length < 3) {
       setError('Please provide a reason of at least 3 characters for suspension/closure.');
       return;
     }
@@ -68,39 +68,36 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
     >
       <div
         className="dialog-content"
-        style={{ maxWidth: '28rem', padding: '1.5rem' }}
+        style={adminLayoutStyles.dialogBox}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Manage Studio Status</h3>
+        <div style={adminLayoutStyles.modalHeader}>
+          <h3 style={adminLayoutStyles.modalTitle}>Manage Studio Status</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+            style={adminLayoutStyles.modalCloseBtn}
+            aria-label="Close"
           >
             &times;
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
-          Updating status for <span className="font-semibold text-gray-900">{studio.name}</span> (
+        <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '1rem' }}>
+          Updating status for <strong style={{ color: '#0f172a' }}>{studio.name}</strong> (
           {studio.id}).
         </p>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
+        {error && <div style={adminLayoutStyles.errorBanner}>{error}</div>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Target Status</label>
+        <form onSubmit={handleSubmit}>
+          <div style={adminTableStyles.formGroup}>
+            <label style={adminTableStyles.formLabel}>Target Status</label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as StudioStatus)}
-              className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              style={adminTableStyles.formControl}
             >
               <option value="active">Active (Operational & Accepting Orders)</option>
               <option value="pending_review">Pending Review (Under Verification)</option>
@@ -109,13 +106,13 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div style={adminTableStyles.formGroup}>
+            <label style={adminTableStyles.formLabel}>
               Audit Reason{' '}
               {selectedStatus === 'suspended' || selectedStatus === 'closed' ? (
-                <span className="text-red-500">*</span>
+                <span style={{ color: '#dc2626' }}>*</span>
               ) : (
-                <span className="text-gray-400 font-normal">(Optional)</span>
+                <span style={{ color: '#94a3b8', fontWeight: 400 }}>(Optional)</span>
               )}
             </label>
             <textarea
@@ -123,23 +120,23 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Provide context for this administrative action..."
-              className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              style={adminTableStyles.formTextarea}
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div style={adminLayoutStyles.modalActions}>
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition"
+              style={adminLayoutStyles.btnSecondary}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
+              style={{ ...adminLayoutStyles.btnPrimary, opacity: submitting ? 0.6 : 1 }}
             >
               {submitting ? 'Updating...' : 'Save Status'}
             </button>

@@ -15,6 +15,7 @@ import {
 } from '../../src/platform-admin-client';
 import { AdminAuditTable } from './admin-audit-table';
 import { AdminKpiGrid } from './admin-kpi-grid';
+import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminShopTable } from './admin-shop-table';
 import { AdminStatusModal } from './admin-status-modal';
 
@@ -61,56 +62,43 @@ export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16" style={{ fontFamily: 'var(--font-family)' }}>
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div style={adminLayoutStyles.pageWrapper}>
+      <header style={adminLayoutStyles.header}>
+        <div style={adminLayoutStyles.headerInner}>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">SnapPrint</h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                Platform Admin
-              </span>
+            <div style={adminLayoutStyles.brandRow}>
+              <h1 style={adminLayoutStyles.brandTitle}>SnapPrint</h1>
+              <span style={adminLayoutStyles.badgeAdmin}>Platform Admin</span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Signed in as <span className="font-medium text-gray-700">{auth.user.email}</span>
+            <p style={adminLayoutStyles.userSubtext}>
+              Signed in as <strong style={{ color: '#334155' }}>{auth.user.email}</strong>
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => loadData()}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition"
-            >
+          <div style={adminLayoutStyles.btnRow}>
+            <button type="button" onClick={() => loadData()} style={adminLayoutStyles.btnSecondary}>
               Refresh
             </button>
-            <a
-              href="/"
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition"
-            >
+            <a href="/" style={adminLayoutStyles.btnSecondary}>
               Shop Workspace
             </a>
-            <button
-              type="button"
-              onClick={onLogout}
-              className="px-3 py-1.5 border border-red-200 rounded-lg text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 transition"
-            >
+            <button type="button" onClick={onLogout} style={adminLayoutStyles.btnDanger}>
               Sign Out
             </button>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-6 mt-2 border-t border-gray-100 overflow-x-auto">
+        <div style={adminLayoutStyles.tabRow}>
           {(['overview', 'studios', 'audit'] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`py-3 text-sm font-medium border-b-2 capitalize transition-colors whitespace-nowrap shrink-0 ${
+              style={
                 activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+                  ? adminLayoutStyles.tabBtnActive
+                  : adminLayoutStyles.tabBtnInactive
+              }
             >
               {tab === 'overview'
                 ? 'Overview & Metrics'
@@ -122,12 +110,8 @@ export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-            {error}
-          </div>
-        )}
+      <main style={adminLayoutStyles.main}>
+        {error && <div style={adminLayoutStyles.errorBanner}>{error}</div>}
 
         {(activeTab === 'overview' || activeTab === 'studios') && (
           <AdminKpiGrid metrics={metrics} loading={loading} />
