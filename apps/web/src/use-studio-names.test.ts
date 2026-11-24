@@ -45,4 +45,23 @@ describe('Studio Names & Context Formatting', () => {
       formatStudioOptionLabel({ studioId: 'studio_123' }, { studio_123: 'Vikram Mobiles' })
     ).toBe('Vikram Mobiles (studio_123)');
   });
+
+  it('guarantees useStudioNames is invoked before early returns in OperatorPortal', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const portalFile = path.resolve(process.cwd(), 'apps/web/app/components/operator-portal.tsx');
+    const content = fs.readFileSync(portalFile, 'utf8');
+
+    const hookIndex = content.indexOf('const studioNames = useStudioNames(');
+    const loadingEarlyReturn = content.indexOf('if (loading) {');
+    const authEarlyReturn = content.indexOf('if (!auth) {');
+
+    expect(hookIndex).toBeGreaterThan(0);
+    expect(loadingEarlyReturn).toBeGreaterThan(0);
+    expect(authEarlyReturn).toBeGreaterThan(0);
+
+    // React rules of hooks: hooks must be invoked at top-level before early returns
+    expect(hookIndex).toBeLessThan(loadingEarlyReturn);
+    expect(hookIndex).toBeLessThan(authEarlyReturn);
+  });
 });
