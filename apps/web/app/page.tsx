@@ -87,11 +87,7 @@ export default function HomePage() {
 
       {showPortalModal && (
         <InfoModal onClose={() => setShowPortalModal(false)} maxWidth={auth ? '960px' : '420px'}>
-          <OperatorPortal
-            initialMode={portalMode}
-            onAuthChange={setAuth}
-            onClosePortal={() => setShowPortalModal(false)}
-          />
+          <OperatorPortal initialMode={portalMode} onAuthChange={setAuth} />
         </InfoModal>
       )}
 

@@ -16,6 +16,7 @@ export interface ModalSheetShellProps {
   headerActions?: React.ReactNode;
   contentStyle?: CSSProperties;
   dialogId?: string;
+  hideCloseButton?: boolean;
 }
 
 export function ModalSheetShell({
@@ -30,6 +31,7 @@ export function ModalSheetShell({
   headerActions,
   contentStyle,
   dialogId,
+  hideCloseButton = false,
 }: ModalSheetShellProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -85,26 +87,30 @@ export function ModalSheetShell({
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {headerActions}
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="dialog-close-btn"
-              >
-                ✕
-              </button>
+              {!hideCloseButton && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="dialog-close-btn"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="dialog-close-btn"
-            style={{ position: 'absolute', top: '1rem', right: '1rem' }}
-          >
-            ✕
-          </button>
+          !hideCloseButton && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="dialog-close-btn"
+              style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+            >
+              ✕
+            </button>
+          )
         )}
         {children}
       </div>

@@ -7,7 +7,7 @@ interface OrderFulfillmentHeaderProps {
   orderCount: number;
   loading: boolean;
   onRefresh: () => void;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function OrderFulfillmentHeader({
@@ -56,9 +56,11 @@ export function OrderFulfillmentHeader({
         >
           🔄 Refresh
         </button>
-        <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
-          ✕
-        </button>
+        {onClose && (
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+            ✕
+          </button>
+        )}
       </div>
     </div>
   );

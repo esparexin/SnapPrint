@@ -18,6 +18,7 @@ export function SetupWizardModal({ studioId, onComplete, onClose }: SetupWizardM
       titleId="wizard-title"
       maxWidth="620px"
       enableSwipeDown={false}
+      hideCloseButton={true}
       contentStyle={{ width: '100%', display: 'flex', flexDirection: 'column' }}
     >
       <ShopSetupWizard

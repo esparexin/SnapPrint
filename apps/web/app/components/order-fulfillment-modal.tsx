@@ -83,7 +83,7 @@ export function OrderFulfillmentModal({
         orderCount={orders.length}
         loading={loading}
         onRefresh={loadOrders}
-        onClose={onClose}
+        onClose={inShell ? undefined : onClose}
       />
       <OrderQueueFilterBar statusFilter={statusFilter} onSelectStatus={setStatusFilter} />
       <OrderFulfillmentList
