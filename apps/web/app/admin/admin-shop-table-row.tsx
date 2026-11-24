@@ -64,10 +64,7 @@ export function AdminShopTableRow({
         <AdminShopTableSubscriptionCell subscription={studio.subscription} />
       </td>
       <td style={adminTableStyles.td}>
-        <AdminShopTablePrintersCell
-          printerCount={studio.printerCount}
-          payment={studio.payment}
-        />
+        <AdminShopTablePrintersCell printerCount={studio.printerCount} payment={studio.payment} />
       </td>
       <td style={adminTableStyles.tdContact}>
         {studio.ownerEmail ? (

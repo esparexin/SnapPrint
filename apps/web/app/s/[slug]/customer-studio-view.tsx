@@ -114,8 +114,6 @@ export function CustomerStudioView({
 
       <PrintRateCard printRates={studio.printRates} />
 
-
-
       {session && (
         <DocumentPrintWorkflow
           slug={slug}

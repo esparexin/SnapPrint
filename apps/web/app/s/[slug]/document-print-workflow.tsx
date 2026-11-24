@@ -1,9 +1,15 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { DocumentPrintConfig, OrderRecord, PublicPaymentSettings, StudioPrintRatesContract } from '@snapprint/contracts';
+import {
+  DocumentPrintConfig,
+  OrderRecord,
+  PublicPaymentSettings,
+  StudioPrintRatesContract,
+} from '@snapprint/contracts';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
+import { createDefaultConfig } from './document-print-workflow-helpers';
 import { OrderConfirmationView } from './order-confirmation-view';
 import { OrderSummaryCard } from './order-summary-card';
 import { PhotoUploader, UploadedDocInfo } from './photo-uploader';
@@ -17,17 +23,6 @@ interface DocumentPrintWorkflowProps {
   isAcceptingOrders?: boolean;
   printRates?: StudioPrintRatesContract;
 }
-
-const createDefaultConfig = (assetId: string): DocumentPrintConfig => ({
-  assetId,
-  paperSize: 'A4',
-  colorMode: 'black_and_white',
-  sides: 'single_sided',
-  orientation: 'portrait',
-  scaling: 'fit_to_page',
-  pageSelection: 'all',
-  copies: 1,
-});
 
 export function DocumentPrintWorkflow({
   slug,
