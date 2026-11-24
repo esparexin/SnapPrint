@@ -25,14 +25,14 @@ interface OperatorPortalHeaderProps {
 }
 
 const VIEW_TITLES: Record<OperatorView, string> = {
-  hub: 'SnapPrint Operator Portal',
-  orders: 'Order Fulfillment Queue',
-  printers: 'Printer Fleet & Pairing',
-  qr: 'Permanent Counter QR Code',
-  profile: 'Shop Profile & Capabilities',
-  payment: 'Payment & Rate Settings',
-  staff: 'Staff & Team Roster',
-  setup: 'Shop Setup Wizard',
+  hub: 'Operator Portal',
+  orders: 'Orders',
+  printers: 'Printers',
+  qr: 'QR Stand',
+  profile: 'Shop Settings',
+  payment: 'Payments',
+  staff: 'Staff',
+  setup: 'Setup Guide',
 };
 
 export function OperatorPortalHeader({
