@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canRedeemPairingKey,
+  createPrintJobsForOrder,
   generatePairingCode,
   PrinterRoutingCandidate,
   resolvePrinterForJob,
@@ -146,6 +147,87 @@ describe('Printer Routing Domain Logic', () => {
       const expired = canRedeemPairingKey({ status: 'active', expiresAt: past }, now);
       expect(expired.allowed).toBe(false);
       expect(expired.reason).toBe('KEY_EXPIRED');
+    });
+  });
+
+  describe('createPrintJobsForOrder', () => {
+    it('generates concrete print jobs routing B&W to active_bw and Color to active_color', () => {
+      const nowIso = '2026-11-24T08:00:00.000Z';
+      const order = {
+        orderId: 'ord_sample_999',
+        studioId: 'std_hyderabad',
+        items: [
+          {
+            assetId: 'ast_resume_pdf',
+            filename: 'resume.pdf',
+            paperSize: 'A4' as const,
+            colorMode: 'black_and_white' as const,
+            sides: 'single_sided' as const,
+            copies: 2,
+            pageSelection: '1-3',
+          },
+          {
+            assetId: 'ast_cert_jpg',
+            filename: 'certificate.jpg',
+            paperSize: 'A4' as const,
+            colorMode: 'color' as const,
+            sides: 'single_sided' as const,
+            copies: 1,
+            pageSelection: 'all',
+          },
+        ],
+      };
+
+      const result = createPrintJobsForOrder(
+        order,
+        [hpBwPrinter, epsonColorPrinter],
+        nowIso
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.failures).toHaveLength(0);
+      expect(result.jobs).toHaveLength(2);
+
+      const bwJob = result.jobs[0];
+      expect(bwJob.orderId).toBe('ord_sample_999');
+      expect(bwJob.targetPrinterId).toBe('prn_hp_bw');
+      expect(bwJob.printerName).toBe('HP LaserJet Pro M126nw');
+      expect(bwJob.colorMode).toBe('bw');
+      expect(bwJob.copies).toBe(2);
+      expect(bwJob.pageRange).toBe('1-3');
+      expect(bwJob.status).toBe('pending');
+
+      const colorJob = result.jobs[1];
+      expect(colorJob.targetPrinterId).toBe('prn_epson_color');
+      expect(colorJob.printerName).toBe('Epson L3150 Series');
+      expect(colorJob.colorMode).toBe('color');
+      expect(colorJob.copies).toBe(1);
+      expect(colorJob.pageRange).toBeUndefined(); // 'all' converted to undefined
+    });
+
+    it('reports failure when an item cannot be routed to any available hardware', () => {
+      const order = {
+        orderId: 'ord_sample_888',
+        studioId: 'std_hyderabad',
+        items: [
+          {
+            assetId: 'ast_banner_pdf',
+            filename: 'banner.pdf',
+            paperSize: 'A3' as const, // Not supported by hpBwPrinter or epsonColorPrinter
+            colorMode: 'color' as const,
+            sides: 'single_sided' as const,
+            copies: 1,
+          },
+        ],
+      };
+
+      const result = createPrintJobsForOrder(order, [hpBwPrinter, epsonColorPrinter]);
+
+      expect(result.success).toBe(false);
+      expect(result.jobs).toHaveLength(0);
+      expect(result.failures).toHaveLength(1);
+      expect(result.failures[0].filename).toBe('banner.pdf');
+      expect(result.failures[0].reason).toBe('NO_PAPER_SIZE_SUPPORT');
     });
   });
 });
