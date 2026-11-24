@@ -34,6 +34,16 @@ describe('Printer Job Routes (apps/api)', () => {
       updatedAt: new Date(),
     });
 
+    const now = new Date();
+    await ctx.db.collection('subscriptions').insertOne({
+      studioId,
+      plan: 'quarterly',
+      status: 'active',
+      startsAt: now,
+      expiresAt: new Date(Date.now() + 86400000 * 90),
+      updatedAt: now,
+    });
+
     ctx.memberships.push({
       userId,
       studioId,
