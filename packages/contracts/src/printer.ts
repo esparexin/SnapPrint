@@ -89,7 +89,13 @@ export const UpdatePrinterRoleRequestSchema = z.object({
 });
 export type UpdatePrinterRoleRequest = z.infer<typeof UpdatePrinterRoleRequestSchema>;
 
-export const PrintJobStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
+export const PrintJobStatusSchema = z.enum([
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+  'stalled',
+]);
 export type PrintJobStatus = z.infer<typeof PrintJobStatusSchema>;
 
 export const PrintJobRecordSchema = z.object({
@@ -107,6 +113,8 @@ export const PrintJobRecordSchema = z.object({
   filename: z.string().trim().min(1).max(256),
   pageRange: z.string().optional(),
   status: PrintJobStatusSchema.default('pending'),
+  claimedByDeviceId: z.string().optional(),
+  leaseExpiresAt: z.string().datetime().optional(),
   errorMessage: z.string().optional(),
   createdAt: z.string().datetime(),
   completedAt: z.string().datetime().optional(),
@@ -123,3 +131,16 @@ export const AgentJobStatusUpdateRequestSchema = z.object({
   errorMessage: z.string().max(500).optional(),
 });
 export type AgentJobStatusUpdateRequest = z.infer<typeof AgentJobStatusUpdateRequestSchema>;
+
+export const StudioDeviceRecordSchema = z.object({
+  deviceId: z.string(),
+  studioId: StudioIdSchema,
+  hostname: z.string(),
+  osPlatform: z.enum(['win32', 'darwin', 'linux']),
+  agentVersion: z.string(),
+  status: z.enum(['active', 'revoked']),
+  lastHeartbeatAt: z.string().datetime(),
+  isOnline: z.boolean(),
+  createdAt: z.string().datetime(),
+});
+export type StudioDeviceRecord = z.infer<typeof StudioDeviceRecordSchema>;

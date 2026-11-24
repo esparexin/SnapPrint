@@ -75,3 +75,39 @@ export const OrderEntitlementResultSchema = z.object({
   evaluatedAt: z.string().datetime(),
 });
 export type OrderEntitlementResult = z.infer<typeof OrderEntitlementResultSchema>;
+
+/**
+ * Default configurable subscription pricing in paise (minor currency).
+ * 1-month free trial = 0 paise.
+ */
+export const DEFAULT_PLAN_PRICES_PAISE: Readonly<Record<SubscriptionPlanId, number>> =
+  Object.freeze({
+    free: 0,
+    quarterly: 99900,
+    half_yearly: 179900,
+    yearly: 299900,
+  });
+
+/**
+ * Subscription order record for gateway renewal tracking.
+ */
+export const SubscriptionOrderRecordSchema = z.object({
+  subscriptionOrderId: z.string().min(1),
+  studioId: StudioIdSchema,
+  plan: SubscriptionPlanIdSchema,
+  durationDays: z.number().int().positive(),
+  amountMinor: z.number().int().nonnegative(),
+  currency: z.literal('INR'),
+  gatewayOrderId: z.string().min(1),
+  gatewayPaymentId: z.string().optional(),
+  status: z.enum(['CREATED', 'PAID', 'FAILED']),
+  capturedAt: z.string().datetime().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type SubscriptionOrderRecord = z.infer<typeof SubscriptionOrderRecordSchema>;
+
+export const CreateSubscriptionOrderRequestSchema = z.object({
+  plan: SubscriptionPlanIdSchema,
+});
+export type CreateSubscriptionOrderRequest = z.infer<typeof CreateSubscriptionOrderRequestSchema>;
