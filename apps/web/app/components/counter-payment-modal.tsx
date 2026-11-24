@@ -57,6 +57,7 @@ export function CounterPaymentModal({
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="counter-payment-title"
       className="dialog-overlay"
       style={{ zIndex: 10000 }}
       onClick={handleBackdropClick}
@@ -68,19 +69,14 @@ export function CounterPaymentModal({
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div style={styles.header}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+          <h3 id="counter-payment-title" style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
             Collect Counter Payment
           </h3>
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '18px',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
+            aria-label="Close"
+            className="dialog-close-btn"
           >
             ✕
           </button>

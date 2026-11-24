@@ -68,7 +68,7 @@ export function PrinterManagementModal({
   });
 
   return (
-    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
+    <div role="dialog" aria-modal="true" aria-labelledby="printer-management-title" className="dialog-overlay" onClick={handleBackdropClick}>
       <div
         className="dialog-content"
         style={{
@@ -90,7 +90,7 @@ export function PrinterManagementModal({
           }}
         >
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
+            <h2 id="printer-management-title" style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
               Hardware &amp; Printers Fleet
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
@@ -117,13 +117,8 @@ export function PrinterManagementModal({
             <button
               type="button"
               onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '1.25rem',
-                cursor: 'pointer',
-                color: '#64748b',
-              }}
+              aria-label="Close"
+              className="dialog-close-btn"
             >
               ✕
             </button>

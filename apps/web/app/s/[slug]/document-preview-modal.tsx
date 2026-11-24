@@ -37,6 +37,7 @@ export function DocumentPreviewModal({
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="document-preview-title"
       className="dialog-overlay"
       style={{ zIndex: 9999 }}
       onClick={handleBackdropClick}
@@ -62,7 +63,7 @@ export function DocumentPreviewModal({
           }}
         >
           <div>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+            <h3 id="document-preview-title" style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
               Document Preview: {filename}
             </h3>
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
@@ -72,13 +73,8 @@ export function DocumentPreviewModal({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '18px',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
+            aria-label="Close"
+            className="dialog-close-btn"
           >
             ✕
           </button>

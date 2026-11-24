@@ -41,16 +41,13 @@ function SetupWizardModal({
   onComplete: (saved: StudioOnboardingProfile | null) => void;
   onClose: () => void;
 }) {
-  const { handleBackdropClick } = useDialog({
-    isOpen: true,
-    onClose,
-    enableSwipeDown: false,
-  });
+  const { handleBackdropClick } = useDialog({ isOpen: true, onClose, enableSwipeDown: false });
 
   return (
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="wizard-title"
       className="dialog-overlay"
       style={{ zIndex: 50 }}
       onClick={handleBackdropClick}

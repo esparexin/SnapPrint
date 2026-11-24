@@ -62,6 +62,7 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="admin-status-title"
       className="dialog-overlay"
       style={{ zIndex: 50 }}
       onClick={handleBackdropClick}
@@ -73,7 +74,7 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div style={adminLayoutStyles.modalHeader}>
-          <h3 style={adminLayoutStyles.modalTitle}>Manage Studio Status</h3>
+          <h3 id="admin-status-title" style={adminLayoutStyles.modalTitle}>Manage Studio Status</h3>
           <button
             type="button"
             onClick={onClose}

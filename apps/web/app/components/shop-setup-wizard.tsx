@@ -43,9 +43,6 @@ export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSet
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wizard-title"
       style={{
         background: '#ffffff',
         borderRadius: '0.75rem',
@@ -84,13 +81,7 @@ export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSet
             type="button"
             onClick={onCancel}
             aria-label="Close setup wizard"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#9ca3af',
-            }}
+            className="dialog-close-btn"
           >
             ✕
           </button>

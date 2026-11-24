@@ -96,7 +96,7 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
   });
 
   return (
-    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
+    <div role="dialog" aria-modal="true" aria-labelledby="studio-qr-title" className="dialog-overlay" onClick={handleBackdropClick}>
       <div
         className="dialog-content"
         style={{
@@ -114,18 +114,14 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
             marginBottom: '16px',
           }}
         >
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
+          <h2 id="studio-qr-title" style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
             Permanent Counter QR Code
           </h2>
           <button
+            type="button"
             onClick={onClose}
-            style={{
-              border: 'none',
-              background: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
+            aria-label="Close"
+            className="dialog-close-btn"
           >
             ✕
           </button>

@@ -122,6 +122,26 @@ button {
   display: none;
 }
 
+.dialog-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  padding: 0;
+}
+
+.dialog-close-btn:hover {
+  color: #0f172a;
+}
+
 @media (max-width: 640px) {
   .dialog-overlay {
     align-items: flex-end;

@@ -16,7 +16,13 @@ export function InfoModal({ title, onClose, children, maxWidth = '540px' }: Info
   });
 
   return (
-    <div role="dialog" aria-modal="true" className="dialog-overlay" onClick={handleBackdropClick}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'info-modal-title' : undefined}
+      className="dialog-overlay"
+      onClick={handleBackdropClick}
+    >
       <div
         className="dialog-content"
         style={{ maxWidth, padding: '2rem' }}
@@ -27,22 +33,15 @@ export function InfoModal({ title, onClose, children, maxWidth = '540px' }: Info
           type="button"
           onClick={onClose}
           aria-label="Close dialog"
-          style={{
-            position: 'absolute',
-            top: '1rem',
-            right: '1rem',
-            background: 'none',
-            border: 'none',
-            fontSize: '1.5rem',
-            lineHeight: 1,
-            cursor: 'pointer',
-            color: '#64748b',
-          }}
+          className="dialog-close-btn"
+          style={{ position: 'absolute', top: '1rem', right: '1rem' }}
         >
           ×
         </button>
         {title && (
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem' }}>{title}</h2>
+          <h2 id="info-modal-title" style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem' }}>
+            {title}
+          </h2>
         )}
         <div style={{ fontSize: '0.92rem', lineHeight: 1.6, color: '#334155' }}>{children}</div>
       </div>

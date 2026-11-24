@@ -79,13 +79,7 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
             type="button"
             onClick={onClose}
             aria-label="Close"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
+            className="dialog-close-btn"
           >
             ✕
           </button>
