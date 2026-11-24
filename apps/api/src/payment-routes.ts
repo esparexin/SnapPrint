@@ -23,6 +23,7 @@ import {
   listPaymentsByOrder,
   updatePaymentStatus,
 } from './repositories/payment.repository.js';
+import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 import { findStudioBySlug } from './repositories/studio.repository.js';
 
 export interface PaymentRouteOptions {
@@ -195,6 +196,10 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
         summary.paidAmountMinor,
         summary.paymentStatus
       );
+
+      if (summary.paymentStatus === 'PAID') {
+        await autoDispatchOrderPrintJobs(db, studio.id, payment.orderId);
+      }
 
       return reply.status(200).send(PaymentRecordSchema.parse(updatedPayment));
     }

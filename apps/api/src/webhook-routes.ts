@@ -10,6 +10,7 @@ import {
   listPaymentsByOrder,
   updatePaymentStatus,
 } from './repositories/payment.repository.js';
+import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 import { recordWebhookEvent, updateWebhookEventStatus } from './repositories/webhook.repository.js';
 
 export interface WebhookRouteOptions {
@@ -85,6 +86,10 @@ export const webhookRoutes: FastifyPluginAsync<WebhookRouteOptions> = async (app
                 summary.paidAmountMinor,
                 summary.paymentStatus
               );
+
+              if (summary.paymentStatus === 'PAID') {
+                await autoDispatchOrderPrintJobs(db, payment.studioId, payment.orderId);
+              }
             }
           } else if (eventType === 'payment.failed') {
             await updatePaymentStatus(db, payment.studioId, payment.paymentId, 'FAILED');

@@ -13,6 +13,7 @@ import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
 import { findOrderById, updateOrderPaymentSummary } from './repositories/order.repository.js';
 import { createPaymentRecord, listPaymentsByOrder } from './repositories/payment.repository.js';
+import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 
 export interface OperatorPaymentRouteOptions {
   db?: Db;
@@ -92,6 +93,10 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
         summary.paidAmountMinor,
         summary.paymentStatus
       );
+
+      if (summary.paymentStatus === 'PAID') {
+        await autoDispatchOrderPrintJobs(db, studioId, order.orderId);
+      }
 
       return reply.status(200).send({
         payment: PaymentRecordSchema.parse(createdPayment),
