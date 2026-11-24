@@ -3,6 +3,7 @@
 import React, { CSSProperties, useState } from 'react';
 import { OrderRecord } from '@snapprint/contracts';
 import { recordOperatorCounterPayment } from '../../src/payment-client';
+import { useDialog } from '../hooks/use-dialog';
 
 interface CounterPaymentModalProps {
   studioId: string;
@@ -137,9 +138,26 @@ export function CounterPaymentModal({
     color: active ? '#15803d' : '#334155',
   });
 
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: true,
+  });
+
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="dialog-overlay"
+      style={{ zIndex: 10000 }}
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="dialog-content"
+        style={{ maxWidth: '440px', padding: '24px' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div style={styles.header}>
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
             Collect Counter Payment

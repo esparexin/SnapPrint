@@ -3,6 +3,7 @@
 import React from 'react';
 import { Studio } from '@snapprint/contracts';
 import { StudioOnboardingProfile } from '../../src/studio-client';
+import { useDialog } from '../hooks/use-dialog';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PrinterManagementModal } from './printer-management-modal';
 import { ShopProfileModal } from './shop-profile-modal';
@@ -29,6 +30,49 @@ export interface PortalModalsProps {
   onCloseProfile: () => void;
   onClosePayment?: () => void;
   onSetupComplete: (saved: StudioOnboardingProfile | null) => void;
+}
+
+function SetupWizardModal({
+  studioId,
+  onComplete,
+  onClose,
+}: {
+  studioId?: string;
+  onComplete: (saved: StudioOnboardingProfile | null) => void;
+  onClose: () => void;
+}) {
+  const { handleBackdropClick } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: false,
+  });
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="dialog-overlay"
+      style={{ zIndex: 50 }}
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="dialog-content"
+        style={{
+          maxWidth: '620px',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ShopSetupWizard
+          initialStudio={studioId ? { id: studioId } : undefined}
+          onComplete={onComplete}
+          onCancel={onClose}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function PortalModals({
@@ -125,37 +169,11 @@ export function PortalModals({
       )}
 
       {showSetupModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            zIndex: 50,
-            overflowY: 'auto',
-            overscrollBehavior: 'contain',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: '620px',
-              width: '100%',
-              margin: 'auto',
-              maxHeight: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <ShopSetupWizard
-              initialStudio={studioId ? { id: studioId } : undefined}
-              onComplete={onSetupComplete}
-              onCancel={onCloseSetup}
-            />
-          </div>
-        </div>
+        <SetupWizardModal
+          studioId={studioId}
+          onComplete={onSetupComplete}
+          onClose={onCloseSetup}
+        />
       )}
     </>
   );

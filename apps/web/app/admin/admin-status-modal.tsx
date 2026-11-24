@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PlatformStudioItem, StudioStatus } from '@snapprint/contracts';
 import { updatePlatformStudioStatus } from '../../src/platform-admin-client';
+import { useDialog } from '../hooks/use-dialog';
 
 export interface AdminStatusModalProps {
   studio: PlatformStudioItem;
@@ -16,6 +17,12 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen,
+    onClose,
+    enableSwipeDown: true,
+  });
 
   if (!isOpen) return null;
 
@@ -52,8 +59,19 @@ export function AdminStatusModal({ studio, isOpen, onClose, onUpdated }: AdminSt
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="dialog-overlay"
+      style={{ zIndex: 50 }}
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="dialog-content"
+        style={{ maxWidth: '28rem', padding: '1.5rem' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Manage Studio Status</h3>
           <button

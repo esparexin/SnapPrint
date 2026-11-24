@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { AgentPairingKeyResponse, generateAgentPairingKey } from '../../src/printer-client';
+import { useDialog } from '../hooks/use-dialog';
 
 interface AgentPairingModalProps {
   studioId: string;
@@ -43,32 +44,30 @@ export function AgentPairingModal({ studioId, studioName, onClose }: AgentPairin
     }
   };
 
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: true,
+    onClose,
+    enableSwipeDown: true,
+  });
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="agent-pairing-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-        zIndex: 60,
-      }}
+      className="dialog-overlay"
+      style={{ zIndex: 60 }}
+      onClick={handleBackdropClick}
     >
       <div
+        className="dialog-content"
         style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          width: '100%',
           maxWidth: '480px',
           padding: '24px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
+        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2
             id="agent-pairing-title"
