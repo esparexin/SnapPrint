@@ -15,7 +15,7 @@ services:
       - key: PORT
         value: 10000
       - key: CORS_ALLOWED_ORIGINS
-        value: https://snap.palnadu.dev
+        value: https://snap.palnadu.dev,https://snapprint.onrender.com
       - key: TRUST_PROXY
         value: true
       - key: COOKIE_SECURE

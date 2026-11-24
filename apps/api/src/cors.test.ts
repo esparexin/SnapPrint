@@ -5,6 +5,7 @@ import cors from '@fastify/cors';
 import {
   buildCorsOptions,
   CANONICAL_PRODUCTION_ORIGIN,
+  RENDER_PRODUCTION_ORIGIN,
   isOriginAllowed,
   normalizeOrigin,
   parseAllowedOrigins,
@@ -40,10 +41,12 @@ describe('CORS Architecture & Origin Normalization', () => {
   it('parseAllowedOrigins guarantees canonical production origin and checks whitelist', () => {
     const origins = parseAllowedOrigins('http://localhost:3000');
     expect(origins).toContain(CANONICAL_PRODUCTION_ORIGIN);
+    expect(origins).toContain(RENDER_PRODUCTION_ORIGIN);
     expect(origins).toContain('http://localhost:3000');
     expect(isOriginAllowed(undefined)).toBe(true);
     expect(isOriginAllowed('null')).toBe(false);
     expect(isOriginAllowed('https://snap.palnadu.dev')).toBe(true);
+    expect(isOriginAllowed('https://snapprint.onrender.com')).toBe(true);
     expect(isOriginAllowed('https://evil-phishing.com')).toBe(false);
   });
 });
@@ -155,7 +158,7 @@ describe('Operator Cookie Security Attributes', () => {
 
     await issueOperatorSessionCookie(mock.db, fakeReply, 'user_123', true);
     expect(header).toContain('secure=true');
-    expect(header).toContain('samesite=strict');
+    expect(header).toContain('samesite=none');
     expect(getOperatorCookieName(true)).toBe('__Host-snapprint_op');
   });
 
@@ -170,7 +173,7 @@ describe('Operator Cookie Security Attributes', () => {
 
     await issueOperatorSessionCookie(mock.db, fakeReply, 'user_123', false);
     expect(header).toContain('secure=false');
-    expect(header).toContain('samesite=strict');
+    expect(header).toContain('samesite=lax');
     expect(getOperatorCookieName(false)).toBe('snapprint_op');
   });
 
@@ -183,11 +186,11 @@ describe('Operator Cookie Security Attributes', () => {
     } as unknown as Parameters<typeof clearOperatorSessionCookie>[0];
 
     clearOperatorSessionCookie(fakeReply, true);
-    expect(clearOpts.sameSite).toBe('strict');
+    expect(clearOpts.sameSite).toBe('none');
     expect(clearOpts.secure).toBe(true);
 
     clearOperatorSessionCookie(fakeReply, false);
-    expect(clearOpts.sameSite).toBe('strict');
+    expect(clearOpts.sameSite).toBe('lax');
     expect(clearOpts.secure).toBe(false);
   });
 });

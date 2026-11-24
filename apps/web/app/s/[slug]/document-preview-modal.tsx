@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { DocumentPrintConfig } from '@snapprint/contracts';
+import { getPhotoPreviewUrl } from '../../../src/upload-client';
 import { useDialog } from '../../hooks/use-dialog';
 
 interface DocumentPreviewModalProps {
@@ -17,12 +18,13 @@ interface DocumentPreviewModalProps {
 export function DocumentPreviewModal({
   slug,
   sessionId,
+  token,
   filename,
   pageCount,
   config,
   onClose,
 }: DocumentPreviewModalProps) {
-  const previewUrl = `/public/studios/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(sessionId)}/assets/${encodeURIComponent(config.assetId)}/preview`;
+  const previewUrl = getPhotoPreviewUrl(slug, sessionId, config.assetId, token);
   const isPdf = filename.toLowerCase().endsWith('.pdf');
   const [loadingPreview, setLoadingPreview] = useState(true);
   const { handleBackdropClick, swipeHandlers } = useDialog({
@@ -64,9 +66,7 @@ export function DocumentPreviewModal({
               Document Preview: {filename}
             </h3>
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-              {config.paperSize.toUpperCase()} · {config.colorMode === 'color' ? 'Color' : 'B&W'} ·{' '}
-              {config.sides === 'double_sided' ? 'Duplex' : 'Single-Sided'} · {pageCount} Total
-              Pages
+              {`${config.paperSize.toUpperCase()} · ${config.colorMode === 'color' ? 'Color' : 'B&W'} · ${config.sides === 'double_sided' ? 'Duplex' : 'Single-Sided'} · ${pageCount} Pages`}
             </div>
           </div>
           <button
@@ -141,7 +141,6 @@ export function DocumentPreviewModal({
             />
           )}
         </div>
-
         <div
           style={{
             padding: '12px 20px',

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { AuthResponse } from '@snapprint/contracts';
 import { fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { adminLayoutStyles } from './admin-layout-styles';
+import { AdminLoginCard } from './admin-login-card';
 import { AdminPortalView } from './admin-portal-view';
 
 export default function PlatformAdminPage() {
@@ -43,18 +43,7 @@ export default function PlatformAdminPage() {
   if (!auth) {
     return (
       <div style={adminLayoutStyles.centeredScreen}>
-        <div style={adminLayoutStyles.authCard}>
-          <div style={adminLayoutStyles.authIcon}>SP</div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
-            Platform Administration
-          </h2>
-          <p style={{ fontSize: '0.875rem', color: '#475569', marginBottom: '1.5rem' }}>
-            Authentication is required to access the SnapPrint administrative governance portal.
-          </p>
-          <Link href="/" style={adminLayoutStyles.btnBlock}>
-            Sign In with Admin Account
-          </Link>
-        </div>
+        <AdminLoginCard onSuccess={setAuth} />
       </div>
     );
   }
@@ -76,18 +65,9 @@ export default function PlatformAdminPage() {
             <code style={adminLayoutStyles.codePill}>platform_admin</code> role required to access
             this workspace.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <Link href="/" style={adminLayoutStyles.btnBlock}>
-              Return to Shop Workspace
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={adminLayoutStyles.btnBlockSecondary}
-            >
-              Sign Out
-            </button>
-          </div>
+          <button type="button" onClick={handleLogout} style={adminLayoutStyles.btnBlockSecondary}>
+            Sign Out & Switch Account
+          </button>
         </div>
       </div>
     );

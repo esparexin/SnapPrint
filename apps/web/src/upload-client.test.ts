@@ -19,6 +19,13 @@ describe('Upload Client Layer', () => {
     );
   });
 
+  it('appends token query parameter when provided', () => {
+    const url = getPhotoPreviewUrl('koramangala-studio', 'sess_123', 'asset_abc', 'my-token-123');
+    expect(url).toContain(
+      '/public/studios/koramangala-studio/sessions/sess_123/assets/asset_abc/preview?token=my-token-123'
+    );
+  });
+
   it('requests upload intent successfully', async () => {
     const mockIntent = {
       assetId: 'asset_1234567890123456',

@@ -9,9 +9,15 @@ import {
 import { getApiBaseUrl } from './auth-client.js';
 import { CustomerApiError } from './customer-client.js';
 
-export function getPhotoPreviewUrl(slug: string, sessionId: string, assetId: string): string {
+export function getPhotoPreviewUrl(
+  slug: string,
+  sessionId: string,
+  assetId: string,
+  token?: string
+): string {
   const base = getApiBaseUrl();
-  return `${base}/public/studios/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(sessionId)}/assets/${encodeURIComponent(assetId)}/preview`;
+  const path = `${base}/public/studios/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(sessionId)}/assets/${encodeURIComponent(assetId)}/preview`;
+  return token ? `${path}?token=${encodeURIComponent(token)}` : path;
 }
 
 export async function requestUploadIntent(

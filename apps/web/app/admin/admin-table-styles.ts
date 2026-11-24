@@ -195,6 +195,15 @@ export const adminTableStyles: Record<string, CSSProperties> = {
     outline: 'none',
     resize: 'vertical',
   },
+  infoBanner: {
+    padding: '0.75rem',
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderRadius: '0.5rem',
+    color: '#1e40af',
+    fontSize: '0.8125rem',
+    marginBottom: '1rem',
+  },
 };
 
 export const statusBadges: Record<string, { bg: string; color: string; border: string }> = {
@@ -204,3 +213,15 @@ export const statusBadges: Record<string, { bg: string; color: string; border: s
   suspended: { bg: '#fef2f2', color: '#991b1b', border: '#fecaca' },
   closed: { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' },
 };
+
+export function getAuthErrorMessage(err: unknown, fallback: string): string {
+  if (
+    typeof err === 'object' &&
+    err !== null &&
+    'statusCode' in err &&
+    (err as { statusCode: number }).statusCode === 429
+  ) {
+    return 'Too many attempts. Security throttling active — please wait.';
+  }
+  return err instanceof Error ? err.message : fallback;
+}

@@ -82,7 +82,7 @@ export function clearOperatorSessionCookie(reply: FastifyReply, cookieSecure: bo
     path: '/',
     httpOnly: true,
     secure: cookieSecure,
-    sameSite: 'strict',
+    sameSite: cookieSecure ? 'none' : 'lax',
   });
 }
 
@@ -114,7 +114,7 @@ export async function issueOperatorSessionCookie(
     path: '/',
     httpOnly: true,
     secure: cookieSecure,
-    sameSite: 'strict',
+    sameSite: cookieSecure ? 'none' : 'lax',
     expires: expiresAt,
   });
 

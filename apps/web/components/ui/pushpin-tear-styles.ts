@@ -2,14 +2,14 @@ import React from 'react';
 import { mixHex } from './pushpin-tear-color';
 
 export const TEAR_CSS =
-  '.tpf{position:relative;overflow:hidden;container-type:size;min-height:560px;background:var(--tpf-sheet);color:var(--tpf-on-sheet);font-family:var(--tpf-sans);isolation:isolate;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;--ease:cubic-bezier(.22,1,.36,1);--fs:clamp(12px,1.5cqmin,14px)}' +
+  '.tpf{position:relative;overflow:hidden;container-type:size;min-height:100%;background:var(--tpf-sheet);color:var(--tpf-on-sheet);font-family:var(--tpf-sans);isolation:isolate;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;--ease:cubic-bezier(.22,1,.36,1);--fs:clamp(12px,1.5cqmin,14px)}' +
   '.tpf *,.tpf *::before,.tpf *::after{box-sizing:border-box}' +
   ':where(.tpf) a{color:inherit;text-decoration:none}' +
   ':where(.tpf) button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer}' +
   ':where(.tpf) input{font:inherit;color:inherit;background:none;border:0;margin:0;outline:none}' +
   ':where(.tpf) :focus-visible{outline:1.5px solid currentColor;outline-offset:4px;border-radius:4px}' +
   '.tpf .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}' +
-  '.tpf-stage{position:absolute;left:0;top:0;max-width:none;display:block;pointer-events:none;z-index:0}' +
+  '.tpf-stage{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;display:block;pointer-events:none;z-index:0}' +
   '.tpf.is-hit .tpf-sheet-g{animation:tpf-hit .32s cubic-bezier(.3,.7,.4,1)}' +
   '.tpf-sheet{fill:var(--tpf-sheet)}.tpf-paper{fill:var(--tpf-paper)}.tpf-rim{fill:var(--tpf-rim)}' +
   '.tpf-ico{width:1.35em;height:1.35em;display:block;max-width:none;flex:none}' +
@@ -98,7 +98,7 @@ export const TEAR_CSS =
   '.tpf-foot-links a{color:inherit;opacity:.85;transition:opacity .2s}' +
   '.tpf-foot-links a:hover{opacity:1;text-decoration:underline;text-underline-offset:3px}' +
   '@container (max-width: 620px){' +
-  '.tpf-top{padding:0 5%}.tpf-flank{display:none}' +
+  '.tpf-top{padding:0 5%;top:calc(env(safe-area-inset-top, 0px) + 10px);transform:none}.tpf-flank{display:none}' +
   '.tpf-brand-title{font-size:16px}' +
   '.tpf-nav{gap:6px}' +
   '.tpf-nav-link{padding:.3em .4em;font-size:12.5px}' +
@@ -107,7 +107,7 @@ export const TEAR_CSS =
   '.tpf-desc{top:30%;font-size:12.5px;max-width:88cqw;line-height:1.45}' +
   '.tpf-col{top:29%}.tpf-col.l{left:6%}.tpf-col.r{right:6%}.tpf-col li:nth-child(n+3){display:none}' +
   '.tpf-side{top:85%}.tpf-side.l{left:14%!important}.tpf-side.r{left:86%!important}' +
-  '.tpf-foot{padding:0 5%;bottom:3%;font-size:11px}' +
+  '.tpf-foot{padding:0 5%;bottom:max(calc(env(safe-area-inset-bottom, 0px) + 8px), 3%);font-size:11px}' +
   '.tpf-foot-links{gap:1em}' +
   '}' +
   '@keyframes tpf-hit{0%{transform:translateY(0)}30%{transform:translateY(2px)}60%{transform:translateY(-.5px)}100%{transform:translateY(0)}}' +
@@ -125,7 +125,7 @@ export function computePushpinVars(
   paper = '#ffffff',
   sheetInk = '#ffffff',
   paperInk?: string,
-  height: number | string = '100svh',
+  height: number | string = '100%',
   fontSans = 'var(--font-family)'
 ) {
   const pinBase = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(sheet) ? sheet : '#0284c7';

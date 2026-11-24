@@ -41,7 +41,6 @@ export const assetRoutes: FastifyPluginAsync<AssetRouteOptions> = async (app, op
     async (request, reply) => {
       const session = authenticateCustomerSession(request, reply, config.sessionSecret);
       if (!session) return;
-
       const db = getEffectiveDb();
       const studio = await verifyStudioSessionOwnership(
         db,
@@ -151,7 +150,6 @@ export const assetRoutes: FastifyPluginAsync<AssetRouteOptions> = async (app, op
     async (request, reply) => {
       const session = authenticateCustomerSession(request, reply, config.sessionSecret);
       if (!session) return;
-
       const db = getEffectiveDb();
       const assets = await listPhotoAssetsBySession(db, session.studioId, session.sessionId);
       return reply
@@ -161,12 +159,14 @@ export const assetRoutes: FastifyPluginAsync<AssetRouteOptions> = async (app, op
   );
 
   // 4. Controlled Private File / Document Preview
-  app.get<{ Params: { slug: string; sessionId: string; assetId: string } }>(
+  app.get<{
+    Params: { slug: string; sessionId: string; assetId: string };
+    Querystring: { token?: string };
+  }>(
     '/public/studios/:slug/sessions/:sessionId/assets/:assetId/preview',
     async (request, reply) => {
       const session = authenticateCustomerSession(request, reply, config.sessionSecret);
       if (!session) return;
-
       const db = getEffectiveDb();
       const asset = await findPhotoAssetById(
         db,
@@ -204,7 +204,6 @@ export const assetRoutes: FastifyPluginAsync<AssetRouteOptions> = async (app, op
     async (request, reply) => {
       const session = authenticateCustomerSession(request, reply, config.sessionSecret);
       if (!session) return;
-
       const db = getEffectiveDb();
       const asset = await findPhotoAssetById(
         db,
