@@ -14,50 +14,45 @@ import {
   listPlatformAuditLogs,
   listPlatformStudios,
   listPlatformUsers,
+  updatePlatformUserStatus,
 } from '../../src/platform-admin-client';
 import { AdminAuditTable } from './admin-audit-table';
+import { AdminCreateUserModal } from './admin-create-user-modal';
 import { AdminKpiGrid } from './admin-kpi-grid';
 import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminPortalHeader, AdminTabType } from './admin-portal-header';
 import { AdminShopTable } from './admin-shop-table';
 import { AdminStatusModal } from './admin-status-modal';
+import { AdminTenantDetailsModal } from './admin-tenant-details-modal';
 import { AdminUserTable } from './admin-user-table';
 
-export interface AdminPortalViewProps {
-  auth: AuthResponse;
-  onLogout: () => void;
-}
-
-interface PortalData {
-  metrics: PlatformMetricsResponse | null;
-  studios: PlatformStudioItem[];
-  auditLogs: PlatformAuditEntry[];
-  users: PlatformUserItem[];
-}
-
-export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
+export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<AdminTabType>('overview');
-  const [data, setData] = useState<PortalData>({
-    metrics: null,
-    studios: [],
-    auditLogs: [],
-    users: [],
-  });
+  const [metrics, setMetrics] = useState<PlatformMetricsResponse | null>(null);
+  const [studios, setStudios] = useState<PlatformStudioItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<PlatformAuditEntry[]>([]);
+  const [users, setUsers] = useState<PlatformUserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedStudio, setSelectedStudio] = useState<PlatformStudioItem | null>(null);
+  const [inspectStudio, setInspectStudio] = useState<PlatformStudioItem | null>(null);
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
 
   const loadData = useCallback(async (stFilter?: StudioStatus, scFilter?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const [metrics, s, a, u] = await Promise.all([
+      const [m, s, a, u] = await Promise.all([
         getPlatformMetrics(),
         listPlatformStudios({ status: stFilter, search: scFilter }),
         listPlatformAuditLogs(50),
         listPlatformUsers(50),
       ]);
-      setData({ metrics, studios: s.studios, auditLogs: a.auditLogs, users: u.users });
+      setMetrics(m);
+      setStudios(s.studios);
+      setAuditLogs(a.auditLogs);
+      setUsers(u.users);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch platform administration data');
     } finally {
@@ -69,9 +64,17 @@ export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
     loadData();
   }, [loadData]);
 
-  const handleUpdated = (up: PlatformStudioItem) => {
-    setData((d) => ({ ...d, studios: d.studios.map((s) => (s.id === up.id ? up : s)) }));
-    loadData();
+  const handleToggleStatus = async (userId: string, targetStatus: 'active' | 'suspended') => {
+    setTogglingUserId(userId);
+    setError(null);
+    try {
+      await updatePlatformUserStatus(userId, targetStatus);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user status');
+    } finally {
+      setTogglingUserId(null);
+    }
   };
 
   return (
@@ -83,34 +86,53 @@ export function AdminPortalView({ auth, onLogout }: AdminPortalViewProps) {
         onRefresh={() => loadData()}
         onLogout={onLogout}
       />
-
       <main style={adminLayoutStyles.main}>
         {error && <div style={adminLayoutStyles.errorBanner}>{error}</div>}
-
         {(activeTab === 'overview' || activeTab === 'studios') && (
           <>
-            <AdminKpiGrid metrics={data.metrics} loading={loading} />
+            <AdminKpiGrid metrics={metrics} loading={loading} />
             <AdminShopTable
-              studios={data.studios}
+              studios={studios}
               loading={loading}
-              onManageStatus={(st) => setSelectedStudio(st)}
+              onInspect={setInspectStudio}
+              onManageStatus={setSelectedStudio}
               onFilterChange={(st, sc) => loadData(st, sc)}
             />
           </>
         )}
-
-        {activeTab === 'users' && <AdminUserTable users={data.users} loading={loading} />}
-
-        {(activeTab === 'overview' || activeTab === 'audit') && (
-          <AdminAuditTable logs={data.auditLogs} loading={loading} />
+        {activeTab === 'users' && (
+          <AdminUserTable
+            users={users}
+            loading={loading}
+            currentUserId={auth.user.id}
+            togglingUserId={togglingUserId}
+            onOpenCreateAdmin={() => setShowCreateAdmin(true)}
+            onToggleStatus={handleToggleStatus}
+          />
         )}
-
+        {(activeTab === 'overview' || activeTab === 'audit') && (
+          <AdminAuditTable logs={auditLogs} loading={loading} />
+        )}
         {selectedStudio && (
           <AdminStatusModal
             studio={selectedStudio}
             isOpen={Boolean(selectedStudio)}
             onClose={() => setSelectedStudio(null)}
-            onUpdated={handleUpdated}
+            onUpdated={() => loadData()}
+          />
+        )}
+        {inspectStudio && (
+          <AdminTenantDetailsModal
+            studio={inspectStudio}
+            isOpen={Boolean(inspectStudio)}
+            onClose={() => setInspectStudio(null)}
+          />
+        )}
+        {showCreateAdmin && (
+          <AdminCreateUserModal
+            isOpen={showCreateAdmin}
+            onClose={() => setShowCreateAdmin(false)}
+            onCreated={() => loadData()}
           />
         )}
       </main>

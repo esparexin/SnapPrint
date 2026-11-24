@@ -35,7 +35,14 @@ export function OperatorPortal({
   useEffect(() => {
     let mounted = true;
     fetchCurrentUser()
-      .then((user) => mounted && setAuth(user))
+      .then((user) => {
+        if (!mounted) return;
+        setAuth(user);
+        const isSuper = user?.memberships.some(
+          (m) => m.role === 'platform_admin' && m.status === 'active'
+        );
+        if (isSuper && typeof window !== 'undefined') window.location.href = '/admin';
+      })
       .catch((err) => {
         if (mounted)
           setErrorBanner(
