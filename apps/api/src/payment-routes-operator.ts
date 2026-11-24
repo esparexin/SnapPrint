@@ -14,6 +14,7 @@ import { requireStudioPermission } from './plugins/authorization.js';
 import { findOrderById, updateOrderPaymentSummary } from './repositories/order.repository.js';
 import { createPaymentRecord, listPaymentsByOrder } from './repositories/payment.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
+import { getStudioSubscription } from './repositories/subscription.repository.js';
 
 export interface OperatorPaymentRouteOptions {
   db?: Db;
@@ -32,6 +33,15 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
     async (request, reply) => {
       const db = getEffectiveDb();
       const studioId = request.studioId!;
+
+      const sub = await getStudioSubscription(db, studioId);
+      if (!sub || sub.status !== 'active') {
+        return reply.status(403).send({
+          statusCode: 403,
+          code: 'SUBSCRIPTION_EXPIRED',
+          message: 'Active subscription required to record counter payments.',
+        });
+      }
       const bodyResult = CounterPaymentRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
         return reply.status(400).send({
