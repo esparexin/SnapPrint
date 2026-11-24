@@ -13,6 +13,43 @@ interface DocumentRateSelectorProps {
   onSelect: (colorMode: ColorMode, sides: PrintSides) => void;
 }
 
+const baseBoxStyle: React.CSSProperties = {
+  padding: '8px 10px',
+  borderRadius: '8px',
+  textAlign: 'left',
+  minHeight: '44px',
+  width: '100%',
+};
+
+function getBoxStyle(isSelected: boolean, isDisabled = false, isColorGroup = false): React.CSSProperties {
+  if (isDisabled) {
+    return {
+      ...baseBoxStyle,
+      border: '1px dashed #cbd5e1',
+      backgroundColor: '#f8fafc',
+      opacity: 0.55,
+      cursor: 'not-allowed',
+    };
+  }
+  if (isSelected) {
+    return {
+      ...baseBoxStyle,
+      border: isColorGroup ? '2px solid #c026d3' : '2px solid #0284c7',
+      backgroundColor: isColorGroup ? '#fdf4ff' : '#f0f9ff',
+      cursor: 'pointer',
+      boxShadow: isColorGroup
+        ? '0 1px 3px rgba(192, 38, 211, 0.2)'
+        : '0 1px 3px rgba(2, 132, 199, 0.2)',
+    };
+  }
+  return {
+    ...baseBoxStyle,
+    border: '1px solid #cbd5e1',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+  };
+}
+
 export function DocumentRateSelector({
   colorMode,
   sides,
@@ -29,47 +66,6 @@ export function DocumentRateSelector({
   const isBwDouble = colorMode === 'black_and_white' && sides === 'double_sided' && !isSinglePage;
   const isColorSingle = colorMode === 'color' && (sides === 'single_sided' || isSinglePage);
   const isColorDouble = colorMode === 'color' && sides === 'double_sided' && !isSinglePage;
-
-  const getBoxStyle = (isSelected: boolean, isDisabled = false, isColorGroup = false): React.CSSProperties => {
-    if (isDisabled) {
-      return {
-        padding: '8px 10px',
-        borderRadius: '8px',
-        border: '1px dashed #cbd5e1',
-        backgroundColor: '#f8fafc',
-        opacity: 0.55,
-        cursor: 'not-allowed',
-        textAlign: 'left',
-        minHeight: '44px',
-        width: '100%',
-      };
-    }
-    if (isSelected) {
-      return {
-        padding: '8px 10px',
-        borderRadius: '8px',
-        border: isColorGroup ? '2px solid #c026d3' : '2px solid #0284c7',
-        backgroundColor: isColorGroup ? '#fdf4ff' : '#f0f9ff',
-        cursor: 'pointer',
-        textAlign: 'left',
-        minHeight: '44px',
-        width: '100%',
-        boxShadow: isColorGroup
-          ? '0 1px 3px rgba(192, 38, 211, 0.2)'
-          : '0 1px 3px rgba(2, 132, 199, 0.2)',
-      };
-    }
-    return {
-      padding: '8px 10px',
-      borderRadius: '8px',
-      border: '1px solid #cbd5e1',
-      backgroundColor: '#ffffff',
-      cursor: 'pointer',
-      textAlign: 'left',
-      minHeight: '44px',
-      width: '100%',
-    };
-  };
 
   return (
     <div style={{ marginBottom: '12px' }}>

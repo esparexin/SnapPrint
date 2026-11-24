@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ColorMode,
   DocumentPrintConfig,
   PaperSize,
+  PaperSizes,
   PrintOrientation,
   PrintSides,
   StudioPrintRatesContract,
@@ -17,6 +18,14 @@ interface DocumentOptionsGridProps {
   printRates?: StudioPrintRatesContract;
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
+
+const PAPER_SIZE_LABELS: Record<PaperSize, string> = {
+  A4: 'A4 (Standard)',
+  A3: 'A3 (Large)',
+  A5: 'A5 (Compact)',
+  legal: 'Legal',
+  letter: 'Letter',
+};
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -43,11 +52,31 @@ export function DocumentOptionsGrid({
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
 
+  // Filter available paper sizes strictly to those configured in studio.printRates
+  const availableSizes = useMemo(() => {
+    const configured = Object.keys(printRates || {}).filter((k) =>
+      PaperSizes.includes(k as PaperSize)
+    ) as PaperSize[];
+    return configured.length > 0 ? configured : (['A4'] as PaperSize[]);
+  }, [printRates]);
+
+  const effectivePaperSize = availableSizes.includes(config.paperSize)
+    ? config.paperSize
+    : availableSizes[0];
+
   function handleRateSelect(colorMode: ColorMode, sides: PrintSides) {
     onUpdate({
       ...config,
+      paperSize: effectivePaperSize,
       colorMode,
       sides: isSinglePage ? 'single_sided' : sides,
+    });
+  }
+
+  function handlePaperSizeChange(newSize: PaperSize) {
+    onUpdate({
+      ...config,
+      paperSize: newSize,
     });
   }
 
@@ -56,7 +85,7 @@ export function DocumentOptionsGrid({
       <DocumentRateSelector
         colorMode={config.colorMode}
         sides={config.sides}
-        paperSize={config.paperSize}
+        paperSize={effectivePaperSize}
         printRates={printRates}
         isSinglePage={isSinglePage}
         onSelect={handleRateSelect}
@@ -73,15 +102,15 @@ export function DocumentOptionsGrid({
         <div style={{ minWidth: 0 }}>
           <label style={labelStyle}>Paper Size</label>
           <select
-            value={config.paperSize}
-            onChange={(e) => onUpdate({ ...config, paperSize: e.target.value as PaperSize })}
+            value={effectivePaperSize}
+            onChange={(e) => handlePaperSizeChange(e.target.value as PaperSize)}
             style={selectStyle}
           >
-            <option value="A4">A4 (Standard)</option>
-            <option value="A3">A3 (Large)</option>
-            <option value="A5">A5 (Compact)</option>
-            <option value="legal">Legal</option>
-            <option value="letter">Letter</option>
+            {availableSizes.map((size) => (
+              <option key={size} value={size}>
+                {PAPER_SIZE_LABELS[size] || size}
+              </option>
+            ))}
           </select>
         </div>
 
