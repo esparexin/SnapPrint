@@ -116,6 +116,29 @@ export const UpdatePlatformUserStatusRequestSchema = z.object({
 });
 export type UpdatePlatformUserStatusRequest = z.infer<typeof UpdatePlatformUserStatusRequestSchema>;
 
+export const AdminOverrideSubscriptionRequestSchema = z.object({
+  plan: SubscriptionPlanIdSchema,
+  durationDays: z.coerce.number().int().positive().max(3650).optional(),
+  reason: z.string().trim().min(3).max(500),
+});
+export type AdminOverrideSubscriptionRequest = z.infer<
+  typeof AdminOverrideSubscriptionRequestSchema
+>;
+
+export const AdminOverrideSubscriptionResponseSchema = z.object({
+  success: z.boolean(),
+  subscription: z.object({
+    plan: SubscriptionPlanIdSchema,
+    status: SubscriptionStatusSchema,
+    startsAt: z.string(),
+    expiresAt: z.string(),
+    updatedAt: z.string(),
+  }),
+});
+export type AdminOverrideSubscriptionResponse = z.infer<
+  typeof AdminOverrideSubscriptionResponseSchema
+>;
+
 export const PlatformStudioDetailsResponseSchema = z.object({
   studio: PlatformStudioItemSchema.extend({
     tagline: z.string().optional(),

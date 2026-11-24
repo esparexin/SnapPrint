@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AdminOverrideSubscriptionRequestSchema,
+  AdminOverrideSubscriptionResponseSchema,
   ListPlatformAuditLogsResponseSchema,
   ListPlatformStudiosQuerySchema,
   ListPlatformStudiosResponseSchema,
@@ -147,5 +149,26 @@ describe('platform-admin contracts', () => {
       },
     };
     expect(PlatformStudioDetailsResponseSchema.parse(details)).toEqual(details);
+  });
+
+  it('validates AdminOverrideSubscriptionRequestSchema and ResponseSchema', () => {
+    const validReq = {
+      plan: 'quarterly',
+      durationDays: 90,
+      reason: 'Promotional grant for launch partner',
+    };
+    expect(AdminOverrideSubscriptionRequestSchema.parse(validReq)).toEqual(validReq);
+
+    const validRes = {
+      success: true,
+      subscription: {
+        plan: 'quarterly',
+        status: 'active',
+        startsAt: '2026-11-20T10:00:00.000Z',
+        expiresAt: '2027-02-18T10:00:00.000Z',
+        updatedAt: '2026-11-24T10:00:00.000Z',
+      },
+    };
+    expect(AdminOverrideSubscriptionResponseSchema.parse(validRes)).toEqual(validRes);
   });
 });

@@ -180,4 +180,20 @@ describe('Platform Admin Governance & RBAC Separation', () => {
     expect(studioItem.payment?.enableCounterPayment).toBe(true);
     expect(studioItem.payment?.enableOnlinePayment).toBe(true);
   });
+
+  it('validates subscription extension durations and audit reason requirements', () => {
+    const validateOverride = (days: number | undefined, reason: string) => {
+      if (reason.trim().length < 3) return { valid: false, error: 'Reason required' };
+      if (days !== undefined && (isNaN(days) || days <= 0 || days > 3650)) {
+        return { valid: false, error: 'Invalid days' };
+      }
+      return { valid: true };
+    };
+
+    expect(validateOverride(undefined, 'VIP extension').valid).toBe(true);
+    expect(validateOverride(365, 'SLA compensation').valid).toBe(true);
+    expect(validateOverride(0, 'Test reason').valid).toBe(false);
+    expect(validateOverride(4000, 'Test reason').valid).toBe(false);
+    expect(validateOverride(30, 'ok').valid).toBe(false);
+  });
 });

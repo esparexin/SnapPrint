@@ -5,6 +5,7 @@ import {
   getPlatformStudioDetails,
   listPlatformAuditLogs,
   listPlatformStudios,
+  overridePlatformStudioSubscription,
   PlatformAdminApiError,
   updatePlatformStudioStatus,
   updatePlatformUserStatus,
@@ -21,12 +22,9 @@ describe('platform-admin-client', () => {
       totalPaidVolumeMinor: 500000,
       currency: 'INR',
     };
-
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockMetrics,
-    } as Response);
-
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockMetrics } as Response);
     const result = await getPlatformMetrics(mockFetch);
     expect(result).toEqual(mockMetrics);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -49,12 +47,9 @@ describe('platform-admin-client', () => {
       ],
       total: 1,
     };
-
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockResponse } as Response);
     const result = await listPlatformStudios({ status: 'active', search: 'alpha' }, mockFetch);
     expect(result).toEqual(mockResponse);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -74,12 +69,9 @@ describe('platform-admin-client', () => {
         updatedAt: '2026-11-23T10:00:00.000Z',
       },
     };
-
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockResponse } as Response);
     const result = await updatePlatformStudioStatus(
       'studio_alpha',
       { status: 'suspended', reason: 'Non-payment' },
@@ -209,5 +201,42 @@ describe('platform-admin-client', () => {
     } as Response);
 
     await expect(getPlatformMetrics(mockFetch)).rejects.toThrow(PlatformAdminApiError);
+  });
+
+  it('overrides studio subscription via POST', async () => {
+    const mockResponse = {
+      success: true,
+      subscription: {
+        studioId: 'studio_alpha',
+        plan: 'yearly',
+        status: 'active',
+        startsAt: '2026-11-24T00:00:00.000Z',
+        expiresAt: '2027-11-24T00:00:00.000Z',
+        updatedAt: '2026-11-24T00:00:00.000Z',
+      },
+    };
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    const result = await overridePlatformStudioSubscription(
+      'studio_alpha',
+      { plan: 'yearly', durationDays: 365, reason: 'Partner promotional grant' },
+      mockFetch
+    );
+    expect(result).toEqual(mockResponse);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:3001/admin/studios/studio_alpha/subscription',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          plan: 'yearly',
+          durationDays: 365,
+          reason: 'Partner promotional grant',
+        }),
+      })
+    );
   });
 });

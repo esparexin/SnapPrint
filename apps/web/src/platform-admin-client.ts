@@ -1,4 +1,6 @@
 import {
+  AdminOverrideSubscriptionRequest,
+  AdminOverrideSubscriptionResponse,
   CreatePlatformAdminUserRequest,
   ListPlatformAuditLogsResponse,
   ListPlatformStudiosQuery,
@@ -159,6 +161,21 @@ export async function getPlatformStudioDetails(
   return requestJson<PlatformStudioDetailsResponse>(
     `/admin/studios/${encodeURIComponent(studioId)}/details`,
     { method: 'GET' },
+    customFetch
+  );
+}
+
+export async function overridePlatformStudioSubscription(
+  studioId: string,
+  payload: AdminOverrideSubscriptionRequest,
+  customFetch: typeof fetch = fetch
+): Promise<AdminOverrideSubscriptionResponse> {
+  return requestJson<AdminOverrideSubscriptionResponse>(
+    `/admin/studios/${encodeURIComponent(studioId)}/subscription`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
     customFetch
   );
 }

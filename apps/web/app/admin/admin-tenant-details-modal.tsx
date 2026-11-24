@@ -5,6 +5,7 @@ import { PlatformStudioDetailsResponse, PlatformStudioItem } from '@snapprint/co
 import { getPlatformStudioDetails } from '../../src/platform-admin-client';
 import { useDialog } from '../hooks/use-dialog';
 import { adminLayoutStyles } from './admin-layout-styles';
+import { AdminSubscriptionOverrideModal } from './admin-subscription-override-modal';
 import { AdminTenantFleetSection } from './admin-tenant-fleet-section';
 import { AdminTenantOverviewSection } from './admin-tenant-overview-section';
 import { AdminTenantStatsSection } from './admin-tenant-stats-section';
@@ -19,6 +20,7 @@ export function AdminTenantDetailsModal({ studio, isOpen, onClose }: AdminTenant
   const [details, setDetails] = useState<PlatformStudioDetailsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOverrideOpen, setIsOverrideOpen] = useState(false);
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
     isOpen,
@@ -26,15 +28,20 @@ export function AdminTenantDetailsModal({ studio, isOpen, onClose }: AdminTenant
     enableSwipeDown: true,
   });
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const loadDetails = React.useCallback(() => {
     setLoading(true);
     setError(null);
     getPlatformStudioDetails(studio.id)
       .then(setDetails)
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to fetch details'))
       .finally(() => setLoading(false));
-  }, [isOpen, studio.id]);
+  }, [studio.id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadDetails();
+    }
+  }, [isOpen, loadDetails]);
 
   if (!isOpen) return null;
 
@@ -94,6 +101,7 @@ export function AdminTenantDetailsModal({ studio, isOpen, onClose }: AdminTenant
             <AdminTenantStatsSection
               subscription={details.subscription}
               printStats={details.printStats}
+              onOverrideSubscription={() => setIsOverrideOpen(true)}
             />
             <AdminTenantFleetSection
               printers={details.printers}
@@ -101,6 +109,16 @@ export function AdminTenantDetailsModal({ studio, isOpen, onClose }: AdminTenant
               studioId={details.studio.id}
             />
           </div>
+        )}
+
+        {isOverrideOpen && (
+          <AdminSubscriptionOverrideModal
+            studioId={studio.id}
+            studioName={studio.name}
+            isOpen={isOverrideOpen}
+            onClose={() => setIsOverrideOpen(false)}
+            onUpdated={loadDetails}
+          />
         )}
       </div>
     </div>

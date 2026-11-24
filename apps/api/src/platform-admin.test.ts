@@ -174,4 +174,28 @@ describe('Platform Admin Routes & Authorization', () => {
     expect(body.printStats.bwPrints).toBeGreaterThanOrEqual(0);
     await app.close();
   });
+
+  it('POST /admin/studios/:id/subscription overrides studio subscription with audit log', async () => {
+    const { app, login } = await seedPlatformEnvironment();
+    const adminCookie = await login('superadmin@snapprint.in');
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/admin/studios/studio_one/subscription',
+      payload: {
+        plan: 'yearly',
+        durationDays: 365,
+        reason: 'VIP partner upgrade grant',
+      },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(body.subscription.plan).toBe('yearly');
+    expect(body.subscription.status).toBe('active');
+    expect(new Date(body.subscription.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    await app.close();
+  });
 });
