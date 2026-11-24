@@ -13,7 +13,7 @@ describe('API Configuration', () => {
     expect(config.sessionSecret).toBe(INSECURE_DEV_SESSION_SECRET);
     expect(config.cookieSecret).toBe(INSECURE_DEV_COOKIE_SECRET);
     expect(config.corsAllowedOrigins).toBe(
-      'http://localhost:3000,http://127.0.0.1:3000,https://snap.palnadu.dev'
+      'http://localhost:3000,http://127.0.0.1:3000,https://snap.palnadu.dev,https://snapprint.onrender.com'
     );
     expect(config.trustProxy).toBe(false);
     expect(config.cookieSecure).toBe(false);

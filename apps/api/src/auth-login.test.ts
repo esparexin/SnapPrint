@@ -48,7 +48,7 @@ describe('Operator Login Route & Credentials Validation', () => {
     expect(setCookie).toBeDefined();
     expect(setCookie).toContain('snapprint_op=');
     expect(setCookie).toContain('HttpOnly');
-    expect(setCookie).toContain('SameSite=Strict');
+    expect(setCookie).toContain('SameSite=Lax');
 
     await app.close();
   });
@@ -197,7 +197,7 @@ describe('Operator Login Route & Credentials Validation', () => {
     expect(setCookie).toContain('__Host-snapprint_op=');
     expect(setCookie).toContain('Secure');
     expect(setCookie).toContain('HttpOnly');
-    expect(setCookie).toContain('SameSite=Strict');
+    expect(setCookie).toContain('SameSite=None');
     expect(setCookie).toContain('Path=/');
 
     await app.close();

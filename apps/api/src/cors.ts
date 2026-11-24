@@ -1,12 +1,14 @@
 import { FastifyCorsOptions } from '@fastify/cors';
 
 export const CANONICAL_PRODUCTION_ORIGIN = 'https://snap.palnadu.dev';
+export const RENDER_PRODUCTION_ORIGIN = 'https://snapprint.onrender.com';
 
 export const DEFAULT_DEV_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 export const DEFAULT_CORS_ALLOWED_ORIGINS = [
   ...DEFAULT_DEV_ORIGINS,
   CANONICAL_PRODUCTION_ORIGIN,
+  RENDER_PRODUCTION_ORIGIN,
 ].join(',');
 
 export const CORS_ALLOWED_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
@@ -52,9 +54,12 @@ export function parseAllowedOrigins(allowedOriginsStr?: string): string[] {
     }
   }
 
-  // Always ensure canonical production origin is permitted
+  // Always ensure canonical production origins are permitted
   if (!parsed.includes(CANONICAL_PRODUCTION_ORIGIN)) {
     parsed.push(CANONICAL_PRODUCTION_ORIGIN);
+  }
+  if (!parsed.includes(RENDER_PRODUCTION_ORIGIN)) {
+    parsed.push(RENDER_PRODUCTION_ORIGIN);
   }
 
   return [...new Set(parsed)];

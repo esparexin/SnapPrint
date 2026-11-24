@@ -113,7 +113,7 @@ describe('Operator Session Lifecycle & /auth/me Profile', () => {
     await app.close();
   });
 
-  it('POST /auth/logout with cookieSecure: true clears __Host- cookie with Secure and Strict', async () => {
+  it('POST /auth/logout with cookieSecure: true clears __Host- cookie with Secure and None', async () => {
     const { app } = await createTestApp({ cookieSecure: true });
 
     const logoutRes = await app.inject({
@@ -127,7 +127,7 @@ describe('Operator Session Lifecycle & /auth/me Profile', () => {
     expect(setCookie).toContain('__Host-snapprint_op=');
     expect(setCookie).toContain('Secure');
     expect(setCookie).toContain('HttpOnly');
-    expect(setCookie).toContain('SameSite=Strict');
+    expect(setCookie).toContain('SameSite=None');
     expect(setCookie).toContain('Path=/');
 
     await app.close();
