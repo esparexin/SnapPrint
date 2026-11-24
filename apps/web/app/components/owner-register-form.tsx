@@ -14,6 +14,7 @@ import {
   requestOwnerRegistrationOtp,
   verifyOwnerRegistrationOtp,
 } from '../../src/auth-client';
+import { formatIndianMobileE164, validateIndianMobile } from '../../src/mobile-validator';
 import { OtpInputStep } from './otp-input-step';
 import { OwnerRegisterDetailsStep } from './owner-register-details-step';
 
@@ -24,22 +25,33 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 interface OwnerRegisterFormProps {
+  initialEmail?: string;
   onSuccess: (auth: AuthResponse) => void;
   onSwitchToLogin: () => void;
 }
 
-export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterFormProps) {
+export function OwnerRegisterForm({
+  initialEmail,
+  onSuccess,
+  onSwitchToLogin,
+}: OwnerRegisterFormProps) {
   const [step, setStep] = useState<'details' | 'otp'>('details');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail || '');
   const [phone, setPhone] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [privacyAccepted, setPrivacyAccepted] = useState(true);
   const [otpCode, setOtpCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [dispatchMessage, setDispatchMessage] = useState('');
+
+  useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+  }, [initialEmail]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -57,12 +69,19 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
       return;
     }
 
+    const phoneError = validateIndianMobile(phone);
+    if (phoneError) {
+      setErrorMessage(phoneError);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      const formattedPhone = formatIndianMobileE164(phone);
       const res = await requestOwnerRegistrationOtp({
         name,
         email,
-        phone,
+        phone: formattedPhone,
         termsAccepted: true,
         privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
@@ -108,10 +127,11 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
+      const formattedPhone = formatIndianMobileE164(phone);
       const res = await requestOwnerRegistrationOtp({
         name,
         email,
-        phone,
+        phone: formattedPhone,
         termsAccepted: true,
         privacyPolicyAccepted: true,
         termsVersion: CURRENT_TERMS_VERSION,
@@ -129,21 +149,18 @@ export function OwnerRegisterForm({ onSuccess, onSwitchToLogin }: OwnerRegisterF
   return (
     <div
       style={{
-        maxWidth: '420px',
-        margin: '2rem auto',
-        padding: '1.5rem',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.5rem',
-        background: '#ffffff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        width: '100%',
+        margin: '0 auto',
       }}
     >
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
-        Studio Registration
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#0f172a' }}>
+        Shop Registration
       </h2>
-      <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0 0 1.25rem' }}>
+      <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
         {step === 'details'
-          ? 'Create a verified owner account for your print studio.'
+          ? initialEmail
+            ? 'No account was found for this email. Complete registration to get started.'
+            : 'Create a verified owner account for your Xerox shop or print store.'
           : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
       </p>
 

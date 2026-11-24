@@ -80,8 +80,20 @@ export const authLoginOtpRoutes: FastifyPluginAsync<AuthLoginOtpRouteOptions> = 
       const user = await findUserDocumentByEmail(db, normalizedEmail);
       const genericResponse = createOtpDispatchResponse(normalizedEmail, 'owner_login');
 
-      if (!user || user.status !== 'active') {
-        return reply.status(200).send(genericResponse);
+      if (!user) {
+        return reply.status(404).send({
+          statusCode: 404,
+          code: 'USER_NOT_REGISTERED',
+          message: 'No account found with this email. Please register your print store first.',
+        });
+      }
+
+      if (user.status !== 'active') {
+        return reply.status(403).send({
+          statusCode: 403,
+          code: 'USER_INACTIVE',
+          message: 'This account is not active. Please contact support.',
+        });
       }
 
       const cooldown = await checkResendCooldown(db, normalizedEmail, 'owner_login');
@@ -110,10 +122,22 @@ export const authLoginOtpRoutes: FastifyPluginAsync<AuthLoginOtpRouteOptions> = 
           subject: emailContent.subject,
           html: emailContent.html,
           text: emailContent.text,
+          otp: code,
+          variables: {
+            otp: code,
+            name: user.name || 'Shop Owner',
+          },
         });
       } catch (err) {
-        await invalidatePendingOtps(db, normalizedEmail, 'owner_login');
-        throw err;
+        if (config.nodeEnv === 'development') {
+          request.log.warn(
+            { err, email: normalizedEmail, devOtpCode: code },
+            '[DEV] Email delivery failed or offline; OTP logged for local testing'
+          );
+        } else {
+          await invalidatePendingOtps(db, normalizedEmail, 'owner_login');
+          throw err;
+        }
       }
 
       return reply.status(200).send(genericResponse);

@@ -1,26 +1,31 @@
 'use client';
 
 import React, { useState } from 'react';
-import { validateSlugSanity } from '@snapprint/domain';
+import { PaperSize } from '@snapprint/contracts';
+import { generateAutoSlug, validateSlugSanity } from '@snapprint/domain';
+import { validateOptionalIndianMobile } from '../../src/mobile-validator';
 import {
   createStudio,
   StudioApiError,
   StudioOnboardingProfile,
   updateStudioProfile,
 } from '../../src/studio-client';
+import { ShopDetailsFormFields } from './shop-details-form-fields';
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem',
-  border: '1px solid #d1d5db',
-  borderRadius: '0.375rem',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontWeight: 600,
-  fontSize: '0.875rem',
-  marginBottom: '0.25rem',
+const DEFAULT_SHOP_PAYLOAD = {
+  location: { state: 'Telangana' },
+  capabilities: {
+    autoPrintMaxPages: 30,
+    isAutoPrintEnabled: true,
+    supportsColor: true,
+    supportsBlackAndWhite: true,
+    supportedPaperSizes: ['A4'] as PaperSize[],
+  },
+  payment: {
+    enableCounterPayment: true,
+    enableOnlinePayment: false,
+    isRazorpayConfirmed: false,
+  },
 };
 
 interface ShopDetailsStepProps {
@@ -44,6 +49,7 @@ export function ShopDetailsStep({
 }: ShopDetailsStepProps) {
   const [name, setName] = useState(initialValues?.name || '');
   const [slug, setSlug] = useState(initialValues?.slug || '');
+  const [isSlugTouched, setIsSlugTouched] = useState(Boolean(initialValues?.slug));
   const [tagline, setTagline] = useState(initialValues?.tagline || '');
   const [city, setCity] = useState(initialValues?.city || '');
   const [phone, setPhone] = useState(initialValues?.phone || '');
@@ -51,6 +57,24 @@ export function ShopDetailsStep({
   const [error, setError] = useState<string | null>(null);
 
   const slugSanity = slug ? validateSlugSanity(slug) : null;
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setName(val);
+    if (!isSlugTouched) {
+      setSlug(generateAutoSlug(val));
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsSlugTouched(true);
+    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhone(digits);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,37 +94,30 @@ export function ShopDetailsStep({
       setError('City is required to activate your shop.');
       return;
     }
+    const phoneError = validateOptionalIndianMobile(phone);
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
 
     setLoading(true);
     try {
+      const commonFields = {
+        name: name.trim(),
+        slug: slug.trim(),
+        tagline: tagline.trim() || undefined,
+        contactPhone: phone.trim() || undefined,
+        location: { city: city.trim(), ...DEFAULT_SHOP_PAYLOAD.location },
+      };
+
       if (studioId) {
-        const updated = await updateStudioProfile(studioId, {
-          name: name.trim(),
-          slug: slug.trim(),
-          tagline: tagline.trim() || undefined,
-          contactPhone: phone.trim() || undefined,
-          location: { city: city.trim(), state: 'Telangana' },
-        });
+        const updated = await updateStudioProfile(studioId, commonFields);
         onSuccess(updated);
       } else {
         const created = await createStudio({
-          name: name.trim(),
-          slug: slug.trim(),
-          tagline: tagline.trim() || undefined,
-          contactPhone: phone.trim() || undefined,
-          location: { city: city.trim(), state: 'Telangana' },
-          capabilities: {
-            autoPrintMaxPages: 30,
-            isAutoPrintEnabled: true,
-            supportsColor: true,
-            supportsBlackAndWhite: true,
-            supportedPaperSizes: ['A4'],
-          },
-          payment: {
-            enableCounterPayment: true,
-            enableOnlinePayment: false,
-            isRazorpayConfirmed: false,
-          },
+          ...commonFields,
+          capabilities: DEFAULT_SHOP_PAYLOAD.capabilities,
+          payment: DEFAULT_SHOP_PAYLOAD.payment,
         });
         onSuccess(created);
       }
@@ -113,86 +130,24 @@ export function ShopDetailsStep({
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div>
-        <label htmlFor="shop-name" style={labelStyle}>
-          Shop Name *
-        </label>
-        <input
-          id="shop-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Ramesh Xerox & Stationery"
-          required
-          style={inputStyle}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="shop-slug" style={labelStyle}>
-          Shop Web Slug * (Public customer URL)
-        </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-          <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>/s/</span>
-          <input
-            id="shop-slug"
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-            placeholder="ramesh-xerox"
-            required
-            style={{ ...inputStyle, flex: 1 }}
-          />
-        </div>
-        {slug && !slugSanity?.valid && (
-          <p style={{ color: '#dc2626', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>
-            {slugSanity?.reason}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="shop-city" style={labelStyle}>
-          City / Town *
-        </label>
-        <input
-          id="shop-city"
-          type="text"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="e.g. Hyderabad"
-          required
-          style={inputStyle}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="shop-phone" style={labelStyle}>
-          Contact Phone (Optional)
-        </label>
-        <input
-          id="shop-phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+91 98765 43210"
-          style={inputStyle}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="shop-tagline" style={labelStyle}>
-          Tagline / Notice (Optional)
-        </label>
-        <input
-          id="shop-tagline"
-          type="text"
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          placeholder="e.g. Fast colour & B/W printing near Bus Stop"
-          style={inputStyle}
-        />
-      </div>
+      <ShopDetailsFormFields
+        name={name}
+        slug={slug}
+        city={city}
+        phone={phone}
+        tagline={tagline}
+        isSlugTouched={isSlugTouched}
+        slugSanity={slugSanity}
+        onNameChange={handleNameChange}
+        onSlugChange={handleSlugChange}
+        onAutoGenerateSlug={() => {
+          setSlug(generateAutoSlug(name));
+          setIsSlugTouched(false);
+        }}
+        onCityChange={setCity}
+        onPhoneChange={handlePhoneChange}
+        onTaglineChange={setTagline}
+      />
 
       {error && (
         <div

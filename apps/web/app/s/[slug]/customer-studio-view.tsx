@@ -16,18 +16,38 @@ import { DocumentPrintWorkflow } from './document-print-workflow';
 
 interface CustomerStudioViewProps {
   slug: string;
+  initialStudio?: PublicStudio | null;
+  initialError?: string | null;
 }
 
-export function CustomerStudioView({ slug }: CustomerStudioViewProps) {
-  const [studio, setStudio] = useState<PublicStudio | null>(null);
+export function CustomerStudioView({
+  slug,
+  initialStudio = null,
+  initialError = null,
+}: CustomerStudioViewProps) {
+  const [studio, setStudio] = useState<PublicStudio | null>(initialStudio);
   const [session, setSession] = useState<CustomerSessionResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<CustomerApiError | null>(null);
+  const [loading, setLoading] = useState(!initialStudio && !initialError);
+  const [error, setError] = useState<CustomerApiError | null>(
+    initialError ? new CustomerApiError(initialError, 500) : null
+  );
 
   useEffect(() => {
     let mounted = true;
 
     async function loadStudioAndSession() {
+      if (initialStudio) {
+        if (initialStudio.status === 'active') {
+          try {
+            const sessionData = await ensureCustomerSession(slug);
+            if (mounted) setSession(sessionData);
+          } catch {
+            // Non-blocking background session init
+          }
+        }
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -58,7 +78,7 @@ export function CustomerStudioView({ slug }: CustomerStudioViewProps) {
     return () => {
       mounted = false;
     };
-  }, [slug]);
+  }, [slug, initialStudio]);
 
   if (loading) {
     return <CustomerStudioLoading />;

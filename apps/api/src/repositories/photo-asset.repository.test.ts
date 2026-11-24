@@ -5,6 +5,7 @@ import {
   createPhotoAssetRecord,
   deletePhotoAssetRecord,
   findPhotoAssetById,
+  findPhotoAssetsByIds,
   listPhotoAssetsBySession,
   PhotoAssetDocument,
 } from './photo-asset.repository.js';
@@ -29,17 +30,19 @@ function createMockAssetDb() {
       });
       return item ? { ...item } : null;
     },
-    find(filter: { studioId?: string; sessionId?: string }) {
+    find(filter: { studioId?: string; sessionId?: string; assetId?: { $in: string[] } }) {
       queryCount++;
       const items = store.filter((a) => {
         if (filter.studioId && a.studioId !== filter.studioId) return false;
         if (filter.sessionId && a.sessionId !== filter.sessionId) return false;
+        if (filter.assetId?.$in && !filter.assetId.$in.includes(a.assetId)) return false;
         return true;
       });
       return {
         sort: () => ({
           toArray: async () => items.map((i) => ({ ...i })),
         }),
+        toArray: async () => items.map((i) => ({ ...i })),
       };
     },
     async countDocuments(filter: { studioId?: string; sessionId?: string }) {
@@ -137,5 +140,45 @@ describe('Photo Asset Persistence Repository', () => {
 
     const countAfter = await countPhotoAssetsBySession(db, 'studio_alpha', 'sess_active_12345678');
     expect(countAfter).toBe(0);
+  });
+
+  it('batches asset fetching with findPhotoAssetsByIds', async () => {
+    const { db } = createMockAssetDb();
+
+    await createPhotoAssetRecord(db, {
+      assetId: 'asset_batch_1111111',
+      studioId: 'studio_alpha',
+      sessionId: 'sess_active_12345678',
+      originalFilename: 'doc1.pdf',
+      mimeType: 'application/pdf',
+      fileSizeBytes: 1024,
+      storageKey: 'storage_key_doc1',
+      createdAt: new Date().toISOString(),
+    });
+
+    await createPhotoAssetRecord(db, {
+      assetId: 'asset_batch_2222222',
+      studioId: 'studio_alpha',
+      sessionId: 'sess_active_12345678',
+      originalFilename: 'doc2.pdf',
+      mimeType: 'application/pdf',
+      fileSizeBytes: 2048,
+      storageKey: 'storage_key_doc2',
+      createdAt: new Date().toISOString(),
+    });
+
+    const map = await findPhotoAssetsByIds(db, 'studio_alpha', 'sess_active_12345678', [
+      'asset_batch_1111111',
+      'asset_batch_2222222',
+      'asset_non_existent',
+    ]);
+
+    expect(map.size).toBe(2);
+    expect(map.get('asset_batch_1111111')?.originalFilename).toBe('doc1.pdf');
+    expect(map.get('asset_batch_2222222')?.originalFilename).toBe('doc2.pdf');
+    expect(map.get('asset_non_existent')).toBeUndefined();
+
+    const empty = await findPhotoAssetsByIds(db, 'studio_alpha', 'sess_active_12345678', []);
+    expect(empty.size).toBe(0);
   });
 });

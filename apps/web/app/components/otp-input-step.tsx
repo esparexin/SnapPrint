@@ -12,6 +12,7 @@ interface OtpInputStepProps {
   cooldown: number;
   isSubmitting: boolean;
   submitLabel: string;
+  backLabel?: string;
 }
 
 export function OtpInputStep({
@@ -23,6 +24,7 @@ export function OtpInputStep({
   cooldown,
   isSubmitting,
   submitLabel,
+  backLabel = 'Edit',
 }: OtpInputStepProps) {
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -93,12 +95,13 @@ export function OtpInputStep({
           style={{
             background: 'none',
             border: 'none',
-            color: '#6b7280',
+            color: '#2563eb',
             cursor: 'pointer',
             padding: 0,
+            fontWeight: 500,
           }}
         >
-          Back
+          {backLabel}
         </button>
         <button
           type="button"

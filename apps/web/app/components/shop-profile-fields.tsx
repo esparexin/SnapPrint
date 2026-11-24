@@ -113,10 +113,13 @@ export function ShopProfileFields({
           Customer Support Phone
         </label>
         <input
-          type="text"
-          placeholder="e.g. +91 98765 43210"
+          type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={10}
+          placeholder="e.g. 9876543210"
           value={contactPhone}
-          onChange={(e) => setContactPhone(e.target.value)}
+          onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
           style={{
             width: '100%',
             padding: '8px 10px',

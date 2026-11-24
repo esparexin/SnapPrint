@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Studio } from '@snapprint/contracts';
+import { validateOptionalIndianMobile } from '../../src/mobile-validator';
 import { updateStudioProfile } from '../../src/workspace-client';
 import { ShopProfileFields } from './shop-profile-fields';
 
@@ -26,6 +27,12 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const phoneError = validateOptionalIndianMobile(contactPhone);
+    if (phoneError) {
+      setError(phoneError);
+      setSaving(false);
+      return;
+    }
     try {
       const res = await updateStudioProfile(studioId, {
         tagline: tagline.trim() || undefined,

@@ -1,153 +1,178 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PushpinTearFooter from '@/components/ui/pushpin-tear-footer';
-import { HomeFeatures } from './components/home-features';
-import { HomeHero } from './components/home-hero';
-import { HomeNavbar } from './components/home-navbar';
-import { HomeServices } from './components/home-services';
-import { HomeWorkflow } from './components/home-workflow';
+import { InfoModal } from './components/info-modal';
 import { OperatorPortal } from './components/operator-portal';
 
 export default function HomePage() {
   const [showPortalModal, setShowPortalModal] = useState(false);
+  const [portalMode, setPortalMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'register') {
+        setPortalMode('register');
+        setShowPortalModal(true);
+      }
+    }
+  }, []);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <HomeNavbar onOpenPortal={() => setShowPortalModal(true)} />
-
-      <main style={{ flex: 1 }}>
-        <HomeHero onOpenPortal={() => setShowPortalModal(true)} />
-        <HomeFeatures />
-        <HomeWorkflow />
-        <HomeServices />
-
-        <section
-          id="portal"
-          style={{
-            padding: '4rem 1.5rem',
-            backgroundColor: '#f1f5f9',
-            borderTop: '1px solid #e2e8f0',
-          }}
-        >
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <span
-                style={{
-                  color: '#0284c7',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Studio Operator Workspace
-              </span>
-              <h2
-                style={{
-                  fontSize: '1.75rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  margin: '0.25rem 0 0.5rem',
-                }}
-              >
-                Shopkeeper Sign In & Studio Registration
-              </h2>
-              <p style={{ color: '#64748b', fontSize: '0.9375rem', margin: 0 }}>
-                Manage print fleets, staff rosters, order fulfillment queues, and payout policies.
-              </p>
-            </div>
-            <div
+    <div
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#0284c7',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowX: 'hidden',
+      }}
+    >
+      <main
+        style={{
+          width: '100%',
+          height: '100svh',
+          position: 'relative',
+        }}
+      >
+        <PushpinTearFooter
+          brand={
+            <img
+              src="/brand/snapprint-logo.png"
+              alt="SnapPrint"
               style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '2rem',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                height: 'clamp(44px, 6.5cqmin, 62px)',
+                width: 'auto',
+                display: 'block',
+                objectFit: 'contain',
               }}
-            >
-              <OperatorPortal />
-            </div>
-          </div>
-        </section>
+            />
+          }
+          name="Palnadu Print Network"
+          logoHref="/"
+          logo={
+            <img
+              src="/favicon.png"
+              alt="SnapPrint"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'block',
+                objectFit: 'contain',
+              }}
+            />
+          }
+          sheet="#0284c7"
+          paper="#ffffff"
+          sheetInk="#ffffff"
+          paperInk="#0f172a"
+          seed={19}
+          topNav={[
+            {
+              label: 'About',
+              href: '/about',
+              variant: 'text',
+            },
+            {
+              label: 'Login',
+              onClick: () => {
+                setPortalMode('email_otp');
+                setShowPortalModal(true);
+              },
+              variant: 'text',
+            },
+            {
+              label: 'Register',
+              onClick: () => {
+                setPortalMode('register');
+                setShowPortalModal(true);
+              },
+              variant: 'button',
+            },
+          ]}
+          status={null}
+          description={
+            <span>
+              <strong
+                style={{
+                  display: 'block',
+                  fontSize: 'clamp(15px, 2cqmin, 19px)',
+                  fontWeight: 700,
+                  marginBottom: '0.35rem',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Instant Digital Counter Xerox & Cloud Printing
+              </strong>
+              <span>
+                Upload documents with automated dynamic pricing and print directly at your local
+                store with <strong>zero WhatsApp privacy leaks</strong>.
+              </span>
+            </span>
+          }
+          columns={[]}
+          sideLinks={[]}
+          newsletter={null}
+          credit=""
+          copyright="© 2026 Palnadu.dev"
+          footerLinks={[
+            {
+              label: 'Privacy Policy',
+              onClick: () => setShowPrivacyModal(true),
+            },
+            {
+              label: 'Terms & Conditions',
+              onClick: () => setShowTermsModal(true),
+            },
+          ]}
+        />
       </main>
 
       {showPortalModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              maxWidth: '680px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '2rem',
-              position: 'relative',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowPortalModal(false)}
-              aria-label="Close Portal"
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                lineHeight: 1,
-                cursor: 'pointer',
-                color: '#64748b',
-              }}
-            >
-              ×
-            </button>
-            <OperatorPortal />
-          </div>
-        </div>
+        <InfoModal onClose={() => setShowPortalModal(false)} maxWidth="420px">
+          <OperatorPortal initialMode={portalMode} />
+        </InfoModal>
       )}
 
-      <PushpinTearFooter
-        brand="SnapPrint"
-        name="Palnadu Print Network"
-        logoHref="/"
-        sheet="#0284c7"
-        paper="#f8fafc"
-        paperInk="#0f172a"
-        email="contact@snapprint.in"
-        newsletter={{
-          label: 'receive shop news & xerox printing offers',
-          placeholder: 'your@email.com',
-        }}
-        status={{ label: 'accepting digital xerox orders' }}
-        mark="PALNADU / 2026"
-        timeZone="Asia/Kolkata"
-        timeLabel="IST"
-        sideLinks={[
-          { icon: 'shield', label: 'privacy policy', href: '/#privacy' },
-          { icon: 'doc', label: 'terms & conditions', href: '/#terms' },
-        ]}
-        copyright="© 2026 SnapPrint Technologies"
-        credit="multi-tenant print network"
-        handle={{ label: '@snapprint', href: 'https://print.palnadu.dev' }}
-      />
+      {showPrivacyModal && (
+        <InfoModal title="Privacy Policy" onClose={() => setShowPrivacyModal(false)}>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Zero WhatsApp Privacy Leaks:</strong> Customer files uploaded to SnapPrint
+            auto-expire with a strict 120-minute TTL. No sensitive documents (Aadhaar cards, voter
+            IDs, certificates) remain saved on studio computers or personal phones.
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Encrypted Spool:</strong> Documents travel via TLS directly to the local printer
+            spool queue and are permanently purged after printing.
+          </p>
+          <p>
+            <strong>Network Trust:</strong> SnapPrint never shares or sells customer contact details
+            or uploaded documents.
+          </p>
+        </InfoModal>
+      )}
+
+      {showTermsModal && (
+        <InfoModal title="Terms & Conditions" onClose={() => setShowTermsModal(false)}>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Multi-Tenant Print Network:</strong> SnapPrint provides a digital counter Xerox
+            and printing infrastructure connecting customers to authorized local studios.
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <strong>Transparent Pricing:</strong> Page count and color breakdown are dynamically
+            calculated before payment. Quotations are strictly binding.
+          </p>
+          <p>
+            <strong>Operator Agreement:</strong> Registered Xerox centers and studios agree to
+            fulfill spool jobs promptly and maintain high print quality standards.
+          </p>
+        </InfoModal>
+      )}
     </div>
   );
 }

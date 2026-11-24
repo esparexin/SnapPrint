@@ -121,10 +121,22 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
           subject: emailContent.subject,
           html: emailContent.html,
           text: emailContent.text,
+          otp: code,
+          variables: {
+            otp: code,
+            name: parseResult.data.name || 'Shop Owner',
+          },
         });
       } catch (err) {
-        await invalidatePendingOtps(db, normalizedEmail, 'owner_registration');
-        throw err;
+        if (config.nodeEnv === 'development') {
+          request.log.warn(
+            { err, email: normalizedEmail, devOtpCode: code },
+            '[DEV] Email delivery failed or offline; OTP logged for local testing'
+          );
+        } else {
+          await invalidatePendingOtps(db, normalizedEmail, 'owner_registration');
+          throw err;
+        }
       }
 
       return reply.status(200).send(dispatchResponse);
@@ -158,7 +170,7 @@ export const authRegistrationRoutes: FastifyPluginAsync<AuthRegistrationRouteOpt
       reply.status(400).send({
         statusCode: 400,
         code: 'INVALID_OR_EXPIRED_OTP',
-        message: 'Invalid, expired, or exhausted verification code. Please request a new code.',
+        message: 'Invalid or expired verification code. Please request a new code.',
       });
 
     const existingUser = await findUserByEmail(db, normalizedEmail);

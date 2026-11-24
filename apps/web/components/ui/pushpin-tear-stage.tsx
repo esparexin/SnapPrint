@@ -43,7 +43,6 @@ export function PushpinTearStage({
         <path ref={rimRef} className="tpf-rim" />
         <use href={'#' + uid + 's'} className="tpf-sheet" />
       </g>
-      <use href={'#' + uid + 's'} />
       <g>
         {Array.from({ length: FLAPS * 2 }, (_, k) => (
           <path

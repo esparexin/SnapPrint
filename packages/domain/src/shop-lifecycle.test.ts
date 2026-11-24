@@ -2,12 +2,34 @@ import { describe, expect, it } from 'vitest';
 import {
   canActivateShop,
   canTransitionShopStatus,
+  generateAutoSlug,
   isAutoPrintEligible,
   resolveCustomerPaymentMethods,
   validateSlugSanity,
 } from './shop-lifecycle.js';
 
 describe('Shop Lifecycle & Capability Domain Rules (@snapprint/domain)', () => {
+  describe('generateAutoSlug', () => {
+    it('converts shop names to clean lowercase hyphenated slugs', () => {
+      expect(generateAutoSlug('Vikram Mobiles')).toBe('vikram-mobiles');
+      expect(generateAutoSlug('Ramesh Xerox & Stationery')).toBe('ramesh-xerox-stationery');
+      expect(generateAutoSlug('  Sri Krishna Prints  ')).toBe('sri-krishna-prints');
+    });
+
+    it('strips special symbols, consecutive hyphens, and outer dashes', () => {
+      expect(generateAutoSlug('Fast @ Print #123!')).toBe('fast-print-123');
+      expect(generateAutoSlug('--hello--world--')).toBe('hello-world');
+      expect(generateAutoSlug('')).toBe('');
+    });
+
+    it('truncates slugs exceeding 48 characters cleanly without trailing hyphens', () => {
+      const longName = 'A'.repeat(50) + ' ' + 'B'.repeat(10);
+      const slug = generateAutoSlug(longName);
+      expect(slug.length).toBeLessThanOrEqual(48);
+      expect(slug.endsWith('-')).toBe(false);
+    });
+  });
+
   describe('validateSlugSanity', () => {
     it('accepts clean, formatted lowercase slugs', () => {
       expect(validateSlugSanity('sri-krishna-prints').valid).toBe(true);

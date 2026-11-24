@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { AuthResponse, OTP_LENGTH, OtpCodeSchema, z } from '@snapprint/contracts';
 import { AuthApiError, requestOwnerLoginOtp, verifyOwnerLoginOtp } from '../../src/auth-client';
 import { OtpInputStep } from './otp-input-step';
+import { OwnerLoginEmailStep } from './owner-login-email-step';
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AuthApiError) return err.message;
@@ -11,22 +12,40 @@ function extractErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+const alertStyle: React.CSSProperties = {
+  background: '#fef2f2',
+  border: '1px solid #f87171',
+  color: '#991b1b',
+  padding: '0.75rem',
+  borderRadius: '0.375rem',
+  fontSize: '0.875rem',
+  marginBottom: '1rem',
+};
+
+const registerLinkStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#2563eb',
+  cursor: 'pointer',
+  fontWeight: 600,
+  textDecoration: 'underline',
+  padding: 0,
+  fontSize: '0.875rem',
+};
+
 interface OwnerLoginOtpFormProps {
   onSuccess: (auth: AuthResponse) => void;
-  onSwitchToPasswordLogin: () => void;
-  onSwitchToRegister: () => void;
+  onSwitchToPasswordLogin?: () => void;
+  onSwitchToRegister: (prefilledEmail?: string) => void;
 }
 
-export function OwnerLoginOtpForm({
-  onSuccess,
-  onSwitchToPasswordLogin,
-  onSwitchToRegister,
-}: OwnerLoginOtpFormProps) {
+export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginOtpFormProps) {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isUnregistered, setIsUnregistered] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [dispatchMessage, setDispatchMessage] = useState('');
 
@@ -40,6 +59,7 @@ export function OwnerLoginOtpForm({
     e.preventDefault();
     if (isSubmitting) return;
     setErrorMessage(null);
+    setIsUnregistered(false);
 
     setIsSubmitting(true);
     try {
@@ -48,6 +68,14 @@ export function OwnerLoginOtpForm({
       setCooldown(res.retryAfterSeconds);
       setStep('otp');
     } catch (err) {
+      if (
+        err instanceof AuthApiError &&
+        (err.code === 'USER_NOT_REGISTERED' || err.statusCode === 404)
+      ) {
+        setIsUnregistered(true);
+        onSwitchToRegister(email);
+        return;
+      }
       setErrorMessage(extractErrorMessage(err, 'Login request failed.'));
     } finally {
       setIsSubmitting(false);
@@ -97,97 +125,58 @@ export function OwnerLoginOtpForm({
   return (
     <div
       style={{
-        maxWidth: '400px',
-        margin: '2rem auto',
-        padding: '1.5rem',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.5rem',
-        background: '#ffffff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        width: '100%',
+        margin: '0 auto',
       }}
     >
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 0.5rem' }}>Owner Sign In</h2>
-      <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: '0 0 1.25rem' }}>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#0f172a' }}>
+        OTP Sign In
+      </h2>
+      <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
         {step === 'email'
           ? 'Sign in with a one-time verification code sent to your email.'
           : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
       </p>
 
       {errorMessage && (
-        <div
-          role="alert"
-          style={{
-            background: '#fef2f2',
-            border: '1px solid #f87171',
-            color: '#991b1b',
-            padding: '0.75rem',
-            borderRadius: '0.375rem',
-            fontSize: '0.875rem',
-            marginBottom: '1rem',
-          }}
-        >
-          {errorMessage}
+        <div role="alert" style={alertStyle}>
+          <div>{errorMessage}</div>
+          {isUnregistered && (
+            <div style={{ marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => onSwitchToRegister(email)}
+                style={registerLinkStyle}
+              >
+                Register your shop now →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {step === 'email' ? (
-        <form onSubmit={handleRequestOtp} noValidate>
-          <div style={{ marginBottom: '1rem' }}>
-            <label
-              htmlFor="owner-email"
-              style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                marginBottom: '0.25rem',
-              }}
-            >
-              Business Email
-            </label>
-            <input
-              id="owner-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isSubmitting}
-              placeholder="owner@printshop.com"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            style={{
-              width: '100%',
-              padding: '0.625rem',
-              background: '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '0.375rem',
-              fontWeight: 500,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSubmitting ? 'Sending Code...' : 'Send Login Code'}
-          </button>
-        </form>
+        <OwnerLoginEmailStep
+          email={email}
+          isSubmitting={isSubmitting}
+          onEmailChange={setEmail}
+          onSubmit={handleRequestOtp}
+        />
       ) : (
         <OtpInputStep
           otpCode={otpCode}
           onOtpCodeChange={setOtpCode}
           onSubmit={handleVerifyOtp}
-          onBack={() => setStep('email')}
+          onBack={() => {
+            setStep('email');
+            setErrorMessage(null);
+            setIsUnregistered(false);
+          }}
           onResend={handleResend}
           cooldown={cooldown}
           isSubmitting={isSubmitting}
           submitLabel="Sign In with Code"
+          backLabel="Edit"
         />
       )}
 
@@ -198,35 +187,24 @@ export function OwnerLoginOtpForm({
           paddingTop: '0.875rem',
           display: 'flex',
           justifyContent: 'space-between',
+          alignItems: 'center',
           fontSize: '0.8125rem',
         }}
       >
+        <span style={{ color: '#64748b' }}>New print store?</span>
         <button
           type="button"
-          onClick={onSwitchToPasswordLogin}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#4b5563',
-            cursor: 'pointer',
-            padding: 0,
-          }}
-        >
-          Operator Password
-        </button>
-        <button
-          type="button"
-          onClick={onSwitchToRegister}
+          onClick={() => onSwitchToRegister(email)}
           style={{
             background: 'none',
             border: 'none',
             color: '#2563eb',
             cursor: 'pointer',
-            fontWeight: 500,
+            fontWeight: 600,
             padding: 0,
           }}
         >
-          Register New Studio
+          Register
         </button>
       </div>
     </div>

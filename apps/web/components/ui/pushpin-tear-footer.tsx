@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useId, useRef } from 'react';
 import { PushpinTearContent } from './pushpin-tear-content';
 import { usePushpinTearAnimation, useReducedMotion } from './pushpin-tear-hook';
 import { A, Icon } from './pushpin-tear-icons';
@@ -20,26 +20,27 @@ export default function PushpinTearFooter({
   name = 'Palnadu Print Cloud',
   logo,
   logoHref = 'https://print.palnadu.dev',
+  topNav,
   socials = DEFAULT_SOCIALS,
   email = 'contact@snapprint.in',
-  newsletter = { label: 'get shop updates & print offers', placeholder: 'your@email' },
-  status = { label: 'accepting digital print orders' },
-  mark = 'SN / 2026',
-  timeZone = 'Asia/Kolkata',
-  timeLabel = 'IST',
+  newsletter = null,
+  status = null,
+  description,
+  mark,
+  timeZone,
+  timeLabel,
   columns = DEFAULT_COLUMNS,
   chat = null,
   sideLinks = DEFAULT_SIDES,
+  footerLinks,
   copyright = '© 2026 SnapPrint Technologies',
-  credit = 'multi-tenant print network',
-  handle = { label: '@snapprint', href: 'https://print.palnadu.dev' },
   sheet = '#0284c7',
-  paper = '#f8fafc',
+  paper = '#ffffff',
   sheetInk = '#ffffff',
   paperInk,
   seed = 7,
   height = '100svh',
-  fontSans = '"Helvetica Neue", Helvetica, Arial, system-ui, sans-serif',
+  fontSans = 'var(--font-family)',
   onSubscribe,
   onRepin,
   className = '',
@@ -54,9 +55,8 @@ export default function PushpinTearFooter({
   const pinRef = useRef<HTMLButtonElement>(null);
 
   const still = useReducedMotion();
-  const [toast, setToast] = useState('');
 
-  const { stage, hit, pin, repin, kick, s, timers } = usePushpinTearAnimation({
+  const { stage, hit, pin, repin, kick, s } = usePushpinTearAnimation({
     seed,
     still,
     rootRef,
@@ -68,10 +68,7 @@ export default function PushpinTearFooter({
     onRepin,
   });
 
-  const flash = (msg: string) => {
-    setToast(msg);
-    timers.current.push(window.setTimeout(() => setToast(''), 1600));
-  };
+  const flash = () => {};
 
   const pinBase = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(sheet) ? sheet : '#0284c7';
   const flapBase = mixHex(
@@ -135,35 +132,38 @@ export default function PushpinTearFooter({
       />
       <PushpinTearContent
         uid={uid}
-        still={still}
+        brand={brand}
+        topNav={topNav}
         socials={socials}
         logo={logo}
         logoHref={logoHref}
         name={name}
-        email={email}
         newsletter={newsletter}
         onSubscribe={onSubscribe}
         mark={mark}
         timeZone={timeZone}
         timeLabel={timeLabel}
         status={status}
+        description={description}
         mailto={mailto}
         H={H}
         flash={flash}
-        toast={toast}
       />
-      {cols.map((c, i) => (
-        <nav key={i} className={'tpf-z tpf-col tpf-h ' + (i ? 'r' : 'l')} style={H(6 + i)}>
-          <h3>{c.title}</h3>
-          <ul>
-            {c.links.map((l, j) => (
-              <li key={j}>
-                <A href={l.href}>{l.label}</A>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      ))}
+      {cols.length > 0 &&
+        cols.map((c, i) => (
+          <nav key={i} className={'tpf-z tpf-col tpf-h ' + (i ? 'r' : 'l')} style={H(6 + i)}>
+            <h3>{c.title}</h3>
+            <ul>
+              {c.links.map((l, j) => (
+                <li key={j}>
+                  <A href={l.href} onClick={l.onClick}>
+                    {l.label}
+                  </A>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       <button
         ref={pinRef}
         type="button"
@@ -190,7 +190,7 @@ export default function PushpinTearFooter({
             </A>
           )}
         </div>
-        <A href={logoHref} className="tpf-word" label={name}>
+        <A href={logoHref} className="tpf-word" label={typeof brand === 'string' ? brand : name}>
           <span>{brand}</span>
         </A>
       </div>
@@ -198,6 +198,7 @@ export default function PushpinTearFooter({
         <A
           key={i}
           href={l.href}
+          onClick={l.onClick}
           className={'tpf-z tpf-side tpf-ink tpf-p ' + (i ? 'r' : 'l')}
           label={l.label}
           style={{ ...H(1 + i), left: i ? '71.5%' : '29.5%' }}
@@ -210,14 +211,15 @@ export default function PushpinTearFooter({
         <span className="tpf-p" style={H(3)}>
           {copyright}
         </span>
-        {credit && (
-          <span className="tpf-credit tpf-p" style={H(4)}>
-            {credit}
-          </span>
+        {footerLinks && footerLinks.length > 0 && (
+          <div className="tpf-foot-links tpf-p" style={H(4)}>
+            {footerLinks.map((l, i) => (
+              <A key={i} href={l.href} onClick={l.onClick} label={l.label}>
+                {l.label}
+              </A>
+            ))}
+          </div>
         )}
-        <A href={handle.href} className="tpf-handle tpf-p" style={H(5)}>
-          {handle.label}
-        </A>
       </div>
     </footer>
   );

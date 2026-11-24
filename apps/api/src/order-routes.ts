@@ -17,7 +17,7 @@ import {
   findOrderBySessionAndId,
   findOrderByStudioAndIdempotency,
 } from './repositories/order.repository.js';
-import { findPhotoAssetById } from './repositories/photo-asset.repository.js';
+import { findPhotoAssetsByIds } from './repositories/photo-asset.repository.js';
 import { StorageService } from './storage/storage-service.js';
 
 export interface OrderRouteOptions {
@@ -59,9 +59,12 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         });
       }
 
+      const assetIds = Array.from(new Set(bodyResult.data.items.map((i) => i.assetId)));
+      const assetMap = await findPhotoAssetsByIds(db, studio.id, session.sessionId, assetIds);
+
       const itemsWithMeta = [];
       for (const item of bodyResult.data.items) {
-        const asset = await findPhotoAssetById(db, studio.id, session.sessionId, item.assetId);
+        const asset = assetMap.get(item.assetId);
         if (!asset) {
           return reply.status(404).send({
             statusCode: 404,
@@ -124,9 +127,12 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         return reply.status(200).send(OrderRecordSchema.parse(existing));
       }
 
+      const assetIds = Array.from(new Set(bodyResult.data.items.map((i) => i.assetId)));
+      const assetMap = await findPhotoAssetsByIds(db, studio.id, session.sessionId, assetIds);
+
       const itemsWithMeta = [];
       for (const item of bodyResult.data.items) {
-        const asset = await findPhotoAssetById(db, studio.id, session.sessionId, item.assetId);
+        const asset = assetMap.get(item.assetId);
         if (!asset) {
           return reply.status(404).send({
             statusCode: 404,

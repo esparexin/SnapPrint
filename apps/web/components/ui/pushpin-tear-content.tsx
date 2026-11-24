@@ -1,45 +1,45 @@
 import React, { useState } from 'react';
 import { A, Clock, Icon, Seal, SnapPrintLogo } from './pushpin-tear-icons';
-import { IconLink } from './pushpin-tear-types';
+import { IconLink, TopNavLink } from './pushpin-tear-types';
 
 interface PushpinTearContentProps {
   uid: string;
-  still: boolean;
-  socials: IconLink[];
+  socials?: IconLink[];
   logo?: React.ReactNode;
   logoHref: string;
+  brand?: string | React.ReactNode;
+  topNav?: TopNavLink[];
   name: string;
-  email: string;
   newsletter?: { label: string; placeholder?: string } | null;
   onSubscribe?: (email: string) => void;
   mark?: string;
   timeZone?: string;
   timeLabel?: string;
   status?: { label: string; href?: string } | null;
+  description?: string | React.ReactNode;
   mailto: string;
   H: (i: number) => React.CSSProperties;
-  flash: (msg: string) => void;
-  toast: string;
+  flash?: () => void;
 }
 
 export function PushpinTearContent({
   uid,
-  still,
   socials,
   logo,
   logoHref,
+  brand,
+  topNav,
   name,
-  email,
   newsletter,
   onSubscribe,
   mark,
   timeZone,
   timeLabel,
   status,
+  description,
   mailto,
   H,
   flash,
-  toast,
 }: PushpinTearContentProps) {
   const [sent, setSent] = useState(false);
   const [address, setAddress] = useState('');
@@ -47,43 +47,34 @@ export function PushpinTearContent({
   return (
     <>
       <div className="tpf-z tpf-top">
-        <div className="tpf-row tpf-h" style={H(0)}>
-          <button
-            type="button"
-            className="tpf-ib tpf-up"
-            onClick={() => window.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' })}
-            aria-label="Back to top"
-          >
-            <Icon name="chevL" />
-          </button>
-          {socials.map((l, i) => (
-            <A key={i} href={l.href} className="tpf-ib" label={l.label}>
-              <Icon name={l.icon} />
-            </A>
-          ))}
-        </div>
-        <A href={logoHref} className="tpf-logo tpf-h" label={name} style={H(1)}>
+        <A href={logoHref} className="tpf-brand-link tpf-h" label={name} style={H(0)}>
           {logo ?? <SnapPrintLogo />}
+          <span className="tpf-brand-title">{typeof brand === 'string' ? brand : 'SnapPrint'}</span>
         </A>
-        <div className="tpf-h" style={{ ...H(2), position: 'relative' }}>
-          <button
-            type="button"
-            className="tpf-mail"
-            onClick={() => {
-              if (navigator.clipboard?.writeText)
-                navigator.clipboard.writeText(email).then(
-                  () => flash('email copied'),
-                  () => flash(email)
-                );
-              else flash(email);
-            }}
-            title="Copy email"
-          >
-            <span>{email}</span>
-            <Icon name="copy" />
-          </button>
-          <span className={'tpf-toast' + (toast ? ' on' : '')}>{toast}</span>
-        </div>
+
+        {topNav && topNav.length > 0 ? (
+          <nav className="tpf-nav tpf-h" style={H(1)}>
+            {topNav.map((item, idx) => (
+              <A
+                key={idx}
+                href={item.href}
+                onClick={item.onClick}
+                className={item.variant === 'button' ? 'tpf-btn-cta' : 'tpf-nav-link'}
+                label={item.label}
+              >
+                {item.label}
+              </A>
+            ))}
+          </nav>
+        ) : (
+          <div className="tpf-row tpf-h" style={H(1)}>
+            {socials?.map((l, i) => (
+              <A key={i} href={l.href} className="tpf-ib" label={l.label}>
+                <Icon name={l.icon} />
+              </A>
+            ))}
+          </div>
+        )}
       </div>
 
       {newsletter && (
@@ -93,7 +84,7 @@ export function PushpinTearContent({
           onSubmit={(e) => {
             e.preventDefault();
             const v = address.trim();
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return flash('check that email');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return flash?.();
             setSent(true);
             onSubscribe?.(v);
           }}
@@ -142,6 +133,12 @@ export function PushpinTearContent({
             </span>
           </span>
         </>
+      )}
+
+      {description && (
+        <p className="tpf-z tpf-desc tpf-h" style={H(7)}>
+          {description}
+        </p>
       )}
     </>
   );

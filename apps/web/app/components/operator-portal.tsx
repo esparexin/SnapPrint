@@ -5,13 +5,18 @@ import { AuthResponse } from '@snapprint/contracts';
 import { AuthApiError, fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { resolveStudioAuthorization } from '../../src/studio-authorization';
 import { ModuleCards } from './module-cards';
+import { OperatorPortalHeader } from './operator-portal-header';
 import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
 import { WorkspaceKpiBar } from './workspace-kpi-bar';
 
-export function OperatorPortal() {
+export interface OperatorPortalProps {
+  initialMode?: 'password' | 'email_otp' | 'register';
+}
+
+export function OperatorPortal({ initialMode = 'email_otp' }: OperatorPortalProps = {}) {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -69,7 +74,10 @@ export function OperatorPortal() {
 
   if (loading) {
     return (
-      <div role="status" style={{ textAlign: 'center', padding: '3rem', fontFamily: 'system-ui' }}>
+      <div
+        role="status"
+        style={{ textAlign: 'center', padding: '3rem', fontFamily: 'var(--font-family)' }}
+      >
         <p style={{ fontSize: '1.125rem', color: '#4b5563' }}>Verifying operator session...</p>
       </div>
     );
@@ -78,6 +86,7 @@ export function OperatorPortal() {
   if (!auth) {
     return (
       <PortalUnauthenticated
+        initialMode={initialMode}
         errorBanner={errorBanner}
         onSuccess={(newAuth) => {
           setAuth(newAuth);
@@ -92,46 +101,21 @@ export function OperatorPortal() {
   return (
     <div
       style={{
+        width: '100%',
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '1.5rem',
-        fontFamily: 'system-ui, sans-serif',
+        fontFamily: 'var(--font-family)',
       }}
     >
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#111827' }}>
-            SnapPrint Operator Portal
-          </h1>
-          <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.875rem' }}>
-            Signed in as <strong>{auth.user.name}</strong> ({auth.user.email})
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={logoutLoading}
-          style={{
-            padding: '0.5rem 1rem',
-            background: logoutLoading ? '#9ca3af' : '#dc2626',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: logoutLoading ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-          }}
-        >
-          {logoutLoading ? 'Signing out...' : 'Sign Out'}
-        </button>
-      </header>
+      <OperatorPortalHeader
+        userName={auth.user.name}
+        userEmail={auth.user.email}
+        isPlatformAdmin={auth.memberships.some(
+          (m) => m.role === 'platform_admin' && m.status === 'active'
+        )}
+        logoutLoading={logoutLoading}
+        onLogout={handleLogout}
+      />
 
       {errorBanner && (
         <div
@@ -185,35 +169,33 @@ export function OperatorPortal() {
               onOpenPaymentModal={() => setShowPaymentModal(true)}
             />
           </section>
-
-          <PortalModals
-            studioId={authState.selectedStudioId || undefined}
-            studioName={
-              authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined
-            }
-            showQrModal={showQrModal}
-            showOrdersModal={showOrdersModal}
-            showPrintersModal={showPrintersModal}
-            showSetupModal={showSetupModal}
-            showStaffModal={showStaffModal}
-            showProfileModal={showProfileModal}
-            showPaymentModal={showPaymentModal}
-            onCloseQr={() => setShowQrModal(false)}
-            onCloseOrders={() => setShowOrdersModal(false)}
-            onClosePrinters={() => setShowPrintersModal(false)}
-            onCloseSetup={() => setShowSetupModal(false)}
-            onCloseStaff={() => setShowStaffModal(false)}
-            onCloseProfile={() => setShowProfileModal(false)}
-            onClosePayment={() => setShowPaymentModal(false)}
-            onSetupComplete={async (saved) => {
-              setShowSetupModal(false);
-              const fresh = await fetchCurrentUser().catch(() => null);
-              if (fresh) setAuth(fresh);
-              if (saved?.id) setSelectedStudioId(saved.id);
-            }}
-          />
         </div>
       )}
+
+      <PortalModals
+        studioId={authState.selectedStudioId || undefined}
+        studioName={authState.selectedStudioId ? `Studio ${authState.selectedStudioId}` : undefined}
+        showQrModal={showQrModal}
+        showOrdersModal={showOrdersModal}
+        showPrintersModal={showPrintersModal}
+        showSetupModal={showSetupModal}
+        showStaffModal={showStaffModal}
+        showProfileModal={showProfileModal}
+        showPaymentModal={showPaymentModal}
+        onCloseQr={() => setShowQrModal(false)}
+        onCloseOrders={() => setShowOrdersModal(false)}
+        onClosePrinters={() => setShowPrintersModal(false)}
+        onCloseSetup={() => setShowSetupModal(false)}
+        onCloseStaff={() => setShowStaffModal(false)}
+        onCloseProfile={() => setShowProfileModal(false)}
+        onClosePayment={() => setShowPaymentModal(false)}
+        onSetupComplete={async (saved) => {
+          setShowSetupModal(false);
+          const fresh = await fetchCurrentUser().catch(() => null);
+          if (fresh) setAuth(fresh);
+          if (saved?.id) setSelectedStudioId(saved.id);
+        }}
+      />
     </div>
   );
 }

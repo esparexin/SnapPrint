@@ -30,8 +30,14 @@ export type IconName =
   | 'shield'
   | 'doc';
 
-export type TearLink = { label: string; href?: string };
-export type IconLink = { icon: IconName; label: string; href?: string };
+export type TearLink = { label: string; href?: string; onClick?: () => void };
+export type TopNavLink = {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  variant?: 'text' | 'button';
+};
+export type IconLink = { icon: IconName; label: string; href?: string; onClick?: () => void };
 export type FooterColumn = { title: string; links: TearLink[] };
 
 export const DEFAULT_SOCIALS: IconLink[] = [
@@ -39,29 +45,9 @@ export const DEFAULT_SOCIALS: IconLink[] = [
   { icon: 'mail', label: 'Email', href: 'mailto:contact@snapprint.in' },
 ];
 
-export const DEFAULT_COLUMNS: FooterColumn[] = [
-  {
-    title: 'services',
-    links: [
-      { label: 'B&W Xerox & Document Print', href: '/' },
-      { label: 'Color Photo Printing', href: '/' },
-      { label: 'Duplex Document Xerox', href: '/' },
-    ],
-  },
-  {
-    title: 'portal',
-    links: [
-      { label: 'Shopkeeper Sign In', href: '/' },
-      { label: 'Register Studio', href: '/' },
-      { label: 'Platform Admin', href: '/admin' },
-    ],
-  },
-];
+export const DEFAULT_COLUMNS: FooterColumn[] = [];
 
-export const DEFAULT_SIDES: IconLink[] = [
-  { icon: 'shield', label: 'privacy policy', href: '/#privacy' },
-  { icon: 'doc', label: 'terms & conditions', href: '/#terms' },
-];
+export const DEFAULT_SIDES: IconLink[] = [];
 
 export interface AnimationParams {
   seed: number;
@@ -76,20 +62,23 @@ export interface AnimationParams {
 }
 
 export type PushpinTearFooterProps = {
-  brand?: string;
+  brand?: string | React.ReactNode;
   name?: string;
   logo?: React.ReactNode;
   logoHref?: string;
+  topNav?: TopNavLink[];
   socials?: IconLink[];
   email?: string;
   newsletter?: { label: string; placeholder?: string } | null;
   status?: { label: string; href?: string } | null;
+  description?: string | React.ReactNode;
   mark?: string;
   timeZone?: string;
   timeLabel?: string;
   columns?: FooterColumn[];
   chat?: TearLink | null;
   sideLinks?: IconLink[];
+  footerLinks?: TearLink[];
   copyright?: string;
   credit?: string;
   handle?: TearLink;

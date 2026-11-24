@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { LoginForm } from './login-form';
 import { OwnerLoginOtpForm } from './owner-login-otp-form';
@@ -9,10 +9,20 @@ import { OwnerRegisterForm } from './owner-register-form';
 interface PortalUnauthenticatedProps {
   errorBanner: string | null;
   onSuccess: (auth: AuthResponse) => void;
+  initialMode?: 'password' | 'email_otp' | 'register';
 }
 
-export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthenticatedProps) {
-  const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>('email_otp');
+export function PortalUnauthenticated({
+  errorBanner,
+  onSuccess,
+  initialMode = 'email_otp',
+}: PortalUnauthenticatedProps) {
+  const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>(initialMode);
+  const [prefilledEmail, setPrefilledEmail] = useState('');
+
+  useEffect(() => {
+    setAuthMode(initialMode);
+  }, [initialMode]);
 
   return (
     <div>
@@ -35,7 +45,11 @@ export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthen
       )}
 
       {authMode === 'register' ? (
-        <OwnerRegisterForm onSuccess={onSuccess} onSwitchToLogin={() => setAuthMode('email_otp')} />
+        <OwnerRegisterForm
+          initialEmail={prefilledEmail}
+          onSuccess={onSuccess}
+          onSwitchToLogin={() => setAuthMode('email_otp')}
+        />
       ) : authMode === 'password' ? (
         <div>
           <LoginForm onSuccess={onSuccess} />
@@ -72,7 +86,7 @@ export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthen
                 padding: 0,
               }}
             >
-              Register Studio
+              Register
             </button>
           </div>
         </div>
@@ -80,7 +94,10 @@ export function PortalUnauthenticated({ errorBanner, onSuccess }: PortalUnauthen
         <OwnerLoginOtpForm
           onSuccess={onSuccess}
           onSwitchToPasswordLogin={() => setAuthMode('password')}
-          onSwitchToRegister={() => setAuthMode('register')}
+          onSwitchToRegister={(email) => {
+            if (email) setPrefilledEmail(email);
+            setAuthMode('register');
+          }}
         />
       )}
     </div>
