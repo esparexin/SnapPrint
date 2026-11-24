@@ -11,6 +11,7 @@
     "dev": "tsx watch src/cli.ts",
     "start": "tsx src/cli.ts",
     "build": "tsc",
+    "build:wix": "tsx scripts/build-windows-package.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
