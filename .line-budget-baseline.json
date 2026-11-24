@@ -49,9 +49,5 @@
   "apps/web/app/s/[slug]/order-summary-card.tsx": 238,
   "apps/web/app/s/[slug]/photo-item-card.tsx": 184,
   "apps/web/app/s/[slug]/photo-uploader.tsx": 226,
-  "apps/web/app/terms/page.tsx": 152,
-  "apps/web/components/ui/pushpin-tear-footer.tsx": 227,
-  "apps/web/components/ui/pushpin-tear-hook.ts": 220,
-  "apps/web/components/ui/pushpin-tear-icons.tsx": 237,
-  "apps/web/components/ui/pushpin-tear-math.ts": 170
+  "apps/web/app/terms/page.tsx": 152
 }

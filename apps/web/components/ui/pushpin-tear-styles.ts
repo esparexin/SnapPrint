@@ -1,3 +1,6 @@
+import React from 'react';
+import { mixHex } from './pushpin-tear-color';
+
 export const TEAR_CSS =
   '.tpf{position:relative;overflow:hidden;container-type:size;min-height:560px;background:var(--tpf-sheet);color:var(--tpf-on-sheet);font-family:var(--tpf-sans);isolation:isolate;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;--ease:cubic-bezier(.22,1,.36,1);--fs:clamp(12px,1.5cqmin,14px)}' +
   '.tpf *,.tpf *::before,.tpf *::after{box-sizing:border-box}' +
@@ -116,3 +119,29 @@ export const TEAR_CSS =
   '@keyframes tpf-blink{0%{opacity:1}50%{opacity:.25}}' +
   '@keyframes tpf-ping{0%{transform:scale(1);opacity:.9}80%,100%{transform:scale(2.6);opacity:0}}' +
   '@media (prefers-reduced-motion: reduce){.tpf *,.tpf *::before,.tpf *::after{animation:none!important;transition-duration:.01s!important;transition-delay:0s!important}}';
+
+export function computePushpinVars(
+  sheet = '#0284c7',
+  paper = '#ffffff',
+  sheetInk = '#ffffff',
+  paperInk?: string,
+  height: number | string = '100svh',
+  fontSans = 'var(--font-family)'
+) {
+  const pinBase = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(sheet) ? sheet : '#0284c7';
+  const flapBase = mixHex(
+    /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(paper) ? paper : '#f8fafc',
+    '#ffffff',
+    0.35
+  );
+  const vars = {
+    height: typeof height === 'number' ? height + 'px' : height,
+    '--tpf-sheet': sheet,
+    '--tpf-paper': paper,
+    '--tpf-on-sheet': sheetInk,
+    '--tpf-on-paper': paperInk ?? sheet,
+    '--tpf-rim': mixHex(flapBase, '#ffffff', 0.6),
+    '--tpf-sans': fontSans,
+  } as React.CSSProperties;
+  return { pinBase, flapBase, vars };
+}

@@ -3,48 +3,14 @@
 import React, { useId, useRef } from 'react';
 import { PushpinTearContent } from './pushpin-tear-content';
 import { usePushpinTearAnimation, useReducedMotion } from './pushpin-tear-hook';
-import { A, Icon } from './pushpin-tear-icons';
-import { mixHex } from './pushpin-tear-math';
-import { Pin } from './pushpin-tear-pin';
+import { PushpinTearBottom, PushpinTearColumns } from './pushpin-tear-nav';
+import { PinButton } from './pushpin-tear-pin';
 import { PushpinTearStage } from './pushpin-tear-stage';
-import { TEAR_CSS } from './pushpin-tear-styles';
-import {
-  DEFAULT_COLUMNS,
-  DEFAULT_SIDES,
-  DEFAULT_SOCIALS,
-  PushpinTearFooterProps,
-} from './pushpin-tear-types';
+import { computePushpinVars, TEAR_CSS } from './pushpin-tear-styles';
+import { DEFAULT_PROPS, PushpinTearFooterProps } from './pushpin-tear-types';
 
-export default function PushpinTearFooter({
-  brand = 'SnapPrint',
-  name = 'Palnadu Print Cloud',
-  logo,
-  logoHref = 'https://snap.palnadu.dev',
-  topNav,
-  socials = DEFAULT_SOCIALS,
-  email = 'contact@snapprint.in',
-  newsletter = null,
-  status = null,
-  description,
-  mark,
-  timeZone,
-  timeLabel,
-  columns = DEFAULT_COLUMNS,
-  chat = null,
-  sideLinks = DEFAULT_SIDES,
-  footerLinks,
-  copyright = '© 2026 SnapPrint Technologies',
-  sheet = '#0284c7',
-  paper = '#ffffff',
-  sheetInk = '#ffffff',
-  paperInk,
-  seed = 7,
-  height = '100svh',
-  fontSans = 'var(--font-family)',
-  onSubscribe,
-  onRepin,
-  className = '',
-}: PushpinTearFooterProps) {
+export default function PushpinTearFooter(rawProps: PushpinTearFooterProps) {
+  const p = { ...DEFAULT_PROPS, ...rawProps };
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const rootRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -57,7 +23,7 @@ export default function PushpinTearFooter({
   const still = useReducedMotion();
 
   const { stage, hit, pin, repin, kick, s } = usePushpinTearAnimation({
-    seed,
+    seed: p.seed,
     still,
     rootRef,
     svgRef,
@@ -65,29 +31,20 @@ export default function PushpinTearFooter({
     rimRef,
     flapRefs,
     gradRefs,
-    onRepin,
+    onRepin: p.onRepin,
   });
 
-  const flash = () => {};
-
-  const pinBase = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(sheet) ? sheet : '#0284c7';
-  const flapBase = mixHex(
-    /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(paper) ? paper : '#f8fafc',
-    '#ffffff',
-    0.35
+  const { pinBase, flapBase, vars } = computePushpinVars(
+    p.sheet,
+    p.paper,
+    p.sheetInk,
+    p.paperInk,
+    p.height,
+    p.fontSans
   );
-  const vars = {
-    height: typeof height === 'number' ? height + 'px' : height,
-    '--tpf-sheet': sheet,
-    '--tpf-paper': paper,
-    '--tpf-on-sheet': sheetInk,
-    '--tpf-on-paper': paperInk ?? sheet,
-    '--tpf-rim': mixHex(flapBase, '#ffffff', 0.6),
-    '--tpf-sans': fontSans,
-  } as React.CSSProperties;
 
-  const mailto = 'mailto:' + email;
-  const cols = columns.slice(0, 2);
+  const mailto = 'mailto:' + p.email;
+  const cols = (p.columns ?? []).slice(0, 2);
   const H = (i: number) => ({ '--i': i }) as React.CSSProperties;
   const cls = [
     'tpf',
@@ -95,7 +52,7 @@ export default function PushpinTearFooter({
     stage >= 2 && 's2',
     stage >= 3 && 's3',
     hit && 'is-hit',
-    className,
+    p.className,
   ]
     .filter(Boolean)
     .join(' ');
@@ -132,95 +89,36 @@ export default function PushpinTearFooter({
       />
       <PushpinTearContent
         uid={uid}
-        brand={brand}
-        topNav={topNav}
-        socials={socials}
-        logo={logo}
-        logoHref={logoHref}
-        name={name}
-        newsletter={newsletter}
-        onSubscribe={onSubscribe}
-        mark={mark}
-        timeZone={timeZone}
-        timeLabel={timeLabel}
-        status={status}
-        description={description}
+        brand={p.brand}
+        topNav={p.topNav}
+        socials={p.socials}
+        logo={p.logo}
+        logoHref={p.logoHref}
+        name={p.name}
+        newsletter={p.newsletter}
+        onSubscribe={p.onSubscribe}
+        mark={p.mark}
+        timeZone={p.timeZone}
+        timeLabel={p.timeLabel}
+        status={p.status}
+        description={p.description}
         mailto={mailto}
         H={H}
-        flash={flash}
+        flash={() => {}}
       />
-      {cols.length > 0 &&
-        cols.map((c, i) => (
-          <nav key={i} className={'tpf-z tpf-col tpf-h ' + (i ? 'r' : 'l')} style={H(6 + i)}>
-            <h3>{c.title}</h3>
-            <ul>
-              {c.links.map((l, j) => (
-                <li key={j}>
-                  <A href={l.href} onClick={l.onClick}>
-                    {l.label}
-                  </A>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ))}
-      <button
-        ref={pinRef}
-        type="button"
-        className="tpf-pin"
-        data-pin={pin}
-        onClick={repin}
-        aria-label="Re-pin"
-      >
-        <span className="tpf-shadow" aria-hidden="true" />
-        <span className="tpf-tilt">
-          <span className="tpf-drop">
-            <span className="tpf-body">
-              <Pin base={pinBase} id={uid + 'p'} />
-            </span>
-          </span>
-        </span>
-      </button>
-      <div className="tpf-z tpf-brand tpf-ink">
-        <div className="tpf-brand-top tpf-p" style={H(0)}>
-          <span className="tpf-eye">{name}</span>
-          {chat && (
-            <A href={chat.href ?? mailto} className="tpf-bub" label={chat.label}>
-              <b>{chat.label}</b>
-            </A>
-          )}
-        </div>
-        <A href={logoHref} className="tpf-word" label={typeof brand === 'string' ? brand : name}>
-          <span>{brand}</span>
-        </A>
-      </div>
-      {sideLinks.slice(0, 2).map((l, i) => (
-        <A
-          key={i}
-          href={l.href}
-          onClick={l.onClick}
-          className={'tpf-z tpf-side tpf-ink tpf-p ' + (i ? 'r' : 'l')}
-          label={l.label}
-          style={{ ...H(1 + i), left: i ? '71.5%' : '29.5%' }}
-        >
-          <span>{l.label}</span>
-          <Icon name={l.icon} />
-        </A>
-      ))}
-      <div className="tpf-z tpf-foot tpf-ink">
-        <span className="tpf-p" style={H(3)}>
-          {copyright}
-        </span>
-        {footerLinks && footerLinks.length > 0 && (
-          <div className="tpf-foot-links tpf-p" style={H(4)}>
-            {footerLinks.map((l, i) => (
-              <A key={i} href={l.href} onClick={l.onClick} label={l.label}>
-                {l.label}
-              </A>
-            ))}
-          </div>
-        )}
-      </div>
+      <PushpinTearColumns cols={cols} H={H} />
+      <PinButton pinRef={pinRef} pin={pin} repin={repin} pinBase={pinBase} uid={uid} />
+      <PushpinTearBottom
+        name={p.name}
+        brand={p.brand}
+        logoHref={p.logoHref}
+        chat={p.chat ?? null}
+        mailto={mailto}
+        sideLinks={p.sideLinks}
+        copyright={p.copyright}
+        footerLinks={p.footerLinks}
+        H={H}
+      />
     </footer>
   );
 }

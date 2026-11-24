@@ -140,30 +140,3 @@ export function sheetD(ys: number[], W: number, H: number, off?: number[]) {
     d += 'L' + n1(XS[i] * W) + ' ' + n1(ys[i] * H - (off ? off[i] : 0));
   return d + 'Z';
 }
-
-export function mixHex(a: string, b: string, t: number) {
-  const p = (h: string) => {
-    const s = h.replace('#', '');
-    const f =
-      s.length === 3
-        ? s
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : s.padEnd(6, '0').slice(0, 6);
-    return [0, 2, 4].map((i) => parseInt(f.slice(i, i + 2), 16) || 0);
-  };
-  const x = p(a);
-  const y = p(b);
-  const k = clamp01(t);
-  return (
-    '#' +
-    x
-      .map((v, i) =>
-        Math.round(v + (y[i] - v) * k)
-          .toString(16)
-          .padStart(2, '0')
-      )
-      .join('')
-  );
-}
