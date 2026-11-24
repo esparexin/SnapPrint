@@ -13,6 +13,22 @@ interface OrderSummaryCardProps {
   onOrderSubmitted: (order: OrderRecord) => void;
 }
 
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '11px',
+  fontWeight: 600,
+  color: '#475569',
+  marginBottom: '3px',
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
+  fontSize: '16px',
+};
+
 export function OrderSummaryCard({
   slug,
   sessionId,
@@ -26,6 +42,8 @@ export function OrderSummaryCard({
   const [error, setError] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+
+  const configHash = JSON.stringify(configs);
 
   useEffect(() => {
     let mounted = true;
@@ -52,7 +70,7 @@ export function OrderSummaryCard({
       mounted = false;
       clearTimeout(timer);
     };
-  }, [slug, sessionId, token, configs]);
+  }, [slug, sessionId, token, configHash]);
 
   async function handleSubmitOrder() {
     if (configs.length === 0 || submitting) return;
@@ -81,12 +99,12 @@ export function OrderSummaryCard({
   return (
     <div
       style={{
-        marginTop: '24px',
-        padding: '20px',
+        marginTop: '20px',
+        padding: '16px',
         backgroundColor: '#ffffff',
         border: '1px solid #0284c7',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+        borderRadius: '10px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}
     >
       <div
@@ -94,11 +112,11 @@ export function OrderSummaryCard({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px',
+          marginBottom: '14px',
         }}
       >
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
-          Print Order Quotation
+        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>
+          Print Order
         </h3>
         {loadingQuote && (
           <span style={{ fontSize: '12px', color: '#0284c7' }}>Recalculating...</span>
@@ -115,7 +133,7 @@ export function OrderSummaryCard({
             borderRadius: '6px',
             color: '#b91c1c',
             fontSize: '13px',
-            marginBottom: '14px',
+            marginBottom: '12px',
           }}
         >
           {error}
@@ -123,7 +141,7 @@ export function OrderSummaryCard({
       )}
 
       {quote && (
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '14px' }}>
           <OrderItemsBreakdown items={quote.items} />
 
           <div
@@ -131,84 +149,46 @@ export function OrderSummaryCard({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              paddingTop: '12px',
+              paddingTop: '10px',
               borderTop: '2px solid #e2e8f0',
             }}
           >
             <div>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
                 Total Estimated Amount:
               </span>
               <div style={{ fontSize: '12px', color: '#64748b' }}>
                 {quote.totalSheets} total printed sheets
               </div>
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0284c7' }}>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: '#0284c7' }}>
               ₹{(quote.totalAmountMinor / 100).toFixed(2)}
             </div>
           </div>
         </div>
       )}
 
-      {/* Counter Pickup Details */}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '12px',
-          margin: '16px 0',
-        }}
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}
       >
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#475569',
-              marginBottom: '4px',
-            }}
-          >
-            Customer Name (Optional)
-          </label>
+        <div style={{ minWidth: 0 }}>
+          <label style={labelStyle}>Customer Name (Optional)</label>
           <input
             type="text"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
             placeholder="For counter call"
-            style={{
-              width: '100%',
-              padding: '8px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '13px',
-            }}
+            style={inputStyle}
           />
         </div>
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#475569',
-              marginBottom: '4px',
-            }}
-          >
-            Mobile Number (Optional)
-          </label>
+        <div style={{ minWidth: 0 }}>
+          <label style={labelStyle}>Mobile Number (Optional)</label>
           <input
             type="tel"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
             placeholder="10-digit mobile"
-            style={{
-              width: '100%',
-              padding: '8px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '13px',
-            }}
+            style={inputStyle}
           />
         </div>
       </div>
@@ -216,21 +196,24 @@ export function OrderSummaryCard({
       <button
         type="button"
         onClick={handleSubmitOrder}
-        disabled={submitting || !quote}
+        disabled={submitting || !quote || loadingQuote}
         style={{
           width: '100%',
           padding: '12px 16px',
-          backgroundColor: submitting || !quote ? '#94a3b8' : '#0284c7',
+          backgroundColor: submitting || !quote || loadingQuote ? '#94a3b8' : '#0284c7',
           color: '#ffffff',
           border: 'none',
           borderRadius: '8px',
           fontSize: '15px',
           fontWeight: 700,
-          cursor: submitting || !quote ? 'not-allowed' : 'pointer',
-          transition: 'background-color 0.2s',
+          cursor: submitting || !quote || loadingQuote ? 'not-allowed' : 'pointer',
+          position: 'sticky',
+          bottom: '12px',
+          zIndex: 10,
+          boxShadow: '0 4px 10px rgba(2, 132, 199, 0.3)',
         }}
       >
-        {submitting ? 'Submitting Order...' : '🚀 Submit Document Print Job'}
+        {submitting ? 'Submitting Order...' : loadingQuote ? 'Calculating Total...' : '🖨️ Print'}
       </button>
     </div>
   );

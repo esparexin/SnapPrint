@@ -61,14 +61,16 @@ export function ShopDetailsStep({
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setName(val);
-    if (!isSlugTouched) {
+    if (!studioId) {
       setSlug(generateAutoSlug(val));
     }
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsSlugTouched(true);
-    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    if (!studioId) {
+      setIsSlugTouched(true);
+      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,10 +142,7 @@ export function ShopDetailsStep({
         slugSanity={slugSanity}
         onNameChange={handleNameChange}
         onSlugChange={handleSlugChange}
-        onAutoGenerateSlug={() => {
-          setSlug(generateAutoSlug(name));
-          setIsSlugTouched(false);
-        }}
+        onAutoGenerateSlug={() => setSlug(generateAutoSlug(name))}
         onCityChange={setCity}
         onPhoneChange={handlePhoneChange}
         onTaglineChange={setTagline}

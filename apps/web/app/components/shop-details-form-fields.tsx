@@ -22,11 +22,11 @@ interface ShopDetailsFormFieldsProps {
   city: string;
   phone: string;
   tagline: string;
-  isSlugTouched: boolean;
+  isSlugTouched?: boolean;
   slugSanity: { valid: boolean; reason?: string } | null;
   onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSlugChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onAutoGenerateSlug: () => void;
+  onSlugChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAutoGenerateSlug?: () => void;
   onCityChange: (val: string) => void;
   onPhoneChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onTaglineChange: (val: string) => void;
@@ -38,11 +38,8 @@ export function ShopDetailsFormFields({
   city,
   phone,
   tagline,
-  isSlugTouched,
   slugSanity,
   onNameChange,
-  onSlugChange,
-  onAutoGenerateSlug,
   onCityChange,
   onPhoneChange,
   onTaglineChange,
@@ -65,40 +62,31 @@ export function ShopDetailsFormFields({
       </div>
 
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label htmlFor="shop-slug" style={labelStyle}>
-            Shop Web Slug * (Public customer URL)
-          </label>
-          {isSlugTouched && (
-            <button
-              type="button"
-              onClick={onAutoGenerateSlug}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#0284c7',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                padding: 0,
-                textDecoration: 'underline',
-              }}
-            >
-              Auto-generate from name
-            </button>
-          )}
-        </div>
+        <label htmlFor="shop-slug" style={labelStyle}>
+          Shop Web Slug * (Public customer URL)
+        </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
           <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>/s/</span>
           <input
             id="shop-slug"
             type="text"
             value={slug}
-            onChange={onSlugChange}
+            readOnly
+            aria-readonly="true"
             placeholder="ramesh-xerox"
             required
-            style={{ ...inputStyle, flex: 1 }}
+            style={{
+              ...inputStyle,
+              flex: 1,
+              backgroundColor: '#f1f5f9',
+              color: '#475569',
+              cursor: 'not-allowed',
+            }}
           />
         </div>
+        <p style={{ color: '#64748b', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>
+          Permanent store identifier (read-only, cannot be changed).
+        </p>
         {slug && !slugSanity?.valid && (
           <p style={{ color: '#dc2626', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>
             {slugSanity?.reason}

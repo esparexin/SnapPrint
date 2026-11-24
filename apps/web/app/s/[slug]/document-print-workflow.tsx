@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { DocumentPrintConfig, OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
@@ -15,6 +15,17 @@ interface DocumentPrintWorkflowProps {
   token: string;
   payment?: PublicPaymentSettings;
 }
+
+const createDefaultConfig = (assetId: string): DocumentPrintConfig => ({
+  assetId,
+  paperSize: 'A4',
+  colorMode: 'black_and_white',
+  sides: 'single_sided',
+  orientation: 'portrait',
+  scaling: 'fit_to_page',
+  pageSelection: 'all',
+  copies: 1,
+});
 
 export function DocumentPrintWorkflow({
   slug,
@@ -31,30 +42,21 @@ export function DocumentPrintWorkflow({
   } | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);
 
-  function handleDocumentsChange(updatedDocs: UploadedDocInfo[]) {
-    setDocs(updatedDocs);
-    setConfigs((prev) => {
-      const nextConfigs: DocumentPrintConfig[] = [];
-      for (const d of updatedDocs) {
-        const existing = prev.find((c) => c.assetId === d.assetId);
-        if (existing) {
-          nextConfigs.push(existing);
-        } else {
-          nextConfigs.push({
-            assetId: d.assetId,
-            paperSize: 'A4',
-            colorMode: 'black_and_white',
-            sides: 'single_sided',
-            orientation: 'portrait',
-            scaling: 'fit_to_page',
-            pageSelection: 'all',
-            copies: 1,
-          });
-        }
-      }
-      return nextConfigs;
+  const handleDocumentsChange = useCallback((updatedDocs: UploadedDocInfo[]) => {
+    setDocs((prev) => {
+      const pKey = prev.map((d) => `${d.assetId}:${d.pageCount}`).join(',');
+      const nKey = updatedDocs.map((d) => `${d.assetId}:${d.pageCount}`).join(',');
+      return pKey === nKey ? prev : updatedDocs;
     });
-  }
+    setConfigs((prev) => {
+      const pKey = prev.map((c) => c.assetId).join(',');
+      const nKey = updatedDocs.map((d) => d.assetId).join(',');
+      if (pKey === nKey) return prev;
+      return updatedDocs.map(
+        (d) => prev.find((c) => c.assetId === d.assetId) || createDefaultConfig(d.assetId)
+      );
+    });
+  }, []);
 
   function handleUpdateConfig(idx: number, updated: DocumentPrintConfig) {
     setConfigs((prev) => prev.map((c, i) => (i === idx ? updated : c)));
@@ -84,8 +86,8 @@ export function DocumentPrintWorkflow({
 
   return (
     <div>
-      <section style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
+      <section style={{ marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
           1. Upload Documents (PDF / Images)
         </h2>
         <PhotoUploader
@@ -97,39 +99,28 @@ export function DocumentPrintWorkflow({
       </section>
 
       {docs.length > 0 && (
-        <section style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
+        <section style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
             2. Configure Print & Xerox Options ({docs.length})
           </h2>
-          {docs.map((doc, idx) => {
-            const config = configs[idx] || {
-              assetId: doc.assetId,
-              paperSize: 'A4',
-              colorMode: 'black_and_white',
-              sides: 'single_sided',
-              orientation: 'portrait',
-              scaling: 'fit_to_page',
-              pageSelection: 'all',
-              copies: 1,
-            };
-
-            return (
-              <DocumentConfigForm
-                key={doc.assetId}
-                config={config}
-                filename={doc.filename}
-                pageCount={doc.pageCount}
-                onUpdate={(updated) => handleUpdateConfig(idx, updated)}
-                onPreview={() => setPreviewDoc({ doc, config })}
-                onRemove={() => handleRemoveDoc(doc.assetId)}
-              />
-            );
-          })}
+          {docs.map((doc, idx) => (
+            <DocumentConfigForm
+              key={doc.assetId}
+              config={configs[idx] || createDefaultConfig(doc.assetId)}
+              filename={doc.filename}
+              pageCount={doc.pageCount}
+              onUpdate={(updated) => handleUpdateConfig(idx, updated)}
+              onPreview={() =>
+                setPreviewDoc({ doc, config: configs[idx] || createDefaultConfig(doc.assetId) })
+              }
+              onRemove={() => handleRemoveDoc(doc.assetId)}
+            />
+          ))}
         </section>
       )}
 
       {configs.length > 0 && (
-        <section style={{ marginBottom: '24px' }}>
+        <section style={{ marginBottom: '20px' }}>
           <OrderSummaryCard
             slug={slug}
             sessionId={sessionId}

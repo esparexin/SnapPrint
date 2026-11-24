@@ -3,91 +3,91 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { buildPermanentStudioUrl } from '@snapprint/domain';
+import { fetchStudio } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
 import { StudioQrActions } from './studio-qr-actions';
 import { StudioQrPreviewBox } from './studio-qr-preview-box';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://snapprint.in';
+
 interface StudioQrModalProps {
   studio: {
     id: string;
-    slug: string;
-    name: string;
+    slug?: string;
+    name?: string;
   };
   onClose: () => void;
 }
 
 export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
+  const [resolvedSlug, setResolvedSlug] = useState<string>(studio.slug || '');
   const [svgMarkup, setSvgMarkup] = useState<string>('');
   const [pngDataUrl, setPngDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
-  const baseUrl =
-    typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_URL
-      ? process.env.NEXT_PUBLIC_APP_URL
-      : 'https://snapprint.in';
+  useEffect(() => {
+    let mounted = true;
+    if (studio.slug) {
+      setResolvedSlug(studio.slug);
+    } else if (studio.id) {
+      fetchStudio(studio.id)
+        .then((res) => mounted && res?.studio?.slug && setResolvedSlug(res.studio.slug))
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [studio.id, studio.slug]);
 
-  const canonicalUrl = buildPermanentStudioUrl(baseUrl, studio.slug);
+  const canonicalUrl = resolvedSlug ? buildPermanentStudioUrl(BASE_URL, resolvedSlug) : '';
 
   useEffect(() => {
     let mounted = true;
-
     async function generateCodes() {
+      if (!canonicalUrl) return;
       try {
-        const svg = await QRCode.toString(canonicalUrl, {
-          type: 'svg',
-          margin: 2,
-          color: { dark: '#0f172a', light: '#ffffff' },
-        });
-
-        const png = await QRCode.toDataURL(canonicalUrl, {
-          width: 1024,
-          margin: 2,
-          color: { dark: '#0f172a', light: '#ffffff' },
-        });
-
+        const color = { dark: '#0f172a', light: '#ffffff' };
+        const [svg, png] = await Promise.all([
+          QRCode.toString(canonicalUrl, { type: 'svg', margin: 2, color }),
+          QRCode.toDataURL(canonicalUrl, { width: 1024, margin: 2, color }),
+        ]);
         if (mounted) {
           setSvgMarkup(svg);
           setPngDataUrl(png);
         }
       } catch {
-        // Fallback handled
+        /* ignore */
       }
     }
-
     generateCodes();
-
     return () => {
       mounted = false;
     };
   }, [canonicalUrl]);
 
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(canonicalUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback
-    }
+  function handleCopy() {
+    if (!canonicalUrl) return;
+    navigator.clipboard
+      ?.writeText(canonicalUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
   }
 
-  function handleDownloadSvg() {
-    if (!svgMarkup) return;
-    const blob = new Blob([svgMarkup], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${studio.slug}-counter-qr.svg`;
+  function download(content: string, ext: 'svg' | 'png') {
+    if (!content || !resolvedSlug) return;
+    const isSvg = ext === 'svg';
+    const href = isSvg
+      ? URL.createObjectURL(new Blob([content], { type: 'image/svg+xml' }))
+      : content;
+    const a = Object.assign(document.createElement('a'), {
+      href,
+      download: `${resolvedSlug}-counter-qr.${ext}`,
+    });
     a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function handleDownloadPng() {
-    if (!pngDataUrl) return;
-    const a = document.createElement('a');
-    a.href = pngDataUrl;
-    a.download = `${studio.slug}-counter-qr.png`;
-    a.click();
+    if (isSvg) URL.revokeObjectURL(href);
   }
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
@@ -138,8 +138,8 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
           hasSvg={Boolean(svgMarkup)}
           hasPng={Boolean(pngDataUrl)}
           onCopy={handleCopy}
-          onDownloadSvg={handleDownloadSvg}
-          onDownloadPng={handleDownloadPng}
+          onDownloadSvg={() => download(svgMarkup, 'svg')}
+          onDownloadPng={() => download(pngDataUrl, 'png')}
           onPrint={() => window.print()}
         />
       </div>

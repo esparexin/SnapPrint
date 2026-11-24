@@ -13,12 +13,14 @@ interface PrinterManagementModalProps {
   studioId: string;
   studioName?: string;
   onClose: () => void;
+  inShell?: boolean;
 }
 
 export function PrinterManagementModal({
   studioId,
   studioName,
   onClose,
+  inShell = false,
 }: PrinterManagementModalProps) {
   const [printers, setPrinters] = useState<StudioPrinter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,10 +65,57 @@ export function PrinterManagementModal({
   };
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen: true,
+    isOpen: !inShell,
     onClose,
     enableSwipeDown: true,
   });
+
+  const content = (
+    <>
+      <PrinterFleetHeader
+        studioId={studioId}
+        studioName={studioName}
+        onOpenPairing={() => setShowPairingModal(true)}
+        onClose={onClose}
+      />
+      <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+        {error && (
+          <div
+            role="alert"
+            style={{
+              padding: '10px 12px',
+              backgroundColor: '#fef2f2',
+              color: '#b91c1c',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              marginBottom: '16px',
+            }}
+          >
+            {error}
+          </div>
+        )}
+        <PrinterFleetList
+          printers={printers}
+          loading={loading}
+          updatingId={updatingId}
+          onRoleChange={handleRoleChange}
+          onPairAgent={() => setShowPairingModal(true)}
+        />
+      </div>
+      <PrinterFleetFooter loading={loading} onRefresh={loadPrinters} onClose={onClose} />
+      {showPairingModal && (
+        <AgentPairingModal
+          studioId={studioId}
+          studioName={studioName}
+          onClose={() => setShowPairingModal(false)}
+        />
+      )}
+    </>
+  );
+
+  if (inShell) {
+    return <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>{content}</div>;
+  }
 
   return (
     <div
@@ -78,58 +127,12 @@ export function PrinterManagementModal({
     >
       <div
         className="dialog-content"
-        style={{
-          maxWidth: '720px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
+        style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <PrinterFleetHeader
-          studioId={studioId}
-          studioName={studioName}
-          onOpenPairing={() => setShowPairingModal(true)}
-          onClose={onClose}
-        />
-
-        <div style={{ padding: '16px 24px', overflowY: 'auto', flex: 1 }}>
-          {error && (
-            <div
-              role="alert"
-              style={{
-                padding: '10px 12px',
-                backgroundColor: '#fef2f2',
-                color: '#b91c1c',
-                borderRadius: '6px',
-                fontSize: '0.875rem',
-                marginBottom: '16px',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <PrinterFleetList
-            printers={printers}
-            loading={loading}
-            updatingId={updatingId}
-            onRoleChange={handleRoleChange}
-            onPairAgent={() => setShowPairingModal(true)}
-          />
-        </div>
-
-        <PrinterFleetFooter loading={loading} onRefresh={loadPrinters} onClose={onClose} />
+        {content}
       </div>
-
-      {showPairingModal && (
-        <AgentPairingModal
-          studioId={studioId}
-          studioName={studioName}
-          onClose={() => setShowPairingModal(false)}
-        />
-      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  fetchStudio,
   fetchStudioMetrics,
   fetchStudioStaff,
   inviteStudioStaff,
@@ -49,6 +50,38 @@ describe('Workspace Client (apps/web)', () => {
     const staff = await fetchStudioStaff('std_1', mockFetch as unknown as typeof fetch);
     expect(staff).toHaveLength(1);
     expect(staff[0].email).toBe('staff@test.com');
+  });
+
+  it('fetchStudio issues GET /studios/:id and returns studio details', async () => {
+    const mockStudio = {
+      id: 'studio_koramangala',
+      slug: 'koramangala-xerox',
+      name: 'Koramangala Xerox',
+      status: 'active',
+      settings: {
+        currency: 'INR',
+        maxActivePrinters: 2,
+        autoApproveOrders: false,
+        isAcceptingOrders: true,
+      },
+      createdAt: '2026-11-23T00:00:00.000Z',
+      updatedAt: '2026-11-23T00:00:00.000Z',
+    };
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        studio: mockStudio,
+        role: 'studio_owner',
+        permissions: ['view_orders', 'manage_studio'],
+      }),
+    });
+
+    const res = await fetchStudio('studio_koramangala', mockFetch as unknown as typeof fetch);
+    expect(res.studio.slug).toBe('koramangala-xerox');
+    expect(res.studio.name).toBe('Koramangala Xerox');
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toContain('/studios/studio_koramangala');
+    expect(init.method).toBe('GET');
   });
 
   it('inviteStudioStaff issues POST /studios/:id/staff/invite', async () => {
