@@ -31,6 +31,7 @@ export function OperatorPortal({
   const [selectedStudioId, setSelectedStudioId] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<OperatorView>('hub');
+  const studioNames = useStudioNames(auth?.memberships);
 
   useEffect(() => {
     let mounted = true;
@@ -101,7 +102,6 @@ export function OperatorPortal({
   }
 
   const authState = resolveStudioAuthorization(auth, selectedStudioId);
-  const studioNames = useStudioNames(auth?.memberships);
   const isPlatformScope = authState.selectedStudioId === 'platform_scope';
   const activeStudioId =
     !isPlatformScope && authState.selectedStudioId ? authState.selectedStudioId : undefined;
