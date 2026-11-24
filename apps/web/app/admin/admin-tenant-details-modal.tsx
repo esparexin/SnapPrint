@@ -7,6 +7,7 @@ import { useDialog } from '../hooks/use-dialog';
 import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminTenantFleetSection } from './admin-tenant-fleet-section';
 import { AdminTenantOverviewSection } from './admin-tenant-overview-section';
+import { AdminTenantStatsSection } from './admin-tenant-stats-section';
 
 export interface AdminTenantDetailsModalProps {
   studio: PlatformStudioItem;
@@ -90,6 +91,10 @@ export function AdminTenantDetailsModal({ studio, isOpen, onClose }: AdminTenant
             }}
           >
             <AdminTenantOverviewSection owner={details.owner} studio={details.studio} />
+            <AdminTenantStatsSection
+              subscription={details.subscription}
+              printStats={details.printStats}
+            />
             <AdminTenantFleetSection
               printers={details.printers}
               devices={details.devices}

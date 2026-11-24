@@ -238,6 +238,10 @@ describe('Platform Admin Routes & Authorization', () => {
     expect(body.studio.currency).toBe('INR');
     expect(Array.isArray(body.printers)).toBe(true);
     expect(Array.isArray(body.devices)).toBe(true);
+    expect(body.printStats).toBeDefined();
+    expect(body.printStats.totalCompletedPrints).toBeGreaterThanOrEqual(0);
+    expect(body.printStats.colorPrints).toBeGreaterThanOrEqual(0);
+    expect(body.printStats.bwPrints).toBeGreaterThanOrEqual(0);
     await app.close();
   });
 });

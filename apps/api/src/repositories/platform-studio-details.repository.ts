@@ -28,6 +28,64 @@ export async function getPlatformStudioDetails(
   const rawPrinters = await db.collection('studio_printers').find({ studioId }).toArray();
   const rawDevices = await db.collection('agent_devices').find({ studioId }).toArray();
 
+  const rawSub = await db.collection('subscriptions').findOne({ studioId });
+  const subscription = rawSub
+    ? {
+        plan: rawSub.plan,
+        status: rawSub.status,
+        startsAt: rawSub.startsAt ? toIsoString(rawSub.startsAt) : undefined,
+        expiresAt: rawSub.expiresAt ? toIsoString(rawSub.expiresAt) : undefined,
+      }
+    : null;
+
+  const completedJobs = await db
+    .collection('print_jobs')
+    .find({ studioId, status: 'completed' }, { projection: { colorMode: 1, copies: 1 } })
+    .toArray();
+
+  let colorPrints = 0;
+  let bwPrints = 0;
+
+  if (completedJobs.length > 0) {
+    for (const job of completedJobs) {
+      const copies = typeof job.copies === 'number' ? job.copies : 1;
+      if (job.colorMode === 'color') {
+        colorPrints += copies;
+      } else {
+        bwPrints += copies;
+      }
+    }
+  } else {
+    const completedOrders = await db
+      .collection('orders')
+      .find(
+        { studioId, status: { $in: ['completed', 'ready'] } },
+        { projection: { items: 1 } }
+      )
+      .toArray();
+
+    for (const order of completedOrders) {
+      if (Array.isArray(order.items)) {
+        for (const item of order.items) {
+          const copies = typeof item.copies === 'number' ? item.copies : 1;
+          const pages = typeof item.pageCount === 'number' ? item.pageCount : 1;
+          const count = copies * pages;
+          if (item.colorMode === 'color') {
+            colorPrints += count;
+          } else {
+            bwPrints += count;
+          }
+        }
+      }
+    }
+  }
+
+  const printStats = {
+    totalCompletedPrints: colorPrints + bwPrints,
+    colorPrints,
+    bwPrints,
+  };
+
   const studioItem = toPlatformStudioItem(
     doc,
     owner ? { name: owner.name, email: owner.email } : undefined
@@ -53,6 +111,8 @@ export async function getPlatformStudioDetails(
           createdAt: toIsoString(owner.createdAt),
         }
       : null,
+    subscription,
+    printStats,
     printers: rawPrinters.map((p) => ({
       id: p.id,
       name: p.name,

@@ -122,4 +122,29 @@ describe('Platform Admin Governance & RBAC Separation', () => {
     expect(mockDetails.devices).toHaveLength(1);
     expect(mockDetails.devices[0].status).toBe('online');
   });
+
+  it('correctly maps operator subscription status and completed print stats', () => {
+    const mockDetails = {
+      subscription: {
+        plan: 'quarterly' as const,
+        status: 'active' as const,
+        startsAt: '2026-11-20T10:00:00.000Z',
+        expiresAt: '2027-02-18T10:00:00.000Z',
+      },
+      printStats: {
+        totalCompletedPrints: 42,
+        colorPrints: 12,
+        bwPrints: 30,
+      },
+    };
+
+    expect(mockDetails.subscription.plan).toBe('quarterly');
+    expect(mockDetails.subscription.status).toBe('active');
+    expect(mockDetails.printStats.totalCompletedPrints).toBe(42);
+    expect(mockDetails.printStats.colorPrints).toBe(12);
+    expect(mockDetails.printStats.bwPrints).toBe(30);
+    expect(mockDetails.printStats.colorPrints + mockDetails.printStats.bwPrints).toBe(
+      mockDetails.printStats.totalCompletedPrints
+    );
+  });
 });

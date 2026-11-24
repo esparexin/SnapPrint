@@ -5,6 +5,7 @@ import {
   ListPlatformStudiosResponseSchema,
   PlatformAuditEntrySchema,
   PlatformMetricsResponseSchema,
+  PlatformStudioDetailsResponseSchema,
   PlatformStudioItemSchema,
   UpdatePlatformStudioStatusRequestSchema,
 } from './platform-admin.js';
@@ -109,5 +110,36 @@ describe('platform-admin contracts', () => {
       total: 1,
     };
     expect(ListPlatformAuditLogsResponseSchema.parse(list)).toEqual(list);
+  });
+
+  it('validates PlatformStudioDetailsResponseSchema with subscription and printStats', () => {
+    const details = {
+      studio: {
+        id: 'studio-alpha',
+        slug: 'studio-alpha',
+        name: 'Studio Alpha',
+        status: 'active',
+        currency: 'INR',
+        maxActivePrinters: 2,
+        autoApproveOrders: false,
+        createdAt: '2026-11-20T10:00:00.000Z',
+        updatedAt: '2026-11-23T10:00:00.000Z',
+      },
+      owner: null,
+      printers: [],
+      devices: [],
+      subscription: {
+        plan: 'quarterly',
+        status: 'active',
+        startsAt: '2026-11-20T10:00:00.000Z',
+        expiresAt: '2027-02-18T10:00:00.000Z',
+      },
+      printStats: {
+        totalCompletedPrints: 15,
+        colorPrints: 5,
+        bwPrints: 10,
+      },
+    };
+    expect(PlatformStudioDetailsResponseSchema.parse(details)).toEqual(details);
   });
 });

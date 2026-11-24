@@ -6,6 +6,7 @@ import {
   StudioStatusSchema,
 } from './tenant.js';
 import { ShopLocationSchema, ShopPaymentSettingsSchema } from './shop-onboarding.js';
+import { SubscriptionPlanIdSchema, SubscriptionStatusSchema } from './subscription.js';
 
 export const PlatformMetricsResponseSchema = z.object({
   totalStudios: z.number().int().nonnegative(),
@@ -156,5 +157,21 @@ export const PlatformStudioDetailsResponseSchema = z.object({
       createdAt: z.string(),
     })
   ),
+  subscription: z
+    .object({
+      plan: SubscriptionPlanIdSchema,
+      status: SubscriptionStatusSchema,
+      startsAt: z.string().optional(),
+      expiresAt: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  printStats: z
+    .object({
+      totalCompletedPrints: z.number().int().nonnegative(),
+      colorPrints: z.number().int().nonnegative(),
+      bwPrints: z.number().int().nonnegative(),
+    })
+    .optional(),
 });
 export type PlatformStudioDetailsResponse = z.infer<typeof PlatformStudioDetailsResponseSchema>;
