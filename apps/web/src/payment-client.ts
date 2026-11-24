@@ -13,8 +13,9 @@ import {
   PaymentVerifyRequest,
   PaymentVerifyRequestSchema,
 } from '@snapprint/contracts';
+import { getApiBaseUrl } from './auth-client.js';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = getApiBaseUrl();
 
 export class PaymentApiError extends Error {
   constructor(

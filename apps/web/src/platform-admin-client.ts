@@ -7,12 +7,9 @@ import {
   UpdatePlatformStudioStatusRequest,
 } from '@snapprint/contracts';
 
-export function getApiBaseUrl(): string {
-  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
-  }
-  return 'http://127.0.0.1:3001';
-}
+import { getApiBaseUrl } from './auth-client.js';
+
+export { getApiBaseUrl };
 
 export class PlatformAdminApiError extends Error {
   constructor(
