@@ -3,7 +3,7 @@
 import React from 'react';
 import { adminLayoutStyles } from './admin-layout-styles';
 
-export type AdminTabType = 'overview' | 'studios' | 'subscriptions' | 'users' | 'audit';
+export type AdminTabType = 'overview' | 'studios' | 'subscriptions' | 'plans' | 'users' | 'audit';
 
 interface AdminPortalHeaderProps {
   email: string;
@@ -16,7 +16,8 @@ interface AdminPortalHeaderProps {
 const TABS: { id: AdminTabType; label: string }[] = [
   { id: 'overview', label: 'Overview & Metrics' },
   { id: 'studios', label: 'Tenants Directory' },
-  { id: 'subscriptions', label: 'Plans & Subscriptions' },
+  { id: 'subscriptions', label: 'Subscriptions' },
+  { id: 'plans', label: 'Plans Catalog' },
   { id: 'users', label: 'Users & RBAC' },
   { id: 'audit', label: 'Audit Trail' },
 ];

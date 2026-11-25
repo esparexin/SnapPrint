@@ -8,6 +8,7 @@ import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminPortalHeader } from './admin-portal-header';
 import { AdminPortalModals } from './admin-portal-modals';
 import { AdminShopTable } from './admin-shop-table';
+import { AdminPlansView } from './admin-plans-view';
 import { AdminSubscriptionsView } from './admin-subscriptions-view';
 import { AdminUserTable } from './admin-user-table';
 import { useAdminPortalData } from './use-admin-portal-data';
@@ -58,6 +59,7 @@ export function AdminPortalView({ auth, onLogout }: { auth: AuthResponse; onLogo
             onManageSubscription={d.setOverrideSubStudio}
           />
         )}
+        {d.activeTab === 'plans' && <AdminPlansView />}
         {d.activeTab === 'users' && (
           <AdminUserTable
             users={d.users}

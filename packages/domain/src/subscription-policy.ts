@@ -198,3 +198,21 @@ export function evaluateStorefrontCheckoutAvailability(
 
   return { allowed: true, reason: 'AVAILABLE' };
 }
+
+export type SubscriptionIntervalLabel =
+  | '1 Month'
+  | '3 Months'
+  | '6 Months'
+  | '12 Months'
+  | 'Custom';
+
+/**
+ * Pure domain classification for subscription intervals based on duration in days.
+ */
+export function categorizePlanInterval(durationDays: number): SubscriptionIntervalLabel {
+  if (durationDays >= 28 && durationDays <= 35) return '1 Month';
+  if (durationDays >= 85 && durationDays <= 95) return '3 Months';
+  if (durationDays >= 175 && durationDays <= 185) return '6 Months';
+  if (durationDays >= 360 && durationDays <= 370) return '12 Months';
+  return 'Custom';
+}
