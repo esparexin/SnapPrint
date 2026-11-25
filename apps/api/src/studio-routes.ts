@@ -11,6 +11,9 @@ export interface StudioRouteOptions {
 
 const UpdateSettingsSchema = StudioSettingsSchema.partial();
 
+const ALLOWED_PAPER_SIZES = new Set(['A4', 'A3', 'A5', 'legal', 'letter']);
+const ALLOWED_COLOR_MODES = new Set(['black_and_white', 'color']);
+
 export const studioRoutes: FastifyPluginAsync<StudioRouteOptions> = async (app, opts) => {
   const getEffectiveDb = (): Db => opts?.db ?? getDb();
 
@@ -70,6 +73,29 @@ export const studioRoutes: FastifyPluginAsync<StudioRouteOptions> = async (app, 
           issues: parseResult.error.issues,
         });
         return;
+      }
+
+      if (parseResult.data.printRates) {
+        for (const [size, modes] of Object.entries(parseResult.data.printRates)) {
+          if (!ALLOWED_PAPER_SIZES.has(size)) {
+            return reply.status(400).send({
+              statusCode: 400,
+              code: 'INVALID_PAPER_SIZE',
+              message: `Unsupported paper size '${size}'. Must be one of: A4, A3, A5, legal, letter.`,
+            });
+          }
+          if (modes && typeof modes === 'object') {
+            for (const mode of Object.keys(modes)) {
+              if (!ALLOWED_COLOR_MODES.has(mode)) {
+                return reply.status(400).send({
+                  statusCode: 400,
+                  code: 'INVALID_PRINT_MODE',
+                  message: `Unsupported print mode '${mode}'. Must be black_and_white or color.`,
+                });
+              }
+            }
+          }
+        }
       }
 
       const updated = await updateStudioSettings(db, request.studioId!, parseResult.data);
