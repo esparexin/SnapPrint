@@ -6,6 +6,7 @@ import {
   CustomerApiError,
   ensureCustomerSession,
   fetchPublicStudio,
+  getStoredCustomerSession,
 } from '../../../src/customer-client';
 import {
   CustomerStudioError,
@@ -28,6 +29,7 @@ export function CustomerStudioView({
 }: CustomerStudioViewProps) {
   const [studio, setStudio] = useState<PublicStudio | null>(initialStudio);
   const [session, setSession] = useState<CustomerSessionResponse | null>(null);
+  const [isNewSession, setIsNewSession] = useState(false);
   const [loading, setLoading] = useState(!initialStudio && !initialError);
   const [error, setError] = useState<CustomerApiError | null>(
     initialError ? new CustomerApiError(initialError, 500) : null
@@ -36,11 +38,20 @@ export function CustomerStudioView({
   useEffect(() => {
     let mounted = true;
     async function loadStudioAndSession() {
+      const cached = getStoredCustomerSession(slug);
+      if (cached && mounted) {
+        setSession(cached);
+        setIsNewSession(false);
+      }
+
       if (initialStudio) {
-        if (initialStudio.status === 'active') {
+        if (initialStudio.status === 'active' && !cached) {
           try {
             const s = await ensureCustomerSession(slug);
-            if (mounted) setSession(s);
+            if (mounted) {
+              setSession(s);
+              setIsNewSession(true);
+            }
           } catch {
             /* ignore */
           }
@@ -53,9 +64,12 @@ export function CustomerStudioView({
         const studioData = await fetchPublicStudio(slug);
         if (!mounted) return;
         setStudio(studioData);
-        if (studioData.status === 'active') {
+        if (studioData.status === 'active' && !cached) {
           const s = await ensureCustomerSession(slug);
-          if (mounted) setSession(s);
+          if (mounted) {
+            setSession(s);
+            setIsNewSession(true);
+          }
         }
       } catch (err) {
         if (!mounted) return;
@@ -89,18 +103,17 @@ export function CustomerStudioView({
         </div>
       )}
 
-      {session && (
-        <DocumentPrintWorkflow
-          slug={slug}
-          studioName={studio.name}
-          sessionId={session.session.sessionId}
-          token={session.token}
-          payment={studio.payment}
-          isAcceptingOrders={studio.isAcceptingOrders !== false}
-          printRates={studio.printRates}
-          capabilities={studio.capabilities}
-        />
-      )}
+      <DocumentPrintWorkflow
+        slug={slug}
+        studioName={studio.name}
+        sessionId={session?.session.sessionId ?? ''}
+        token={session?.token ?? ''}
+        isNewSession={isNewSession}
+        payment={studio.payment}
+        isAcceptingOrders={studio.isAcceptingOrders !== false}
+        printRates={studio.printRates}
+        capabilities={studio.capabilities}
+      />
 
       <footer className="sf-footer">
         <div>
