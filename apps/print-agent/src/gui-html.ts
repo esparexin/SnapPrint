@@ -142,25 +142,25 @@ export function getGuiHtml(): string {
     }
     async function loadPrinters() {
       const list = document.getElementById('printersList');
-      list.innerHTML = '<div style=\"color:#64748b;font-size:0.8rem;text-align:center;padding:12px;\">Scanning for printers...</div>';
+      list.innerHTML = '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:12px;">Scanning for printers...</div>';
       try {
         const res = await fetch('/api/printers');
         const data = await res.json();
         renderPrinters(data.printers || []);
       } catch {
-        list.innerHTML = '<div style=\"color:#94a3b8;font-size:0.8rem;text-align:center;padding:12px;\">Could not scan printers.</div>';
+        list.innerHTML = '<div style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:12px;">Could not scan printers.</div>';
       }
     }
     function renderPrinters(printers) {
       const list = document.getElementById('printersList');
       if (!printers || printers.length === 0) {
-        list.innerHTML = '<div style=\"color:#94a3b8;font-size:0.8rem;text-align:center;padding:12px;\">No printers detected.</div>';
+        list.innerHTML = '<div style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:12px;">No printers detected.</div>';
         return;
       }
       list.innerHTML = printers.map(p => {
-        const tag = p.isColorSupported ? '<span class=\"tag tag-color\">Color</span>' : '<span class=\"tag tag-bw\">B&amp;W</span>';
-        const d = p.isDefault ? '<span class=\"tag\" style=\"background:#fef3c7;color:#92400e;\">Default</span>' : '';
-        return '<div class=\"printer-item\"><span>' + escapeHtml(p.name) + '</span><div style=\"display:flex;gap:4px;\">' + tag + d + '</div></div>';
+        const tag = p.isColorSupported ? '<span class="tag tag-color">Color</span>' : '<span class="tag tag-bw">B&amp;W</span>';
+        const d = p.isDefault ? '<span class="tag" style="background:#fef3c7;color:#92400e;">Default</span>' : '';
+        return '<div class="printer-item"><span>' + escapeHtml(p.name) + '</span><div style="display:flex;gap:4px;">' + tag + d + '</div></div>';
       }).join('');
     }
     async function pairDevice() {
@@ -191,7 +191,7 @@ export function getGuiHtml(): string {
       setTimeout(() => { box.style.display = 'none'; }, 4000);
     }
     function escapeHtml(s) {
-      return (s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', \"'\":'&#39;' })[m]);
+      return (s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]);
     }
     loadState();
     loadPrinters();
