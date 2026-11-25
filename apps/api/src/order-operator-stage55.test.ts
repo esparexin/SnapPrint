@@ -152,7 +152,7 @@ describe('Stage 5.5 Operator Queue, Document Access & State Machine', () => {
     );
 
     const cookie = await loginOperator();
-    const patch = (payload: { status: string; notes?: string }) =>
+    const patch = (payload: { status: string; notes?: string; confirmedHandover?: boolean }) =>
       ctx.app.inject({
         method: 'PATCH',
         url: `/studios/${studioId}/orders/ord_lifecycle_123456/status`,
@@ -178,12 +178,21 @@ describe('Stage 5.5 Operator Queue, Document Access & State Machine', () => {
     expect(step2.statusCode).toBe(200);
     expect(JSON.parse(step2.payload).status).toBe('ready');
 
-    // 4. ready -> completed
-    const step3 = await patch({ status: 'completed', notes: 'Handed over' });
+    // 4. ready -> completed without handover confirmation rejected
+    const unconfirmed = await patch({ status: 'completed', notes: 'Handed over' });
+    expect(unconfirmed.statusCode).toBe(400);
+    expect(JSON.parse(unconfirmed.payload).code).toBe('HANDOVER_NOT_CONFIRMED');
+
+    // 5. ready -> completed with handover confirmation succeeds
+    const step3 = await patch({
+      status: 'completed',
+      notes: 'Handed over',
+      confirmedHandover: true,
+    });
     expect(step3.statusCode).toBe(200);
     expect(JSON.parse(step3.payload).status).toBe('completed');
 
-    // 5. Terminal state
+    // 6. Terminal state
     const step4 = await patch({ status: 'processing' });
     expect(step4.statusCode).toBe(400);
     expect(JSON.parse(step4.payload).code).toBe('ORDER_IN_TERMINAL_STATE');
