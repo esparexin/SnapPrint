@@ -91,52 +91,21 @@ export function CustomerStudioHeader({
   studio: { name: string; contactPhone?: string };
 }) {
   return (
-    <header style={{ marginBottom: '20px', textAlign: 'center' }}>
-      <Link
-        href="/"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          textDecoration: 'none',
-          marginBottom: '10px',
-        }}
-      >
-        <img
-          src="/favicon.png"
-          alt="SnapPrint"
-          style={{ width: '22px', height: '22px', borderRadius: '6px' }}
-        />
-        <span
-          style={{
-            fontSize: '13px',
-            fontWeight: 800,
-            color: '#0284c7',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          SnapPrint Network
-        </span>
+    <header className="sf-header">
+      <Link href="/" className="sf-brand-link" aria-label="SnapPrint Network Home">
+        <img src="/favicon.png" alt="SnapPrint" className="sf-brand-logo" />
+        <span className="sf-brand-name-desktop">SnapPrint Network</span>
       </Link>
-      <h1
-        style={{
-          fontSize: '26px',
-          fontWeight: 800,
-          color: '#0f172a',
-          letterSpacing: '-0.5px',
-          margin: '0 0 4px',
-        }}
-      >
-        {studio.name}
-      </h1>
-      <div style={{ color: '#0284c7', fontSize: '14px', fontWeight: 600 }}>
-        Xerox &amp; Digital Document Printing
-      </div>
-      {studio.contactPhone && (
-        <div style={{ color: '#64748b', fontSize: '13px', marginTop: '4px' }}>
-          Shop Contact: {studio.contactPhone}
+      <div className="sf-studio-meta">
+        <div className="sf-studio-title-row">
+          <h1 className="sf-studio-name">{studio.name}</h1>
+          <span className="sf-brand-pill-mobile">SnapPrint</span>
         </div>
-      )}
+        <div className="sf-studio-tagline">Xerox &amp; Digital Document Printing</div>
+        {studio.contactPhone && (
+          <div className="sf-studio-contact">Shop Contact: {studio.contactPhone}</div>
+        )}
+      </div>
     </header>
   );
 }

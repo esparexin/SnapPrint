@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { AllowedMimeTypes } from '@snapprint/contracts';
+import { UploadCloudIcon } from './storefront-icons';
 
 interface PhotoDropzoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -29,7 +30,7 @@ export function PhotoDropzone({ onFilesSelected, disabled }: PhotoDropzoneProps)
   }
 
   return (
-    <div style={{ marginBottom: '16px' }}>
+    <div>
       <input
         ref={fileInputRef}
         type="file"
@@ -46,20 +47,28 @@ export function PhotoDropzone({ onFilesSelected, disabled }: PhotoDropzoneProps)
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        style={{
-          border: `1.5px dashed ${isDragging ? '#0284c7' : '#94a3b8'}`,
-          borderRadius: '10px',
-          padding: '16px 12px',
-          textAlign: 'center',
-          backgroundColor: isDragging ? '#f0f9ff' : '#ffffff',
-          transition: 'all 0.2s ease',
-        }}
+        className={isDragging ? 'sf-dropzone sf-dropzone--dragging' : 'sf-dropzone'}
       >
-        <div style={{ fontSize: '24px', marginBottom: '4px' }}>📄</div>
-        <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            backgroundColor: '#f0f9ff',
+            color: '#0284c7',
+            marginBottom: '6px',
+          }}
+          aria-hidden="true"
+        >
+          <UploadCloudIcon size={17} />
+        </div>
+        <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#0f172a', lineHeight: 1.3 }}>
           Upload Documents or Photos
         </div>
-        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 12px', lineHeight: 1.4 }}>
+        <p style={{ fontSize: '11.5px', color: '#64748b', margin: '2px 0 10px', lineHeight: 1.35 }}>
           Supports PDF (Multi-page), JPG, PNG, WebP up to 50MB.
         </p>
 
@@ -68,22 +77,14 @@ export function PhotoDropzone({ onFilesSelected, disabled }: PhotoDropzoneProps)
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
+            className="sf-upload-btn"
             style={{
-              padding: '8px 18px',
-              backgroundColor: '#0284c7',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 600,
               cursor: disabled ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
+              opacity: disabled ? 0.6 : 1,
             }}
           >
-            📂 Browse Files & Photos
+            <UploadCloudIcon size={15} />
+            Browse Files &amp; Photos
           </button>
         </div>
       </div>

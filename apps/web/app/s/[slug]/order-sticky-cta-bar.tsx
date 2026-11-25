@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { QuoteResponse } from '@snapprint/contracts';
+import { AlertIcon, PrinterIcon } from './storefront-icons';
 
 interface OrderStickyCtaBarProps {
   quote: QuoteResponse | null;
@@ -21,33 +22,12 @@ export function OrderStickyCtaBar({
   const disabled = submitting || !quote || loadingQuote || isAcceptingOrders === false;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 40,
-        backgroundColor: '#ffffff',
-        borderTop: '1px solid #e2e8f0',
-        boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.08)',
-        padding: '10px 16px calc(10px + env(safe-area-inset-bottom, 0px))',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '640px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-        }}
-      >
+    <div className="sf-sticky-bar">
+      <div className="sf-sticky-inner">
         <div style={{ minWidth: 0 }}>
           {quote ? (
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#0284c7', lineHeight: 1.2 }}>
                 ₹{(quote.totalAmountMinor / 100).toFixed(2)}
               </div>
               <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>
@@ -55,11 +35,11 @@ export function OrderStickyCtaBar({
               </div>
             </div>
           ) : loadingQuote ? (
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 500 }}>
               Calculating Total...
             </span>
           ) : (
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 500 }}>
               Ready to print
             </span>
           )}
@@ -69,27 +49,28 @@ export function OrderStickyCtaBar({
           type="button"
           onClick={onSubmit}
           disabled={disabled}
+          className="sf-sticky-btn"
           style={{
-            flexShrink: 0,
-            minHeight: '44px',
-            padding: '10px 20px',
             backgroundColor: disabled ? '#94a3b8' : '#0284c7',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '15px',
-            fontWeight: 700,
             cursor: disabled ? 'not-allowed' : 'pointer',
-            boxShadow: disabled ? 'none' : '0 2px 8px rgba(2, 132, 199, 0.35)',
+            boxShadow: disabled ? 'none' : '0 2px 6px rgba(2, 132, 199, 0.3)',
           }}
         >
-          {isAcceptingOrders === false
-            ? '⚠️ Printer Offline'
-            : submitting
-              ? 'Submitting...'
-              : loadingQuote
-                ? 'Calculating...'
-                : '🖨️ Print'}
+          {isAcceptingOrders === false ? (
+            <>
+              <AlertIcon size={15} />
+              Printer Offline
+            </>
+          ) : submitting ? (
+            'Submitting...'
+          ) : loadingQuote ? (
+            'Calculating...'
+          ) : (
+            <>
+              <PrinterIcon size={15} />
+              Print
+            </>
+          )}
         </button>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   StudioPrintRatesContract,
 } from '@snapprint/contracts';
 import { DocumentRateSelector } from './document-rate-selector';
+import { AutoOrientIcon, LandscapeIcon, PortraitIcon } from './storefront-icons';
 
 interface DocumentOptionsGridProps {
   config: DocumentPrintConfig;
@@ -27,22 +28,23 @@ const PAPER_SIZE_LABELS: Record<PaperSize, string> = {
   letter: 'Letter',
 };
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '11px',
-  fontWeight: 600,
-  color: '#475569',
-  marginBottom: '3px',
+const COMPACT_SIZE_LABELS: Record<PaperSize, string> = {
+  A4: 'A4',
+  A3: 'A3',
+  A5: 'A5',
+  legal: 'Legal',
+  letter: 'Letter',
 };
 
-const selectStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '6px 8px',
-  borderRadius: '6px',
-  border: '1px solid #cbd5e1',
-  fontSize: '13px',
-  backgroundColor: '#ffffff',
-};
+const ORIENTATION_OPTIONS: Array<{
+  value: PrintOrientation;
+  label: string;
+  icon: React.ReactNode;
+}> = [
+  { value: 'portrait', label: 'Portrait', icon: <PortraitIcon size={12} /> },
+  { value: 'landscape', label: 'Landscape', icon: <LandscapeIcon size={12} /> },
+  { value: 'auto', label: 'Auto', icon: <AutoOrientIcon size={12} /> },
+];
 
 export function DocumentOptionsGrid({
   config,
@@ -91,42 +93,51 @@ export function DocumentOptionsGrid({
         onSelect={handleRateSelect}
       />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '10px',
-          marginBottom: '12px',
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <label style={labelStyle}>Paper Size</label>
-          <select
-            value={effectivePaperSize}
-            onChange={(e) => handlePaperSizeChange(e.target.value as PaperSize)}
-            style={selectStyle}
-          >
-            {availableSizes.map((size) => (
-              <option key={size} value={size}>
-                {PAPER_SIZE_LABELS[size] || size}
-              </option>
-            ))}
-          </select>
+      <div style={{ marginBottom: '10px' }}>
+        <div className="sf-field-label">Paper Size</div>
+        <div role="radiogroup" aria-label="Paper Size" className="sf-segmented-group">
+          {availableSizes.map((size) => {
+            const active = effectivePaperSize === size;
+            const label =
+              availableSizes.length === 1
+                ? PAPER_SIZE_LABELS[size] || size
+                : COMPACT_SIZE_LABELS[size] || size;
+            return (
+              <button
+                key={size}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => handlePaperSizeChange(size)}
+                className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        <div style={{ minWidth: 0 }}>
-          <label style={labelStyle}>Orientation</label>
-          <select
-            value={config.orientation}
-            onChange={(e) =>
-              onUpdate({ ...config, orientation: e.target.value as PrintOrientation })
-            }
-            style={selectStyle}
-          >
-            <option value="portrait">▯ Portrait</option>
-            <option value="landscape">▭ Landscape</option>
-            <option value="auto">⟳ Auto</option>
-          </select>
+      <div style={{ marginBottom: '10px' }}>
+        <div className="sf-field-label">Orientation</div>
+        <div role="radiogroup" aria-label="Orientation" className="sf-orientation-group">
+          {ORIENTATION_OPTIONS.map((opt) => {
+            const active = config.orientation === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => onUpdate({ ...config, orientation: opt.value })}
+                className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
+                style={{ width: '100%' }}
+              >
+                {opt.icon}
+                <span>{opt.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

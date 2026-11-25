@@ -114,29 +114,22 @@ export function OrderSummaryCard({
   if (configs.length === 0) return null;
 
   return (
-    <div
-      style={{
-        marginTop: '20px',
-        padding: '16px',
-        backgroundColor: '#ffffff',
-        border: '1px solid #0284c7',
-        borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}
-    >
+    <div className="sf-order-card">
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '14px',
+          marginBottom: '10px',
         }}
       >
-        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>
+        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
           Print Order
         </h3>
         {loadingQuote && (
-          <span style={{ fontSize: '12px', color: '#0284c7' }}>Recalculating...</span>
+          <span style={{ fontSize: '11.5px', color: '#0284c7', fontWeight: 500 }}>
+            Recalculating...
+          </span>
         )}
       </div>
 
@@ -144,13 +137,13 @@ export function OrderSummaryCard({
         <div
           role="alert"
           style={{
-            padding: '10px 14px',
+            padding: '8px 10px',
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
             borderRadius: '6px',
             color: '#b91c1c',
-            fontSize: '13px',
-            marginBottom: '12px',
+            fontSize: '12px',
+            marginBottom: '10px',
           }}
         >
           {error}
@@ -158,26 +151,26 @@ export function OrderSummaryCard({
       )}
 
       {quote && (
-        <div style={{ marginBottom: '14px' }}>
+        <div>
           <OrderItemsBreakdown items={quote.items} />
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              paddingTop: '10px',
-              borderTop: '2px solid #e2e8f0',
+              paddingTop: '8px',
+              borderTop: '1px solid #e2e8f0',
             }}
           >
             <div>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                Total Estimated Amount:
+              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155' }}>
+                Total Estimated Amount
               </span>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                {quote.totalSheets} total printed sheets
+              <div style={{ fontSize: '11px', color: '#64748b' }}>
+                {quote.totalSheets} total printed {quote.totalSheets === 1 ? 'sheet' : 'sheets'}
               </div>
             </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: '#0284c7' }}>
+            <div style={{ fontSize: '17px', fontWeight: 700, color: '#0284c7' }}>
               ₹{(quote.totalAmountMinor / 100).toFixed(2)}
             </div>
           </div>
@@ -198,7 +191,6 @@ export function OrderSummaryCard({
         isAcceptingOrders={isAcceptingOrders}
         onSubmit={handleSubmitOrder}
       />
-      <div style={{ height: '70px' }} aria-hidden="true" />
     </div>
   );
 }

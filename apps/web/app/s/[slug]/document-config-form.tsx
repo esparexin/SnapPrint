@@ -4,6 +4,7 @@ import React from 'react';
 import { DocumentPrintConfig, StudioPrintRatesContract } from '@snapprint/contracts';
 import { DocumentCopiesStepper } from './document-copies-stepper';
 import { DocumentOptionsGrid } from './document-options-grid';
+import { EyeIcon, TrashIcon } from './storefront-icons';
 
 interface DocumentConfigFormProps {
   config: DocumentPrintConfig;
@@ -15,14 +16,6 @@ interface DocumentConfigFormProps {
   onPreview: () => void;
   onRemove: () => void;
 }
-
-const actionBtnBase: React.CSSProperties = {
-  padding: '5px 10px',
-  borderRadius: '6px',
-  fontSize: '12px',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
 
 export function DocumentConfigForm({
   config,
@@ -37,75 +30,68 @@ export function DocumentConfigForm({
   const isSinglePage = pageCount === 1;
 
   return (
-    <div
-      style={{
-        padding: '14px',
-        backgroundColor: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '10px',
-        marginBottom: '14px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '12px',
-          gap: '8px',
-        }}
-      >
-        <div style={{ minWidth: 0, flex: 1 }}>
+    <div className="sf-doc-card">
+      <div className="sf-doc-header">
+        <div
+          style={{
+            minWidth: 0,
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
           <div
             style={{
-              fontWeight: 700,
-              fontSize: '14px',
+              fontWeight: 600,
+              fontSize: '13px',
               color: '#0f172a',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              minWidth: 0,
             }}
           >
             {filename}
           </div>
-          <div
+          <span
             style={{
-              display: 'inline-block',
-              marginTop: '3px',
+              flexShrink: 0,
               padding: '1px 6px',
-              backgroundColor: '#e0f2fe',
-              color: '#0369a1',
+              backgroundColor: '#f1f5f9',
+              color: '#475569',
               borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: 600,
+              fontSize: '10.5px',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
             }}
           >
-            📄 {pageCount} {isSinglePage ? 'Page' : 'Pages'}
-          </div>
+            {pageCount} {isSinglePage ? 'Page' : 'Pages'}
+          </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
           <button
             type="button"
             onClick={onPreview}
             aria-label={`Preview ${filename}`}
+            className="sf-doc-action-btn"
             style={{
-              ...actionBtnBase,
-              backgroundColor: '#f1f5f9',
+              backgroundColor: '#f8fafc',
               border: '1px solid #cbd5e1',
               color: '#334155',
             }}
           >
-            👁️ Preview
+            <EyeIcon size={12} />
+            Preview
           </button>
           <button
             type="button"
             onClick={onRemove}
             disabled={isRemoving}
             aria-label={`Delete ${filename}`}
+            className="sf-doc-action-btn"
             style={{
-              ...actionBtnBase,
               backgroundColor: '#fef2f2',
               border: '1px solid #fecaca',
               color: '#b91c1c',
@@ -113,7 +99,8 @@ export function DocumentConfigForm({
               cursor: isRemoving ? 'not-allowed' : 'pointer',
             }}
           >
-            {isRemoving ? 'Deleting...' : '🗑️ Delete'}
+            <TrashIcon size={12} />
+            {isRemoving ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

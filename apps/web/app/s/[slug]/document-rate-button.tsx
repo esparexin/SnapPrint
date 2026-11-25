@@ -3,11 +3,12 @@
 import React from 'react';
 
 const baseBoxStyle: React.CSSProperties = {
-  padding: '8px 10px',
-  borderRadius: '8px',
+  padding: '6px 9px',
+  borderRadius: '7px',
   textAlign: 'left',
-  minHeight: '44px',
+  minHeight: '42px',
   width: '100%',
+  lineHeight: 1.25,
 };
 
 export function getBoxStyle(
@@ -20,19 +21,16 @@ export function getBoxStyle(
       ...baseBoxStyle,
       border: '1px dashed #cbd5e1',
       backgroundColor: '#f8fafc',
-      opacity: 0.55,
+      opacity: 0.6,
       cursor: 'not-allowed',
     };
   }
   if (isSelected) {
     return {
       ...baseBoxStyle,
-      border: isColorGroup ? '2px solid #c026d3' : '2px solid #0284c7',
+      border: isColorGroup ? '1.5px solid #c026d3' : '1.5px solid #0284c7',
       backgroundColor: isColorGroup ? '#fdf4ff' : '#f0f9ff',
       cursor: 'pointer',
-      boxShadow: isColorGroup
-        ? '0 1px 3px rgba(192, 38, 211, 0.2)'
-        : '0 1px 3px rgba(2, 132, 199, 0.2)',
     };
   }
   return {
@@ -66,12 +64,13 @@ export function DocumentRateOptionButton({
       type="button"
       onClick={onClick}
       disabled={isDisabled}
+      aria-pressed={isSelected}
       style={getBoxStyle(isSelected, isDisabled, isColor)}
     >
       <div
         style={{
           fontSize: '12px',
-          fontWeight: isSelected ? 700 : 500,
+          fontWeight: isSelected ? 600 : 500,
           color: isSelected ? activeColor : '#1e293b',
         }}
       >

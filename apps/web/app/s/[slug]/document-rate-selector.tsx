@@ -32,37 +32,37 @@ export function DocumentRateSelector({
   const isColorDouble = colorMode === 'color' && sides === 'double_sided' && !isSinglePage;
 
   return (
-    <div style={{ marginBottom: '12px' }}>
-      <label
-        style={{
-          display: 'block',
-          fontSize: '11px',
-          fontWeight: 600,
-          color: '#475569',
-          marginBottom: '6px',
-        }}
-      >
-        Print Mode & Color
-      </label>
+    <div style={{ marginBottom: '10px' }}>
+      <div className="sf-field-label">Print Mode &amp; Color</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
           <div
             style={{
               fontSize: '11px',
-              fontWeight: 700,
+              fontWeight: 600,
               color: '#334155',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '5px',
             }}
           >
-            <span>⚫</span> Black & White
+            <span
+              aria-hidden="true"
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '999px',
+                backgroundColor: '#1e293b',
+                display: 'inline-block',
+              }}
+            />
+            Black &amp; White
           </div>
           <DocumentRateOptionButton
             label="Single-sided"
             sublabel={
               <>
-                <strong>{formatRupees(bw.singleSidedMinor)}</strong>/page
+                <span style={{ fontWeight: 600 }}>{formatRupees(bw.singleSidedMinor)}</span>/page
               </>
             }
             isSelected={isBwSingle}
@@ -75,7 +75,7 @@ export function DocumentRateSelector({
                 '1-page doc'
               ) : (
                 <>
-                  <strong>{formatRupees(bw.doubleSidedMinor)}</strong>/sheet
+                  <span style={{ fontWeight: 600 }}>{formatRupees(bw.doubleSidedMinor)}</span>/sheet
                 </>
               )
             }
@@ -85,24 +85,34 @@ export function DocumentRateSelector({
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
           <div
             style={{
               fontSize: '11px',
-              fontWeight: 700,
+              fontWeight: 600,
               color: '#334155',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '5px',
             }}
           >
-            <span>🌈</span> Color
+            <span
+              aria-hidden="true"
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '999px',
+                background: 'linear-gradient(135deg, #ec4899, #8b5cf6, #06b6d4)',
+                display: 'inline-block',
+              }}
+            />
+            Color
           </div>
           <DocumentRateOptionButton
             label="Single-sided"
             sublabel={
               <>
-                <strong>{formatRupees(color.singleSidedMinor)}</strong>/page
+                <span style={{ fontWeight: 600 }}>{formatRupees(color.singleSidedMinor)}</span>/page
               </>
             }
             isSelected={isColorSingle}
@@ -116,7 +126,8 @@ export function DocumentRateSelector({
                 '1-page doc'
               ) : (
                 <>
-                  <strong>{formatRupees(color.doubleSidedMinor)}</strong>/sheet
+                  <span style={{ fontWeight: 600 }}>{formatRupees(color.doubleSidedMinor)}</span>
+                  /sheet
                 </>
               )
             }
