@@ -21,7 +21,7 @@ export function getDefaultConfigPath(): string {
 }
 
 export function getDefaultApiUrl(): string {
-  return process.env.SNAPPRINT_API_URL || 'http://127.0.0.1:3001';
+  return process.env.SNAPPRINT_API_URL || 'https://api.snapprint.in';
 }
 
 export function protectCredential(plainText: string, platform = process.platform): string {

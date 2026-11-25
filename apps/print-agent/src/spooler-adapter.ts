@@ -127,19 +127,28 @@ export function parseCupsPrinters(
 
 export function createSystemSpoolerAdapter(options?: {
   platform?: NodeJS.Platform;
-  execAsync?: (cmd: string) => Promise<{ stdout: string; stderr: string }>;
+  execAsync?: (
+    cmd: string,
+    opts?: { timeout?: number }
+  ) => Promise<{ stdout: string; stderr: string }>;
 }): SpoolerAdapter {
   const platform = options?.platform || process.platform;
-  const runner = options?.execAsync || execPromise;
+  const runner =
+    options?.execAsync ||
+    (async (cmd: string, opts?: { timeout?: number }) => {
+      const res = await execPromise(cmd, { encoding: 'utf-8', ...opts });
+      return { stdout: String(res.stdout), stderr: String(res.stderr) };
+    });
 
   return {
     async getPrinters(): Promise<DiscoveredPrinter[]> {
       if (platform === 'win32') {
         try {
           const { stdout } = await runner(
-            'powershell -NoProfile -Command "Get-Printer | Select-Object Name,DriverName,Default | ConvertTo-Json"'
+            'powershell -NoProfile -Command "Get-Printer | Select-Object Name,DriverName,Default | ConvertTo-Json"',
+            { timeout: 5000 }
           );
-          return parseWindowsPrintersJson(stdout);
+          return parseWindowsPrintersJson(String(stdout));
         } catch {
           return [];
         }
@@ -148,10 +157,10 @@ export function createSystemSpoolerAdapter(options?: {
       // Unix / macOS / Linux fallback via CUPS
       try {
         const [pRes, dRes] = await Promise.all([
-          runner('lpstat -p').catch(() => ({ stdout: '', stderr: '' })),
-          runner('lpstat -d').catch(() => ({ stdout: '', stderr: '' })),
+          runner('lpstat -p', { timeout: 5000 }).catch(() => ({ stdout: '', stderr: '' })),
+          runner('lpstat -d', { timeout: 5000 }).catch(() => ({ stdout: '', stderr: '' })),
         ]);
-        return parseCupsPrinters(pRes.stdout, dRes.stdout);
+        return parseCupsPrinters(String(pRes.stdout), String(dRes.stdout));
       } catch {
         return [];
       }
@@ -169,7 +178,7 @@ export function createSystemSpoolerAdapter(options?: {
         // 1. Validate target printer exists and is online
         const checkCmd = buildWindowsPrinterValidationScript(printerName);
         try {
-          await runner(`powershell -NoProfile -Command "${checkCmd}"`);
+          await runner(`powershell -NoProfile -Command "${checkCmd}"`, { timeout: 10000 });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           if (msg.includes('PRINTER_NOT_FOUND')) {
@@ -194,7 +203,7 @@ export function createSystemSpoolerAdapter(options?: {
         }
 
         try {
-          await runner(`powershell -NoProfile -Command "${printCmd}"`);
+          await runner(`powershell -NoProfile -Command "${printCmd}"`, { timeout: 30000 });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           throw new Error(
@@ -208,7 +217,7 @@ export function createSystemSpoolerAdapter(options?: {
       const safePath = filePath.replace(/"/g, '\\"');
       const safePrinter = printerName.replace(/"/g, '\\"');
       try {
-        await runner(`lp -d "${safePrinter}" -n ${copies} "${safePath}"`);
+        await runner(`lp -d "${safePrinter}" -n ${copies} "${safePath}"`, { timeout: 30000 });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         throw new Error(

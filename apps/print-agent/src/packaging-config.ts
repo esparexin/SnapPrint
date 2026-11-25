@@ -91,6 +91,22 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
           Type="string"
           KeyPath="no" />
       </Component>
+      <Component Id="ApplicationShortcutsComponent" Guid="B5E3F6D9-2C4B-5E8F-0D3E-6F9B2C4D6E8B" Directory="ApplicationProgramsFolder">
+        <Shortcut
+          Id="UninstallProductShortcut"
+          Name="Uninstall ${meta.productName}"
+          Description="Uninstalls ${meta.productName}"
+          Target="[System64Folder]msiexec.exe"
+          Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="CleanUpApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\\SnapPrint\\${meta.startupRegistryName}"
+          Name="installed"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
     </ComponentGroup>
 
     <Feature Id="MainFeature" Title="${meta.productName}" Level="1">
