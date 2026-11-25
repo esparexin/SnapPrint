@@ -136,7 +136,25 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
   return 1;
 }
 
-if (process.argv[1]?.endsWith('cli.ts') || process.argv[1]?.endsWith('cli.js')) {
+export function isCliMainModule(targetPath?: string): boolean {
+  const target = targetPath || process.argv[1] || '';
+  const normalized = target.replace(/\\/g, '/').toLowerCase();
+  return (
+    normalized.endsWith('/cli.ts') ||
+    normalized.endsWith('/cli.js') ||
+    normalized.endsWith('cli.ts') ||
+    normalized.endsWith('cli.js') ||
+    normalized.endsWith('/snapprint-agent.bundle.cjs') ||
+    normalized.endsWith('snapprint-agent.bundle.cjs') ||
+    normalized.endsWith('/snapprint-agent.exe') ||
+    normalized.endsWith('snapprint-agent.exe') ||
+    normalized.endsWith('/snapprint-agent') ||
+    normalized.endsWith('snapprint-agent') ||
+    Boolean(process.env.SNAPPRINT_AGENT_STANDALONE)
+  );
+}
+
+if (isCliMainModule()) {
   runCli().then((code) => {
     if (code !== 0 && process.argv[2] !== 'start') {
       process.exit(code);

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { FastifyInstance } from 'fastify';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
 
@@ -10,18 +10,6 @@ export interface AgentDownloadRoutesOptions {
 
 export const DEFAULT_AGENT_VERSION = '0.1.0';
 export const DEFAULT_INSTALLER_NAME = 'SnapPrint-Print-Agent.msi' as const;
-
-export function createFallbackInstallerBuffer(): Buffer {
-  const cfbHeader = Buffer.from([
-    0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x3e, 0x00, 0x03, 0x00, 0xfe, 0xff, 0x09, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ]);
-  const packagePayload = Buffer.from(
-    `SnapPrint-Print-Agent-Package: Product=SnapPrint Desktop Print Agent; ` +
-      `UpgradeCode=E3A7B95C-8F42-4F1A-B871-3C5E9025DF7A; Version=${DEFAULT_AGENT_VERSION};\n`
-  );
-  return Buffer.concat([cfbHeader, packagePayload]);
-}
 
 export async function agentDownloadRoutes(
   app: FastifyInstance,
@@ -58,42 +46,45 @@ export async function agentDownloadRoutes(
     releaseDate: string;
   } | null => {
     const installerPath = resolveInstallerPath();
-    if (existsSync(installerPath)) {
-      const stats = statSync(installerPath);
-      const buffer = readFileSync(installerPath);
-      const sha256 = createHash('sha256').update(buffer).digest('hex');
-      return { buffer, sizeBytes: stats.size, sha256, releaseDate: stats.mtime.toISOString() };
-    }
-
-    if (opts?.installerPath) {
+    if (!existsSync(installerPath)) {
       return null;
     }
 
-    const buffer = createFallbackInstallerBuffer();
-    const sha256 = createHash('sha256').update(buffer).digest('hex');
-    const releaseDate = new Date('2026-11-24T00:00:00.000Z').toISOString();
-
-    try {
-      mkdirSync(dirname(installerPath), { recursive: true });
-      writeFileSync(installerPath, buffer);
-    } catch {
-      // Best-effort cache to disk; proceed with in-memory buffer if filesystem is non-writable
+    const stats = statSync(installerPath);
+    // Strict structural check: valid MSI must have non-trivial size and OLE CFB header
+    if (stats.size < 1024) {
+      return null;
     }
 
-    return { buffer, sizeBytes: buffer.length, sha256, releaseDate };
+    const buffer = readFileSync(installerPath);
+    if (
+      buffer.length < 8 ||
+      buffer[0] !== 0xd0 ||
+      buffer[1] !== 0xcf ||
+      buffer[2] !== 0x11 ||
+      buffer[3] !== 0xe0 ||
+      buffer[4] !== 0xa1 ||
+      buffer[5] !== 0xb1 ||
+      buffer[6] !== 0x1a ||
+      buffer[7] !== 0xe1
+    ) {
+      return null;
+    }
+
+    const sha256 = createHash('sha256').update(buffer).digest('hex');
+    return { buffer, sizeBytes: stats.size, sha256, releaseDate: stats.mtime.toISOString() };
   };
 
   // GET /downloads/windows-agent/metadata
   app.get('/downloads/windows-agent/metadata', async (request, reply) => {
     const data = getInstallerData();
-    let sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-    let sizeBytes = 1024;
-    let releaseDate = new Date('2026-11-24T00:00:00.000Z').toISOString();
-
-    if (data) {
-      sha256 = data.sha256;
-      sizeBytes = data.sizeBytes;
-      releaseDate = data.releaseDate;
+    if (!data) {
+      return reply.status(404).send({
+        statusCode: 404,
+        code: 'METADATA_NOT_FOUND',
+        message:
+          'Windows Print Agent installer metadata not available because no valid installer artifact has been compiled or published on this server.',
+      });
     }
 
     const host = request.headers.host || 'localhost:3001';
@@ -104,9 +95,9 @@ export async function agentDownloadRoutes(
       version: DEFAULT_AGENT_VERSION,
       installerName: DEFAULT_INSTALLER_NAME,
       downloadUrl,
-      sha256,
-      sizeBytes,
-      releaseDate,
+      sha256: data.sha256,
+      sizeBytes: data.sizeBytes,
+      releaseDate: data.releaseDate,
     });
 
     return reply.status(200).send(metadata);
@@ -119,7 +110,8 @@ export async function agentDownloadRoutes(
       return reply.status(404).send({
         statusCode: 404,
         code: 'INSTALLER_NOT_FOUND',
-        message: 'Windows Print Agent installer artifact not found on this server.',
+        message:
+          'Windows Print Agent installer artifact not found on this server. Compile or publish the release artifact before downloading.',
       });
     }
 

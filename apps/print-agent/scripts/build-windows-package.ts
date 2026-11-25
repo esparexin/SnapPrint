@@ -1,9 +1,18 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bundleAgentRuntime } from '../src/agent-bundler.js';
 import { DEFAULT_PACKAGING_METADATA, generateWixManifest } from '../src/packaging-config.js';
+import { validateMsiHeader, validatePeHeader } from '../src/packaging-validator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,100 +29,115 @@ export function emitWixPackageManifest(outputDir: string): string {
   return filePath;
 }
 
-export function emitWindowsExecutable(targetPath: string): {
-  path: string;
-  sizeBytes: number;
-  sha256: string;
-} {
-  const dir = dirname(targetPath);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-
-  // Windows Portable Executable (PE) header template (MZ header + PE signature + embedded SnapPrint agent bundle)
-  const mzHeader = Buffer.from([
-    0x4d, 0x5a, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
-    0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ]);
-  const bundlePayload = Buffer.from(
-    `/* SnapPrint Print Agent Standalone Executable v${DEFAULT_PACKAGING_METADATA.version} */\n` +
-      `// Auto-generated distributable Windows runtime\n`
-  );
-
-  const exeBuffer = Buffer.concat([mzHeader, bundlePayload]);
-  writeFileSync(targetPath, exeBuffer);
-
-  const sha256 = createHash('sha256').update(exeBuffer).digest('hex');
-  return { path: targetPath, sizeBytes: exeBuffer.length, sha256 };
-}
-
-export function emitWindowsMsiInstaller(targetPath: string): {
-  path: string;
-  sizeBytes: number;
-  sha256: string;
-} {
-  const dir = dirname(targetPath);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-
-  // Standard Microsoft Compound File Binary (CFB/MSI) magic bytes: D0 CF 11 E0 A1 B1 1A E1
-  const cfbHeader = Buffer.from([
-    0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x3e, 0x00, 0x03, 0x00, 0xfe, 0xff, 0x09, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ]);
-  const packagePayload = Buffer.from(
-    `SnapPrint-Print-Agent-Package: Product=${DEFAULT_PACKAGING_METADATA.productName}; ` +
-      `UpgradeCode=${DEFAULT_PACKAGING_METADATA.upgradeCode}; Version=${DEFAULT_PACKAGING_METADATA.version};\n`
-  );
-
-  const msiBuffer = Buffer.concat([cfbHeader, packagePayload]);
-  writeFileSync(targetPath, msiBuffer);
-
-  const sha256 = createHash('sha256').update(msiBuffer).digest('hex');
-  return { path: targetPath, sizeBytes: msiBuffer.length, sha256 };
-}
-
-export function buildWindowsPackage(): {
+export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: boolean }): Promise<{
   success: boolean;
   msiPath: string;
   exePath: string;
+  bundlePath: string;
+  sha256?: string;
   message: string;
-} {
-  const wixDir = join(packageRoot, 'installer', 'wix');
-  const distWixDir = join(distDir, 'installer');
-  const primaryWxsPath = emitWixPackageManifest(wixDir);
-  emitWixPackageManifest(distWixDir);
+}> {
+  if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true });
+  }
+
+  // 1. Ensure runtime bundle exists
+  const bundlePath = join(distDir, 'snapprint-agent.bundle.cjs');
+  if (!existsSync(bundlePath)) {
+    await bundleAgentRuntime();
+  }
 
   const exePath = join(distDir, DEFAULT_PACKAGING_METADATA.binaryName);
   const msiPath = join(distDir, DEFAULT_PACKAGING_METADATA.msiFileName);
 
-  emitWindowsExecutable(exePath);
-  emitWindowsMsiInstaller(msiPath);
-
+  // 2. WiX toolchain verification
   const checkWix = spawnSync('wix', ['--version'], { encoding: 'utf-8' });
   const hasWix = !checkWix.error && checkWix.status === 0;
 
-  if (hasWix) {
-    const buildResult = spawnSync('wix', ['build', '-o', msiPath, primaryWxsPath], {
-      encoding: 'utf-8',
-      stdio: 'inherit',
-    });
-    if (buildResult.status === 0) {
+  if (!hasWix) {
+    if (options?.allowSkipOnNonWindows && process.platform !== 'win32') {
       return {
-        success: true,
+        success: false,
         msiPath,
         exePath,
-        message: `Built ${DEFAULT_PACKAGING_METADATA.msiFileName} using WiX Toolset v4.`,
+        bundlePath,
+        message: 'WiX toolchain not available on non-Windows environment; packaging skipped.',
       };
     }
+    throw new Error(
+      `WiX Toolset v4 is not installed. To compile the Windows MSI package, install WiX v4 ` +
+        `('dotnet tool install --global wix') on a Windows build runner.`
+    );
   }
+
+  // 3. Emit WiX manifest
+  const wixDir = join(packageRoot, 'installer', 'wix');
+  const primaryWxsPath = emitWixPackageManifest(wixDir);
+
+  // 4. Standalone Windows Executable preparation
+  if (process.platform === 'win32') {
+    if (!existsSync(exePath)) {
+      copyFileSync(process.execPath, exePath);
+      const postject = spawnSync('npx', [
+        'postject',
+        exePath,
+        'NODE_SEA_BLOB',
+        bundlePath,
+        '--sentinel-fuse',
+        'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+      ]);
+      if (postject.status !== 0) {
+        throw new Error(
+          `postject failed to inject runtime bundle into executable: ${postject.stderr}`
+        );
+      }
+    }
+  }
+
+  if (!existsSync(exePath)) {
+    throw new Error(
+      `Standalone executable ${exePath} is missing. A genuine Windows executable must be compiled before running WiX.`
+    );
+  }
+
+  const exeBuffer = readFileSync(exePath);
+  if (!validatePeHeader(exeBuffer) || exeBuffer.length < 10000) {
+    throw new Error(
+      `Generated executable at ${exePath} failed PE structural validation (invalid PE header or size).`
+    );
+  }
+
+  // 5. Compile MSI with WiX v4
+  const buildResult = spawnSync('wix', ['build', '-o', msiPath, primaryWxsPath], {
+    encoding: 'utf-8',
+    stdio: 'inherit',
+  });
+
+  if (buildResult.status !== 0) {
+    throw new Error(`wix build failed with exit code ${buildResult.status}.`);
+  }
+
+  if (!existsSync(msiPath)) {
+    throw new Error(`wix build completed but ${msiPath} was not found on disk.`);
+  }
+
+  const msiBuffer = readFileSync(msiPath);
+  if (!validateMsiHeader(msiBuffer) || msiBuffer.length < 50000) {
+    throw new Error(
+      `Generated MSI at ${msiPath} failed validation (corrupt OLE CFB header or size < 50KB).`
+    );
+  }
+
+  const sha256 = createHash('sha256').update(msiBuffer).digest('hex');
+  const stats = statSync(msiPath);
 
   return {
     success: true,
     msiPath,
     exePath,
-    message: `Generated Windows agent executable and MSI installer artifact at ${msiPath}.`,
+    bundlePath,
+    sha256,
+    message: `Successfully compiled genuine MSI installer (${stats.size} bytes, SHA-256: ${sha256}).`,
   };
 }
 
@@ -121,10 +145,15 @@ if (
   process.argv[1]?.endsWith('build-windows-package.ts') ||
   process.argv[1]?.endsWith('build-windows-package.js')
 ) {
-  console.log(`[SnapPrint] Emitting Windows Print Agent standalone runtime and MSI installer...`);
-  const result = buildWindowsPackage();
-  console.log(`[SnapPrint] ${result.message}`);
-  if (!result.success) {
-    process.exit(1);
-  }
+  buildWindowsPackage()
+    .then((result) => {
+      console.log(`[SnapPrint] ${result.message}`);
+      if (!result.success) process.exit(1);
+    })
+    .catch((err) => {
+      console.error(
+        `[SnapPrint Packaging Error] ${err instanceof Error ? err.message : String(err)}`
+      );
+      process.exit(1);
+    });
 }
