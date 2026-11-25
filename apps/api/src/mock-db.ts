@@ -34,15 +34,11 @@ function matchComparisonOp(actual: unknown, op: string, target: unknown): boolea
   const a = toComparableNumber(actual);
   const b = toComparableNumber(target);
   if (Number.isNaN(a) || Number.isNaN(b)) return false;
-  return op === '$gt'
-    ? a > b
-    : op === '$gte'
-      ? a >= b
-      : op === '$lt'
-        ? a < b
-        : op === '$lte'
-          ? a <= b
-          : false;
+  if (op === '$gt') return a > b;
+  if (op === '$gte') return a >= b;
+  if (op === '$lt') return a < b;
+  if (op === '$lte') return a <= b;
+  return false;
 }
 
 function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
@@ -57,6 +53,11 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
       if ('$exists' in obj && (item[k] !== undefined) !== Boolean(obj.$exists)) return false;
       if ('$in' in obj && Array.isArray(obj.$in)) {
         if (!obj.$in.includes(item[k])) return false;
+        continue;
+      }
+      if ('$regex' in obj) {
+        const reg = obj.$regex instanceof RegExp ? obj.$regex : new RegExp(String(obj.$regex), 'i');
+        if (!reg.test(String(item[k] ?? ''))) return false;
         continue;
       }
       let handledOp = false;
@@ -211,6 +212,13 @@ export function createMockDb(): { db: Db } & MockCollections {
           if (idx === -1) return { deletedCount: 0 };
           list.splice(idx, 1);
           return { deletedCount: 1 };
+        },
+        async deleteMany(filter: Record<string, unknown>) {
+          const before = list.length;
+          for (let i = list.length - 1; i >= 0; i--) {
+            if (matchDoc(list[i], filter)) list.splice(i, 1);
+          }
+          return { deletedCount: before - list.length };
         },
         async updateMany(filter: Record<string, unknown>, update: Record<string, unknown>) {
           const matched = list.filter((i) => matchDoc(i, filter));

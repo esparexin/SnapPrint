@@ -155,5 +155,93 @@ describe('Printer Operator Routes (apps/api)', () => {
     const { printers } = listRes.json();
     expect(printers.find((p: { id: string }) => p.id === 'hp_01').role).toBe('active_bw');
     expect(printers.find((p: { id: string }) => p.id === 'epson_01').role).toBe('active_color');
+
+    // 5. Reject active_color on monochromatic printer
+    const invalidColorRes = await app.inject({
+      method: 'PATCH',
+      url: `/studios/${studioId}/printers/hp_01/role`,
+      headers: { cookie: `${cookie.name}=${cookie.value}` },
+      payload: { role: 'active_color' },
+    });
+    expect(invalidColorRes.statusCode).toBe(404);
+  });
+
+  it('purges and ignores virtual and software printers during sync', async () => {
+    const { app, studioId, cookie } = await seedStudioOwner();
+    const keyRes = await app.inject({
+      method: 'POST',
+      url: `/studios/${studioId}/agent/pairing-keys`,
+      headers: { cookie: `${cookie.name}=${cookie.value}` },
+    });
+    const enrollRes = await app.inject({
+      method: 'POST',
+      url: '/agent/enroll',
+      payload: {
+        pairingCode: keyRes.json().code,
+        agentVersion: '1.0.0',
+        hostname: 'PC',
+        osPlatform: 'win32',
+      },
+    });
+
+    const now = new Date().toISOString();
+    await app.inject({
+      method: 'POST',
+      url: '/agent/sync-printers',
+      headers: { 'x-device-token': enrollRes.json().deviceToken },
+      payload: {
+        printers: [
+          {
+            printerId: 'hp_real',
+            name: '\\\\manasa\\HP LaserJet M1005',
+            driverName: 'HP M1005',
+            isColorSupported: false,
+            supportedPaperSizes: ['A4'],
+            status: 'online',
+            isDefaultOsPrinter: true,
+            lastSeenAt: now,
+          },
+          {
+            printerId: 'anydesk',
+            name: 'AnyDesk Printer',
+            driverName: 'AnyDesk v4 Driver',
+            isColorSupported: false,
+            supportedPaperSizes: ['A4'],
+            status: 'online',
+            lastSeenAt: now,
+          },
+          {
+            printerId: 'pdf',
+            name: 'Microsoft Print to PDF',
+            driverName: 'Print to PDF',
+            isColorSupported: false,
+            supportedPaperSizes: ['A4'],
+            status: 'online',
+            lastSeenAt: now,
+          },
+          {
+            printerId: 'onenote',
+            name: 'OneNote (Desktop)',
+            driverName: 'Send to OneNote',
+            isColorSupported: false,
+            supportedPaperSizes: ['A4'],
+            status: 'online',
+            lastSeenAt: now,
+          },
+        ],
+        timestamp: now,
+      },
+    });
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: `/studios/${studioId}/printers`,
+      headers: { cookie: `${cookie.name}=${cookie.value}` },
+    });
+    expect(listRes.statusCode).toBe(200);
+    const { printers } = listRes.json();
+    expect(printers).toHaveLength(1);
+    expect(printers[0].name).toBe('\\\\manasa\\HP LaserJet M1005');
+    expect(printers[0].role).toBe('active_bw');
   });
 });

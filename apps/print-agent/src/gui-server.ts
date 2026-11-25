@@ -62,7 +62,14 @@ export function createGuiServer(
   spooler: SpoolerAdapter,
   configPath?: string
 ): Server {
-  return createServer(async (req, res) => {
+  let activeDaemon: AgentDaemon | null = null;
+  const initialConfig = loadAgentConfig(configPath);
+  if (initialConfig.deviceToken) {
+    activeDaemon = new AgentDaemon(initialConfig, client, spooler);
+    activeDaemon.start().catch(() => {});
+  }
+
+  const server = createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://127.0.0.1');
 
     if (req.method === 'GET' && url.pathname === '/') {
@@ -136,8 +143,9 @@ export function createGuiServer(
         config.deviceFriendlyName = host;
         saveAgentConfig(config, configPath);
 
-        const daemon = new AgentDaemon(config, client, spooler);
-        await daemon.syncOnce().catch(() => {});
+        if (activeDaemon) activeDaemon.stop();
+        activeDaemon = new AgentDaemon(config, client, spooler);
+        activeDaemon.start().catch(() => {});
 
         return sendJson(res, 200, {
           success: true,
@@ -152,6 +160,10 @@ export function createGuiServer(
     }
 
     if (req.method === 'POST' && url.pathname === '/api/unpair') {
+      if (activeDaemon) {
+        activeDaemon.stop();
+        activeDaemon = null;
+      }
       unpairAgent(configPath);
       return sendJson(res, 200, { success: true });
     }
@@ -159,8 +171,12 @@ export function createGuiServer(
     if (req.method === 'POST' && url.pathname === '/api/sync') {
       const config = loadAgentConfig(configPath);
       if (config.deviceToken) {
-        const daemon = new AgentDaemon(config, client, spooler);
-        await daemon.syncOnce().catch(() => {});
+        if (!activeDaemon) {
+          activeDaemon = new AgentDaemon(config, client, spooler);
+          activeDaemon.start().catch(() => {});
+        } else {
+          await activeDaemon.syncOnce().catch(() => {});
+        }
       }
       const printers = await spooler.getPrinters().catch(() => []);
       return sendJson(res, 200, { printers });
@@ -168,6 +184,15 @@ export function createGuiServer(
 
     res.writeHead(404).end('Not Found');
   });
+
+  (server as unknown as { stopDaemon?: () => void }).stopDaemon = () => {
+    if (activeDaemon) {
+      activeDaemon.stop();
+      activeDaemon = null;
+    }
+  };
+
+  return server;
 }
 
 export async function startGuiServer(
@@ -195,7 +220,11 @@ export async function startGuiServer(
         server,
         port,
         url,
-        close: () => new Promise((done) => server.close(() => done())),
+        close: () =>
+          new Promise((done) => {
+            (server as unknown as { stopDaemon?: () => void }).stopDaemon?.();
+            server.close(() => done());
+          }),
       });
     });
   });
