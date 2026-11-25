@@ -5,24 +5,86 @@ import { createInterface } from 'node:readline/promises';
 import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
+import { launchGuiWindow, startGuiServer } from './gui-server.js';
 import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
 
 export const AGENT_VERSION = '0.1.0';
 
-export async function runCli(argv: string[] = process.argv.slice(2)): Promise<number> {
-  const command = argv[0] || 'status';
+export function extractApiUrlFlag(argv: string[]): { apiUrl?: string; filteredArgv: string[] } {
+  let apiUrl: string | undefined;
+  const filtered: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith('--api-url=')) {
+      apiUrl = arg.slice(10).trim();
+    } else if (arg === '--api-url' && i + 1 < argv.length) {
+      apiUrl = argv[++i].trim();
+    } else if (arg.startsWith('--server=')) {
+      apiUrl = arg.slice(9).trim();
+    } else if (arg === '--server' && i + 1 < argv.length) {
+      apiUrl = argv[++i].trim();
+    } else {
+      filtered.push(arg);
+    }
+  }
+  return { apiUrl, filteredArgv: filtered };
+}
+
+export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise<number> {
+  const { apiUrl, filteredArgv } = extractApiUrlFlag(rawArgv);
+  const config = loadAgentConfig();
+
+  if (apiUrl) {
+    config.apiUrl = apiUrl;
+    saveAgentConfig(config);
+  }
+
+  const client = new AgentClient(config.apiUrl);
+  const spooler = createSystemSpoolerAdapter();
+  const command = filteredArgv[0];
+
   if (command === 'version' || command === '--version' || command === '-v') {
     console.log(AGENT_VERSION);
     return 0;
   }
 
-  const config = loadAgentConfig();
-  const client = new AgentClient(config.apiUrl);
-  const spooler = createSystemSpoolerAdapter();
+  if (!command || command === 'gui') {
+    const handle = await startGuiServer(client, spooler);
+    launchGuiWindow(handle.url);
+    console.log(`SnapPrint Agent GUI running at: ${handle.url}`);
 
-  if (command === 'enroll') {
-    let pairingCode = argv[1];
+    if (config.deviceToken) {
+      const daemon = new AgentDaemon(config, client, spooler);
+      daemon.start().catch(() => {});
+    }
+
+    if (process.env.NODE_ENV === 'test' || Boolean(process.env.SNAPPRINT_TEST_MODE)) {
+      await handle.close();
+      return 0;
+    }
+
+    const handleExit = () => {
+      handle.close();
+      releaseInstanceLock();
+      process.exit(0);
+    };
+    process.on('SIGINT', handleExit);
+    process.on('SIGTERM', handleExit);
+    return new Promise(() => {});
+  }
+
+  if (command === 'config') {
+    if (apiUrl) {
+      console.log(`API URL updated to: ${config.apiUrl}`);
+      return 0;
+    }
+    console.log(`Current API URL: ${config.apiUrl}`);
+    return 0;
+  }
+
+  if (command === 'enroll' || command === 'pair') {
+    let pairingCode = filteredArgv[1];
     if (!pairingCode) {
       const rl = createInterface({ input: process.stdin, output: process.stdout });
       pairingCode = await rl.question('Enter 16-char Pairing Code (e.g. SNAP-XXXX-YYYY): ');
@@ -138,7 +200,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
   }
 
   console.log(
-    'Usage: snapprint-agent [enroll <code?> | unpair | sync | start | status | printers | version]'
+    'Usage: snapprint-agent [gui | pair <code?> [--api-url <url>] | enroll | start | status | printers | sync | unpair | config | version]'
   );
   return 1;
 }

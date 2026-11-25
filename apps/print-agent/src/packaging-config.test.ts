@@ -34,6 +34,9 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(xml).toContain('Directory Id="INSTALLFOLDER" Name="PrintAgent"');
     expect(xml).toContain('Id="ApplicationStartMenuShortcut"');
     expect(xml).toContain('Id="ApplicationDesktopShortcut"');
+    expect(xml).toContain('Id="UninstallProductShortcut"');
+    expect(xml).toContain('Target="[System64Folder]msiexec.exe"');
+    expect(xml).toContain('Arguments="/x [ProductCode]"');
     expect(xml).toContain('Key="Software\\Microsoft\\Windows\\CurrentVersion\\Run"');
   });
 

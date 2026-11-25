@@ -116,6 +116,18 @@ printer HP_LaserJet_1020 is idle. enabled since Mon 23 Nov 2026 10:00:00 AM IST
       expect(printers[0].name).toBe('Mocked Windows Printer');
     });
 
+    it('passes timeout option to runner to prevent hang on win32', async () => {
+      let passedTimeout: number | undefined;
+      const mockExec = async (cmd: string, opts?: { timeout?: number }) => {
+        passedTimeout = opts?.timeout;
+        return { stdout: '[]', stderr: '' };
+      };
+
+      const adapter = createSystemSpoolerAdapter({ platform: 'win32', execAsync: mockExec });
+      await adapter.getPrinters();
+      expect(passedTimeout).toBe(5000);
+    });
+
     it('queries CUPS when on darwin/linux', async () => {
       const mockExec = async (cmd: string) => {
         if (cmd === 'lpstat -p') {

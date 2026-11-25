@@ -1,11 +1,13 @@
 import { tmpdir } from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AGENT_VERSION, runCli } from './cli.js';
+import { AGENT_VERSION, extractApiUrlFlag, runCli } from './cli.js';
+import { loadAgentConfig } from './config.js';
 
 describe('CLI Commands', () => {
   beforeEach(() => {
     process.env.SNAPPRINT_CONFIG_DIR = tmpdir();
   });
+
   it('displays status without failing', async () => {
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const exitCode = await runCli(['status']);
@@ -22,6 +24,47 @@ describe('CLI Commands', () => {
     expect(exitCode).toBe(1);
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: snapprint-agent'));
     consoleLogSpy.mockRestore();
+  });
+
+  it('extractApiUrlFlag parses --api-url and --server variations', () => {
+    expect(extractApiUrlFlag(['status', '--api-url=https://api.one.com'])).toEqual({
+      apiUrl: 'https://api.one.com',
+      filteredArgv: ['status'],
+    });
+
+    expect(
+      extractApiUrlFlag(['pair', 'SNAP-1234-5678', '--api-url', 'https://api.two.com'])
+    ).toEqual({
+      apiUrl: 'https://api.two.com',
+      filteredArgv: ['pair', 'SNAP-1234-5678'],
+    });
+
+    expect(extractApiUrlFlag(['status', '--server', 'https://api.three.com'])).toEqual({
+      apiUrl: 'https://api.three.com',
+      filteredArgv: ['status'],
+    });
+  });
+
+  it('config command displays and updates API URL', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitCode = await runCli(['config', '--api-url', 'https://api.snapprint.in']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('API URL updated to: https://api.snapprint.in')
+    );
+
+    const saved = loadAgentConfig();
+    expect(saved.apiUrl).toBe('https://api.snapprint.in');
+    consoleLogSpy.mockRestore();
+  });
+
+  it('pair command alias requires pairing code when empty', async () => {
+    const consoleErrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // When code is empty string
+    const exitCode = await runCli(['pair', '   ']);
+    expect(exitCode).toBe(1);
+    expect(consoleErrSpy).toHaveBeenCalledWith(expect.stringContaining('Pairing code is required'));
+    consoleErrSpy.mockRestore();
   });
 
   it('fails sync when device is not enrolled', async () => {
@@ -52,5 +95,12 @@ describe('CLI Commands', () => {
     }
 
     consoleLogSpy.mockRestore();
+  });
+
+  it('launches GUI server and closes cleanly in test mode', async () => {
+    process.env.SNAPPRINT_TEST_MODE = '1';
+    const exitCode = await runCli(['gui']);
+    expect(exitCode).toBe(0);
+    delete process.env.SNAPPRINT_TEST_MODE;
   });
 });
