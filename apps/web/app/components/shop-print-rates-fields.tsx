@@ -16,6 +16,22 @@ export interface ShopPrintRatesFieldsProps {
 
 const ALL_SIZES: PaperSize[] = ['A4', 'A3', 'A5', 'legal', 'letter'];
 
+const tabBtnStyle = (isSelected: boolean): React.CSSProperties => ({
+  minHeight: '44px',
+  padding: '6px 12px',
+  borderRadius: '6px',
+  border: isSelected ? '2px solid #0284c7' : '1px solid #cbd5e1',
+  backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
+  color: isSelected ? '#0369a1' : '#334155',
+  fontWeight: isSelected ? 700 : 500,
+  fontSize: '13px',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
 export function ShopPrintRatesFields({
   printRates,
   supportedPaperSizes,
@@ -23,18 +39,19 @@ export function ShopPrintRatesFields({
   supportsBlackAndWhite = true,
   onChange,
 }: ShopPrintRatesFieldsProps) {
-  const configured = Object.keys(printRates).filter((k): k is PaperSize =>
+  const configured: PaperSize[] = Object.keys(printRates).filter((k): k is PaperSize =>
     ALL_SIZES.includes(k as PaperSize)
   );
-  const activeSizes: PaperSize[] =
-    supportedPaperSizes && supportedPaperSizes.length > 0
-      ? supportedPaperSizes
-      : configured.length > 0
-        ? configured
-        : ['A4'];
+  const activeSizes: PaperSize[] = supportedPaperSizes?.length
+    ? supportedPaperSizes
+    : configured.length
+      ? configured
+      : (['A4'] as PaperSize[]);
 
   const [selectedSize, setSelectedSize] = useState<PaperSize>(activeSizes[0] || 'A4');
-  const currentSize = activeSizes.includes(selectedSize) ? selectedSize : activeSizes[0] || 'A4';
+  const currentSize: PaperSize = activeSizes.includes(selectedSize)
+    ? selectedSize
+    : activeSizes[0] || 'A4';
 
   const defaultRates = DEFAULT_DOCUMENT_PRINT_RATES[currentSize] || DEFAULT_DOCUMENT_PRINT_RATES.A4;
   const currentSizeRates = printRates[currentSize] || defaultRates;
@@ -48,10 +65,7 @@ export function ShopPrintRatesFields({
     const modeRates = currentSizeRates[mode] || defaultRates[mode];
     onChange({
       ...printRates,
-      [currentSize]: {
-        ...currentSizeRates,
-        [mode]: { ...modeRates, [side]: minor },
-      },
+      [currentSize]: { ...currentSizeRates, [mode]: { ...modeRates, [side]: minor } },
     });
   };
 
@@ -68,44 +82,47 @@ export function ShopPrintRatesFields({
         </span>
       </div>
 
-      {/* Paper Size Selector Tabs */}
-      <div role="tablist" aria-label="Supported Paper Sizes" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-        {activeSizes.map((size) => {
-          const isSelected = size === currentSize;
-          const sDim = PAPER_DIMENSIONS[size];
-          return (
-            <button
-              key={size}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              onClick={() => setSelectedSize(size)}
-              style={{
-                minHeight: '44px',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: isSelected ? '2px solid #0284c7' : '1px solid #cbd5e1',
-                backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
-                color: isSelected ? '#0369a1' : '#334155',
-                fontWeight: isSelected ? 700 : 500,
-                fontSize: '13px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <span>{size.toUpperCase()}</span>
-              {sDim && <span style={{ fontSize: '10px', color: '#64748b' }}>{sDim.widthMm}×{sDim.heightMm}mm</span>}
-            </button>
-          );
-        })}
+      <div
+        role="tablist"
+        aria-label="Supported Paper Sizes"
+        style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}
+      >
+        {activeSizes.map((size) => (
+          <button
+            key={size}
+            type="button"
+            role="tab"
+            aria-selected={size === currentSize}
+            onClick={() => setSelectedSize(size)}
+            style={tabBtnStyle(size === currentSize)}
+          >
+            <span>{size.toUpperCase()}</span>
+            {PAPER_DIMENSIONS[size] && (
+              <span style={{ fontSize: '10px', color: '#64748b' }}>
+                {PAPER_DIMENSIONS[size].widthMm}×{PAPER_DIMENSIONS[size].heightMm}mm
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{currentSize.toUpperCase()} Rates</span>
-        {dim && <span style={{ fontSize: '11px', color: '#64748b' }}>{dim.widthMm} × {dim.heightMm} mm ({dim.widthInches}&quot; × {dim.heightInches}&quot;)</span>}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          padding: '6px 0',
+          borderBottom: '1px dashed #e2e8f0',
+        }}
+      >
+        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+          {currentSize.toUpperCase()} Rates
+        </span>
+        {dim && (
+          <span style={{ fontSize: '11px', color: '#64748b' }}>
+            Dimensions: {dim.widthMm} × {dim.heightMm} mm
+          </span>
+        )}
       </div>
 
       <ShopRateInputsGrid

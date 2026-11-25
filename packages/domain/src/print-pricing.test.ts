@@ -193,21 +193,16 @@ describe('Document Print Pricing Logic', () => {
 
   describe('validateShopPricingMatrix', () => {
     it('returns complete for fully populated matrix', () => {
-      const res = validateShopPricingMatrix(
-        ['A4', 'A3'],
-        true,
-        true,
-        {
-          A4: {
-            black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
-            color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
-          },
-          A3: {
-            black_and_white: { singleSidedMinor: 500, doubleSidedMinor: 800 },
-            color: { singleSidedMinor: 2000, doubleSidedMinor: 3500 },
-          },
-        }
-      );
+      const res = validateShopPricingMatrix(['A4', 'A3'], true, true, {
+        A4: {
+          black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+          color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+        },
+        A3: {
+          black_and_white: { singleSidedMinor: 500, doubleSidedMinor: 800 },
+          color: { singleSidedMinor: 2000, doubleSidedMinor: 3500 },
+        },
+      });
       expect(res.isComplete).toBe(true);
       expect(res.missing).toHaveLength(0);
     });

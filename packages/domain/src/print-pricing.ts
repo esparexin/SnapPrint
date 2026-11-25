@@ -69,8 +69,7 @@ export function calculateItemQuote({
   const paperRates = rates?.[config.paperSize] || defaultPaperRates;
   const defaultColorRates =
     defaultPaperRates[config.colorMode] || defaultPaperRates.black_and_white;
-  const colorRates =
-    paperRates?.[config.colorMode] || defaultColorRates;
+  const colorRates = paperRates?.[config.colorMode] || defaultColorRates;
 
   const singleSidedRate = colorRates.singleSidedMinor ?? defaultColorRates.singleSidedMinor;
   const doubleSidedRate = colorRates.doubleSidedMinor ?? defaultColorRates.doubleSidedMinor;
