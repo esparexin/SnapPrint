@@ -13,6 +13,7 @@ interface OtpInputStepProps {
   isSubmitting: boolean;
   submitLabel: string;
   backLabel?: string;
+  hideBack?: boolean;
 }
 
 export function OtpInputStep({
@@ -25,6 +26,7 @@ export function OtpInputStep({
   isSubmitting,
   submitLabel,
   backLabel = 'Edit',
+  hideBack = false,
 }: OtpInputStepProps) {
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -84,25 +86,27 @@ export function OtpInputStep({
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: hideBack ? 'flex-end' : 'space-between',
           alignItems: 'center',
           fontSize: '0.8125rem',
         }}
       >
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#2563eb',
-            cursor: 'pointer',
-            padding: 0,
-            fontWeight: 500,
-          }}
-        >
-          {backLabel}
-        </button>
+        {!hideBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#2563eb',
+              cursor: 'pointer',
+              padding: 0,
+              fontWeight: 500,
+            }}
+          >
+            {backLabel}
+          </button>
+        )}
         <button
           type="button"
           onClick={onResend}

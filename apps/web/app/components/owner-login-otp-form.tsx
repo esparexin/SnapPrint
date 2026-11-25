@@ -5,33 +5,13 @@ import { AuthResponse, OTP_LENGTH, OtpCodeSchema, z } from '@snapprint/contracts
 import { AuthApiError, requestOwnerLoginOtp, verifyOwnerLoginOtp } from '../../src/auth-client';
 import { OtpInputStep } from './otp-input-step';
 import { OwnerLoginEmailStep } from './owner-login-email-step';
+import { ownerLoginOtpStyles as s } from './owner-login-otp-styles';
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AuthApiError) return err.message;
   if (err instanceof z.ZodError) return err.issues[0]?.message || 'Invalid email address.';
   return fallback;
 }
-
-const alertStyle: React.CSSProperties = {
-  background: '#fef2f2',
-  border: '1px solid #f87171',
-  color: '#991b1b',
-  padding: '0.75rem',
-  borderRadius: '0.375rem',
-  fontSize: '0.875rem',
-  marginBottom: '1rem',
-};
-
-const registerLinkStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#2563eb',
-  cursor: 'pointer',
-  fontWeight: 600,
-  textDecoration: 'underline',
-  padding: 0,
-  fontSize: '0.875rem',
-};
 
 interface OwnerLoginOtpFormProps {
   onSuccess: (auth: AuthResponse) => void;
@@ -47,7 +27,6 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUnregistered, setIsUnregistered] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [dispatchMessage, setDispatchMessage] = useState('');
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -64,7 +43,6 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
     setIsSubmitting(true);
     try {
       const res = await requestOwnerLoginOtp({ email });
-      setDispatchMessage(res.message);
       setCooldown(res.retryAfterSeconds);
       setStep('otp');
     } catch (err) {
@@ -95,10 +73,7 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
 
     setIsSubmitting(true);
     try {
-      const auth = await verifyOwnerLoginOtp({
-        email,
-        code: parsedCode.data,
-      });
+      const auth = await verifyOwnerLoginOtp({ email, code: parsedCode.data });
       onSuccess(auth);
     } catch (err) {
       setErrorMessage(extractErrorMessage(err, 'Invalid verification code.'));
@@ -113,7 +88,6 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
     setErrorMessage(null);
     try {
       const res = await requestOwnerLoginOtp({ email });
-      setDispatchMessage(res.message);
       setCooldown(res.retryAfterSeconds);
     } catch (err) {
       setErrorMessage(extractErrorMessage(err, 'Failed to resend code.'));
@@ -122,31 +96,47 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
     }
   };
 
+  const resetToEmail = () => {
+    setStep('email');
+    setErrorMessage(null);
+    setIsUnregistered(false);
+  };
+
   return (
-    <div
-      style={{
-        width: '100%',
-        margin: '0 auto',
-      }}
-    >
-      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#0f172a' }}>
-        OTP Sign In
-      </h2>
-      <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 1.25rem' }}>
-        {step === 'email'
-          ? 'Sign in with a one-time verification code sent to your email.'
-          : `${dispatchMessage} Check your inbox and enter the code if you receive one.`}
-      </p>
+    <div style={{ width: '100%', margin: '0 auto' }}>
+      <img src="/brand/snapprint-icon.png" alt="SnapPrint" style={s.logo} />
+      <h2 style={s.title}>OTP Sign In</h2>
+      {step === 'email' ? (
+        <p style={s.emailSubtitle}>Sign in with a one-time verification code sent to your email.</p>
+      ) : (
+        <div role="status" style={s.statusLine}>
+          <span style={s.checkMark} aria-hidden="true">
+            ✓
+          </span>
+          <span>
+            OTP sent to <strong style={{ color: '#0f172a' }}>{email}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={resetToEmail}
+            title="Edit email"
+            aria-label="Edit email"
+            style={s.editBtn}
+          >
+            ✎
+          </button>
+        </div>
+      )}
 
       {errorMessage && (
-        <div role="alert" style={alertStyle}>
+        <div role="alert" style={s.alert}>
           <div>{errorMessage}</div>
           {isUnregistered && (
             <div style={{ marginTop: '0.5rem' }}>
               <button
                 type="button"
                 onClick={() => onSwitchToRegister(email)}
-                style={registerLinkStyle}
+                style={s.registerLink}
               >
                 Register your shop now →
               </button>
@@ -167,43 +157,18 @@ export function OwnerLoginOtpForm({ onSuccess, onSwitchToRegister }: OwnerLoginO
           otpCode={otpCode}
           onOtpCodeChange={setOtpCode}
           onSubmit={handleVerifyOtp}
-          onBack={() => {
-            setStep('email');
-            setErrorMessage(null);
-            setIsUnregistered(false);
-          }}
+          onBack={resetToEmail}
           onResend={handleResend}
           cooldown={cooldown}
           isSubmitting={isSubmitting}
           submitLabel="Sign In with Code"
-          backLabel="Edit"
+          hideBack
         />
       )}
 
-      <div
-        style={{
-          borderTop: '1px solid #e5e7eb',
-          marginTop: '1.25rem',
-          paddingTop: '0.875rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '0.8125rem',
-        }}
-      >
+      <div style={s.footer}>
         <span style={{ color: '#64748b' }}>New print store?</span>
-        <button
-          type="button"
-          onClick={() => onSwitchToRegister(email)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#2563eb',
-            cursor: 'pointer',
-            fontWeight: 600,
-            padding: 0,
-          }}
-        >
+        <button type="button" onClick={() => onSwitchToRegister(email)} style={s.footerBtn}>
           Register
         </button>
       </div>
