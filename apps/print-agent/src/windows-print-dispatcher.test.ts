@@ -49,6 +49,16 @@ describe('Windows Print Dispatcher & Targeting', () => {
       expect(script).toContain('-Verb PrintTo');
       expect(script).toContain('-WindowStyle Hidden');
     });
+
+    it('configures vertical duplex for double-sided image printing', () => {
+      const script = buildWindowsImagePrintScript('HP LaserJet Pro', tempPng, 1, true);
+      expect(script).toContain('PrinterSettings.Duplex = [System.Drawing.Printing.Duplex]::Vertical');
+    });
+
+    it('configures Set-PrintConfiguration TwoSidedLongEdge for PDF duplex printing', () => {
+      const script = buildWindowsPdfPrintScript('Canon Pixma G3010', tempPdf, 1, true);
+      expect(script).toContain('-DuplexingMode TwoSidedLongEdge');
+    });
   });
 
   describe('Format Validation & Error Handling', () => {

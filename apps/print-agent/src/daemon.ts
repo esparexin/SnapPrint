@@ -151,6 +151,7 @@ export class AgentDaemon {
         await this.spooler.printFile(job.printerName, tempFilePath, {
           copies: job.copies,
           paperSize: job.paperSize,
+          sides: job.sides,
         });
         this.jobTracker.clearInFlight(job.jobId);
 

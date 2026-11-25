@@ -48,16 +48,21 @@ export function buildWindowsPrinterValidationScript(printerName: string): string
 export function buildWindowsImagePrintScript(
   printerName: string,
   filePath: string,
-  copies = 1
+  copies = 1,
+  isDuplex = false
 ): string {
   const safePrinter = printerName.replace(/'/g, "''");
   const safePath = filePath.replace(/'/g, "''");
+  const duplexSetting = isDuplex
+    ? '$doc.PrinterSettings.Duplex = [System.Drawing.Printing.Duplex]::Vertical;'
+    : '$doc.PrinterSettings.Duplex = [System.Drawing.Printing.Duplex]::Simplex;';
   return `
     Add-Type -AssemblyName System.Drawing;
     $img = [System.Drawing.Image]::FromFile('${safePath}');
     $doc = New-Object System.Drawing.Printing.PrintDocument;
     $doc.PrinterSettings.PrinterName = '${safePrinter}';
     $doc.PrinterSettings.Copies = ${copies};
+    ${duplexSetting}
     $doc.add_PrintPage({
       param($sender, $ev)
       $ev.Graphics.DrawImage($img, $ev.MarginBounds);
@@ -74,11 +79,15 @@ export function buildWindowsImagePrintScript(
 export function buildWindowsPdfPrintScript(
   printerName: string,
   filePath: string,
-  copies = 1
+  copies = 1,
+  isDuplex = false
 ): string {
   const safePrinter = printerName.replace(/'/g, "''");
   const safePath = filePath.replace(/'/g, "''");
+  const duplexMode = isDuplex ? 'TwoSidedLongEdge' : 'OneSided';
   return `
+    $cfg = Get-PrintConfiguration -PrinterName '${safePrinter}' -ErrorAction SilentlyContinue;
+    if ($cfg) { Set-PrintConfiguration -PrinterName '${safePrinter}' -DuplexingMode ${duplexMode} -ErrorAction SilentlyContinue; }
     for ($i = 0; $i -lt ${copies}; $i++) {
       $proc = Start-Process -FilePath '${safePath}' -Verb PrintTo -ArgumentList '${safePrinter}' -WindowStyle Hidden -PassThru;
       if ($proc) {

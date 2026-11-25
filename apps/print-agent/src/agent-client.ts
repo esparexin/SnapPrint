@@ -113,6 +113,9 @@ export class AgentClient {
               p.supportedPaperSizes && p.supportedPaperSizes.length > 0
                 ? p.supportedPaperSizes
                 : ['A4'],
+            duplexSupport: p.duplexSupport || 'unknown',
+            supportedDuplexSizes: p.supportedDuplexSizes || [],
+            capabilityProvenance: p.capabilityProvenance || 'unverified',
             status: 'online',
             isDefaultOsPrinter: Boolean(p.isDefault),
             lastSeenAt: now,
