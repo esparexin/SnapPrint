@@ -43,7 +43,9 @@ jobs:
         run: pnpm --filter @snapprint/print-agent run build
 
       - name: Install WiX Toolset v4
-        run: dotnet tool install --global wix
+        run: |
+          dotnet tool install --global wix --version 4.0.6
+          wix --version
 
       - name: Package Windows Executable and MSI Installer
         run: pnpm --filter @snapprint/print-agent run package:windows

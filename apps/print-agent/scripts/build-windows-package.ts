@@ -66,7 +66,7 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
     }
     throw new Error(
       `WiX Toolset v4 is not installed. To compile the Windows MSI package, install WiX v4 ` +
-        `('dotnet tool install --global wix') on a Windows build runner.`
+        `('dotnet tool install --global wix --version 4.0.6') on a Windows build runner.`
     );
   }
 
