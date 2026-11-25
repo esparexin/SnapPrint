@@ -1,18 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Permission } from '@snapprint/contracts';
-import { OfflineHardwareAlertBanner } from './offline-hardware-alert-banner';
+import { getAgentDownloadUrl } from '../../src/printer-client';
 import { OperatorView } from './operator-portal-header';
 import { WorkspaceKpiBar } from './workspace-kpi-bar';
 
 interface OperatorStudioHubProps {
   studioId?: string;
+  activeView: OperatorView;
   can?: (permission: Permission) => boolean;
   onNavigate: (view: OperatorView) => void;
+  onOpenPairing?: () => void;
 }
 
-const QUICK_TABS: { id: OperatorView; label: string; icon: string }[] = [
+export const SHOP_MENU_TABS: { id: OperatorView; label: string; icon: string }[] = [
   { id: 'orders', label: 'Orders', icon: '📄' },
   { id: 'printers', label: 'Printers', icon: '🖨️' },
   { id: 'qr', label: 'QR Stand', icon: '📱' },
@@ -22,57 +24,83 @@ const QUICK_TABS: { id: OperatorView; label: string; icon: string }[] = [
   { id: 'setup', label: 'Setup Guide', icon: '⚙️' },
 ];
 
-export function OperatorStudioHub({ studioId, onNavigate }: OperatorStudioHubProps) {
+export function OperatorStudioHub({
+  studioId,
+  activeView,
+  onNavigate,
+  onOpenPairing,
+}: OperatorStudioHubProps) {
+  const tabRefs = useRef<Partial<Record<OperatorView, HTMLButtonElement | null>>>({});
+  const downloadUrl = getAgentDownloadUrl();
+
+  useEffect(() => {
+    const activeEl = tabRefs.current[activeView];
+    if (activeEl && typeof activeEl.scrollIntoView === 'function') {
+      activeEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeView]);
+
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, idx: number) => {
+    const lastIdx = SHOP_MENU_TABS.length - 1;
+    let nextIdx: number | null = null;
+    if (e.key === 'ArrowRight') nextIdx = idx === lastIdx ? 0 : idx + 1;
+    else if (e.key === 'ArrowLeft') nextIdx = idx === 0 ? lastIdx : idx - 1;
+    else if (e.key === 'Home') nextIdx = 0;
+    else if (e.key === 'End') nextIdx = lastIdx;
+    if (nextIdx === null) return;
+    e.preventDefault();
+    const targetTab = SHOP_MENU_TABS[nextIdx];
+    onNavigate(targetTab.id);
+    tabRefs.current[targetTab.id]?.focus();
+  };
+
   return (
     <>
-      {studioId && (
-        <>
-          <OfflineHardwareAlertBanner
-            studioId={studioId}
-            onOpenPairing={() => onNavigate('printers')}
-          />
-          <WorkspaceKpiBar studioId={studioId} onNavigate={onNavigate} />
-        </>
-      )}
+      {studioId && <WorkspaceKpiBar studioId={studioId} onNavigate={onNavigate} />}
 
-      <div
-        role="tablist"
-        aria-label="Shop Navigation Tabs"
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          overflowX: 'auto',
-          paddingBottom: '0.5rem',
-          marginBottom: '1.25rem',
-        }}
-      >
-        {QUICK_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            onClick={() => onNavigate(tab.id)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '9999px',
-              backgroundColor: '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              color: '#1e293b',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-            }}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
+      <nav aria-label="Shop Portal Menu" className="portal-menu-nav">
+        <div role="tablist" aria-label="Shop Sections" className="portal-tablist">
+          {SHOP_MENU_TABS.map((tab, idx) => {
+            const isSelected = activeView === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={(el) => {
+                  tabRefs.current[tab.id] = el;
+                }}
+                id={`portal-tab-${tab.id}`}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                tabIndex={isSelected ? 0 : -1}
+                onClick={() => onNavigate(tab.id)}
+                onKeyDown={(e) => handleTabKeyDown(e, idx)}
+                className="portal-tab"
+              >
+                <span aria-hidden="true">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <a
+          href={downloadUrl}
+          download="SnapPrint-Print-Agent.msi"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="portal-menu-action"
+        >
+          <span aria-hidden="true">📥</span>
+          <span>Download</span>
+        </a>
+
+        {studioId && onOpenPairing && (
+          <button type="button" onClick={onOpenPairing} className="portal-menu-action">
+            Pair
           </button>
-        ))}
-      </div>
+        )}
+      </nav>
     </>
   );
 }
