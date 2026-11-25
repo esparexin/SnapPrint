@@ -116,7 +116,13 @@ export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRow
           }}
         >
           <option value="active_bw">Active B&amp;W (Primary)</option>
-          <option value="active_color">Active Color (Primary)</option>
+          {printer.isColorSupported ? (
+            <option value="active_color">Active Color (Primary)</option>
+          ) : (
+            <option value="active_color" disabled>
+              Active Color (Unavailable on B&amp;W)
+            </option>
+          )}
           <option value="standby">Standby (Backup)</option>
         </select>
       </div>
