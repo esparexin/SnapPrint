@@ -5,7 +5,6 @@ import {
   PaymentHistoryResponseSchema,
   PaymentInitiateRequestSchema,
   PaymentInitiateResponseSchema,
-  PaymentRecord,
   PaymentRecordSchema,
   PaymentVerifyRequestSchema,
 } from '@snapprint/contracts';
@@ -36,9 +35,9 @@ export interface PaymentRouteOptions {
 
 async function syncPayment(db: Db, studioId: string, orderId: string, totalAmountMinor: number) {
   const allPayments = await listPaymentsByOrder(db, studioId, orderId);
-  const summary = deriveOrderPaymentStatus(totalAmountMinor, allPayments);
-  await updateOrderPaymentSummary(db, studioId, orderId, summary.paidAmountMinor, summary.paymentStatus);
-  return summary;
+  const s = deriveOrderPaymentStatus(totalAmountMinor, allPayments);
+  await updateOrderPaymentSummary(db, studioId, orderId, s.paidAmountMinor, s.paymentStatus);
+  return s;
 }
 
 export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app, opts) => {
@@ -110,7 +109,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
 
       const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
       const now = new Date().toISOString();
-      const paymentRecord: PaymentRecord = {
+      await createPaymentRecord(db, {
         paymentId,
         orderId: order.orderId,
         studioId: studio.id,
@@ -122,9 +121,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
         gatewayOrderId: gatewayOrder.gatewayOrderId,
         createdAt: now,
         updatedAt: now,
-      };
-
-      await createPaymentRecord(db, paymentRecord);
+      });
 
       return reply.status(200).send(
         PaymentInitiateResponseSchema.parse({

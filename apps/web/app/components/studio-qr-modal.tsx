@@ -10,7 +10,9 @@ import { StudioQrPreviewBox } from './studio-qr-preview-box';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
-  (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://snap.palnadu.dev');
+  (typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : 'https://snap.palnadu.dev');
 
 interface StudioQrModalProps {
   studio: { id: string; slug?: string; name?: string };

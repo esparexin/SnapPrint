@@ -39,7 +39,7 @@ describe('platform-plans-client', () => {
       name: 'Custom Annual',
       durationDays: 365,
       priceRupees: 4999,
-      category: 'annual' as const,
+      category: 'paid' as const,
       intervalMonths: 12,
       isActive: true,
     };
