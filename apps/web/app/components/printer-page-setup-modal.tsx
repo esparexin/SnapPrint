@@ -41,10 +41,7 @@ export function PrinterPageSetupModal({
     setLoading(true);
     setError(null);
     try {
-      const [fleet, studioData] = await Promise.all([
-        fetchStudioPrinters(studioId),
-        fetchStudio(studioId),
-      ]);
+      const [fleet, studioData] = await Promise.all([fetchStudioPrinters(studioId), fetchStudio(studioId)]);
       setPrinters(fleet.printers);
       if (fleet.allowance) setAllowance(fleet.allowance);
       if (studioData?.studio) setStudio(studioData.studio);
@@ -91,14 +88,7 @@ export function PrinterPageSetupModal({
         {error && (
           <div
             role="alert"
-            style={{
-              padding: '10px 12px',
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              marginBottom: '16px',
-              backgroundColor: '#fef2f2',
-              color: '#b91c1c',
-            }}
+            style={{ padding: '10px 12px', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '16px', backgroundColor: '#fef2f2', color: '#b91c1c' }}
           >
             {error}
           </div>
