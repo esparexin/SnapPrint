@@ -2,13 +2,8 @@
 
 import React, { useMemo } from 'react';
 import {
-  ColorMode,
-  DocumentPrintConfig,
-  PaperSize,
-  PaperSizes,
-  PrintOrientation,
-  PrintSides,
-  StudioPrintRatesContract,
+  ColorMode, DocumentPrintConfig, PaperSize, PaperSizes,
+  PrintOrientation, PrintSides, StudioPrintRatesContract, StudioPublicCapabilities,
 } from '@snapprint/contracts';
 import { DocumentRateSelector } from './document-rate-selector';
 import { AutoOrientIcon, LandscapeIcon, PortraitIcon } from './storefront-icons';
@@ -17,23 +12,16 @@ interface DocumentOptionsGridProps {
   config: DocumentPrintConfig;
   pageCount?: number;
   printRates?: StudioPrintRatesContract;
+  capabilities?: StudioPublicCapabilities;
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
 
 const PAPER_SIZE_LABELS: Record<PaperSize, string> = {
-  A4: 'A4 (Standard)',
-  A3: 'A3 (Large)',
-  A5: 'A5 (Compact)',
-  legal: 'Legal',
-  letter: 'Letter',
+  A4: 'A4 (Standard)', A3: 'A3 (Large)', A5: 'A5 (Compact)', legal: 'Legal', letter: 'Letter',
 };
 
 const COMPACT_SIZE_LABELS: Record<PaperSize, string> = {
-  A4: 'A4',
-  A3: 'A3',
-  A5: 'A5',
-  legal: 'Legal',
-  letter: 'Letter',
+  A4: 'A4', A3: 'A3', A5: 'A5', legal: 'Legal', letter: 'Letter',
 };
 
 const ORIENTATION_OPTIONS: Array<{
@@ -50,6 +38,7 @@ export function DocumentOptionsGrid({
   config,
   pageCount,
   printRates,
+  capabilities,
   onUpdate,
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
@@ -89,6 +78,7 @@ export function DocumentOptionsGrid({
         sides={config.sides}
         paperSize={effectivePaperSize}
         printRates={printRates}
+        capabilities={capabilities}
         isSinglePage={isSinglePage}
         onSelect={handleRateSelect}
       />

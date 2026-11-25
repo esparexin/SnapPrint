@@ -2,7 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { PrinterRole } from '@snapprint/contracts';
-import { fetchStudioPrinters, StudioPrinter, updatePrinterRole } from '../../src/printer-client';
+import {
+  fetchStudioPrinters,
+  StudioFleetAllowance,
+  StudioPrinter,
+  updatePrinterRole,
+} from '../../src/printer-client';
 import { useDialog } from '../hooks/use-dialog';
 import { AgentPairingModal } from './agent-pairing-modal';
 import { PrinterFleetFooter } from './printer-fleet-footer';
@@ -23,6 +28,7 @@ export function PrinterManagementModal({
   inShell = false,
 }: PrinterManagementModalProps) {
   const [printers, setPrinters] = useState<StudioPrinter[]>([]);
+  const [allowance, setAllowance] = useState<StudioFleetAllowance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -34,6 +40,7 @@ export function PrinterManagementModal({
     try {
       const data = await fetchStudioPrinters(studioId);
       setPrinters(data.printers);
+      if (data.allowance) setAllowance(data.allowance);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch studio printers');
     } finally {
@@ -50,13 +57,7 @@ export function PrinterManagementModal({
     setError(null);
     try {
       await updatePrinterRole(studioId, printerId, role);
-      setPrinters((prev) =>
-        prev.map((p) => {
-          if (p.id === printerId) return { ...p, role };
-          if (role !== 'standby' && p.role === role) return { ...p, role: 'standby' };
-          return p;
-        })
-      );
+      await loadPrinters();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update printer role');
     } finally {
@@ -75,6 +76,7 @@ export function PrinterManagementModal({
       <PrinterFleetHeader
         studioId={studioId}
         studioName={studioName}
+        allowance={allowance}
         onOpenPairing={() => setShowPairingModal(true)}
         onClose={inShell ? undefined : onClose}
       />
@@ -83,12 +85,8 @@ export function PrinterManagementModal({
           <div
             role="alert"
             style={{
-              padding: '10px 12px',
-              backgroundColor: '#fef2f2',
-              color: '#b91c1c',
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              marginBottom: '16px',
+              padding: '10px 12px', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '16px',
+              backgroundColor: '#fef2f2', color: '#b91c1c',
             }}
           >
             {error}

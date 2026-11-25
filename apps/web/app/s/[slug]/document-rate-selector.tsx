@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
-import { ColorMode, PaperSize, PrintSides, StudioPrintRatesContract } from '@snapprint/contracts';
+import {
+  ColorMode, PaperSize, PrintSides,
+  StudioPrintRatesContract, StudioPublicCapabilities,
+} from '@snapprint/contracts';
 import { DocumentRateOptionButton } from './document-rate-button';
 import { DEFAULT_RATES, formatRupees } from './print-rate-card';
 
@@ -10,6 +13,7 @@ interface DocumentRateSelectorProps {
   sides: PrintSides;
   paperSize: PaperSize;
   printRates?: StudioPrintRatesContract;
+  capabilities?: StudioPublicCapabilities;
   isSinglePage: boolean;
   onSelect: (colorMode: ColorMode, sides: PrintSides) => void;
 }
@@ -19,6 +23,7 @@ export function DocumentRateSelector({
   sides,
   paperSize,
   printRates,
+  capabilities,
   isSinglePage,
   onSelect,
 }: DocumentRateSelectorProps) {
@@ -26,10 +31,28 @@ export function DocumentRateSelector({
   const bw = paperRates?.black_and_white || DEFAULT_RATES.A4.black_and_white;
   const color = paperRates?.color || DEFAULT_RATES.A4.color;
 
+  const isDuplexSupported = Boolean(
+    capabilities?.supportsDuplex &&
+      (capabilities.supportedDuplexSizes?.length === 0 ||
+        capabilities.supportedDuplexSizes?.includes(paperSize))
+  );
+
   const isBwSingle = colorMode === 'black_and_white' && (sides === 'single_sided' || isSinglePage);
-  const isBwDouble = colorMode === 'black_and_white' && sides === 'double_sided' && !isSinglePage;
+  const isBwDouble =
+    colorMode === 'black_and_white' && sides === 'double_sided' && !isSinglePage && isDuplexSupported;
   const isColorSingle = colorMode === 'color' && (sides === 'single_sided' || isSinglePage);
-  const isColorDouble = colorMode === 'color' && sides === 'double_sided' && !isSinglePage;
+  const isColorDouble =
+    colorMode === 'color' && sides === 'double_sided' && !isSinglePage && isDuplexSupported;
+
+  function renderDuplexSublabel(rateMinor: number) {
+    if (isSinglePage) return '1-page doc';
+    if (!isDuplexSupported) return 'Simplex only';
+    return (
+      <>
+        <span style={{ fontWeight: 600 }}>{formatRupees(rateMinor)}</span>/sheet
+      </>
+    );
+  }
 
   return (
     <div style={{ marginBottom: '10px' }}>
@@ -70,17 +93,9 @@ export function DocumentRateSelector({
           />
           <DocumentRateOptionButton
             label="Back-to-Back"
-            sublabel={
-              isSinglePage ? (
-                '1-page doc'
-              ) : (
-                <>
-                  <span style={{ fontWeight: 600 }}>{formatRupees(bw.doubleSidedMinor)}</span>/sheet
-                </>
-              )
-            }
+            sublabel={renderDuplexSublabel(bw.doubleSidedMinor)}
             isSelected={isBwDouble}
-            isDisabled={isSinglePage}
+            isDisabled={isSinglePage || !isDuplexSupported}
             onClick={() => onSelect('black_and_white', 'double_sided')}
           />
         </div>
@@ -121,18 +136,9 @@ export function DocumentRateSelector({
           />
           <DocumentRateOptionButton
             label="Back-to-Back"
-            sublabel={
-              isSinglePage ? (
-                '1-page doc'
-              ) : (
-                <>
-                  <span style={{ fontWeight: 600 }}>{formatRupees(color.doubleSidedMinor)}</span>
-                  /sheet
-                </>
-              )
-            }
+            sublabel={renderDuplexSublabel(color.doubleSidedMinor)}
             isSelected={isColorDouble}
-            isDisabled={isSinglePage}
+            isDisabled={isSinglePage || !isDuplexSupported}
             isColor
             onClick={() => onSelect('color', 'double_sided')}
           />

@@ -1,4 +1,18 @@
-import { PaperSize, PrinterRole, PrinterStatus } from '@snapprint/contracts';
+import {
+  CapabilityProvenance,
+  DuplexSupport,
+  PaperSize,
+  PrinterRole,
+  PrinterStatus,
+} from '@snapprint/contracts';
+
+export interface StudioFleetAllowance {
+  registeredCount: number;
+  activeCount: number;
+  maxActivePrinters: number;
+  remainingActiveCapacity: number;
+  isLimitReached: boolean;
+}
 
 export interface StudioPrinter {
   id: string;
@@ -8,6 +22,9 @@ export interface StudioPrinter {
   role: PrinterRole;
   isColorSupported: boolean;
   supportedPaperSizes: PaperSize[];
+  duplexSupport?: DuplexSupport;
+  supportedDuplexSizes?: PaperSize[];
+  capabilityProvenance?: CapabilityProvenance;
   status: PrinterStatus;
   isDefaultOsPrinter?: boolean;
   lastSeenAt: string;
@@ -78,7 +95,7 @@ export async function generateAgentPairingKey(
 export async function fetchStudioPrinters(
   studioId: string,
   fetchImpl: typeof fetch = fetch
-): Promise<{ printers: StudioPrinter[] }> {
+): Promise<{ printers: StudioPrinter[]; allowance?: StudioFleetAllowance }> {
   const url = `${getApiBaseUrl()}/studios/${encodeURIComponent(studioId)}/printers`;
   const res = await fetchImpl(url, {
     method: 'GET',
