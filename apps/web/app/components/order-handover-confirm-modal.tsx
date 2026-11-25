@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { OrderRecord } from '@snapprint/contracts';
 import { useDialog } from '../hooks/use-dialog';
+import { OrderHandoverChecklist } from './order-handover-checklist';
 
 interface OrderHandoverConfirmModalProps {
   order: OrderRecord;
@@ -50,7 +51,10 @@ export function OrderHandoverConfirmModal({
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
 
         <div style={{ marginBottom: '12px' }}>
-          <h2 id="handover-modal-title" style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+          <h2
+            id="handover-modal-title"
+            style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#0f172a' }}
+          >
             Customer Handover · Order {order.orderNumber}
           </h2>
           <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
@@ -58,21 +62,17 @@ export function OrderHandoverConfirmModal({
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', margin: '8px 0', maxHeight: '180px', overflowY: 'auto' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase' }}>
-            Order Documents Checklist ({order.items.length})
-          </div>
-          {order.items.map((it, idx) => (
-            <div key={idx} style={{ fontSize: '13px', padding: '5px 0', borderBottom: idx < order.items.length - 1 ? '1px solid #e2e8f0' : 'none', display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-              <span style={{ fontWeight: 600, color: '#1e293b' }}>{it.filename}</span>
-              <span style={{ color: '#475569' }}>
-                {it.paperSize.toUpperCase()} · {it.colorMode === 'color' ? 'Color' : 'B&W'} · {it.sheetsCount} sheets × {it.copies}
-              </span>
-            </div>
-          ))}
-        </div>
+        <OrderHandoverChecklist items={order.items} />
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', cursor: 'pointer' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 0',
+            cursor: 'pointer',
+          }}
+        >
           <input
             type="checkbox"
             checked={confirmed}
@@ -80,7 +80,8 @@ export function OrderHandoverConfirmModal({
             style={{ width: '20px', height: '20px', minWidth: '20px', fontSize: '16px' }}
           />
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', lineHeight: 1.4 }}>
-            I have verified that all physical printed pages match this order and confirmed handover to customer.
+            I have verified that all physical printed pages match this order and confirmed handover
+            to customer.
           </span>
         </label>
 

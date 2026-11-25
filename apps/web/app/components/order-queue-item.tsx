@@ -50,12 +50,32 @@ export function OrderQueueItem({
   const lastEvent = order.events?.length ? order.events[order.events.length - 1] : null;
 
   return (
-    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', backgroundColor: '#fff' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+    <div
+      style={{
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '16px',
+        backgroundColor: '#fff',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '10px',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
+      >
         <div>
-          <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{order.orderNumber}</span>
+          <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
+            {order.orderNumber}
+          </span>
           {order.customerName && (
-            <span style={{ marginLeft: '8px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+            <span
+              style={{ marginLeft: '8px', fontSize: '13px', fontWeight: 600, color: '#334155' }}
+            >
               · {order.customerName} {order.customerPhone && `(${order.customerPhone})`}
             </span>
           )}
@@ -65,16 +85,41 @@ export function OrderQueueItem({
         </div>
 
         <div style={{ display: 'flex', gap: '6px' }}>
-          <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, backgroundColor: paymentBadge.bg, color: paymentBadge.text }}>
+          <span
+            style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 700,
+              backgroundColor: paymentBadge.bg,
+              color: paymentBadge.text,
+            }}
+          >
             {paymentStatus}
           </span>
-          <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, backgroundColor: statusBadge.bg, color: statusBadge.text }}>
+          <span
+            style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 700,
+              backgroundColor: statusBadge.bg,
+              color: statusBadge.text,
+            }}
+          >
             {order.status.toUpperCase()}
           </span>
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '6px', marginBottom: '12px' }}>
+      <div
+        style={{
+          backgroundColor: '#f8fafc',
+          padding: '10px 12px',
+          borderRadius: '6px',
+          marginBottom: '12px',
+        }}
+      >
         {order.items.map((item, idx) => (
           <OrderQueueDocumentRow
             key={item.assetId || idx}
@@ -86,13 +131,23 @@ export function OrderQueueItem({
         ))}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '10px',
+        }}
+      >
         <div>
           <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
             Total: ₹{(order.totalAmountMinor / 100).toFixed(2)}
           </span>
           {(order.paidAmountMinor ?? 0) > 0 && paymentStatus !== 'PAID' && (
-            <span style={{ fontSize: '12px', color: '#16a34a', marginLeft: '8px', fontWeight: 600 }}>
+            <span
+              style={{ fontSize: '12px', color: '#16a34a', marginLeft: '8px', fontWeight: 600 }}
+            >
               (Paid: ₹{((order.paidAmountMinor ?? 0) / 100).toFixed(2)})
             </span>
           )}
@@ -108,7 +163,15 @@ export function OrderQueueItem({
       </div>
 
       {lastEvent && (
-        <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', fontSize: '11px', color: '#64748b' }}>
+        <div
+          style={{
+            marginTop: '10px',
+            paddingTop: '8px',
+            borderTop: '1px solid #f1f5f9',
+            fontSize: '11px',
+            color: '#64748b',
+          }}
+        >
           ℹ️ Last update: <strong>{lastEvent.toStatus.toUpperCase()}</strong> by{' '}
           {lastEvent.operatorName || lastEvent.operatorUserId || 'operator'} at{' '}
           {new Date(lastEvent.timestamp).toLocaleTimeString()}

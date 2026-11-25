@@ -188,23 +188,19 @@ export async function markOrderDocumentDeleted(
   if (!existing) return null;
 
   const updatedItems = existing.items.map((item) =>
-    item.assetId === assetId
-      ? { ...item, isDeleted: true, deletedAt: now.toISOString() }
-      : item
+    item.assetId === assetId ? { ...item, isDeleted: true, deletedAt: now.toISOString() } : item
   );
 
-  const result = await db
-    .collection<OrderDocument>(ORDERS_COLLECTION)
-    .findOneAndUpdate(
-      { studioId, orderId },
-      {
-        $set: {
-          items: updatedItems,
-          updatedAt: now,
-        },
-        $push: { events: event },
+  const result = await db.collection<OrderDocument>(ORDERS_COLLECTION).findOneAndUpdate(
+    { studioId, orderId },
+    {
+      $set: {
+        items: updatedItems,
+        updatedAt: now,
       },
-      { returnDocument: 'after', projection: { _id: 0 } }
-    );
+      $push: { events: event },
+    },
+    { returnDocument: 'after', projection: { _id: 0 } }
+  );
   return result ? toOrderContract(result) : null;
 }

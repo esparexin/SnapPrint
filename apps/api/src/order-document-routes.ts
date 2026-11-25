@@ -1,17 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import { FastifyPluginAsync } from 'fastify';
 import { Db } from 'mongodb';
-import {
-  DocumentDeletionResponseSchema,
-  OrderAuditEvent,
-} from '@snapprint/contracts';
+import { DocumentDeletionResponseSchema, OrderAuditEvent } from '@snapprint/contracts';
 import { canAuthorizePrint, canDeleteOrderDocument } from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
-import {
-  findOrderById,
-  markOrderDocumentDeleted,
-} from './repositories/order.repository.js';
+import { findOrderById, markOrderDocumentDeleted } from './repositories/order.repository.js';
 import { findPhotoAssetById } from './repositories/photo-asset.repository.js';
 import { findStudioById } from './repositories/studio.repository.js';
 import { getStorageService, StorageService } from './storage/storage-service.js';

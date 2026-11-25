@@ -47,7 +47,8 @@ export function OrderQueueDocumentRow({
         </span>
         <span style={{ color: '#475569' }}>
           — {item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
-          {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'}, {item.sheetsCount} sh × {item.copies}
+          {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'}, {item.sheetsCount} sh ×{' '}
+          {item.copies}
         </span>
         {isDeleted && (
           <span
@@ -90,7 +91,9 @@ export function OrderQueueDocumentRow({
           <button
             type="button"
             onClick={async () => {
-              if (window.confirm(`Permanently delete "${item.filename}" to protect customer privacy?`)) {
+              if (
+                window.confirm(`Permanently delete "${item.filename}" to protect customer privacy?`)
+              ) {
                 await onDeleteDocument(order.orderId, item.assetId);
               }
             }}
