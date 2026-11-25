@@ -103,4 +103,28 @@ describe('CLI Commands', () => {
     expect(exitCode).toBe(0);
     delete process.env.SNAPPRINT_TEST_MODE;
   });
+
+  it('runs update command checking for updates', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        version: '0.1.0',
+        installerName: 'SnapPrint-Print-Agent.msi',
+        downloadUrl: 'https://snapprint.example.com/download.msi',
+        sha256: 'a'.repeat(64),
+        sizeBytes: 100,
+        releaseDate: new Date().toISOString(),
+      }),
+    } as unknown as Response);
+
+    const exitCode = await runCli(['update']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Checking for agent updates')
+    );
+    consoleLogSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
 });

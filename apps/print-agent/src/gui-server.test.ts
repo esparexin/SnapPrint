@@ -169,4 +169,17 @@ describe('GUI Local Server & Endpoints', () => {
       await handle.close();
     }
   });
+
+  it('GET /api/update/check returns update check status', async () => {
+    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
+    try {
+      const res = await fetch(`${handle.url}/api/update/check`);
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { updateAvailable: boolean; currentVersion: string };
+      expect(typeof data.updateAvailable).toBe('boolean');
+      expect(data.currentVersion).toBe('0.1.0');
+    } finally {
+      await handle.close();
+    }
+  });
 });

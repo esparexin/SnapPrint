@@ -2,14 +2,16 @@
 
 import { hostname } from 'node:os';
 import { createInterface } from 'node:readline/promises';
+import { AGENT_VERSION, handleUpdateCommand } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { launchGuiWindow, startGuiServer } from './gui-server.js';
 import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
+import { hideConsoleWindow, startSystemTray } from './system-tray.js';
 
-export const AGENT_VERSION = '0.1.0';
+export { AGENT_VERSION } from './agent-updater.js';
 
 export function extractApiUrlFlag(argv: string[]): { apiUrl?: string; filteredArgv: string[] } {
   let apiUrl: string | undefined;
@@ -49,6 +51,10 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
     return 0;
   }
 
+  if (command === 'update') {
+    return handleUpdateCommand(config.apiUrl, AGENT_VERSION);
+  }
+
   if (!command || command === 'gui') {
     const handle = await startGuiServer(client, spooler);
     launchGuiWindow(handle.url);
@@ -59,11 +65,16 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
       return 0;
     }
 
+    let tray: { stop: () => void } | null = null;
     const handleExit = () => {
+      tray?.stop();
       handle.close();
       releaseInstanceLock();
       process.exit(0);
     };
+    tray = startSystemTray({ url: handle.url, onExit: handleExit });
+    hideConsoleWindow();
+
     process.on('SIGINT', handleExit);
     process.on('SIGTERM', handleExit);
     return new Promise(() => {});
@@ -195,7 +206,7 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
   }
 
   console.log(
-    'Usage: snapprint-agent [gui | pair <code?> [--api-url <url>] | enroll | start | status | printers | sync | unpair | config | version]'
+    'Usage: snapprint-agent [gui | update | pair <code?> [--api-url <url>] | enroll | start | status | printers | sync | unpair | config | version]'
   );
   return 1;
 }
