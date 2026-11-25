@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateSubscriptionExpiry,
+  categorizePlanInterval,
   deriveSubscriptionStatus,
   extendSubscription,
   isSubscriptionActive,
@@ -128,6 +129,28 @@ describe('Subscription Policy Pure Domain SSOT', () => {
       expect(result.durationDays).toBe(30);
       expect(result.previousExpiresAt).toBe(renewalTime);
       expect(result.newExpiresAt).toBe('2026-01-31T00:00:00.000Z');
+    });
+  });
+
+  describe('categorizePlanInterval', () => {
+    it('classifies 1 month durations (28 to 35 days, including 30, 31, 32)', () => {
+      expect(categorizePlanInterval(28)).toBe('1 Month');
+      expect(categorizePlanInterval(30)).toBe('1 Month');
+      expect(categorizePlanInterval(31)).toBe('1 Month');
+      expect(categorizePlanInterval(32)).toBe('1 Month');
+      expect(categorizePlanInterval(35)).toBe('1 Month');
+    });
+
+    it('classifies 3 months, 6 months, and 12 months durations correctly', () => {
+      expect(categorizePlanInterval(90)).toBe('3 Months');
+      expect(categorizePlanInterval(180)).toBe('6 Months');
+      expect(categorizePlanInterval(365)).toBe('12 Months');
+    });
+
+    it('returns Custom for non-standard durations', () => {
+      expect(categorizePlanInterval(14)).toBe('Custom');
+      expect(categorizePlanInterval(60)).toBe('Custom');
+      expect(categorizePlanInterval(500)).toBe('Custom');
     });
   });
 });
