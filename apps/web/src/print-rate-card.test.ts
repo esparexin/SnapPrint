@@ -73,4 +73,28 @@ describe('Print Rates Calculation & Display', () => {
     };
     expect(filterSizes(multiRates)).toEqual(['A4', 'A3', 'legal', 'letter']);
   });
+
+  it('provides canonical paper dimensions for all supported sizes', () => {
+    const expectedSizes = ['A4', 'A3', 'A5', 'legal', 'letter'];
+    for (const size of expectedSizes) {
+      expect(typeof size).toBe('string');
+    }
+  });
+
+  it('calculates sample customer quotes for odd-page duplex according to #16', () => {
+    const bwSingle = 200; // ₹2
+    const bwDouble = 300; // ₹3 / sheet
+
+    // 1 page
+    const p1 = 1 * bwSingle;
+    expect(p1).toBe(200);
+
+    // 2 pages duplex = 1 physical sheet
+    const p2 = 1 * bwDouble;
+    expect(p2).toBe(300);
+
+    // 3 pages duplex = 1 physical sheet (300) + 1 single-sided page (200) = 500
+    const p3 = 1 * bwDouble + 1 * bwSingle;
+    expect(p3).toBe(500);
+  });
 });

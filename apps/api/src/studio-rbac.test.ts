@@ -185,6 +185,60 @@ describe('Studio Role-Based Access Control (RBAC)', () => {
     });
     expect(updateRes.statusCode).toBe(200);
 
+    // Update valid multi-size print rates
+    const ratesRes = await app.inject({
+      method: 'PATCH',
+      url: '/studios/studio_alpha/settings',
+      payload: {
+        printRates: {
+          A4: {
+            black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+            color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+          },
+          A3: {
+            black_and_white: { singleSidedMinor: 500, doubleSidedMinor: 800 },
+            color: { singleSidedMinor: 2000, doubleSidedMinor: 3500 },
+          },
+        },
+      },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(ratesRes.statusCode).toBe(200);
+    const updatedStudio = JSON.parse(ratesRes.payload);
+    expect(updatedStudio.settings.printRates.A3.color.singleSidedMinor).toBe(2000);
+
+    // Reject unsupported paper size
+    const invalidSizeRes = await app.inject({
+      method: 'PATCH',
+      url: '/studios/studio_alpha/settings',
+      payload: {
+        printRates: {
+          Tabloid: {
+            black_and_white: { singleSidedMinor: 500, doubleSidedMinor: 800 },
+          },
+        },
+      },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(invalidSizeRes.statusCode).toBe(400);
+    expect(JSON.parse(invalidSizeRes.payload).code).toBe('INVALID_PAPER_SIZE');
+
+    // Reject unsupported print mode
+    const invalidModeRes = await app.inject({
+      method: 'PATCH',
+      url: '/studios/studio_alpha/settings',
+      payload: {
+        printRates: {
+          A4: {
+            sepia: { singleSidedMinor: 500, doubleSidedMinor: 800 },
+          },
+        },
+      },
+      cookies: { [adminCookie.name]: adminCookie.value },
+    });
+    expect(invalidModeRes.statusCode).toBe(400);
+    expect(JSON.parse(invalidModeRes.payload).code).toBe('INVALID_PRINT_MODE');
+
     await app.close();
   });
 });

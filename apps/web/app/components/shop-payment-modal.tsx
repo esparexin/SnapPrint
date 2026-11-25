@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Studio, StudioPrintRatesContract } from '@snapprint/contracts';
+import { PaperSize, Studio, StudioPrintRatesContract } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
 import { ModalSheetShell } from './modal-sheet-shell';
@@ -112,7 +112,22 @@ export function ShopPaymentModal({
             counterPaymentEnabled={counterPaymentEnabled}
             setCounterPaymentEnabled={setCounterPaymentEnabled}
           />
-          <ShopPrintRatesFields printRates={printRates} onChange={setPrintRates} />
+          <ShopPrintRatesFields
+            printRates={printRates}
+            supportedPaperSizes={
+              (studio as { capabilities?: { supportedPaperSizes?: PaperSize[] } })?.capabilities
+                ?.supportedPaperSizes
+            }
+            supportsColor={
+              (studio as { capabilities?: { supportsColor?: boolean } })?.capabilities
+                ?.supportsColor
+            }
+            supportsBlackAndWhite={
+              (studio as { capabilities?: { supportsBlackAndWhite?: boolean } })?.capabilities
+                ?.supportsBlackAndWhite
+            }
+            onChange={setPrintRates}
+          />
           <ShopRazorpayForm
             studioId={studioId}
             isConfirmed={isConfirmed}
