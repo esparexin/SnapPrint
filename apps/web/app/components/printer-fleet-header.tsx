@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { getAgentDownloadUrl } from '../../src/printer-client';
+import { PrinterStatusBadge } from './printer-status-badge';
 
 interface PrinterFleetHeaderProps {
   studioId: string;
@@ -21,7 +22,7 @@ export function PrinterFleetHeader({
   return (
     <div
       style={{
-        padding: '16px 24px',
+        padding: '16px 20px',
         borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         justifyContent: 'space-between',
@@ -31,12 +32,15 @@ export function PrinterFleetHeader({
       }}
     >
       <div>
-        <h2
-          id="printer-management-title"
-          style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}
-        >
-          Hardware &amp; Printers Fleet
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <h2
+            id="printer-management-title"
+            style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#0f172a' }}
+          >
+            Hardware &amp; Printers Fleet
+          </h2>
+          <PrinterStatusBadge studioId={studioId} />
+        </div>
         <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
           {studioName || `Studio ${studioId}`} · Capability Routing &amp; Discovery
         </p>

@@ -13,6 +13,23 @@ export interface ShopProfileFieldsProps {
   setAddress: (val: string) => void;
 }
 
+const fieldLabelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.8125rem',
+  fontWeight: 600,
+  color: '#334155',
+  marginBottom: '4px',
+};
+
+const fieldInputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 10px',
+  fontSize: '0.875rem',
+  border: '1px solid #cbd5e1',
+  borderRadius: '6px',
+  boxSizing: 'border-box',
+};
+
 export function ShopProfileFields({
   isAcceptingOrders,
   setIsAcceptingOrders,
@@ -25,7 +42,6 @@ export function ShopProfileFields({
 }: ShopProfileFieldsProps) {
   return (
     <>
-      {/* Pause / Resume Control */}
       <div
         style={{
           padding: '12px',
@@ -35,6 +51,8 @@ export function ShopProfileFields({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '8px',
         }}
       >
         <div>
@@ -73,45 +91,18 @@ export function ShopProfileFields({
       </div>
 
       <div>
-        <label
-          style={{
-            display: 'block',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: '#334155',
-            marginBottom: '4px',
-          }}
-        >
-          Shop Tagline
-        </label>
+        <label style={fieldLabelStyle}>Shop Tagline</label>
         <input
           type="text"
           placeholder="e.g. Fast A4 Xerox & High-Speed Prints"
           value={tagline}
           onChange={(e) => setTagline(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            fontSize: '0.875rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '6px',
-            boxSizing: 'border-box',
-          }}
+          style={fieldInputStyle}
         />
       </div>
 
       <div>
-        <label
-          style={{
-            display: 'block',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: '#334155',
-            marginBottom: '4px',
-          }}
-        >
-          Customer Support Phone
-        </label>
+        <label style={fieldLabelStyle}>Customer Support Phone</label>
         <input
           type="tel"
           inputMode="numeric"
@@ -120,42 +111,18 @@ export function ShopProfileFields({
           placeholder="e.g. 9876512340"
           value={contactPhone}
           onChange={(e) => setContactPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            fontSize: '0.875rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '6px',
-            boxSizing: 'border-box',
-          }}
+          style={fieldInputStyle}
         />
       </div>
 
       <div>
-        <label
-          style={{
-            display: 'block',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: '#334155',
-            marginBottom: '4px',
-          }}
-        >
-          Counter Location Address
-        </label>
+        <label style={fieldLabelStyle}>Counter Location Address</label>
         <input
           type="text"
           placeholder="e.g. Shop #4, Main Road, Hanamkonda"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            fontSize: '0.875rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '6px',
-            boxSizing: 'border-box',
-          }}
+          style={fieldInputStyle}
         />
       </div>
     </>

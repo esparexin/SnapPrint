@@ -26,14 +26,16 @@ export function StudioQrActions({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: '8px',
           marginBottom: '12px',
         }}
       >
         <button
+          type="button"
           onClick={onCopy}
           style={{
+            minHeight: '42px',
             padding: '10px',
             backgroundColor: '#f8fafc',
             border: '1px solid #cbd5e1',
@@ -47,9 +49,11 @@ export function StudioQrActions({
           {copied ? '✓ Copied!' : 'Copy Studio URL'}
         </button>
         <button
+          type="button"
           onClick={onDownloadPng}
           disabled={!hasPng}
           style={{
+            minHeight: '42px',
             padding: '10px',
             backgroundColor: '#f8fafc',
             border: '1px solid #cbd5e1',
@@ -64,11 +68,19 @@ export function StudioQrActions({
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '8px',
+        }}
+      >
         <button
+          type="button"
           onClick={onDownloadSvg}
           disabled={!hasSvg}
           style={{
+            minHeight: '42px',
             padding: '10px',
             backgroundColor: '#0284c7',
             color: '#ffffff',
@@ -82,8 +94,10 @@ export function StudioQrActions({
           Download Vector SVG
         </button>
         <button
+          type="button"
           onClick={onPrint}
           style={{
+            minHeight: '42px',
             padding: '10px',
             backgroundColor: '#0f172a',
             color: '#ffffff',

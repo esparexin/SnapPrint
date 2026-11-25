@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { StaffMember } from '@snapprint/contracts';
 import { fetchStudioStaff, inviteStudioStaff, revokeStudioStaff } from '../../src/workspace-client';
-import { useDialog } from '../hooks/use-dialog';
+import { ModalSheetShell } from './modal-sheet-shell';
 import { StaffInviteForm } from './staff-invite-form';
 import { StaffManagementHeader } from './staff-management-header';
 import { StaffRosterList } from './staff-roster-list';
@@ -12,9 +12,15 @@ interface StaffManagementModalProps {
   studioId: string;
   studioName?: string;
   onClose: () => void;
+  inShell?: boolean;
 }
 
-export function StaffManagementModal({ studioId, studioName, onClose }: StaffManagementModalProps) {
+export function StaffManagementModal({
+  studioId,
+  studioName,
+  onClose,
+  inShell = false,
+}: StaffManagementModalProps) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,74 +79,62 @@ export function StaffManagementModal({ studioId, studioName, onClose }: StaffMan
     }
   };
 
-  const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen: true,
-    onClose,
-    enableSwipeDown: true,
-  });
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="staff-modal-title"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
+    <ModalSheetShell
+      onClose={onClose}
+      titleId="staff-modal-title"
+      maxWidth="520px"
+      inShell={inShell}
+      hideCloseButton={true}
+      contentStyle={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
     >
-      <div
-        className="dialog-content"
-        style={{ maxWidth: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <StaffManagementHeader studioName={studioName} onClose={onClose} />
+      <StaffManagementHeader studioName={studioName} onClose={inShell ? undefined : onClose} />
 
-        <div style={{ padding: '20px', overflowY: 'auto' }}>
-          {error && (
-            <div
-              role="alert"
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#fef2f2',
-                color: '#b91c1c',
-                borderRadius: '6px',
-                fontSize: '0.8125rem',
-                marginBottom: '16px',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <StaffInviteForm
-            email={email}
-            setEmail={setEmail}
-            name={name}
-            setName={setName}
-            inviting={inviting}
-            onInvite={handleInvite}
-          />
-
-          <span
+      <div style={{ padding: '20px', overflowY: inShell ? 'visible' : 'auto' }}>
+        {error && (
+          <div
+            role="alert"
             style={{
+              padding: '8px 12px',
+              backgroundColor: '#fef2f2',
+              color: '#b91c1c',
+              borderRadius: '6px',
               fontSize: '0.8125rem',
-              fontWeight: 700,
-              color: '#334155',
-              display: 'block',
-              marginBottom: '8px',
+              marginBottom: '16px',
             }}
           >
-            Active Staff Roster ({staff.length})
-          </span>
+            {error}
+          </div>
+        )}
 
-          <StaffRosterList
-            staff={staff}
-            loading={loading}
-            revokingId={revokingId}
-            onRevoke={handleRevoke}
-          />
-        </div>
+        <StaffInviteForm
+          email={email}
+          setEmail={setEmail}
+          name={name}
+          setName={setName}
+          inviting={inviting}
+          onInvite={handleInvite}
+        />
+
+        <span
+          style={{
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            color: '#334155',
+            display: 'block',
+            marginBottom: '8px',
+          }}
+        >
+          Active Staff Roster ({staff.length})
+        </span>
+
+        <StaffRosterList
+          staff={staff}
+          loading={loading}
+          revokingId={revokingId}
+          onRevoke={handleRevoke}
+        />
       </div>
-    </div>
+    </ModalSheetShell>
   );
 }

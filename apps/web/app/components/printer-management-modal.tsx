@@ -102,7 +102,11 @@ export function PrinterManagementModal({
           onPairAgent={() => setShowPairingModal(true)}
         />
       </div>
-      <PrinterFleetFooter loading={loading} onRefresh={loadPrinters} onClose={onClose} />
+      <PrinterFleetFooter
+        loading={loading}
+        onRefresh={loadPrinters}
+        onClose={inShell ? undefined : onClose}
+      />
       {showPairingModal && (
         <AgentPairingModal
           studioId={studioId}
@@ -114,7 +118,11 @@ export function PrinterManagementModal({
   );
 
   if (inShell) {
-    return <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>{content}</div>;
+    return (
+      <div className="portal-section-card" style={{ display: 'flex', flexDirection: 'column' }}>
+        {content}
+      </div>
+    );
   }
 
   return (

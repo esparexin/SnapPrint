@@ -170,3 +170,10 @@ export async function logoutOperator(customFetch: typeof fetch = fetch): Promise
     throw new AuthApiError(message, res.status, code);
   }
 }
+
+export async function signOutToHome(customFetch: typeof fetch = fetch): Promise<void> {
+  await logoutOperator(customFetch);
+  if (typeof window !== 'undefined') {
+    window.location.replace('/');
+  }
+}

@@ -7,6 +7,7 @@ import {
   StudioOnboardingProfile,
   updateStudioProfile,
 } from '../../src/studio-client';
+import { getNoticeBoxStyle } from './operator-portal-styles';
 
 type PaperSize = 'A4' | 'A3' | 'A5' | 'legal' | 'letter';
 
@@ -90,7 +91,7 @@ export function ShopCapabilitiesStep({
         <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
           Print Types Supported
         </h3>
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.5rem' }}>
           <label
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
           >
@@ -155,7 +156,9 @@ export function ShopCapabilitiesStep({
           jobs require operator confirmation at the counter to prevent accidental queue hogging.
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem 1rem' }}
+        >
           <label htmlFor="auto-print-threshold" style={{ fontWeight: 500, fontSize: '0.875rem' }}>
             Maximum Direct Pages:
           </label>
@@ -178,16 +181,7 @@ export function ShopCapabilitiesStep({
       </div>
 
       {error && (
-        <div
-          role="alert"
-          style={{
-            padding: '0.5rem',
-            background: '#fee2e2',
-            color: '#991b1b',
-            borderRadius: '0.25rem',
-            fontSize: '0.8125rem',
-          }}
-        >
+        <div role="alert" style={getNoticeBoxStyle('error')}>
           {error}
         </div>
       )}

@@ -91,30 +91,28 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
   ];
 
   return (
-    <div
-      role="region"
-      aria-label="Today's Operational Summary"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '8px',
-        marginBottom: '16px',
-        width: '100%',
-      }}
-    >
+    <div role="region" aria-label="Today's Operational Summary" className="portal-kpi-grid">
       {kpis.map((kpi) => (
         <button
           key={kpi.label}
           type="button"
           onClick={() => onNavigate?.(kpi.view)}
+          className="portal-kpi-btn"
           style={{
             backgroundColor: kpi.bg,
             border: `1px solid ${kpi.border}`,
-            borderRadius: '8px',
-            padding: '8px 10px',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            minHeight: '56px',
+            minWidth: 0,
             textAlign: 'center',
             cursor: onNavigate ? 'pointer' : 'default',
             width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '2px',
           }}
         >
           <span

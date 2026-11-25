@@ -50,6 +50,8 @@ export function StaffRosterList({ staff, loading, revokingId, onRevoke }: StaffR
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
             padding: '10px 12px',
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',

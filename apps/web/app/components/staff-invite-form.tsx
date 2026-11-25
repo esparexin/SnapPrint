@@ -44,7 +44,7 @@ export function StaffInviteForm({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: '8px',
           marginBottom: '8px',
         }}
@@ -60,6 +60,8 @@ export function StaffInviteForm({
             fontSize: '0.8125rem',
             border: '1px solid #cbd5e1',
             borderRadius: '6px',
+            width: '100%',
+            minWidth: 0,
           }}
         />
         <input
@@ -72,6 +74,8 @@ export function StaffInviteForm({
             fontSize: '0.8125rem',
             border: '1px solid #cbd5e1',
             borderRadius: '6px',
+            width: '100%',
+            minWidth: 0,
           }}
         />
       </div>
@@ -80,6 +84,7 @@ export function StaffInviteForm({
         disabled={inviting || !email.trim()}
         style={{
           width: '100%',
+          minHeight: '40px',
           padding: '8px 12px',
           backgroundColor: '#0284c7',
           color: '#ffffff',

@@ -159,3 +159,58 @@ export async function revokeAgentDevice(
   }
   return data;
 }
+
+export type ShopPrinterStatus = 'not_added' | 'connected' | 'offline';
+
+export function computePrinterStatus(
+  printers: readonly { status: string }[],
+  devices: readonly { isOnline: boolean }[]
+): ShopPrinterStatus {
+  if (!printers || printers.length === 0) {
+    return 'not_added';
+  }
+  const hasOnlineAgent = devices.some((d) => d.isOnline);
+  const hasOnlinePrinter = printers.some((p) => p.status === 'online');
+  if (hasOnlineAgent && hasOnlinePrinter) {
+    return 'connected';
+  }
+  return 'offline';
+}
+
+let cachedFleetPromise: {
+  studioId: string;
+  timestamp: number;
+  promise: Promise<{ printers: StudioPrinter[]; devices: AgentDevice[] }>;
+} | null = null;
+
+export function resetFleetStatusCacheForTests(): void {
+  cachedFleetPromise = null;
+}
+
+export async function fetchStudioFleetStatus(
+  studioId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<{ printers: StudioPrinter[]; devices: AgentDevice[]; status: ShopPrinterStatus }> {
+  const now = Date.now();
+  if (
+    !cachedFleetPromise ||
+    cachedFleetPromise.studioId !== studioId ||
+    now - cachedFleetPromise.timestamp > 10_000
+  ) {
+    const promise = Promise.all([
+      fetchStudioPrinters(studioId, fetchImpl),
+      fetchStudioDevices(studioId, fetchImpl),
+    ]).then(([pRes, dRes]) => ({
+      printers: pRes.printers,
+      devices: dRes.devices,
+    }));
+    cachedFleetPromise = { studioId, timestamp: now, promise };
+  }
+
+  const { printers, devices } = await cachedFleetPromise.promise;
+  return {
+    printers,
+    devices,
+    status: computePrinterStatus(printers, devices),
+  };
+}

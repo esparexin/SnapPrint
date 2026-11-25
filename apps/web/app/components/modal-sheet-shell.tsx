@@ -17,6 +17,7 @@ export interface ModalSheetShellProps {
   contentStyle?: CSSProperties;
   dialogId?: string;
   hideCloseButton?: boolean;
+  inShell?: boolean;
 }
 
 export function ModalSheetShell({
@@ -32,6 +33,7 @@ export function ModalSheetShell({
   contentStyle,
   dialogId,
   hideCloseButton = false,
+  inShell = false,
 }: ModalSheetShellProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -40,11 +42,23 @@ export function ModalSheetShell({
   }, []);
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen,
+    isOpen: isOpen && !inShell,
     onClose,
     enableSwipeDown,
     dialogId,
   });
+
+  if (inShell) {
+    if (!isOpen) return null;
+    return (
+      <div
+        className="portal-section-card"
+        style={{ display: 'flex', flexDirection: 'column', ...contentStyle }}
+      >
+        {children}
+      </div>
+    );
+  }
 
   if (!mounted || !isOpen) return null;
 

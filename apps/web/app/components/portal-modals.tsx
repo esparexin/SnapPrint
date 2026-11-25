@@ -4,53 +4,61 @@ import React, { useEffect, useState } from 'react';
 import { Studio } from '@snapprint/contracts';
 import { StudioOnboardingProfile } from '../../src/studio-client';
 import { fetchStudio } from '../../src/workspace-client';
+import { AgentPairingModal } from './agent-pairing-modal';
 import { OperatorView } from './operator-portal-header';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
 import { PrinterManagementModal } from './printer-management-modal';
 import { SetupWizardModal } from './setup-wizard-modal';
-import { ShopProfileModal } from './shop-profile-modal';
 import { ShopPaymentModal } from './shop-payment-modal';
+import { ShopProfileModal } from './shop-profile-modal';
 import { StaffManagementModal } from './staff-management-modal';
 import { StudioQrModal } from './studio-qr-modal';
 
-const EMPTY_SETTINGS = {
-  currency: 'INR',
-  maxActivePrinters: 2,
-  autoApproveOrders: false,
-  isAcceptingOrders: true,
-};
+const fallbackStudio = (id: string, slug?: string, name?: string): Studio => ({
+  id,
+  slug: slug || '',
+  name: name || `Studio ${id}`,
+  status: 'active',
+  settings: {
+    currency: 'INR',
+    maxActivePrinters: 2,
+    autoApproveOrders: false,
+    isAcceptingOrders: true,
+  },
+  createdAt: '',
+  updatedAt: '',
+});
 
 export interface PortalModalsProps {
   studioId?: string;
   studioName?: string;
   studioSlug?: string;
   activeView?: OperatorView;
+  inShell?: boolean;
+  showPairingModal?: boolean;
+  onClosePairing?: () => void;
   onBackToHub?: () => void;
-  showQrModal?: boolean;
-  showOrdersModal?: boolean;
-  showPrintersModal?: boolean;
-  showSetupModal?: boolean;
-  showStaffModal?: boolean;
-  showProfileModal?: boolean;
-  showPaymentModal?: boolean;
-  onCloseQr?: () => void;
-  onCloseOrders?: () => void;
-  onClosePrinters?: () => void;
-  onCloseSetup?: () => void;
-  onCloseStaff?: () => void;
-  onCloseProfile?: () => void;
-  onClosePayment?: () => void;
   onSetupComplete: (saved: StudioOnboardingProfile | null) => void;
 }
 
-export function PortalModals(props: PortalModalsProps) {
-  const { studioId, studioName, studioSlug, activeView, onBackToHub, onSetupComplete } = props;
-  const isSetup = activeView === 'setup' || props.showSetupModal;
+export function PortalModals({
+  studioId,
+  studioName,
+  studioSlug,
+  activeView,
+  inShell = false,
+  showPairingModal = false,
+  onClosePairing,
+  onBackToHub,
+  onSetupComplete,
+}: PortalModalsProps) {
+  const isSetup = activeView === 'setup';
   const [fetchedStudio, setFetchedStudio] = useState<Studio | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    if (!studioId) return setFetchedStudio(null);
+    setFetchedStudio(null);
+    if (!studioId) return;
     fetchStudio(studioId)
       .then((data) => mounted && data?.studio && setFetchedStudio(data.studio))
       .catch(() => {});
@@ -60,89 +68,67 @@ export function PortalModals(props: PortalModalsProps) {
   }, [studioId]);
 
   if (!studioId && !isSetup) return null;
+  const currentStudio =
+    fetchedStudio || (studioId ? fallbackStudio(studioId, studioSlug, studioName) : null);
+  const handleClose = () => onBackToHub?.();
+  const studioKey = `${studioId || 'none'}-${fetchedStudio?.updatedAt || 'init'}`;
 
-  const currentStudio: Studio | null =
-    fetchedStudio ||
-    (studioId
-      ? {
-          id: studioId,
-          slug: studioSlug || '',
-          name: studioName || `Studio ${studioId}`,
-          status: 'active',
-          settings: EMPTY_SETTINGS,
-          createdAt: '',
-          updatedAt: '',
-        }
-      : null);
-
-  const handleClose = (fn?: () => void) => {
-    fn?.();
-    onBackToHub?.();
-  };
-
-  return (
-    <>
-      {studioId && currentStudio && (
-        <>
-          {(activeView === 'qr' || props.showQrModal) && (
-            <StudioQrModal
-              studio={{
-                id: studioId,
-                slug: currentStudio.slug || studioSlug,
-                name: currentStudio.name,
-              }}
-              onClose={() => handleClose(props.onCloseQr)}
-            />
-          )}
-          {(activeView === 'orders' || props.showOrdersModal) && (
-            <OrderFulfillmentModal
-              studioId={studioId}
-              studioName={currentStudio.name}
-              onClose={() => handleClose(props.onCloseOrders)}
-              inShell={activeView === 'orders'}
-            />
-          )}
-          {(activeView === 'printers' || props.showPrintersModal) && (
-            <PrinterManagementModal
-              studioId={studioId}
-              studioName={currentStudio.name}
-              onClose={() => handleClose(props.onClosePrinters)}
-              inShell={activeView === 'printers'}
-            />
-          )}
-          {(activeView === 'staff' || props.showStaffModal) && (
-            <StaffManagementModal
-              studioId={studioId}
-              studioName={currentStudio.name}
-              onClose={() => handleClose(props.onCloseStaff)}
-            />
-          )}
-          {(activeView === 'profile' || props.showProfileModal) && (
-            <ShopProfileModal
-              studioId={studioId}
-              studio={currentStudio}
-              onClose={() => handleClose(props.onCloseProfile)}
-              onUpdated={() => handleClose(props.onCloseProfile)}
-            />
-          )}
-          {(activeView === 'payment' || props.showPaymentModal) && (
-            <ShopPaymentModal
-              studioId={studioId}
-              studio={currentStudio}
-              onClose={() => handleClose(props.onClosePayment)}
-              onUpdated={() => handleClose(props.onClosePayment)}
-            />
-          )}
-        </>
-      )}
-
-      {isSetup && (
+  const renderSection = (): React.ReactNode => {
+    if (isSetup) {
+      return (
         <SetupWizardModal
           studioId={studioId}
+          inShell={inShell}
           onComplete={(saved) => (onSetupComplete(saved), onBackToHub?.())}
-          onClose={() => handleClose(props.onCloseSetup)}
+          onClose={handleClose}
+        />
+      );
+    }
+    if (!studioId || !currentStudio) return null;
+    const base = { studioId, studioName: currentStudio.name, onClose: handleClose, inShell };
+    const qrStudio = {
+      id: studioId,
+      slug: currentStudio.slug || studioSlug,
+      name: currentStudio.name,
+    };
+    const studioFormProps = {
+      key: studioKey,
+      studioId,
+      studio: currentStudio,
+      onClose: handleClose,
+      onUpdated: setFetchedStudio,
+      inShell,
+    };
+    const views: Partial<Record<OperatorView, React.ReactNode>> = {
+      orders: <OrderFulfillmentModal {...base} />,
+      printers: <PrinterManagementModal {...base} />,
+      staff: <StaffManagementModal {...base} />,
+      qr: <StudioQrModal studio={qrStudio} onClose={handleClose} inShell={inShell} />,
+      profile: <ShopProfileModal {...studioFormProps} />,
+      payment: <ShopPaymentModal {...studioFormProps} />,
+    };
+    return activeView ? views[activeView] || null : null;
+  };
+
+  const content = (
+    <>
+      {renderSection()}
+      {showPairingModal && studioId && (
+        <AgentPairingModal
+          studioId={studioId}
+          studioName={currentStudio?.name || studioName}
+          onClose={() => onClosePairing?.()}
         />
       )}
     </>
   );
+
+  if (inShell && activeView) {
+    return (
+      <div role="tabpanel" aria-labelledby={`portal-tab-${activeView}`}>
+        {content}
+      </div>
+    );
+  }
+  return content;
 }

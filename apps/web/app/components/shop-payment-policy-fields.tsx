@@ -97,7 +97,8 @@ export function ShopPaymentPolicyFields({
       <div
         style={{
           display: 'flex',
-          gap: '16px',
+          flexWrap: 'wrap',
+          gap: '12px 16px',
           padding: '10px',
           backgroundColor: '#f8fafc',
           borderRadius: '6px',

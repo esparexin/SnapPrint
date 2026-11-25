@@ -11,19 +11,21 @@ import { StudioQrPreviewBox } from './studio-qr-preview-box';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://snapprint.in';
 
 interface StudioQrModalProps {
-  studio: {
-    id: string;
-    slug?: string;
-    name?: string;
-  };
+  studio: { id: string; slug?: string; name?: string };
   onClose: () => void;
+  inShell?: boolean;
 }
 
-export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
+export function StudioQrModal({ studio, onClose, inShell = false }: StudioQrModalProps) {
   const [resolvedSlug, setResolvedSlug] = useState<string>(studio.slug || '');
   const [svgMarkup, setSvgMarkup] = useState<string>('');
   const [pngDataUrl, setPngDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const { handleBackdropClick, swipeHandlers } = useDialog({
+    isOpen: !inShell,
+    onClose,
+    enableSwipeDown: true,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -42,24 +44,20 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
   const canonicalUrl = resolvedSlug ? buildPermanentStudioUrl(BASE_URL, resolvedSlug) : '';
 
   useEffect(() => {
+    if (!canonicalUrl) return;
     let mounted = true;
-    async function generateCodes() {
-      if (!canonicalUrl) return;
-      try {
-        const color = { dark: '#0f172a', light: '#ffffff' };
-        const [svg, png] = await Promise.all([
-          QRCode.toString(canonicalUrl, { type: 'svg', margin: 2, color }),
-          QRCode.toDataURL(canonicalUrl, { width: 1024, margin: 2, color }),
-        ]);
+    const color = { dark: '#0f172a', light: '#ffffff' };
+    Promise.all([
+      QRCode.toString(canonicalUrl, { type: 'svg', margin: 2, color }),
+      QRCode.toDataURL(canonicalUrl, { width: 1024, margin: 2, color }),
+    ])
+      .then(([svg, png]) => {
         if (mounted) {
           setSvgMarkup(svg);
           setPngDataUrl(png);
         }
-      } catch {
-        /* ignore */
-      }
-    }
-    generateCodes();
+      })
+      .catch(() => {});
     return () => {
       mounted = false;
     };
@@ -90,11 +88,41 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
     if (isSvg) URL.revokeObjectURL(href);
   }
 
-  const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen: true,
-    onClose,
-    enableSwipeDown: true,
-  });
+  const content = (
+    <>
+      <div className="portal-section-header">
+        <h2 id="studio-qr-title" className="portal-section-title">
+          Permanent Counter QR Code
+        </h2>
+        {!inShell && (
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+            ✕
+          </button>
+        )}
+      </div>
+      <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>
+        Print this QR code on physical acrylic counter stands, posters, or stickers. It permanently
+        encodes your studio URL and never expires.
+      </p>
+      <StudioQrPreviewBox svgMarkup={svgMarkup} canonicalUrl={canonicalUrl} />
+      <StudioQrActions
+        copied={copied}
+        hasSvg={Boolean(svgMarkup)}
+        hasPng={Boolean(pngDataUrl)}
+        onCopy={handleCopy}
+        onDownloadSvg={() => download(svgMarkup, 'svg')}
+        onDownloadPng={() => download(pngDataUrl, 'png')}
+        onPrint={() => window.print()}
+      />
+    </>
+  );
+
+  if (inShell)
+    return (
+      <div className="portal-section-card" style={{ padding: 20 }}>
+        {content}
+      </div>
+    );
 
   return (
     <div
@@ -110,38 +138,7 @@ export function StudioQrModal({ studio, onClose }: StudioQrModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px',
-          }}
-        >
-          <h2 id="studio-qr-title" style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
-            Permanent Counter QR Code
-          </h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
-            ✕
-          </button>
-        </div>
-
-        <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px', lineHeight: 1.5 }}>
-          Print this QR code on physical acrylic counter stands, posters, or stickers. It
-          permanently encodes your studio URL and never expires.
-        </p>
-
-        <StudioQrPreviewBox svgMarkup={svgMarkup} canonicalUrl={canonicalUrl} />
-
-        <StudioQrActions
-          copied={copied}
-          hasSvg={Boolean(svgMarkup)}
-          hasPng={Boolean(pngDataUrl)}
-          onCopy={handleCopy}
-          onDownloadSvg={() => download(svgMarkup, 'svg')}
-          onDownloadPng={() => download(pngDataUrl, 'png')}
-          onPrint={() => window.print()}
-        />
+        {content}
       </div>
     </div>
   );

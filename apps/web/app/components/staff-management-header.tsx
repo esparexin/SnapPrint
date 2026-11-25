@@ -4,7 +4,7 @@ import React from 'react';
 
 interface StaffManagementHeaderProps {
   studioName?: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function StaffManagementHeader({ studioName, onClose }: StaffManagementHeaderProps) {
@@ -16,6 +16,7 @@ export function StaffManagementHeader({ studioName, onClose }: StaffManagementHe
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: '8px',
       }}
     >
       <div>
@@ -25,13 +26,15 @@ export function StaffManagementHeader({ studioName, onClose }: StaffManagementHe
         >
           Staff & Permissions
         </h2>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+        <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '2px' }}>
           {studioName || 'Studio Workspace'}
         </div>
       </div>
-      <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
-        ✕
-      </button>
+      {onClose && (
+        <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+          ✕
+        </button>
+      )}
     </div>
   );
 }

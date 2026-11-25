@@ -106,7 +106,11 @@ export function OrderFulfillmentModal({
   );
 
   if (inShell) {
-    return <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>{content}</div>;
+    return (
+      <div className="portal-section-card" style={{ display: 'flex', flexDirection: 'column' }}>
+        {content}
+      </div>
+    );
   }
 
   return (
