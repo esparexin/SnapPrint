@@ -51,7 +51,7 @@ const linkButtonStyles: CSSProperties = {
   transition: 'background-color 0.15s ease',
 };
 
-export const CONTACT_ADMIN_URL = 'https://in.linkedin.com/in/kalyansmv';
+export const CONTACT_ADMIN_URL = 'https://www.linkedin.com/in/kalyansmv/';
 
 export function AdminNoAdminCard() {
   return (

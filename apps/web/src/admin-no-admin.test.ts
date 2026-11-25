@@ -13,7 +13,7 @@ type ElementProps = {
 
 describe('AdminNoAdminCard & Platform Admin Access Gatecheck', () => {
   it('defines the correct contact URL for administrator access', () => {
-    expect(CONTACT_ADMIN_URL).toBe('https://in.linkedin.com/in/kalyansmv');
+    expect(CONTACT_ADMIN_URL).toBe('https://www.linkedin.com/in/kalyansmv/');
   });
 
   it('renders the expected minimal copy and elements', () => {
@@ -29,7 +29,7 @@ describe('AdminNoAdminCard & Platform Admin Access Gatecheck', () => {
     expect(emojiEl.props.children).toBe('🙂');
     expect(titleEl.props.children).toBe('No Admin');
     expect(subtitleEl.props.children).toBe('Please reach out to Kalyan V Medaboina for access.');
-    expect(linkEl.props.href).toBe('https://in.linkedin.com/in/kalyansmv');
+    expect(linkEl.props.href).toBe('https://www.linkedin.com/in/kalyansmv/');
     expect(linkEl.props.target).toBe('_blank');
     expect(linkEl.props.rel).toBe('noopener noreferrer');
     expect(linkEl.props.children).toBe('Contact Administrator ↗');
