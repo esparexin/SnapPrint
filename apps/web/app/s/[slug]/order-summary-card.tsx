@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DocumentPrintConfig, OrderRecord, QuoteResponse } from '@snapprint/contracts';
+import { clearStoredCustomerSession } from '../../../src/customer-client';
 import { OrderApiError, requestPrintQuote, submitPrintOrder } from '../../../src/order-client';
 import { hasInvalidPageSelection } from './document-print-workflow-helpers';
 import { OrderCustomerForm } from './order-customer-form';
@@ -76,7 +77,13 @@ export function OrderSummaryCard({
   }, [slug, sessionId, token, configHash]);
 
   async function handleSubmitOrder() {
-    if (configs.length === 0 || submitting) return;
+    if (
+      configs.length === 0 ||
+      submitting ||
+      (customerPhone.length > 0 && customerPhone.length < 10)
+    ) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -92,7 +99,14 @@ export function OrderSummaryCard({
       onOrderSubmitted(order);
     } catch (err) {
       if (err instanceof OrderApiError) {
-        if (err.code === 'AGENT_OFFLINE' || err.code === 'NO_ACTIVE_PRINTER') {
+        if (
+          err.code === 'SESSION_MISMATCH' ||
+          err.code === 'INVALID_SESSION_TOKEN' ||
+          err.code === 'TENANT_MISMATCH'
+        ) {
+          clearStoredCustomerSession(slug);
+          setError('Your session expired. Please refresh the page to start a fresh session.');
+        } else if (err.code === 'AGENT_OFFLINE' || err.code === 'NO_ACTIVE_PRINTER') {
           setError(
             'This shop is currently unable to accept new print orders because printing hardware is offline. Please try again shortly.'
           );

@@ -23,6 +23,22 @@ export async function registerPrinterAgentRoutes(
 ): Promise<void> {
   const getEffectiveDb = (): Db => opts?.db ?? getDb();
 
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    const raw = typeof body === 'string' ? body : body?.toString('utf8') || '';
+    if (!raw.trim()) {
+      done(null, {});
+      return;
+    }
+    try {
+      done(null, JSON.parse(raw));
+    } catch (err: unknown) {
+      const error = err as Error & { statusCode?: number };
+      error.statusCode = 400;
+      done(error, undefined);
+    }
+  });
+
   // 1. Device Agent: Enroll with Pairing Code
   app.post('/agent/enroll', async (request, reply) => {
     const db = getEffectiveDb();

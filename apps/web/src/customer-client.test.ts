@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
+  clearStoredCustomerSession,
   ensureCustomerSession,
   fetchPublicStudio,
   getSessionStorageKey,
@@ -109,5 +110,9 @@ describe('Customer Client Layer', () => {
       token: 'new.token',
     });
     expect(getStoredCustomerSession('koramangala-prints')?.token).toBe('new.token');
+
+    // Verify clearStoredCustomerSession clears sessionStorage
+    clearStoredCustomerSession('koramangala-prints');
+    expect(getStoredCustomerSession('koramangala-prints')).toBeNull();
   });
 });

@@ -122,6 +122,19 @@ export function storeCustomerSession(slug: string, data: CustomerSessionResponse
 }
 
 /**
+ * Clears cached customer session from sessionStorage (e.g. on invalid token or session mismatch).
+ */
+export function clearStoredCustomerSession(slug: string): void {
+  if (typeof window === 'undefined' || !window.sessionStorage) return;
+
+  try {
+    window.sessionStorage.removeItem(getSessionStorageKey(slug));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
  * Ensures an active session exists without duplicate creation.
  */
 export async function ensureCustomerSession(

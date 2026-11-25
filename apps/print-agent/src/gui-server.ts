@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createServer, IncomingMessage, Server, ServerResponse } from 'node:http';
 import { hostname } from 'node:os';
+import { AGENT_VERSION, applyAgentUpdate, checkForUpdate } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
@@ -137,10 +138,12 @@ export function createGuiServer(
           osPlatform,
         });
 
-        config.deviceToken = enrollResult.deviceToken;
-        config.studioId = enrollResult.studioId;
-        config.deviceId = enrollResult.deviceId;
-        config.deviceFriendlyName = host;
+        Object.assign(config, {
+          deviceToken: enrollResult.deviceToken,
+          studioId: enrollResult.studioId,
+          deviceId: enrollResult.deviceId,
+          deviceFriendlyName: host,
+        });
         saveAgentConfig(config, configPath);
 
         if (activeDaemon) activeDaemon.stop();
@@ -182,14 +185,24 @@ export function createGuiServer(
       return sendJson(res, 200, { printers });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/update/check') {
+      const config = loadAgentConfig(configPath);
+      const update = await checkForUpdate(config.apiUrl, AGENT_VERSION);
+      return sendJson(res, 200, update);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/update/apply') {
+      const config = loadAgentConfig(configPath);
+      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION);
+      return sendJson(res, result.success ? 200 : 400, result);
+    }
+
     res.writeHead(404).end('Not Found');
   });
 
   (server as unknown as { stopDaemon?: () => void }).stopDaemon = () => {
-    if (activeDaemon) {
-      activeDaemon.stop();
-      activeDaemon = null;
-    }
+    activeDaemon?.stop();
+    activeDaemon = null;
   };
 
   return server;

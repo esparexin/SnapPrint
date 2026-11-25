@@ -57,7 +57,10 @@ export function getGuiHtml(): string {
         </div>
       </div>
     </div>
-    <span style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 8px; border-radius: 999px;">v0.1.0</span>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button id="updateBtn" class="btn" style="display:none;width:auto;padding:2px 8px;font-size:0.75rem;background:#059669;color:#fff;cursor:pointer;" onclick="performUpdate()">Update</button>
+      <span style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 8px; border-radius: 999px;">v0.1.0</span>
+    </div>
   </div>
 
   <div id="serverEditBox" style="display: none; padding: 10px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;">
@@ -193,9 +196,41 @@ export function getGuiHtml(): string {
     function escapeHtml(s) {
       return (s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]);
     }
+    async function checkUpdates() {
+      try {
+        const res = await fetch('/api/update/check');
+        const data = await res.json();
+        const btn = document.getElementById('updateBtn');
+        if (data && data.updateAvailable && data.latestVersion) {
+          btn.textContent = '⚡ Update to v' + data.latestVersion;
+          btn.style.display = 'inline-flex';
+        } else {
+          btn.style.display = 'none';
+        }
+      } catch {}
+    }
+    async function performUpdate() {
+      const btn = document.getElementById('updateBtn');
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+      showAlert('Downloading and applying update in-place...', 'success');
+      try {
+        const res = await fetch('/api/update/apply', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Update failed');
+        showAlert(data.message || 'Update launched! Restarting agent...', 'success');
+        btn.textContent = 'Restarting...';
+      } catch (err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Retry Update';
+      }
+    }
     loadState();
     loadPrinters();
+    checkUpdates();
     setInterval(loadState, 15000);
+    setInterval(checkUpdates, 60000);
   </script>
 </body>
 </html>`;

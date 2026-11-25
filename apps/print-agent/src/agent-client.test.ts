@@ -88,6 +88,12 @@ describe('AgentClient', () => {
     );
     const res = await customClient.sendHeartbeat('tok_xyz');
     expect(res.timestamp).toBe('2026-11-23T12:00:00.000Z');
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toBe('http://127.0.0.1:3001/agent/heartbeat');
+    expect(init.method).toBe('POST');
+    expect(init.headers['x-device-token']).toBe('tok_xyz');
+    expect(init.headers['Content-Type']).toBe('application/json');
+    expect(init.body).toBe('{}');
   });
 
   it('fetchPendingJobs sends GET /agent/jobs/pending and returns jobs array', async () => {

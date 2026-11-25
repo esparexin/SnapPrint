@@ -12,29 +12,34 @@ export default function OperatorPage() {
 
   useEffect(() => {
     let mounted = true;
+    let redirecting = false;
     fetchCurrentUser()
       .then((user) => {
         if (!mounted) return;
-        setAuth(user);
         if (typeof window !== 'undefined' && user) {
-          const isOperator = user.memberships.some(
-            (m) => (m.role === 'studio_owner' || m.role === 'studio_staff') && m.status === 'active'
-          );
-          if (isOperator) {
-            window.location.replace('/portal');
-            return;
-          }
           const isPlatformAdmin = user.memberships.some(
             (m) => m.role === 'platform_admin' && m.status === 'active'
           );
           if (isPlatformAdmin) {
+            redirecting = true;
             window.location.replace('/admin');
             return;
           }
+          const isOperator = user.memberships.some(
+            (m) => (m.role === 'studio_owner' || m.role === 'studio_staff') && m.status === 'active'
+          );
+          if (isOperator) {
+            redirecting = true;
+            window.location.replace('/portal');
+            return;
+          }
         }
+        setAuth(user);
       })
       .catch(() => mounted && setAuth(null))
-      .finally(() => mounted && setLoading(false));
+      .finally(() => {
+        if (mounted && !redirecting) setLoading(false);
+      });
 
     return () => {
       mounted = false;
