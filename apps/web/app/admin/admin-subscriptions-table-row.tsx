@@ -6,7 +6,7 @@ import { adminTableStyles as styles } from './admin-table-styles';
 import {
   formatDaysRemaining,
   formatPlanCategory,
-  formatPlanIntervalDetails,
+  formatPlanDetails,
   getSubscriptionBadgeStyle,
   getSubscriptionStatusLabel,
   SubscriptionBadgeState,
@@ -54,9 +54,7 @@ export function AdminSubscriptionsTableRow({
       <td style={styles.td}>
         {isEnrolled ? (
           <div>
-            <div style={{ fontWeight: 600, color: '#0f172a' }}>
-              {formatPlanIntervalDetails(sub?.plan)}
-            </div>
+            <div style={{ fontWeight: 600, color: '#0f172a' }}>{formatPlanDetails(sub?.plan)}</div>
             <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
               <span style={getSubscriptionBadgeStyle(badgeState)}>{statusLabel}</span>
             </div>

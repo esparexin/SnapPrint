@@ -14,14 +14,16 @@ export function formatPlanLabel(plan?: string): string {
   return PLAN_LABELS[plan] || plan;
 }
 
-export function formatPlanIntervalDetails(plan?: string): string {
+export function formatPlanDetails(plan?: string): string {
   if (!plan) return '—';
-  if (plan === 'free') return '1 Month (30d)';
-  if (plan === 'quarterly') return '3 Months (90d)';
-  if (plan === 'half_yearly') return '6 Months (180d)';
-  if (plan === 'yearly') return '12 Months (365d)';
+  if (plan === 'free') return 'Free Plan';
+  if (plan === 'quarterly') return 'Quarterly Plan';
+  if (plan === 'half_yearly') return 'Half-Yearly Plan';
+  if (plan === 'yearly') return 'Yearly Plan';
   return plan;
 }
+
+export const formatPlanIntervalDetails = formatPlanDetails;
 
 export function formatPlanCategory(plan?: string): 'free' | 'paid' | 'none' {
   if (!plan) return 'none';
@@ -78,10 +80,6 @@ export function computeTierCounts(studios: PlatformStudioItem[]): TierCounts {
     active: 0,
     free: 0,
     paid: 0,
-    oneMonth: 0,
-    threeMonths: 0,
-    sixMonths: 0,
-    twelveMonths: 0,
     expired: 0,
     none: 0,
   };
@@ -95,12 +93,8 @@ export function computeTierCounts(studios: PlatformStudioItem[]): TierCounts {
       c.active++;
       if (p === 'free') {
         c.free++;
-        c.oneMonth++;
       } else {
         c.paid++;
-        if (p === 'quarterly') c.threeMonths++;
-        else if (p === 'half_yearly') c.sixMonths++;
-        else if (p === 'yearly') c.twelveMonths++;
       }
     } else {
       c.expired++;
@@ -125,11 +119,92 @@ export function filterStudiosByPlan(
     else if (planFilter === 'none') matchP = !sub;
     else if (planFilter === 'free') matchP = p === 'free' && isAct;
     else if (planFilter === 'paid') matchP = Boolean(sub) && p !== 'free' && isAct;
-    else if (planFilter === '1mo') matchP = p === 'free' && isAct;
-    else if (planFilter === '3mo') matchP = p === 'quarterly' && isAct;
-    else if (planFilter === '6mo') matchP = p === 'half_yearly' && isAct;
-    else if (planFilter === '12mo') matchP = p === 'yearly' && isAct;
     else if (planFilter === 'expired') matchP = sub?.status === 'expired';
     return matchQ && matchP;
+  });
+}
+
+export type SubscriptionSortColumn =
+  | 'studio'
+  | 'category'
+  | 'plan'
+  | 'startsAt'
+  | 'expiresAt'
+  | 'remaining';
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface SubscriptionColumnConfig {
+  key: SubscriptionSortColumn;
+  label: string;
+}
+
+export const subFilterStyles = {
+  input: {
+    flex: '1 1 200px',
+    minHeight: '44px',
+    padding: '0.5rem 0.75rem',
+    border: '1px solid #cbd5e1',
+    borderRadius: '0.375rem',
+    fontSize: '1rem',
+  } as CSSProperties,
+  select: {
+    minHeight: '44px',
+    padding: '0.5rem 0.75rem',
+    border: '1px solid #cbd5e1',
+    borderRadius: '0.375rem',
+    fontSize: '1rem',
+    backgroundColor: '#fff',
+  } as CSSProperties,
+  notify: {
+    color: '#15803d',
+    backgroundColor: '#f0fdf4',
+    padding: '0.5rem 0.75rem',
+    borderRadius: '0.375rem',
+    marginBottom: '0.5rem',
+    fontSize: '0.85rem',
+  } as CSSProperties,
+};
+
+export const SUBSCRIPTION_COLUMNS: SubscriptionColumnConfig[] = [
+  { key: 'studio', label: 'Studio' },
+  { key: 'category', label: 'Category' },
+  { key: 'plan', label: 'Plan Details' },
+  { key: 'startsAt', label: 'Plan Date' },
+  { key: 'expiresAt', label: 'Expires At' },
+  { key: 'remaining', label: 'Remaining' },
+];
+
+export function sortStudios(
+  studios: PlatformStudioItem[],
+  column: SubscriptionSortColumn,
+  direction: SortDirection
+): PlatformStudioItem[] {
+  const mult = direction === 'asc' ? 1 : -1;
+  return [...studios].sort((a, b) => {
+    if (column === 'studio') {
+      return mult * a.name.localeCompare(b.name);
+    }
+    if (column === 'category') {
+      const catA = formatPlanCategory(a.subscription?.plan);
+      const catB = formatPlanCategory(b.subscription?.plan);
+      return mult * catA.localeCompare(catB);
+    }
+    if (column === 'plan') {
+      const planA = formatPlanDetails(a.subscription?.plan);
+      const planB = formatPlanDetails(b.subscription?.plan);
+      return mult * planA.localeCompare(planB);
+    }
+    if (column === 'startsAt') {
+      const tA = a.subscription?.startsAt ? new Date(a.subscription.startsAt).getTime() : 0;
+      const tB = b.subscription?.startsAt ? new Date(b.subscription.startsAt).getTime() : 0;
+      return mult * (tA - tB);
+    }
+    if (column === 'expiresAt' || column === 'remaining') {
+      const tA = a.subscription?.expiresAt ? new Date(a.subscription.expiresAt).getTime() : 0;
+      const tB = b.subscription?.expiresAt ? new Date(b.subscription.expiresAt).getTime() : 0;
+      return mult * (tA - tB);
+    }
+    return 0;
   });
 }

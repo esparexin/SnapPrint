@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { PlatformStudioItem } from '@snapprint/contracts';
 import { adminTableStyles as styles } from './admin-table-styles';
 import { AdminSubscriptionTierCards } from './admin-subscription-tier-cards';
 import { AdminSubscriptionsTableRow } from './admin-subscriptions-table-row';
-import { computeTierCounts, filterStudiosByPlan } from './admin-subscription-helpers';
-import { notifyStudioSubscription } from '../../src/platform-plans-client';
+import { SUBSCRIPTION_COLUMNS, subFilterStyles } from './admin-subscription-helpers';
+import { useAdminSubscriptions } from './use-admin-subscriptions';
 
 export interface AdminSubscriptionsViewProps {
   studios: PlatformStudioItem[];
@@ -21,26 +21,19 @@ export function AdminSubscriptionsView({
   onInspect,
   onManageSubscription,
 }: AdminSubscriptionsViewProps) {
-  const [query, setQuery] = useState('');
-  const [planFilter, setPlanFilter] = useState<string>('all');
-  const [notifyMsg, setNotifyMsg] = useState<string | null>(null);
-
-  const counts = useMemo(() => computeTierCounts(studios), [studios]);
-  const filtered = useMemo(
-    () => filterStudiosByPlan(studios, query, planFilter),
-    [studios, query, planFilter]
-  );
-
-  const handleNotify = async (studio: PlatformStudioItem) => {
-    if (!window.confirm(`Trigger subscription notice email for "${studio.name}"?`)) return;
-    try {
-      await notifyStudioSubscription(studio.id);
-      setNotifyMsg(`Notification email queued successfully for ${studio.name}`);
-      setTimeout(() => setNotifyMsg(null), 4000);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to queue notification');
-    }
-  };
+  const {
+    query,
+    setQuery,
+    planFilter,
+    setPlanFilter,
+    sortCol,
+    sortDir,
+    handleSort,
+    notifyMsg,
+    counts,
+    sorted,
+    handleNotify,
+  } = useAdminSubscriptions(studios);
 
   return (
     <div style={styles.container}>
@@ -48,20 +41,7 @@ export function AdminSubscriptionsView({
         Tenant Subscriptions
       </h2>
       <AdminSubscriptionTierCards counts={counts} />
-      {notifyMsg && (
-        <div
-          style={{
-            color: '#15803d',
-            backgroundColor: '#f0fdf4',
-            padding: '0.5rem 0.75rem',
-            borderRadius: '0.375rem',
-            marginBottom: '0.5rem',
-            fontSize: '0.85rem',
-          }}
-        >
-          {notifyMsg}
-        </div>
-      )}
+      {notifyMsg && <div style={subFilterStyles.notify}>{notifyMsg}</div>}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
         <input
@@ -69,34 +49,16 @@ export function AdminSubscriptionsView({
           placeholder="Filter by studio name or slug..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{
-            flex: '1 1 200px',
-            minHeight: '44px',
-            padding: '0.5rem 0.75rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '0.375rem',
-            fontSize: '1rem',
-          }}
+          style={subFilterStyles.input}
         />
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value)}
-          style={{
-            minHeight: '44px',
-            padding: '0.5rem 0.75rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '0.375rem',
-            fontSize: '1rem',
-            backgroundColor: '#fff',
-          }}
+          style={subFilterStyles.select}
         >
           <option value="all">All Tenants ({counts.total})</option>
           <option value="free">Free Plan Users ({counts.free})</option>
           <option value="paid">Paid Plan Users ({counts.paid})</option>
-          <option value="1mo">1 Month ({counts.oneMonth})</option>
-          <option value="3mo">3 Months ({counts.threeMonths})</option>
-          <option value="6mo">6 Months ({counts.sixMonths})</option>
-          <option value="12mo">12 Months ({counts.twelveMonths})</option>
           <option value="none">Not Enrolled ({counts.none})</option>
           <option value="expired">Expired ({counts.expired})</option>
         </select>
@@ -106,12 +68,27 @@ export function AdminSubscriptionsView({
         <table style={styles.table}>
           <thead>
             <tr style={styles.tableHeader}>
-              <th style={styles.th}>Studio</th>
-              <th style={styles.th}>Category</th>
-              <th style={styles.th}>Plan Details</th>
-              <th style={styles.th}>Plan Date</th>
-              <th style={styles.th}>Expires At</th>
-              <th style={styles.th}>Remaining</th>
+              {SUBSCRIPTION_COLUMNS.map((col) => {
+                const isCurrent = sortCol === col.key;
+                const icon = isCurrent ? (sortDir === 'asc' ? '▲' : '▼') : '↕';
+                return (
+                  <th
+                    key={col.key}
+                    style={{ ...styles.th, cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => handleSort(col.key)}
+                    title={`Sort by ${col.label}`}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      {col.label}
+                      <span
+                        style={{ fontSize: '0.7rem', color: isCurrent ? '#0284c7' : '#94a3b8' }}
+                      >
+                        {icon}
+                      </span>
+                    </span>
+                  </th>
+                );
+              })}
               <th style={styles.th}>Actions</th>
             </tr>
           </thead>
@@ -122,14 +99,14 @@ export function AdminSubscriptionsView({
                   Loading subscriptions...
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <tr>
                 <td colSpan={7} style={styles.tdEmpty}>
                   No subscriptions matching filters.
                 </td>
               </tr>
             ) : (
-              filtered.map((s) => (
+              sorted.map((s) => (
                 <AdminSubscriptionsTableRow
                   key={s.id}
                   studio={s}
