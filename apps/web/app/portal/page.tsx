@@ -1,77 +1,62 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { AuthApiError, signOutToHome } from '../../src/auth-client';
 import { OperatorPortal } from '../components/operator-portal';
+import { portalStyles } from '../components/operator-portal-styles';
 
 export default function PortalPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      await signOutToHome();
+      setIsAuthenticated(false);
+    } catch (err) {
+      setSignOutError(err instanceof AuthApiError ? err.message : 'Sign out encountered an error.');
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#0f172a' }}>
-      <header
-        style={{
-          borderBottom: '1px solid #e2e8f0',
-          backgroundColor: '#ffffff',
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            padding: '0.75rem 1.25rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Link
-            href="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              textDecoration: 'none',
-              color: 'inherit',
-            }}
-          >
+    <div style={{ minHeight: '100dvh', backgroundColor: '#f8fafc', color: '#0f172a' }}>
+      <header className="portal-topbar">
+        <div className="portal-container portal-topbar-inner">
+          <Link href="/" className="portal-brand-link">
             <img
               src="/favicon.png"
               alt="SnapPrint"
-              style={{ width: '28px', height: '28px', borderRadius: '6px' }}
+              style={{ width: '28px', height: '28px', borderRadius: '6px', display: 'block' }}
             />
             <span style={{ fontSize: '1.125rem', fontWeight: 700 }}>SnapPrint</span>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                color: '#0284c7',
-                background: '#e0f2fe',
-                padding: '0.15rem 0.5rem',
-                borderRadius: '9999px',
-                border: '1px solid #bae6fd',
-              }}
+            <span className="portal-badge">Shop Portal</span>
+          </Link>
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="portal-signout-btn"
             >
-              Shop Portal
-            </span>
-          </Link>
-          <Link
-            href="/"
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              color: '#64748b',
-              textDecoration: 'none',
-            }}
-          >
-            ← Home
-          </Link>
+              {signingOut ? 'Signing out...' : 'Sign Out'}
+            </button>
+          )}
         </div>
       </header>
-
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 1rem' }}>
-        <OperatorPortal />
+      <main className="portal-container" style={{ paddingBlock: '1.25rem 2.5rem' }}>
+        {signOutError && (
+          <div role="alert" style={portalStyles.alert}>
+            {signOutError}
+          </div>
+        )}
+        <OperatorPortal hideHeaderSignOut onAuthChange={(u) => setIsAuthenticated(Boolean(u))} />
       </main>
     </div>
   );
