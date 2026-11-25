@@ -29,14 +29,37 @@ export interface SpoolerAdapter {
 }
 
 const COLOR_KEYWORDS = [
-  'color', 'colour', 'cmyk', 'photo', 'l3150', 'l3250', 'l3110', 'l805',
-  'ecotank', 'inktank', 'deskjet', 'pixma', 'surecolor', 'envy',
+  'color',
+  'colour',
+  'cmyk',
+  'photo',
+  'l3150',
+  'l3250',
+  'l3110',
+  'l805',
+  'ecotank',
+  'inktank',
+  'deskjet',
+  'pixma',
+  'surecolor',
+  'envy',
 ];
 
 const VIRTUAL_KEYWORDS = [
-  'print to pdf', 'onenote', 'anydesk', 'xps document', 'fax', 'cutepdf',
-  'adobe pdf', 'foxit', 'pdf creator', 'pdf24', 'bullzip', 'virtual print',
-  'root print queue', 'cups-pdf',
+  'print to pdf',
+  'onenote',
+  'anydesk',
+  'xps document',
+  'fax',
+  'cutepdf',
+  'adobe pdf',
+  'foxit',
+  'pdf creator',
+  'pdf24',
+  'bullzip',
+  'virtual print',
+  'root print queue',
+  'cups-pdf',
 ];
 
 export function isVirtualOrSoftwarePrinter(name: string, driverName = ''): boolean {

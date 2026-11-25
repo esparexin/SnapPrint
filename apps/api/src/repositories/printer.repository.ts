@@ -51,7 +51,13 @@ export async function createPairingKey(
     .collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION)
     .updateMany({ studioId, status: 'active' }, { $set: { status: 'revoked' } });
 
-  const doc: AgentPairingKeyDocument = { code, studioId, expiresAt, status: 'active', createdAt: now };
+  const doc: AgentPairingKeyDocument = {
+    code,
+    studioId,
+    expiresAt,
+    status: 'active',
+    createdAt: now,
+  };
   await db.collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION).insertOne(doc);
   return doc;
 }
@@ -124,32 +130,50 @@ export async function syncDiscoveredPrinters(
         { studioId, id: p.printerId },
         {
           $set: {
-            name: p.name, driverName: p.driverName, isColorSupported: p.isColorSupported,
-            supportedPaperSizes: p.supportedPaperSizes, status: p.status,
-            isDefaultOsPrinter: p.isDefaultOsPrinter, lastSeenAt: now, updatedAt: now,
+            name: p.name,
+            driverName: p.driverName,
+            isColorSupported: p.isColorSupported,
+            supportedPaperSizes: p.supportedPaperSizes,
+            status: p.status,
+            isDefaultOsPrinter: p.isDefaultOsPrinter,
+            lastSeenAt: now,
+            updatedAt: now,
           },
         }
       );
     } else {
       await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).insertOne({
-        id: p.printerId, studioId, name: p.name, driverName: p.driverName, role: 'standby',
-        isColorSupported: p.isColorSupported, supportedPaperSizes: p.supportedPaperSizes,
-        status: p.status, isDefaultOsPrinter: p.isDefaultOsPrinter, lastSeenAt: now,
-        createdAt: now, updatedAt: now,
+        id: p.printerId,
+        studioId,
+        name: p.name,
+        driverName: p.driverName,
+        role: 'standby',
+        isColorSupported: p.isColorSupported,
+        supportedPaperSizes: p.supportedPaperSizes,
+        status: p.status,
+        isDefaultOsPrinter: p.isDefaultOsPrinter,
+        lastSeenAt: now,
+        createdAt: now,
+        updatedAt: now,
       });
     }
   }
 
-  const activeCount = await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).countDocuments({
-    studioId,
-    role: { $in: ['active_bw', 'active_color'] },
-  });
+  const activeCount = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .countDocuments({
+      studioId,
+      role: { $in: ['active_bw', 'active_color'] },
+    });
   if (activeCount === 0 && physicalPrinters.length > 0) {
     const target = physicalPrinters.find((p) => p.isDefaultOsPrinter) || physicalPrinters[0];
     const targetRole: PrinterRole = target.isColorSupported ? 'active_color' : 'active_bw';
     await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
-      .updateOne({ studioId, id: target.printerId }, { $set: { role: targetRole, updatedAt: now } });
+      .updateOne(
+        { studioId, id: target.printerId },
+        { $set: { role: targetRole, updatedAt: now } }
+      );
   }
 }
 
