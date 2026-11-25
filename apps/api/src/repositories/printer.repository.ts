@@ -51,14 +51,7 @@ export async function createPairingKey(
     .collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION)
     .updateMany({ studioId, status: 'active' }, { $set: { status: 'revoked' } });
 
-  const doc: AgentPairingKeyDocument = {
-    code,
-    studioId,
-    expiresAt,
-    status: 'active',
-    createdAt: now,
-  };
-
+  const doc: AgentPairingKeyDocument = { code, studioId, expiresAt, status: 'active', createdAt: now };
   await db.collection<AgentPairingKeyDocument>(PAIRING_KEYS_COLLECTION).insertOne(doc);
   return doc;
 }
@@ -88,11 +81,7 @@ export async function registerAgentDevice(
   device: Omit<AgentDeviceDocument, 'createdAt' | 'lastHeartbeatAt'>
 ): Promise<AgentDeviceDocument> {
   const now = new Date();
-  const doc: AgentDeviceDocument = {
-    ...device,
-    createdAt: now,
-    lastHeartbeatAt: now,
-  };
+  const doc: AgentDeviceDocument = { ...device, createdAt: now, lastHeartbeatAt: now };
   await db.collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION).insertOne(doc);
   return doc;
 }
@@ -118,7 +107,14 @@ export async function syncDiscoveredPrinters(
   printers: DiscoveredPrinter[]
 ): Promise<void> {
   const now = new Date();
-  for (const p of printers) {
+  const vRegex = /anydesk|print to pdf|onenote|xps document|fax|cutepdf|adobe pdf|virtual print/i;
+  await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).deleteMany({
+    studioId,
+    $or: [{ name: { $regex: vRegex } }, { driverName: { $regex: vRegex } }],
+  });
+
+  const physicalPrinters = printers.filter((p) => !vRegex.test(`${p.name} ${p.driverName || ''}`));
+  for (const p of physicalPrinters) {
     const existing = await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
       .findOne({ studioId, id: p.printerId });
@@ -128,33 +124,32 @@ export async function syncDiscoveredPrinters(
         { studioId, id: p.printerId },
         {
           $set: {
-            name: p.name,
-            driverName: p.driverName,
-            isColorSupported: p.isColorSupported,
-            supportedPaperSizes: p.supportedPaperSizes,
-            status: p.status,
-            isDefaultOsPrinter: p.isDefaultOsPrinter,
-            lastSeenAt: now,
-            updatedAt: now,
+            name: p.name, driverName: p.driverName, isColorSupported: p.isColorSupported,
+            supportedPaperSizes: p.supportedPaperSizes, status: p.status,
+            isDefaultOsPrinter: p.isDefaultOsPrinter, lastSeenAt: now, updatedAt: now,
           },
         }
       );
     } else {
       await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).insertOne({
-        id: p.printerId,
-        studioId,
-        name: p.name,
-        driverName: p.driverName,
-        role: 'standby',
-        isColorSupported: p.isColorSupported,
-        supportedPaperSizes: p.supportedPaperSizes,
-        status: p.status,
-        isDefaultOsPrinter: p.isDefaultOsPrinter,
-        lastSeenAt: now,
-        createdAt: now,
-        updatedAt: now,
+        id: p.printerId, studioId, name: p.name, driverName: p.driverName, role: 'standby',
+        isColorSupported: p.isColorSupported, supportedPaperSizes: p.supportedPaperSizes,
+        status: p.status, isDefaultOsPrinter: p.isDefaultOsPrinter, lastSeenAt: now,
+        createdAt: now, updatedAt: now,
       });
     }
+  }
+
+  const activeCount = await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).countDocuments({
+    studioId,
+    role: { $in: ['active_bw', 'active_color'] },
+  });
+  if (activeCount === 0 && physicalPrinters.length > 0) {
+    const target = physicalPrinters.find((p) => p.isDefaultOsPrinter) || physicalPrinters[0];
+    const targetRole: PrinterRole = target.isColorSupported ? 'active_color' : 'active_bw';
+    await db
+      .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+      .updateOne({ studioId, id: target.printerId }, { $set: { role: targetRole, updatedAt: now } });
   }
 }
 
@@ -171,6 +166,12 @@ export async function updateStudioPrinterRole(
   printerId: string,
   role: PrinterRole
 ): Promise<boolean> {
+  const printer = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .findOne({ studioId, id: printerId });
+  if (!printer) return false;
+  if (role === 'active_color' && !printer.isColorSupported) return false;
+
   const now = new Date();
   if (role === 'active_bw' || role === 'active_color') {
     await db
@@ -181,7 +182,7 @@ export async function updateStudioPrinterRole(
   const res = await db
     .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
     .updateOne({ studioId, id: printerId }, { $set: { role, updatedAt: now } });
-  return res.modifiedCount > 0;
+  return res.matchedCount > 0;
 }
 
 export const AGENT_HEARTBEAT_TIMEOUT_MS = 120_000;

@@ -28,25 +28,25 @@ export interface SpoolerAdapter {
   printFile(printerName: string, filePath: string, options?: PrintFileOptions): Promise<void>;
 }
 
+const COLOR_KEYWORDS = [
+  'color', 'colour', 'cmyk', 'photo', 'l3150', 'l3250', 'l3110', 'l805',
+  'ecotank', 'inktank', 'deskjet', 'pixma', 'surecolor', 'envy',
+];
+
+const VIRTUAL_KEYWORDS = [
+  'print to pdf', 'onenote', 'anydesk', 'xps document', 'fax', 'cutepdf',
+  'adobe pdf', 'foxit', 'pdf creator', 'pdf24', 'bullzip', 'virtual print',
+  'root print queue', 'cups-pdf',
+];
+
+export function isVirtualOrSoftwarePrinter(name: string, driverName = ''): boolean {
+  const combined = `${name} ${driverName}`.toLowerCase();
+  return VIRTUAL_KEYWORDS.some((kw) => combined.includes(kw));
+}
+
 export function inferIsColorSupported(name: string, driverName: string): boolean {
   const combined = `${name} ${driverName}`.toLowerCase();
-  const colorKeywords = [
-    'color',
-    'colour',
-    'cmyk',
-    'photo',
-    'l3150',
-    'l3250',
-    'l3110',
-    'l805',
-    'ecotank',
-    'inktank',
-    'deskjet',
-    'pixma',
-    'surecolor',
-    'envy',
-  ];
-  return colorKeywords.some((kw) => combined.includes(kw));
+  return COLOR_KEYWORDS.some((kw) => combined.includes(kw));
 }
 
 export function inferSupportedPaperSizes(name: string, driverName: string): PaperSize[] {
@@ -75,7 +75,12 @@ export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
     const list = Array.isArray(parsed) ? parsed : [parsed];
 
     return list
-      .filter((item) => item && typeof item.Name === 'string')
+      .filter((item) => {
+        if (!item || typeof item.Name !== 'string') return false;
+        const name = String(item.Name).trim();
+        const driverName = String(item.DriverName || item.Name).trim();
+        return !isVirtualOrSoftwarePrinter(name, driverName);
+      })
       .map((item) => {
         const name = String(item.Name).trim();
         const driverName = String(item.DriverName || item.Name).trim();
@@ -111,6 +116,8 @@ export function parseCupsPrinters(
     if (!name) continue;
 
     const driverName = name.replace(/_/g, ' ');
+    if (isVirtualOrSoftwarePrinter(name, driverName)) continue;
+
     const isDefault = defaultPrinterName ? name === defaultPrinterName : false;
 
     printers.push({

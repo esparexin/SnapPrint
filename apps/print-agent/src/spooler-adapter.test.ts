@@ -7,6 +7,7 @@ import {
   DiscoveredPrinter,
   inferIsColorSupported,
   inferSupportedPaperSizes,
+  isVirtualOrSoftwarePrinter,
   parseCupsPrinters,
   parseWindowsPrintersJson,
 } from './spooler-adapter.js';
@@ -26,6 +27,16 @@ describe('Spooler Adapter & Drivers Discovery', () => {
         'legal',
       ]);
       expect(inferSupportedPaperSizes('Epson L3150', 'Epson Driver')).toEqual(['A4']);
+    });
+
+    it('identifies and flags virtual and software printer queues', () => {
+      expect(isVirtualOrSoftwarePrinter('AnyDesk Printer', 'AnyDesk v4 Printer Driver')).toBe(true);
+      expect(isVirtualOrSoftwarePrinter('Microsoft Print to PDF', 'Microsoft Print To PDF')).toBe(true);
+      expect(isVirtualOrSoftwarePrinter('OneNote (Desktop)', 'Send to Microsoft OneNote 16 Driver')).toBe(true);
+      expect(isVirtualOrSoftwarePrinter('OneNote (Desktop) - Protected', 'Microsoft Virtual Print Class Driver')).toBe(true);
+      expect(isVirtualOrSoftwarePrinter('Fax', 'Microsoft Shared Fax Driver')).toBe(true);
+      expect(isVirtualOrSoftwarePrinter('\\\\manasa\\HP LaserJet M1005', 'HP LaserJet M1005')).toBe(false);
+      expect(isVirtualOrSoftwarePrinter('Epson L3250 Series', 'EPSON L3250 Series')).toBe(false);
     });
   });
 
@@ -66,6 +77,21 @@ describe('Spooler Adapter & Drivers Discovery', () => {
       const printers = parseWindowsPrintersJson(psJson);
       expect(printers).toHaveLength(1);
       expect(printers[0].name).toBe('Brother HL-L2320D series');
+      expect(printers[0].isColorSupported).toBe(false);
+    });
+
+    it('filters out virtual and software printers from Windows PowerShell list', () => {
+      const psJson = JSON.stringify([
+        { Name: '\\\\manasa\\HP LaserJet M1005', DriverName: 'HP LaserJet M1005', Default: true },
+        { Name: 'AnyDesk Printer', DriverName: 'AnyDesk v4 Printer Driver', Default: false },
+        { Name: 'Microsoft Print to PDF', DriverName: 'Microsoft Print To PDF', Default: false },
+        { Name: 'OneNote (Desktop)', DriverName: 'Send to Microsoft OneNote 16 Driver', Default: false },
+        { Name: 'OneNote (Desktop) - Protected', DriverName: 'Microsoft Virtual Print Class Driver', Default: false },
+      ]);
+
+      const printers = parseWindowsPrintersJson(psJson);
+      expect(printers).toHaveLength(1);
+      expect(printers[0].name).toBe('\\\\manasa\\HP LaserJet M1005');
       expect(printers[0].isColorSupported).toBe(false);
     });
 
