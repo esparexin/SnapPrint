@@ -1,5 +1,26 @@
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
+import { PaperSize } from '@snapprint/contracts';
+
+const COLOR_REGEX =
+  /color|colour|cmyk|photo|l3150|l3250|l3110|l805|ecotank|inktank|deskjet|pixma|surecolor|envy/i;
+
+const VIRTUAL_REGEX =
+  /print to pdf|onenote|anydesk|xps document|fax|cutepdf|adobe pdf|foxit|pdf creator|pdf24|bullzip|virtual print|root print queue|cups-pdf/i;
+
+export function isVirtualOrSoftwarePrinter(name: string, driverName = ''): boolean {
+  return VIRTUAL_REGEX.test(`${name} ${driverName}`);
+}
+
+export function inferIsColorSupported(name: string, driverName: string): boolean {
+  return COLOR_REGEX.test(`${name} ${driverName}`);
+}
+
+export function inferSupportedPaperSizes(name: string, driverName: string): PaperSize[] {
+  return /mfp|laserjet|legal|office|copier/i.test(`${name} ${driverName}`)
+    ? ['A4', 'legal']
+    : ['A4'];
+}
 
 export const SUPPORTED_PRINT_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg'] as const;
 export type SupportedPrintExtension = (typeof SUPPORTED_PRINT_EXTENSIONS)[number];
@@ -97,4 +118,15 @@ export function buildWindowsPdfPrintScript(
   `
     .trim()
     .replace(/\s+/g, ' ');
+}
+
+export function toSpoolerError(prefix: string, name: string, err: unknown): Error {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes('PRINTER_NOT_FOUND')) {
+    return new Error(`PRINTER_NOT_FOUND: Target printer '${name}' is not installed.`);
+  }
+  if (msg.includes('PRINTER_OFFLINE')) {
+    return new Error(`PRINTER_OFFLINE: Target printer '${name}' is offline or disconnected.`);
+  }
+  return new Error(`${prefix} for '${name}': ${msg}`);
 }
