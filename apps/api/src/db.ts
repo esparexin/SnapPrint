@@ -129,6 +129,10 @@ export async function ensureIndexes(db: Db): Promise<void> {
     { key: { deviceToken: 1 }, unique: true, name: 'uid_agent_device_token' },
     { key: { deviceId: 1 }, unique: true, name: 'uid_agent_device_id' },
     { key: { studioId: 1, status: 1 }, name: 'idx_agent_device_studio_status' },
+    {
+      key: { studioId: 1, status: 1, lastHeartbeatAt: -1 },
+      name: 'idx_agent_device_studio_status_heartbeat',
+    },
     { key: { lastHeartbeatAt: 1 }, name: 'idx_agent_device_heartbeat' },
   ]);
 

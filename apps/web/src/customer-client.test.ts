@@ -36,6 +36,12 @@ describe('Customer Client Layer', () => {
     expect(result.id).toBe('studio_koramangala');
     expect(result.name).toBe('Koramangala Prints');
     expect(result.status).toBe('active');
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/public/studios/koramangala-prints'),
+      expect.objectContaining({
+        next: { revalidate: 60, tags: ['studio-koramangala-prints'] },
+      })
+    );
   });
 
   it('fetchPublicStudio throws typed CustomerApiError on 404', async () => {

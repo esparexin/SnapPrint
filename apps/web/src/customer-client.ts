@@ -36,7 +36,8 @@ export async function fetchPublicStudio(
     res = await customFetch(`${baseUrl}/public/studios/${encodeURIComponent(slug)}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-    });
+      next: { revalidate: 60, tags: [`studio-${slug}`] },
+    } as RequestInit);
   } catch {
     throw new CustomerApiError('Unable to connect to studio server', 0, 'NETWORK_ERROR');
   }

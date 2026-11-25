@@ -47,18 +47,9 @@ export async function getStudioFleetAllowance(
   };
 }
 
-/**
- * Returns public capabilities for active, online studio printers.
- */
-export async function getStudioPublicCapabilities(
-  db: Db,
-  studioId: string
-): Promise<StudioPublicCapabilities> {
-  const activePrinters = await db
-    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
-    .find({ studioId, role: { $in: ['active_bw', 'active_color'] }, status: 'online' })
-    .toArray();
-
+export function deriveCapabilitiesFromPrinters(
+  activePrinters: readonly StudioPrinterDocument[]
+): StudioPublicCapabilities {
   const supportsColor = activePrinters.some((p) => p.isColorSupported);
   const duplexPrinters = activePrinters.filter((p) => p.duplexSupport === 'supported');
   const supportsDuplex = duplexPrinters.length > 0;
@@ -80,6 +71,35 @@ export async function getStudioPublicCapabilities(
     supportsDuplex,
     supportedDuplexSizes,
     supportedPaperSizes: supportedPaperSizes.length > 0 ? supportedPaperSizes : ['A4'],
+  };
+}
+
+/**
+ * Returns public capabilities for active, online studio printers.
+ */
+export async function getStudioPublicCapabilities(
+  db: Db,
+  studioId: string
+): Promise<StudioPublicCapabilities> {
+  const { capabilities } = await getStudioActivePrintersAndCapabilities(db, studioId);
+  return capabilities;
+}
+
+/**
+ * Fetches active online printers and their derived public capabilities in a single database read.
+ */
+export async function getStudioActivePrintersAndCapabilities(
+  db: Db,
+  studioId: string
+): Promise<{ activePrinters: StudioPrinterDocument[]; capabilities: StudioPublicCapabilities }> {
+  const activePrinters = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .find({ studioId, role: { $in: ['active_bw', 'active_color'] }, status: 'online' })
+    .toArray();
+
+  return {
+    activePrinters,
+    capabilities: deriveCapabilitiesFromPrinters(activePrinters),
   };
 }
 

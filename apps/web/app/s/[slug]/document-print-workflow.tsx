@@ -19,8 +19,9 @@ import { useStorefrontDocuments } from './use-storefront-documents';
 interface DocumentPrintWorkflowProps {
   slug: string;
   studioName: string;
-  sessionId: string;
-  token: string;
+  sessionId?: string;
+  token?: string;
+  isNewSession?: boolean;
   payment?: PublicPaymentSettings;
   isAcceptingOrders?: boolean;
   printRates?: StudioPrintRatesContract;
@@ -30,8 +31,9 @@ interface DocumentPrintWorkflowProps {
 export function DocumentPrintWorkflow({
   slug,
   studioName,
-  sessionId,
-  token,
+  sessionId = '',
+  token = '',
+  isNewSession = false,
   payment,
   isAcceptingOrders = true,
   printRates,
@@ -51,7 +53,7 @@ export function DocumentPrintWorkflow({
     handleRemoveAsset,
     handleUpdateConfig,
     resetDocuments,
-  } = useStorefrontDocuments(slug, sessionId, token);
+  } = useStorefrontDocuments(slug, sessionId, token, isNewSession);
 
   const [previewAssetId, setPreviewAssetId] = useState<string | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);

@@ -10,6 +10,9 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+// Enable edge revalidation every 60 seconds (ISR)
+export const revalidate = 60;
+
 interface StudioLandingPageProps {
   params: Promise<{ slug: string }>;
 }

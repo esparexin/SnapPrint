@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Studio } from '@snapprint/contracts';
-import { PrinterRole } from '@snapprint/contracts';
 import {
   fetchStudioPrinters,
   StudioFleetAllowance,
@@ -56,8 +54,6 @@ export function PrinterPageSetupModal({
     }
   };
 
-  useEffect(() => { loadData(); }, [studioId]);
-
   const handleRoleChange = async (printerId: string, role: PrinterRole) => {
     setUpdatingId(printerId);
     setError(null);
@@ -88,7 +84,6 @@ export function PrinterPageSetupModal({
       />
       <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
         {error && (
-          <div role="alert" style={{ padding: '10px 12px', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '16px', backgroundColor: '#fef2f2', color: '#b91c1c' }}>
             {error}
           </div>
         )}
@@ -103,20 +98,12 @@ export function PrinterPageSetupModal({
           <PrinterPageSetupSection studioId={studioId} printers={printers} studio={studio} />
         )}
       </div>
-      <PrinterFleetFooter loading={loading} onRefresh={loadData} onClose={inShell ? undefined : onClose} />
-      {showPairingModal && (
-        <AgentPairingModal studioId={studioId} studioName={studioName} onClose={() => setShowPairingModal(false)} />
       )}
     </>
   );
 
   if (inShell) {
-    return <div className="portal-section-card" style={{ display: 'flex', flexDirection: 'column' }}>{content}</div>;
-  }
 
-  return (
-    <div role="dialog" aria-modal="true" aria-labelledby="printer-management-title" className="dialog-overlay" onClick={handleBackdropClick}>
-      <div className="dialog-content" style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         {content}
       </div>

@@ -7,7 +7,9 @@ import {
   UploadLimits,
 } from '@snapprint/contracts';
 import {
+  deleteSessionPhoto,
   getPhotoPreviewUrl,
+  listSessionPhotos,
   requestUploadIntent,
   uploadPhotoBinary,
 } from '../../../src/upload-client';
@@ -174,6 +176,40 @@ export function revokePreviewUrlIfBlob(url: string): void {
   ) {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function deleteDocumentAsset(
+  slug: string,
+  sessionId: string,
+  token: string,
+  item: UploadItem
+): Promise<void> {
+  if (item.assetId) {
+    await deleteSessionPhoto(slug, sessionId, item.assetId, token);
+  }
+  revokePreviewUrlIfBlob(item.previewUrl);
+}
+
+export function makeCompletedUploadPatch(asset: PhotoAsset): Partial<UploadItem> {
+  return {
+    status: 'completed',
+    assetId: asset.assetId,
+    widthPx: asset.widthPx,
+    heightPx: asset.heightPx,
+    pageCount: asset.pageCount || 1,
+    abortController: undefined,
+  };
+}
+
+export function syncSessionPhotos(
+  slug: string,
+  sessionId: string,
+  token: string,
+  onLoaded: (items: UploadItem[]) => void
+): void {
+  listSessionPhotos(slug, sessionId, token)
+    .then((assets) => onLoaded(mapAssetsToUploadItems(assets, slug, sessionId, token)))
+    .catch(() => {});
 }
 
 export function getFeedbackBannerStyle(kind: WorkflowFeedback['kind']): CSSProperties {
