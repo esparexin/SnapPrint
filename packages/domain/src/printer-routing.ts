@@ -7,11 +7,14 @@ export interface PrinterRoutingCandidate {
   isColorSupported: boolean;
   supportedPaperSizes: readonly PaperSize[];
   status: PrinterStatus;
+  duplexSupport?: 'supported' | 'unsupported' | 'unknown';
+  supportedDuplexSizes?: readonly PaperSize[];
 }
 
 export interface ResolvePrinterJobInput {
   colorMode: 'color' | 'bw';
   paperSize: PaperSize;
+  sides?: 'single' | 'double' | 'single_sided' | 'double_sided';
   printers: readonly PrinterRoutingCandidate[];
 }
 
@@ -22,11 +25,12 @@ export interface PrinterRoutingResult {
     | 'NO_PRINTERS_CONFIGURED'
     | 'NO_ONLINE_PRINTERS'
     | 'NO_PAPER_SIZE_SUPPORT'
+    | 'NO_DUPLEX_SUPPORT'
     | 'NO_COLOR_SUPPORT';
 }
 
 export function resolvePrinterForJob(input: ResolvePrinterJobInput): PrinterRoutingResult {
-  const { colorMode, paperSize, printers } = input;
+  const { colorMode, paperSize, sides, printers } = input;
 
   if (!printers || printers.length === 0) {
     return { allowed: false, reason: 'NO_PRINTERS_CONFIGURED' };
@@ -44,39 +48,47 @@ export function resolvePrinterForJob(input: ResolvePrinterJobInput): PrinterRout
     return { allowed: false, reason: 'NO_PAPER_SIZE_SUPPORT' };
   }
 
-  // 3. Routing logic based on color mode
+  // 3. Filter by duplex support if double-sided printing requested (fail-closed)
+  const isDuplex = sides === 'double' || sides === 'double_sided';
+  const candidates = isDuplex
+    ? paperCompatible.filter((p) => {
+        if (p.duplexSupport !== 'supported') return false;
+        if (p.supportedDuplexSizes && p.supportedDuplexSizes.length > 0) {
+          return p.supportedDuplexSizes.includes(paperSize);
+        }
+        return true;
+      })
+    : paperCompatible;
+
+  if (isDuplex && candidates.length === 0) {
+    return { allowed: false, reason: 'NO_DUPLEX_SUPPORT' };
+  }
+
+  // 4. Routing logic based on color mode
   if (colorMode === 'color') {
-    const colorCapable = paperCompatible.filter((p) => p.isColorSupported);
+    const colorCapable = candidates.filter((p) => p.isColorSupported);
     if (colorCapable.length === 0) {
       return { allowed: false, reason: 'NO_COLOR_SUPPORT' };
     }
 
     const activeColor = colorCapable.find((p) => p.role === 'active_color');
-    if (activeColor) {
-      return { allowed: true, selectedPrinter: activeColor };
-    }
+    if (activeColor) return { allowed: true, selectedPrinter: activeColor };
 
     const standbyColor = colorCapable.find((p) => p.role === 'standby');
-    if (standbyColor) {
-      return { allowed: true, selectedPrinter: standbyColor };
-    }
+    if (standbyColor) return { allowed: true, selectedPrinter: standbyColor };
 
     return { allowed: true, selectedPrinter: colorCapable[0] };
   }
 
   // B&W Routing logic:
   // Preference: 1. active_bw, 2. standby B&W, 3. active_color (fallback for B&W jobs)
-  const activeBw = paperCompatible.find((p) => p.role === 'active_bw');
-  if (activeBw) {
-    return { allowed: true, selectedPrinter: activeBw };
-  }
+  const activeBw = candidates.find((p) => p.role === 'active_bw');
+  if (activeBw) return { allowed: true, selectedPrinter: activeBw };
 
-  const standbyBw = paperCompatible.find((p) => p.role === 'standby' && !p.isColorSupported);
-  if (standbyBw) {
-    return { allowed: true, selectedPrinter: standbyBw };
-  }
+  const standbyBw = candidates.find((p) => p.role === 'standby' && !p.isColorSupported);
+  if (standbyBw) return { allowed: true, selectedPrinter: standbyBw };
 
-  const fallback = paperCompatible.find((p) => p.role === 'active_color') ?? paperCompatible[0];
+  const fallback = candidates.find((p) => p.role === 'active_color') ?? candidates[0];
   return { allowed: true, selectedPrinter: fallback };
 }
 
@@ -174,6 +186,7 @@ export function createPrintJobsForOrder(
     const routeResult = resolvePrinterForJob({
       colorMode: normalizedColorMode,
       paperSize: item.paperSize,
+      sides: normalizedSides,
       printers,
     });
 

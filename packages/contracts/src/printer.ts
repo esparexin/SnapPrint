@@ -21,6 +21,17 @@ export type PrinterStatus = z.infer<typeof PrinterStatusSchema>;
 export const PrinterConnectionTypeSchema = z.enum(['usb', 'network', 'virtual', 'unknown']);
 export type PrinterConnectionType = z.infer<typeof PrinterConnectionTypeSchema>;
 
+export const DuplexSupportSchema = z.enum(['supported', 'unsupported', 'unknown']);
+export type DuplexSupport = z.infer<typeof DuplexSupportSchema>;
+
+export const CapabilityProvenanceSchema = z.enum([
+  'driver_query',
+  'system_detected',
+  'manual_verified',
+  'unverified',
+]);
+export type CapabilityProvenance = z.infer<typeof CapabilityProvenanceSchema>;
+
 export const DiscoveredPrinterSchema = z.object({
   printerId: PrinterIdSchema,
   name: z.string().trim().min(1).max(120),
@@ -28,6 +39,9 @@ export const DiscoveredPrinterSchema = z.object({
   connectionType: PrinterConnectionTypeSchema.default('unknown'),
   isColorSupported: z.boolean().default(false),
   supportedPaperSizes: z.array(PaperSizeSchema).min(1).default(['A4']),
+  duplexSupport: DuplexSupportSchema.default('unknown'),
+  supportedDuplexSizes: z.array(PaperSizeSchema).default([]),
+  capabilityProvenance: CapabilityProvenanceSchema.default('unverified'),
   status: PrinterStatusSchema.default('online'),
   isDefaultOsPrinter: z.boolean().default(false),
   lastSeenAt: z.string().datetime(),
@@ -42,6 +56,9 @@ export const AssignedStudioPrinterSchema = z.object({
   role: PrinterRoleSchema.default('standby'),
   isColorSupported: z.boolean().default(false),
   supportedPaperSizes: z.array(PaperSizeSchema).min(1).default(['A4']),
+  duplexSupport: DuplexSupportSchema.default('unknown'),
+  supportedDuplexSizes: z.array(PaperSizeSchema).default([]),
+  capabilityProvenance: CapabilityProvenanceSchema.default('unverified'),
   status: PrinterStatusSchema.default('online'),
   isDefaultOsPrinter: z.boolean().default(false),
   lastSeenAt: z.string().datetime(),
