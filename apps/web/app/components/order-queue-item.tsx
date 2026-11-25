@@ -1,15 +1,23 @@
 'use client';
 
 import React from 'react';
-import { OrderPaymentStatus, OrderRecord, OrderStatus } from '@snapprint/contracts';
-import { getOperatorDocumentDownloadUrl } from '../../src/order-client';
+import {
+  OrderPaymentStatus,
+  OrderRecord,
+  OrderStatus,
+  QuoteItemBreakdown,
+} from '@snapprint/contracts';
 import { OrderQueueActions } from './order-queue-actions';
+import { OrderQueueDocumentRow } from './order-queue-document-row';
 
 interface OrderQueueItemProps {
   order: OrderRecord;
   updating: boolean;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
   onRecordPayment?: (order: OrderRecord) => void;
+  onRequestHandover?: (order: OrderRecord) => void;
+  onPreviewItem: (order: OrderRecord, item: QuoteItemBreakdown) => void;
+  onDeleteDocument?: (orderId: string, assetId: string) => Promise<void>;
 }
 
 const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
@@ -32,12 +40,14 @@ export function OrderQueueItem({
   updating,
   onStatusChange,
   onRecordPayment,
+  onRequestHandover,
+  onPreviewItem,
+  onDeleteDocument,
 }: OrderQueueItemProps) {
   const paymentStatus = order.paymentStatus ?? 'UNPAID';
   const statusBadge = statusColors[order.status] || statusColors.submitted;
   const paymentBadge = paymentColors[paymentStatus] || paymentColors.UNPAID;
-  const lastEvent =
-    order.events && order.events.length > 0 ? order.events[order.events.length - 1] : null;
+  const lastEvent = order.events?.length ? order.events[order.events.length - 1] : null;
 
   return (
     <div
@@ -111,61 +121,13 @@ export function OrderQueueItem({
         }}
       >
         {order.items.map((item, idx) => (
-          <div
-            key={idx}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: '12px',
-              marginBottom: '6px',
-              flexWrap: 'wrap',
-              gap: '4px',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '100%' }}>
-              <span
-                style={{
-                  maxWidth: '180px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-block',
-                }}
-                title={item.filename}
-              >
-                <strong>{item.filename}</strong>
-              </span>
-              <span style={{ color: '#475569' }}>
-                — {item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
-                {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'}, {item.sheetsCount} sh ×{' '}
-                {item.copies}
-              </span>
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 600 }}>₹{(item.subtotalMinor / 100).toFixed(2)}</span>
-              <a
-                href={getOperatorDocumentDownloadUrl(order.studioId, order.orderId, item.assetId)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  padding: '4px 8px',
-                  backgroundColor: '#f1f5f9',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  color: '#0284c7',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  minHeight: '32px',
-                }}
-              >
-                📄 View/Print
-              </a>
-            </span>
-          </div>
+          <OrderQueueDocumentRow
+            key={item.assetId || idx}
+            order={order}
+            item={item}
+            onPreview={onPreviewItem}
+            onDeleteDocument={onDeleteDocument}
+          />
         ))}
       </div>
 
@@ -196,6 +158,7 @@ export function OrderQueueItem({
           updating={updating}
           onStatusChange={onStatusChange}
           onRecordPayment={onRecordPayment}
+          onRequestHandover={onRequestHandover}
         />
       </div>
 

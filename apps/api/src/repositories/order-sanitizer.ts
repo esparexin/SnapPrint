@@ -79,6 +79,8 @@ function sanitizeOrderItem(raw: unknown): QuoteItemBreakdown | null {
     sheetsCount: sheets,
     unitPriceMinor: unitPrice,
     subtotalMinor: subtotal,
+    isDeleted: typeof item.isDeleted === 'boolean' ? item.isDeleted : undefined,
+    deletedAt: typeof item.deletedAt === 'string' ? item.deletedAt : undefined,
   };
 }
 
@@ -101,6 +103,8 @@ function sanitizeAuditEvent(raw: unknown): OrderAuditEvent | null {
     operatorName: typeof evt.operatorName === 'string' ? evt.operatorName : undefined,
     timestamp: toIsoString(evt.timestamp),
     reason: typeof evt.reason === 'string' ? evt.reason : undefined,
+    action: typeof evt.action === 'string' ? evt.action : undefined,
+    assetId: typeof evt.assetId === 'string' ? evt.assetId : undefined,
   };
 }
 

@@ -175,3 +175,32 @@ export async function updateOrderPaymentSummary(
     );
   return result ? toOrderContract(result) : null;
 }
+
+export async function markOrderDocumentDeleted(
+  db: Db,
+  studioId: string,
+  orderId: string,
+  assetId: string,
+  event: OrderAuditEvent
+): Promise<OrderRecord | null> {
+  const now = new Date();
+  const existing = await findOrderById(db, studioId, orderId);
+  if (!existing) return null;
+
+  const updatedItems = existing.items.map((item) =>
+    item.assetId === assetId ? { ...item, isDeleted: true, deletedAt: now.toISOString() } : item
+  );
+
+  const result = await db.collection<OrderDocument>(ORDERS_COLLECTION).findOneAndUpdate(
+    { studioId, orderId },
+    {
+      $set: {
+        items: updatedItems,
+        updatedAt: now,
+      },
+      $push: { events: event },
+    },
+    { returnDocument: 'after', projection: { _id: 0 } }
+  );
+  return result ? toOrderContract(result) : null;
+}
