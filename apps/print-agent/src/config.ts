@@ -21,7 +21,7 @@ export function getDefaultConfigPath(): string {
 }
 
 export function getDefaultApiUrl(): string {
-  return process.env.SNAPPRINT_API_URL || 'https://api.snapprint.in';
+  return process.env.SNAPPRINT_API_URL || 'https://snapprint.onrender.com';
 }
 
 export function protectCredential(plainText: string, platform = process.platform): string {
