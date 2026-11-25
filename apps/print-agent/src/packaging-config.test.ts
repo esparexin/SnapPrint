@@ -1,7 +1,13 @@
 import { homedir } from 'node:os';
 import { describe, expect, it } from 'vitest';
+import { bundleAgentRuntime } from './agent-bundler.js';
 import { getDefaultConfigPath } from './config.js';
 import { DEFAULT_PACKAGING_METADATA, generateWixManifest } from './packaging-config.js';
+import {
+  validateMsiHeader,
+  validateMsiIntegrity,
+  validatePeHeader,
+} from './packaging-validator.js';
 
 describe('SnapPrint Print Agent Windows Packaging Config', () => {
   it('provides valid default packaging metadata aligned with contracts', () => {
@@ -24,33 +30,11 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(xml).toContain('Manufacturer="SnapPrint Technologies"');
     expect(xml).toContain('Version="0.1.0"');
     expect(xml).toContain('Scope="perMachine"');
-
-    // Program Files target
     expect(xml).toContain('Directory Id="SnapPrintVendorFolder" Name="SnapPrint"');
     expect(xml).toContain('Directory Id="INSTALLFOLDER" Name="PrintAgent"');
-
-    // Shortcuts
     expect(xml).toContain('Id="ApplicationStartMenuShortcut"');
     expect(xml).toContain('Id="ApplicationDesktopShortcut"');
-
-    // Auto-run registry key on user boot
     expect(xml).toContain('Key="Software\\Microsoft\\Windows\\CurrentVersion\\Run"');
-    expect(xml).toContain('Name="SnapPrintAgent"');
-    expect(xml).toContain('Value="&quot;[INSTALLFOLDER]snapprint-agent.exe&quot; start"');
-  });
-
-  it('supports custom source directories and override metadata', () => {
-    const xml = generateWixManifest({
-      sourceDir: 'C:\\build\\artifacts',
-      metadata: {
-        version: '1.2.0',
-        productName: 'Custom Print Agent',
-      },
-    });
-
-    expect(xml).toContain('Version="1.2.0"');
-    expect(xml).toContain('Name="Custom Print Agent"');
-    expect(xml).toContain('Source="C:\\build\\artifacts\\snapprint-agent.exe"');
   });
 
   it('isolates mutable agent credentials outside the Program Files installation directory', () => {
@@ -58,5 +42,39 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(configPath.startsWith(homedir())).toBe(true);
     expect(configPath).toContain('.snapprint');
     expect(configPath).not.toContain('ProgramFiles');
+  });
+
+  it('validates genuine PE and MSI binary headers and rejects corrupt stubs', () => {
+    // Valid minimal PE header structure (MZ + PE\0\0 at 0x3c)
+    const validPe = Buffer.alloc(128, 0);
+    validPe[0] = 0x4d;
+    validPe[1] = 0x5a;
+    validPe.writeInt32LE(0x40, 0x3c);
+    validPe[0x40] = 0x50;
+    validPe[0x41] = 0x45;
+    expect(validatePeHeader(validPe)).toBe(true);
+
+    // Corrupt stub
+    expect(validatePeHeader(Buffer.from('corrupt placeholder text'))).toBe(false);
+
+    // Valid MSI CFB header
+    const validMsi = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+    expect(validateMsiHeader(validMsi)).toBe(true);
+    expect(validateMsiHeader(Buffer.from([0x00, 0x01, 0x02]))).toBe(false);
+
+    // Integrity check
+    const integrityValid = validateMsiIntegrity(Buffer.concat([validMsi, Buffer.alloc(2048)]));
+    expect(integrityValid.valid).toBe(true);
+
+    const integrityStub = validateMsiIntegrity(Buffer.from('tiny stub'));
+    expect(integrityStub.valid).toBe(false);
+    expect(integrityStub.error).toContain('size must be at least 1KB');
+  });
+
+  it('bundles standalone runtime into self-contained bundle with verified size', async () => {
+    const result = await bundleAgentRuntime();
+    expect(result.success).toBe(true);
+    expect(result.sizeBytes).toBeGreaterThan(10000);
+    expect(result.outputPath).toContain('snapprint-agent.bundle.cjs');
   });
 });

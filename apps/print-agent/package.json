@@ -10,8 +10,10 @@
   "scripts": {
     "dev": "tsx watch src/cli.ts",
     "start": "tsx src/cli.ts",
-    "build": "tsc && tsx scripts/build-windows-package.ts",
+    "bundle": "tsx scripts/bundle-agent.ts",
+    "build": "tsc && tsx scripts/bundle-agent.ts",
     "build:wix": "tsx scripts/build-windows-package.ts",
+    "package:windows": "tsx scripts/build-windows-package.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "esbuild": "^0.25.12",
     "tsx": "~4.19.0",
     "typescript": "~5.8.0"
   }
