@@ -54,11 +54,6 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
     launchGuiWindow(handle.url);
     console.log(`SnapPrint Agent GUI running at: ${handle.url}`);
 
-    if (config.deviceToken) {
-      const daemon = new AgentDaemon(config, client, spooler);
-      daemon.start().catch(() => {});
-    }
-
     if (process.env.NODE_ENV === 'test' || Boolean(process.env.SNAPPRINT_TEST_MODE)) {
       await handle.close();
       return 0;

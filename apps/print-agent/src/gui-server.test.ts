@@ -53,6 +53,8 @@ describe('GUI Local Server & Endpoints', () => {
         deviceId: 'dev_test789',
       }),
       syncPrinters: vi.fn().mockResolvedValue({ count: 1 }),
+      sendHeartbeat: vi.fn().mockResolvedValue(true),
+      pollPendingJobs: vi.fn().mockResolvedValue([]),
     } as unknown as AgentClient;
   });
 
@@ -135,6 +137,7 @@ describe('GUI Local Server & Endpoints', () => {
       const stateData = (await stateRes.json()) as StateResponse;
       expect(stateData.isEnrolled).toBe(true);
       expect(stateData.studioId).toBe('std_test456');
+      expect(mockClient.syncPrinters).toHaveBeenCalled();
     } finally {
       await handle.close();
     }
