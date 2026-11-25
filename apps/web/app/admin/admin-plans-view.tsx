@@ -3,8 +3,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { SubscriptionPlanDefinition } from '@snapprint/contracts';
 import { adminTableStyles as styles } from './admin-table-styles';
-import { deletePlatformSubscriptionPlan, listPlatformSubscriptionPlans } from '../../src/platform-plans-client';
+import {
+  deletePlatformSubscriptionPlan,
+  listPlatformSubscriptionPlans,
+} from '../../src/platform-plans-client';
 import { AdminPlanModal } from './admin-plan-modal';
+import { AdminPlansTableRow } from './admin-plans-table-row';
 
 export function AdminPlansView() {
   const [plans, setPlans] = useState<SubscriptionPlanDefinition[]>([]);
@@ -41,17 +45,32 @@ export function AdminPlansView() {
 
   return (
     <div style={styles.container}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1rem',
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Subscription Plans Catalog</h2>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.25rem 0 0' }}>Configure, edit days (30, 31, 32+), and set pricing for tenant tiers</p>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+            Subscription Plans Catalog
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.25rem 0 0' }}>
+            Configure, edit days (30, 31, 32+), and set pricing for tenant tiers
+          </p>
         </div>
         <button type="button" onClick={() => setSelectedPlan('new')} style={styles.btnAssign}>
           + Add New Plan
         </button>
       </div>
 
-      {error && <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '0.75rem' }}>{error}</div>}
+      {error && (
+        <div style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+          {error}
+        </div>
+      )}
 
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
@@ -67,35 +86,25 @@ export function AdminPlansView() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={styles.tdEmpty}>Loading plans catalog...</td></tr>
+              <tr>
+                <td colSpan={6} style={styles.tdEmpty}>
+                  Loading plans catalog...
+                </td>
+              </tr>
             ) : plans.length === 0 ? (
-              <tr><td colSpan={6} style={styles.tdEmpty}>No plans configured.</td></tr>
+              <tr>
+                <td colSpan={6} style={styles.tdEmpty}>
+                  No plans configured.
+                </td>
+              </tr>
             ) : (
               plans.map((p) => (
-                <tr key={p.id} style={styles.tableRow}>
-                  <td style={styles.tdBold}>
-                    {p.name}
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 400 }}>{p.id}</div>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem', borderRadius: '9999px', backgroundColor: p.category === 'free' ? '#f0f9ff' : '#eef2ff', color: p.category === 'free' ? '#0284c7' : '#4f46e5' }}>
-                      {p.category === 'free' ? 'Free Plan' : 'Paid Plan'}
-                    </span>
-                  </td>
-                  <td style={styles.td}>{p.durationDays} Days</td>
-                  <td style={styles.td}>{p.priceRupees === 0 ? 'Free' : `₹${p.priceRupees}`}</td>
-                  <td style={styles.td}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem', borderRadius: '9999px', backgroundColor: p.isActive ? '#ecfdf5' : '#f1f5f9', color: p.isActive ? '#059669' : '#64748b' }}>
-                      {p.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button type="button" onClick={() => setSelectedPlan(p)} style={styles.btnSecondary}>✏️ Edit</button>
-                      <button type="button" onClick={() => handleDelete(p)} style={{ ...styles.btnSecondary, color: '#dc2626' }}>🗑️ Delete</button>
-                    </div>
-                  </td>
-                </tr>
+                <AdminPlansTableRow
+                  key={p.id}
+                  plan={p}
+                  onEdit={setSelectedPlan}
+                  onDelete={handleDelete}
+                />
               ))
             )}
           </tbody>
@@ -106,7 +115,10 @@ export function AdminPlansView() {
         <AdminPlanModal
           plan={selectedPlan === 'new' ? null : selectedPlan}
           onClose={() => setSelectedPlan(null)}
-          onSaved={() => { setSelectedPlan(null); loadPlans(); }}
+          onSaved={() => {
+            setSelectedPlan(null);
+            loadPlans();
+          }}
         />
       )}
     </div>
