@@ -38,7 +38,8 @@ export function AdminSubscriptionsView({
   const filtered = useMemo(() => {
     return studios.filter((s) => {
       const q = query.toLowerCase();
-      const matchesQuery = !query || s.name.toLowerCase().includes(q) || s.slug.toLowerCase().includes(q);
+      const matchesQuery =
+        !query || s.name.toLowerCase().includes(q) || s.slug.toLowerCase().includes(q);
       const isEnrolled = Boolean(s.subscription);
       const isAct = s.subscription?.status === 'active';
       const isExp = s.subscription?.status === 'expired';
@@ -55,7 +56,9 @@ export function AdminSubscriptionsView({
 
   return (
     <div style={styles.container}>
-      <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.75rem' }}>
+      <h2
+        style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.75rem' }}
+      >
         Tenant Plans & Subscriptions
       </h2>
       <AdminSubscriptionTierCards counts={counts} />
@@ -66,12 +69,26 @@ export function AdminSubscriptionsView({
           placeholder="Filter by studio name or slug..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: '1 1 200px', minHeight: '44px', padding: '0.5rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '1rem' }}
+          style={{
+            flex: '1 1 200px',
+            minHeight: '44px',
+            padding: '0.5rem 0.75rem',
+            border: '1px solid #cbd5e1',
+            borderRadius: '0.375rem',
+            fontSize: '1rem',
+          }}
         />
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value)}
-          style={{ minHeight: '44px', padding: '0.5rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', fontSize: '1rem', backgroundColor: '#fff' }}
+          style={{
+            minHeight: '44px',
+            padding: '0.5rem 0.75rem',
+            border: '1px solid #cbd5e1',
+            borderRadius: '0.375rem',
+            fontSize: '1rem',
+            backgroundColor: '#fff',
+          }}
         >
           <option value="all">All Tenants ({counts.total})</option>
           <option value="active">Active Plans ({counts.active})</option>
@@ -96,9 +113,17 @@ export function AdminSubscriptionsView({
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={styles.tdEmpty}>Loading subscriptions...</td></tr>
+              <tr>
+                <td colSpan={6} style={styles.tdEmpty}>
+                  Loading subscriptions...
+                </td>
+              </tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} style={styles.tdEmpty}>No subscriptions matching filters.</td></tr>
+              <tr>
+                <td colSpan={6} style={styles.tdEmpty}>
+                  No subscriptions matching filters.
+                </td>
+              </tr>
             ) : (
               filtered.map((s) => (
                 <AdminSubscriptionsTableRow

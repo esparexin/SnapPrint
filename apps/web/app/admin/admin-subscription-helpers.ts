@@ -32,9 +32,7 @@ export function getSubscriptionStatusLabel(sub?: { status: string } | null): str
   return sub.status === 'active' ? 'Active' : 'Expired';
 }
 
-export function getSubscriptionBadgeStyle(
-  state: SubscriptionBadgeState | boolean
-): CSSProperties {
+export function getSubscriptionBadgeStyle(state: SubscriptionBadgeState | boolean): CSSProperties {
   if (state === 'none') {
     return {
       fontSize: '0.7rem',

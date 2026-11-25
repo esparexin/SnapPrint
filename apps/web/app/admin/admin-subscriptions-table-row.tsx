@@ -33,11 +33,7 @@ export function AdminSubscriptionsTableRow({
     <tr style={styles.tableRow} onClick={() => onInspect(studio)}>
       <td style={styles.tdBold}>{studio.name}</td>
       <td style={styles.td}>
-        {isEnrolled ? (
-          formatPlanLabel(sub?.plan)
-        ) : (
-          <span style={{ color: '#94a3b8' }}>None</span>
-        )}
+        {isEnrolled ? formatPlanLabel(sub?.plan) : <span style={{ color: '#94a3b8' }}>None</span>}
       </td>
       <td style={styles.td}>
         <span style={getSubscriptionBadgeStyle(badgeState)}>{statusLabel}</span>
