@@ -147,6 +147,30 @@ describe('Printer Agent Routes (apps/api)', () => {
     });
     expect(hbRes.statusCode).toBe(200);
     expect(hbRes.json().success).toBe(true);
+
+    const emptyJsonHbRes = await app.inject({
+      method: 'POST',
+      url: '/agent/heartbeat',
+      headers: {
+        'x-device-token': deviceToken,
+        'content-type': 'application/json',
+      },
+      payload: '',
+    });
+    expect(emptyJsonHbRes.statusCode).toBe(200);
+    expect(emptyJsonHbRes.json().success).toBe(true);
+
+    const validJsonHbRes = await app.inject({
+      method: 'POST',
+      url: '/agent/heartbeat',
+      headers: {
+        'x-device-token': deviceToken,
+        'content-type': 'application/json',
+      },
+      payload: '{}',
+    });
+    expect(validJsonHbRes.statusCode).toBe(200);
+    expect(validJsonHbRes.json().success).toBe(true);
   });
 
   it('POST /agent/sync-printers and heartbeat reject missing or invalid token', async () => {

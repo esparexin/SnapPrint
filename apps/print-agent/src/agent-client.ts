@@ -145,6 +145,7 @@ export class AgentClient {
         'Content-Type': 'application/json',
         'x-device-token': deviceToken,
       },
+      body: JSON.stringify({}),
     });
 
     const data = (await res.json().catch(() => null)) as {
