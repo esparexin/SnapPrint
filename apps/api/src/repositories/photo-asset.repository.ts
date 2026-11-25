@@ -10,9 +10,9 @@ export interface PhotoAssetDocument {
   originalFilename: string;
   mimeType: AllowedMimeType;
   fileSizeBytes: number;
-  widthPx?: number;
-  heightPx?: number;
-  pageCount?: number;
+  widthPx?: number | null;
+  heightPx?: number | null;
+  pageCount?: number | null;
   storageKey: string;
   createdAt: Date;
 }
@@ -25,9 +25,9 @@ export function toPhotoAssetContract(doc: PhotoAssetDocument): PhotoAsset {
     originalFilename: doc.originalFilename,
     mimeType: doc.mimeType,
     fileSizeBytes: doc.fileSizeBytes,
-    widthPx: doc.widthPx,
-    heightPx: doc.heightPx,
-    pageCount: doc.pageCount,
+    widthPx: doc.widthPx ?? undefined,
+    heightPx: doc.heightPx ?? undefined,
+    pageCount: doc.pageCount ?? undefined,
     storageKey: doc.storageKey,
     createdAt:
       doc.createdAt instanceof Date
@@ -47,11 +47,11 @@ export async function createPhotoAssetRecord(db: Db, asset: PhotoAsset): Promise
     originalFilename: parsed.originalFilename,
     mimeType: parsed.mimeType,
     fileSizeBytes: parsed.fileSizeBytes,
-    widthPx: parsed.widthPx,
-    heightPx: parsed.heightPx,
-    pageCount: parsed.pageCount,
     storageKey: parsed.storageKey,
     createdAt: Number.isNaN(now.getTime()) ? new Date() : now,
+    ...(parsed.widthPx !== undefined ? { widthPx: parsed.widthPx } : {}),
+    ...(parsed.heightPx !== undefined ? { heightPx: parsed.heightPx } : {}),
+    ...(parsed.pageCount !== undefined ? { pageCount: parsed.pageCount } : {}),
   };
 
   await db.collection<PhotoAssetDocument>(PHOTO_ASSETS_COLLECTION).insertOne(doc);

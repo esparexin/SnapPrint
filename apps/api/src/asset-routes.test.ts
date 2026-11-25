@@ -159,4 +159,57 @@ describe('Secure Document & Photo Upload Lifecycle', () => {
     expect(previewRes.headers['content-type']).toBe('application/pdf');
     expect(previewRes.rawPayload).toEqual(pdfContent);
   });
+
+  it('uploads PDF without image dimensions and deletes assets with legacy BSON null fields', async () => {
+    const { ctx, studioId, slug, sessionId, token } = await seedTestSession();
+
+    const pdfContent = Buffer.from(
+      '%PDF-1.4\n1 0 obj\n<< /Type /Pages /Count 2 /Kids [] >>\nendobj\ntrailer\n%%EOF'
+    );
+    const multipart = buildMultipart('scan.pdf', 'application/pdf', pdfContent);
+
+    const uploadRes = await ctx.app.inject({
+      method: 'POST',
+      url: `/public/studios/${slug}/sessions/${sessionId}/assets/upload`,
+      headers: { authorization: `Bearer ${token}`, ...multipart.headers },
+      payload: multipart.payload,
+    });
+    expect(uploadRes.statusCode).toBe(201);
+    const uploaded = JSON.parse(uploadRes.payload);
+    expect(uploaded.widthPx).toBeUndefined();
+    expect(uploaded.heightPx).toBeUndefined();
+    expect(uploaded.pageCount).toBe(2);
+
+    // Simulate BSON null persisted on legacy record in MongoDB
+    const stored = ctx.photoAssets.find((a) => a.assetId === uploaded.assetId)!;
+    stored.widthPx = null;
+    stored.heightPx = null;
+
+    const listRes = await ctx.app.inject({
+      method: 'GET',
+      url: `/public/studios/${slug}/sessions/${sessionId}/assets`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(JSON.parse(listRes.payload).assets).toHaveLength(1);
+
+    // Cross-session delete must be rejected
+    const forbiddenDel = await ctx.app.inject({
+      method: 'DELETE',
+      url: `/public/studios/${slug}/sessions/sess_other_12345678/assets/${uploaded.assetId}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(forbiddenDel.statusCode).toBe(403);
+
+    // Authorized delete removes asset cleanly
+    const deleteRes = await ctx.app.inject({
+      method: 'DELETE',
+      url: `/public/studios/${slug}/sessions/${sessionId}/assets/${uploaded.assetId}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(deleteRes.statusCode).toBe(200);
+    expect(JSON.parse(deleteRes.payload)).toEqual({ success: true, assetId: uploaded.assetId });
+    expect(ctx.photoAssets).toHaveLength(0);
+    expect(studioId).toBe('studio_alpha');
+  });
 });

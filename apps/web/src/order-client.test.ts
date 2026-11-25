@@ -63,6 +63,30 @@ describe('Order & Quotation Client', () => {
 
     expect(quote.totalAmountMinor).toBe(1000);
     expect(quote.currency).toBe('INR');
+
+    const controller = new AbortController();
+    await requestPrintQuote(
+      'alpha-xerox',
+      'sess_123',
+      'tok_456',
+      [
+        {
+          assetId: 'asset_1234567890abcdef',
+          paperSize: 'A4',
+          colorMode: 'black_and_white',
+          sides: 'single_sided',
+          orientation: 'portrait',
+          scaling: 'fit_to_page',
+          pageSelection: 'all',
+          copies: 1,
+        },
+      ],
+      controller.signal
+    );
+    expect(global.fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining('/quote'),
+      expect.objectContaining({ signal: controller.signal })
+    );
   });
 
   it('submits order and handles errors properly', async () => {

@@ -181,4 +181,61 @@ describe('Photo Asset Persistence Repository', () => {
     const empty = await findPhotoAssetsByIds(db, 'studio_alpha', 'sess_active_12345678', []);
     expect(empty.size).toBe(0);
   });
+
+  it('omits undefined optional fields on insert and normalizes legacy BSON null fields on read', async () => {
+    const { db, store } = createMockAssetDb();
+    const createdPdf = await createPhotoAssetRecord(db, {
+      assetId: 'asset_pdf_missing_dims_1',
+      studioId: 'studio_alpha',
+      sessionId: 'sess_active_12345678',
+      originalFilename: 'notes.pdf',
+      mimeType: 'application/pdf',
+      fileSizeBytes: 4096,
+      pageCount: 4,
+      storageKey: 'studios/studio_alpha/sessions/sess_active_12345678/asset_pdf/notes.pdf',
+      createdAt: new Date().toISOString(),
+    });
+    expect(createdPdf.widthPx).toBeUndefined();
+    expect(createdPdf.heightPx).toBeUndefined();
+    expect(createdPdf.pageCount).toBe(4);
+    expect('widthPx' in store[0]).toBe(false);
+    expect('heightPx' in store[0]).toBe(false);
+
+    // Simulate legacy MongoDB document containing BSON null values for optional fields
+    store.push({
+      assetId: 'asset_legacy_bson_null_1',
+      studioId: 'studio_alpha',
+      sessionId: 'sess_active_12345678',
+      originalFilename: 'legacy-scan.pdf',
+      mimeType: 'application/pdf',
+      fileSizeBytes: 8192,
+      widthPx: null,
+      heightPx: null,
+      pageCount: null,
+      storageKey: 'studios/studio_alpha/sessions/sess_active_12345678/legacy/legacy-scan.pdf',
+      createdAt: new Date(),
+    });
+    const sessionArgs = [db, 'studio_alpha', 'sess_active_12345678'] as const;
+    const found = await findPhotoAssetById(...sessionArgs, 'asset_legacy_bson_null_1');
+    expect(found?.widthPx).toBeUndefined();
+    expect(found?.heightPx).toBeUndefined();
+    expect(found?.pageCount).toBeUndefined();
+    expect((await findPhotoAssetsByIds(...sessionArgs, ['asset_legacy_bson_null_1'])).size).toBe(1);
+    expect(await listPhotoAssetsBySession(...sessionArgs)).toHaveLength(2);
+
+    // Preserve strict validation for genuinely invalid values
+    store.push({
+      assetId: 'asset_invalid_zero_dim_1',
+      studioId: 'studio_alpha',
+      sessionId: 'sess_active_12345678',
+      originalFilename: 'bad.png',
+      mimeType: 'image/png',
+      fileSizeBytes: 512,
+      widthPx: 0,
+      heightPx: 100,
+      storageKey: 'studios/studio_alpha/sessions/sess_active_12345678/bad/bad.png',
+      createdAt: new Date(),
+    });
+    await expect(findPhotoAssetById(...sessionArgs, 'asset_invalid_zero_dim_1')).rejects.toThrow();
+  });
 });

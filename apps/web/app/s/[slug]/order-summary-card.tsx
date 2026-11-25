@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DocumentPrintConfig, OrderRecord, QuoteResponse } from '@snapprint/contracts';
 import { OrderApiError, requestPrintQuote, submitPrintOrder } from '../../../src/order-client';
+import { hasInvalidPageSelection } from './document-print-workflow-helpers';
 import { OrderCustomerForm } from './order-customer-form';
 import { OrderItemsBreakdown } from './order-items-breakdown';
 import { OrderStickyCtaBar } from './order-sticky-cta-bar';
@@ -35,8 +36,17 @@ export function OrderSummaryCard({
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
     if (configs.length === 0) {
       setQuote(null);
+      setError(null);
+      setLoadingQuote(false);
+      return;
+    }
+    if (hasInvalidPageSelection(configs)) {
+      setQuote(null);
+      setLoadingQuote(false);
+      setError('Please enter a valid page selection (e.g. all or 1-5).');
       return;
     }
 
@@ -44,12 +54,16 @@ export function OrderSummaryCard({
       setLoadingQuote(true);
       setError(null);
       try {
-        const q = await requestPrintQuote(slug, sessionId, token, configs);
+        const q = await requestPrintQuote(slug, sessionId, token, configs, controller.signal);
         if (mounted) setQuote(q);
       } catch (err) {
-        if (mounted) setError(err instanceof Error ? err.message : 'Failed to calculate quote');
+        if (controller.signal.aborted) return;
+        if (mounted) {
+          setQuote(null);
+          setError(err instanceof Error ? err.message : 'Failed to calculate quote');
+        }
       } finally {
-        if (mounted) setLoadingQuote(false);
+        if (mounted && !controller.signal.aborted) setLoadingQuote(false);
       }
     }
 
@@ -57,6 +71,7 @@ export function OrderSummaryCard({
     return () => {
       mounted = false;
       clearTimeout(timer);
+      controller.abort();
     };
   }, [slug, sessionId, token, configHash]);
 

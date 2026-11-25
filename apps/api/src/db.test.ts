@@ -1,8 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { Db, IndexDescription } from 'mongodb';
-import { ensureIndexes, getClient, getDb } from './db.js';
+import { BSON, Db, IndexDescription } from 'mongodb';
+import { ensureIndexes, getClient, getDb, MONGO_CLIENT_OPTIONS } from './db.js';
 
 describe('Database Indexes & Connection State', () => {
+  it('configures MongoClient with ignoreUndefined: true to prevent BSON null coercion', () => {
+    expect(MONGO_CLIENT_OPTIONS.ignoreUndefined).toBe(true);
+
+    // Without ignoreUndefined, BSON serializes undefined optional properties as null
+    const legacySerialized = BSON.deserialize(
+      BSON.serialize({ assetId: 'ast_1', widthPx: undefined }, { ignoreUndefined: false })
+    );
+    expect(legacySerialized.widthPx).toBeNull();
+
+    // With MONGO_CLIENT_OPTIONS.ignoreUndefined (true), undefined optional properties are omitted
+    const fixedSerialized = BSON.deserialize(
+      BSON.serialize(
+        { assetId: 'ast_1', widthPx: undefined },
+        { ignoreUndefined: MONGO_CLIENT_OPTIONS.ignoreUndefined }
+      )
+    );
+    expect('widthPx' in fixedSerialized).toBe(false);
+  });
+
   it('throws descriptive error when getDb() is called before connectDb()', () => {
     expect(() => getDb()).toThrow('Database not connected. Call connectDb() first.');
   });

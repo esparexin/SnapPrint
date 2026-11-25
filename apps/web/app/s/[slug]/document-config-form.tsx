@@ -10,6 +10,7 @@ interface DocumentConfigFormProps {
   filename: string;
   pageCount: number;
   printRates?: StudioPrintRatesContract;
+  isRemoving?: boolean;
   onUpdate: (updated: DocumentPrintConfig) => void;
   onPreview: () => void;
   onRemove: () => void;
@@ -28,6 +29,7 @@ export function DocumentConfigForm({
   filename,
   pageCount,
   printRates,
+  isRemoving = false,
   onUpdate,
   onPreview,
   onRemove,
@@ -87,6 +89,7 @@ export function DocumentConfigForm({
           <button
             type="button"
             onClick={onPreview}
+            aria-label={`Preview ${filename}`}
             style={{
               ...actionBtnBase,
               backgroundColor: '#f1f5f9',
@@ -99,14 +102,18 @@ export function DocumentConfigForm({
           <button
             type="button"
             onClick={onRemove}
+            disabled={isRemoving}
+            aria-label={`Delete ${filename}`}
             style={{
               ...actionBtnBase,
               backgroundColor: '#fef2f2',
               border: '1px solid #fecaca',
               color: '#b91c1c',
+              opacity: isRemoving ? 0.6 : 1,
+              cursor: isRemoving ? 'not-allowed' : 'pointer',
             }}
           >
-            🗑️ Delete
+            {isRemoving ? 'Deleting...' : '🗑️ Delete'}
           </button>
         </div>
       </div>

@@ -92,4 +92,29 @@ describe('Document Print Pricing Logic', () => {
   it('fails closed when given empty item list', () => {
     expect(() => calculateOrderQuote({ items: [] })).toThrow('at least one document');
   });
+
+  it('falls back to default rates when studio pricing matrix is empty or partial', () => {
+    const order = calculateOrderQuote({
+      items: [
+        {
+          config: {
+            assetId: 'asset_partial_rates_1',
+            paperSize: 'A3',
+            colorMode: 'color',
+            sides: 'double_sided',
+            orientation: 'portrait',
+            scaling: 'fit_to_page',
+            pageSelection: 'all',
+            copies: 1,
+          },
+          filename: 'poster.pdf',
+          documentPageCount: 2,
+        },
+      ],
+      rates: {} as never,
+    });
+
+    expect(order.items[0].unitPriceMinor).toBe(3500);
+    expect(order.totalAmountMinor).toBe(3500);
+  });
 });

@@ -1,18 +1,14 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
-import {
-  DocumentPrintConfig,
-  OrderRecord,
-  PublicPaymentSettings,
-  StudioPrintRatesContract,
-} from '@snapprint/contracts';
+import React, { useState } from 'react';
+import { OrderRecord, PublicPaymentSettings, StudioPrintRatesContract } from '@snapprint/contracts';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
-import { createDefaultConfig } from './document-print-workflow-helpers';
+import { createDefaultConfig, resolvePreviewTarget } from './document-print-workflow-helpers';
 import { OrderConfirmationView } from './order-confirmation-view';
 import { OrderSummaryCard } from './order-summary-card';
-import { PhotoUploader, UploadedDocInfo } from './photo-uploader';
+import { PhotoUploader } from './photo-uploader';
+import { useStorefrontDocuments } from './use-storefront-documents';
 
 interface DocumentPrintWorkflowProps {
   slug: string;
@@ -33,39 +29,25 @@ export function DocumentPrintWorkflow({
   isAcceptingOrders = true,
   printRates,
 }: DocumentPrintWorkflowProps) {
-  const [docs, setDocs] = useState<UploadedDocInfo[]>([]);
-  const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
-  const [previewDoc, setPreviewDoc] = useState<{
-    doc: UploadedDocInfo;
-    config: DocumentPrintConfig;
-  } | null>(null);
+  const {
+    items,
+    docs,
+    activeConfigs,
+    removingKeys,
+    feedback,
+    setFeedback,
+    handleFilesSelected,
+    handleCancelUpload,
+    handleRetryUpload,
+    handleDeleteItem,
+    handleRemoveAsset,
+    handleUpdateConfig,
+    resetDocuments,
+  } = useStorefrontDocuments(slug, sessionId, token);
+
+  const [previewAssetId, setPreviewAssetId] = useState<string | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);
-
-  const handleDocumentsChange = useCallback((updatedDocs: UploadedDocInfo[]) => {
-    setDocs((prev) => {
-      const pKey = prev.map((d) => `${d.assetId}:${d.pageCount}`).join(',');
-      const nKey = updatedDocs.map((d) => `${d.assetId}:${d.pageCount}`).join(',');
-      return pKey === nKey ? prev : updatedDocs;
-    });
-    setConfigs((prev) => {
-      const pKey = prev.map((c) => c.assetId).join(',');
-      const nKey = updatedDocs.map((d) => d.assetId).join(',');
-      return pKey === nKey
-        ? prev
-        : updatedDocs.map(
-            (d) => prev.find((c) => c.assetId === d.assetId) || createDefaultConfig(d.assetId)
-          );
-    });
-  }, []);
-
-  function handleUpdateConfig(idx: number, updated: DocumentPrintConfig) {
-    setConfigs((prev) => prev.map((c, i) => (i === idx ? updated : c)));
-  }
-
-  function handleRemoveDoc(assetId: string) {
-    setDocs((prev) => prev.filter((d) => d.assetId !== assetId));
-    setConfigs((prev) => prev.filter((c) => c.assetId !== assetId));
-  }
+  const previewTarget = resolvePreviewTarget(docs, activeConfigs, previewAssetId);
 
   if (submittedOrder) {
     return (
@@ -77,8 +59,8 @@ export function DocumentPrintWorkflow({
         payment={payment}
         onNewOrder={() => {
           setSubmittedOrder(null);
-          setDocs([]);
-          setConfigs([]);
+          setPreviewAssetId(null);
+          resetDocuments();
         }}
       />
     );
@@ -91,10 +73,13 @@ export function DocumentPrintWorkflow({
           1. Upload Documents (PDF / Images)
         </h2>
         <PhotoUploader
-          slug={slug}
-          sessionId={sessionId}
-          token={token}
-          onDocumentsChange={handleDocumentsChange}
+          items={items}
+          feedback={feedback}
+          onDismissFeedback={() => setFeedback(null)}
+          onFilesSelected={handleFilesSelected}
+          onRetry={handleRetryUpload}
+          onCancel={handleCancelUpload}
+          onDelete={handleDeleteItem}
         />
       </section>
 
@@ -106,42 +91,41 @@ export function DocumentPrintWorkflow({
           {docs.map((doc, idx) => (
             <DocumentConfigForm
               key={doc.assetId}
-              config={configs[idx] || createDefaultConfig(doc.assetId)}
+              config={activeConfigs[idx] || createDefaultConfig(doc.assetId)}
               filename={doc.filename}
               pageCount={doc.pageCount}
               printRates={printRates}
-              onUpdate={(updated) => handleUpdateConfig(idx, updated)}
-              onPreview={() =>
-                setPreviewDoc({ doc, config: configs[idx] || createDefaultConfig(doc.assetId) })
-              }
-              onRemove={() => handleRemoveDoc(doc.assetId)}
+              isRemoving={removingKeys.includes(doc.assetId)}
+              onUpdate={(updated) => handleUpdateConfig(doc.assetId, updated)}
+              onPreview={() => setPreviewAssetId(doc.assetId)}
+              onRemove={() => handleRemoveAsset(doc.assetId)}
             />
           ))}
         </section>
       )}
 
-      {configs.length > 0 && (
+      {activeConfigs.length > 0 && (
         <section style={{ marginBottom: '20px' }}>
           <OrderSummaryCard
             slug={slug}
             sessionId={sessionId}
             token={token}
-            configs={configs}
+            configs={activeConfigs}
             onOrderSubmitted={(order) => setSubmittedOrder(order)}
             isAcceptingOrders={isAcceptingOrders}
           />
         </section>
       )}
 
-      {previewDoc && (
+      {previewTarget && (
         <DocumentPreviewModal
           slug={slug}
           sessionId={sessionId}
           token={token}
-          filename={previewDoc.doc.filename}
-          pageCount={previewDoc.doc.pageCount}
-          config={previewDoc.config}
-          onClose={() => setPreviewDoc(null)}
+          filename={previewTarget.doc.filename}
+          pageCount={previewTarget.doc.pageCount}
+          config={previewTarget.config}
+          onClose={() => setPreviewAssetId(null)}
         />
       )}
     </div>
