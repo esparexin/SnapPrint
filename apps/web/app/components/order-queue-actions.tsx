@@ -39,6 +39,7 @@ export function OrderQueueActions({
         <button
           type="button"
           onClick={() => onRecordPayment(order)}
+          disabled={updating}
           style={{ ...actionBtn, backgroundColor: '#16a34a' }}
         >
           💰 Record Payment
@@ -50,9 +51,14 @@ export function OrderQueueActions({
           type="button"
           onClick={() => onStatusChange(order.orderId, 'processing')}
           disabled={updating}
-          style={{ ...actionBtn, backgroundColor: '#0284c7' }}
+          style={{
+            ...actionBtn,
+            backgroundColor: updating ? '#0369a1' : '#0284c7',
+            cursor: updating ? 'not-allowed' : 'pointer',
+            opacity: updating ? 0.75 : 1,
+          }}
         >
-          🖨️ Start Printing
+          {updating ? '⏳ Dispatching...' : '🖨️ Start Printing'}
         </button>
       )}
 
@@ -61,9 +67,14 @@ export function OrderQueueActions({
           type="button"
           onClick={() => onStatusChange(order.orderId, 'ready')}
           disabled={updating}
-          style={{ ...actionBtn, backgroundColor: '#d97706' }}
+          style={{
+            ...actionBtn,
+            backgroundColor: updating ? '#b45309' : '#d97706',
+            cursor: updating ? 'not-allowed' : 'pointer',
+            opacity: updating ? 0.75 : 1,
+          }}
         >
-          📦 Mark Ready
+          {updating ? '⏳ Updating...' : '📦 Mark Ready'}
         </button>
       )}
 
@@ -76,9 +87,14 @@ export function OrderQueueActions({
               : onStatusChange(order.orderId, 'completed')
           }
           disabled={updating}
-          style={{ ...actionBtn, backgroundColor: '#15803d' }}
+          style={{
+            ...actionBtn,
+            backgroundColor: updating ? '#166534' : '#15803d',
+            cursor: updating ? 'not-allowed' : 'pointer',
+            opacity: updating ? 0.75 : 1,
+          }}
         >
-          ✅ Complete Order
+          {updating ? '⏳ Completing...' : '✅ Complete Order'}
         </button>
       )}
 
@@ -98,6 +114,8 @@ export function OrderQueueActions({
             border: '1px solid #f87171',
             fontSize: '12px',
             padding: '8px 12px',
+            cursor: updating ? 'not-allowed' : 'pointer',
+            opacity: updating ? 0.6 : 1,
           }}
         >
           ✕ Cancel

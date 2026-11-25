@@ -34,11 +34,13 @@ export function OrderFulfillmentModal({
     orders,
     loading,
     error,
+    successMessage,
     updatingId,
     loadOrders,
     handleStatusChange,
     handleDeleteDocument,
     handlePaymentSuccess,
+    clearFeedback,
   } = useOperatorQueue(studioId, statusFilter);
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
@@ -76,12 +78,15 @@ export function OrderFulfillmentModal({
         orders={orders}
         loading={loading}
         error={error}
+        successMessage={successMessage}
         updatingId={updatingId}
         onStatusChange={(id, st) => handleStatusChange(id, st)}
         onRecordPayment={(ord) => setPaymentOrder(ord)}
         onRequestHandover={(ord) => setHandoverOrder(ord)}
         onPreviewItem={(ord, it) => setPreviewTarget({ order: ord, item: it })}
         onDeleteDocument={onDeleteDocument}
+        onDismissError={clearFeedback}
+        onDismissSuccess={clearFeedback}
       />
       <OrderFulfillmentOverlays
         studioId={studioId}
