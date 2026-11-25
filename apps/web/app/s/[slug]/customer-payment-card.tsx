@@ -151,20 +151,15 @@ export function CustomerPaymentCard({
     return (
       <div style={styles.card}>
         <div style={styles.header}>
-          <div>
-            <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
-              Payment Due at Counter: ₹{(remainingMinor / 100).toFixed(2)}
-            </div>
-            <div style={{ fontSize: '12px', color: '#b45309', marginTop: '2px' }}>
-              Pay at Counter / Cash Only
-            </div>
+          <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
+            Payment Due: ₹{(remainingMinor / 100).toFixed(2)}
           </div>
           <span style={styles.badge}>{order.paymentStatus ?? 'UNPAID'}</span>
         </div>
 
         <div style={styles.counterAlert}>
-          💵 <strong>Pay at Counter</strong>: This shop operates in cash/counter mode. Please show
-          Order #{order.orderNumber} to the operator at the desk to pay and collect your printouts.
+          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the
+          desk to pay via cash or counter UPI QR stand.
         </div>
       </div>
     );
@@ -174,30 +169,32 @@ export function CustomerPaymentCard({
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div>
-          <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
-            Payment Pending: ₹{(remainingMinor / 100).toFixed(2)}
-          </div>
-          <div style={{ fontSize: '12px', color: '#b45309', marginTop: '2px' }}>
-            Choose Pay Online or Pay at Counter
-          </div>
+        <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
+          Payment Due: ₹{(remainingMinor / 100).toFixed(2)}
         </div>
         <span style={styles.badge}>{order.paymentStatus ?? 'UNPAID'}</span>
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
 
-      <div style={styles.actions}>
-        <button
-          type="button"
-          onClick={handlePayOnline}
-          disabled={loading}
-          style={{ ...styles.payBtn, cursor: loading ? 'not-allowed' : 'pointer' }}
-        >
-          {loading ? 'Processing...' : '⚡ Pay Online (UPI / Card)'}
-        </button>
-        <div style={styles.counterBox}>
-          💵 <strong>Pay at Counter</strong>: Show your order number to pay cash or UPI at the desk.
+      <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div>
+          <button
+            type="button"
+            onClick={handlePayOnline}
+            disabled={loading}
+            style={{ ...styles.payBtn, width: '100%', cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? 'Processing...' : '⚡ Pay Now on Phone (Instant Auto-Verify)'}
+          </button>
+          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+            Order confirms immediately — no waiting at desk.
+          </div>
+        </div>
+
+        <div style={styles.counterAlert}>
+          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the
+          desk to pay via cash or counter UPI QR stand.
         </div>
       </div>
     </div>

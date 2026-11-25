@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { deriveOrderPaymentStatus, validatePaymentAttempt } from './payment-calculator.js';
+import {
+  deriveOrderPaymentStatus,
+  isOrderEligibleForPayment,
+  validatePaymentAttempt,
+} from './payment-calculator.js';
 
 describe('Payment Calculator', () => {
   describe('deriveOrderPaymentStatus', () => {
@@ -40,6 +44,48 @@ describe('Payment Calculator', () => {
     });
   });
 
+  describe('isOrderEligibleForPayment', () => {
+    it('returns false when order is cancelled', () => {
+      expect(isOrderEligibleForPayment({ status: 'cancelled', paymentStatus: 'UNPAID' })).toBe(
+        false
+      );
+      expect(
+        isOrderEligibleForPayment({ status: 'cancelled', paymentStatus: 'PARTIALLY_PAID' })
+      ).toBe(false);
+    });
+
+    it('returns false when order is already PAID', () => {
+      expect(isOrderEligibleForPayment({ status: 'submitted', paymentStatus: 'PAID' })).toBe(false);
+      expect(isOrderEligibleForPayment({ status: 'ready', paymentStatus: 'PAID' })).toBe(false);
+    });
+
+    it('returns false when paid amount meets or exceeds total', () => {
+      expect(
+        isOrderEligibleForPayment({
+          status: 'submitted',
+          paymentStatus: 'UNPAID',
+          totalAmountMinor: 500,
+          paidAmountMinor: 500,
+        })
+      ).toBe(false);
+    });
+
+    it('returns true when order is active and unpaid or partially paid', () => {
+      expect(isOrderEligibleForPayment({ status: 'submitted', paymentStatus: 'UNPAID' })).toBe(
+        true
+      );
+      expect(isOrderEligibleForPayment({ status: 'processing', paymentStatus: 'UNPAID' })).toBe(
+        true
+      );
+      expect(isOrderEligibleForPayment({ status: 'ready', paymentStatus: 'PARTIALLY_PAID' })).toBe(
+        true
+      );
+      expect(isOrderEligibleForPayment({ status: 'completed', paymentStatus: 'UNPAID' })).toBe(
+        true
+      );
+    });
+  });
+
   describe('validatePaymentAttempt', () => {
     it('allows valid payment attempt for remaining balance', () => {
       const validation = validatePaymentAttempt(
@@ -48,6 +94,21 @@ describe('Payment Calculator', () => {
       );
       expect(validation.valid).toBe(true);
       expect(validation.remainingMinor).toBe(600);
+    });
+
+    it('rejects attempt if order is cancelled', () => {
+      const validation = validatePaymentAttempt(
+        {
+          totalAmountMinor: 1000,
+          paidAmountMinor: 0,
+          paymentStatus: 'UNPAID',
+          status: 'cancelled',
+        },
+        500
+      );
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('ORDER_CANCELLED');
+      expect(validation.remainingMinor).toBe(0);
     });
 
     it('rejects attempt if order is already PAID', () => {

@@ -26,13 +26,46 @@ export function EmptyPrinterState({ onPairAgent }: EmptyPrinterStateProps) {
           margin: '0 0 16px',
           fontSize: '0.875rem',
           color: '#64748b',
-          maxWidth: '380px',
+          maxWidth: '420px',
           marginInline: 'auto',
+          lineHeight: 1.5,
         }}
       >
         Install the SnapPrint Desktop Agent on your shop computer and pair it using a pairing key to
         discover your local drivers.
       </p>
+
+      <div
+        role="status"
+        style={{
+          margin: '0 auto 20px',
+          maxWidth: '440px',
+          padding: '10px 14px',
+          backgroundColor: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '8px',
+          fontSize: '0.8125rem',
+          color: '#1e40af',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+          textAlign: 'left',
+          lineHeight: 1.45,
+        }}
+      >
+        <span style={{ fontSize: '1.1rem', lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
+          ℹ️
+        </span>
+        <div>
+          <strong style={{ display: 'block', color: '#1e3a8a', marginBottom: '2px' }}>
+            Page Setup &amp; Rates Unavailable
+          </strong>
+          <span>
+            Paper sizes (A4, A3, Legal, etc.), duplex options, and print rate configurations will
+            automatically unlock once your first printer is registered.
+          </span>
+        </div>
+      </div>
       <button
         type="button"
         onClick={onPairAgent}

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthApiError, signOutToHome } from '../../src/auth-client';
+import { getAgentDownloadUrl } from '../../src/printer-client';
 import { OperatorPortal } from '../components/operator-portal';
 import { portalStyles } from '../components/operator-portal-styles';
 
@@ -51,14 +52,26 @@ export default function PortalPage() {
             <span className="portal-badge">Shop Portal</span>
           </Link>
           {isAuthenticated && (
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="portal-signout-btn"
-            >
-              {signingOut ? 'Signing out...' : 'Sign Out'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <a
+                href={getAgentDownloadUrl()}
+                download="SnapPrint-Print-Agent.msi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="portal-download-btn"
+              >
+                <span aria-hidden="true">📥</span>
+                <span>Download</span>
+              </a>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="portal-signout-btn"
+              >
+                {signingOut ? 'Signing out...' : 'Sign Out'}
+              </button>
+            </div>
           )}
         </div>
       </header>

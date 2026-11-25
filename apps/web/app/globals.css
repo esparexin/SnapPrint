@@ -776,6 +776,23 @@ html:has(.sf-sticky-bar) {
   white-space: nowrap;
 }
 
+.portal-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-block-size: 36px;
+  padding: 0.4rem 0.85rem;
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .portal-signout-btn:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;

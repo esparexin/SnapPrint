@@ -164,7 +164,6 @@ export function OperatorPortal({
               activeView={activeView}
               can={authState.can}
               onNavigate={setActiveView}
-              onOpenPairing={() => setShowPairingModal(true)}
             />
           )}
         </div>

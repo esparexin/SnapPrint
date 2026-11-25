@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getAgentDownloadUrl } from '../../src/printer-client';
 import { OperatorView } from './operator-portal-styles';
 import { PrinterStatusBadge } from './printer-status-badge';
 
@@ -90,6 +91,16 @@ export function OperatorPortalHeader({
               Admin Workspace →
             </a>
           )}
+          <a
+            href={getAgentDownloadUrl()}
+            download="SnapPrint-Print-Agent.msi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="portal-download-btn"
+          >
+            <span aria-hidden="true">📥</span>
+            <span>Download</span>
+          </a>
           {!hideSignOut && (
             <button
               type="button"

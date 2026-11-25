@@ -5,6 +5,7 @@ import React from 'react';
 interface OrderPreviewActionsProps {
   isCompleted: boolean;
   isDeleted: boolean;
+  isCancelled?: boolean;
   filename: string;
   orderId: string;
   assetId: string;
@@ -16,6 +17,7 @@ interface OrderPreviewActionsProps {
 export function OrderPreviewActions({
   isCompleted,
   isDeleted,
+  isCancelled = false,
   filename,
   orderId,
   assetId,
@@ -60,7 +62,7 @@ export function OrderPreviewActions({
         )}
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
-        {!isDeleted && (
+        {!isDeleted && !isCancelled && (
           <a
             href={downloadUrl}
             target="_blank"

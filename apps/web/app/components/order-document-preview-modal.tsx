@@ -29,6 +29,7 @@ export function OrderDocumentPreviewModal({
   });
 
   const isCompleted = order.status === 'completed';
+  const isCancelled = order.status === 'cancelled';
   const downloadUrl = getOperatorDocumentDownloadUrl(studioId, order.orderId, item.assetId);
 
   return (
@@ -84,7 +85,30 @@ export function OrderDocumentPreviewModal({
           </button>
         </div>
 
-        {item.isDeleted ? (
+        {isCancelled ? (
+          <div
+            role="status"
+            style={{
+              margin: '20px 0',
+              padding: '32px 20px',
+              textAlign: 'center',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              color: '#64748b',
+            }}
+          >
+            <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>🚫</span>
+            <strong
+              style={{ display: 'block', color: '#334155', marginBottom: '4px', fontSize: '15px' }}
+            >
+              Preview Unavailable
+            </strong>
+            <p style={{ margin: 0, fontSize: '13px' }}>
+              Document preview is unavailable because order {order.orderNumber} has been cancelled.
+            </p>
+          </div>
+        ) : item.isDeleted ? (
           <OrderDocumentDeletedView />
         ) : (
           <div
@@ -106,6 +130,7 @@ export function OrderDocumentPreviewModal({
         <OrderPreviewActions
           isCompleted={isCompleted}
           isDeleted={Boolean(item.isDeleted)}
+          isCancelled={isCancelled}
           filename={item.filename}
           orderId={order.orderId}
           assetId={item.assetId}

@@ -81,6 +81,7 @@ export function OrderFulfillmentModal({
         successMessage={successMessage}
         updatingId={updatingId}
         onStatusChange={(id, st) => handleStatusChange(id, st)}
+        onCollectPayment={(ord) => setPaymentOrder(ord)}
         onRecordPayment={(ord) => setPaymentOrder(ord)}
         onRequestHandover={(ord) => setHandoverOrder(ord)}
         onPreviewItem={(ord, it) => setPreviewTarget({ order: ord, item: it })}

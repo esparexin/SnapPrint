@@ -20,13 +20,13 @@ export function OrderFulfillmentHeader({
   return (
     <div
       style={{
-        padding: '16px 20px',
+        padding: '12px 16px',
         borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: '10px',
+        gap: '8px',
       }}
     >
       <div>
