@@ -137,10 +137,10 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
     );
   }
 
-  // 5. Compile MSI with WiX v4
+  // 5. Compile MSI with WiX v4 (explicit x64 architecture)
   const buildResult = spawnSync(
     'wix',
-    ['build', '-d', `SourceDir=${distDir}`, '-o', msiPath, primaryWxsPath],
+    ['build', '-arch', 'x64', '-d', `SourceDir=${distDir}`, '-o', msiPath, primaryWxsPath],
     {
       encoding: 'utf-8',
       stdio: 'inherit',

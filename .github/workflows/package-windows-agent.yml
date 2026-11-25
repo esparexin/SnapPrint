@@ -114,6 +114,12 @@ jobs:
 
           $installedExe = "C:\Program Files\SnapPrint\PrintAgent\snapprint-agent.exe"
           if (-not (Test-Path $installedExe)) {
+            if (Test-Path "C:\Program Files (x86)\SnapPrint\PrintAgent\snapprint-agent.exe") {
+              Write-Host "Diagnostic: Executable was found under Program Files (x86)."
+            }
+            if (Test-Path $logPath) {
+              Get-Content $logPath -Tail 100
+            }
             throw "Installed executable not found at $installedExe"
           }
 
