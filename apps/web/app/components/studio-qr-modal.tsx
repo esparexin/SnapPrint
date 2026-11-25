@@ -8,7 +8,11 @@ import { useDialog } from '../hooks/use-dialog';
 import { StudioQrActions } from './studio-qr-actions';
 import { StudioQrPreviewBox } from './studio-qr-preview-box';
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://snapprint.in';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : 'https://snap.palnadu.dev');
 
 interface StudioQrModalProps {
   studio: { id: string; slug?: string; name?: string };

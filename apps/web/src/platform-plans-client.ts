@@ -4,8 +4,9 @@ import {
   SubscriptionPlanDefinition,
   UpdateSubscriptionPlanRequest,
 } from '@snapprint/contracts';
+import { getApiBaseUrl } from './auth-client.js';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL = getApiBaseUrl();
 
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${path}`;

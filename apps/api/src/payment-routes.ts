@@ -5,7 +5,6 @@ import {
   PaymentHistoryResponseSchema,
   PaymentInitiateRequestSchema,
   PaymentInitiateResponseSchema,
-  PaymentRecord,
   PaymentRecordSchema,
   PaymentVerifyRequestSchema,
 } from '@snapprint/contracts';
@@ -13,6 +12,7 @@ import { deriveOrderPaymentStatus, validatePaymentAttempt } from '@snapprint/dom
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
 import { createPaymentGatewayService, PaymentGatewayService } from './payment/gateway-service.js';
+import { resolveSessionIdFromHeader } from './session-token.js';
 import {
   findOrderBySessionAndId,
   updateOrderPaymentSummary,
@@ -35,15 +35,9 @@ export interface PaymentRouteOptions {
 
 async function syncPayment(db: Db, studioId: string, orderId: string, totalAmountMinor: number) {
   const allPayments = await listPaymentsByOrder(db, studioId, orderId);
-  const summary = deriveOrderPaymentStatus(totalAmountMinor, allPayments);
-  await updateOrderPaymentSummary(
-    db,
-    studioId,
-    orderId,
-    summary.paidAmountMinor,
-    summary.paymentStatus
-  );
-  return summary;
+  const s = deriveOrderPaymentStatus(totalAmountMinor, allPayments);
+  await updateOrderPaymentSummary(db, studioId, orderId, s.paidAmountMinor, s.paymentStatus);
+  return s;
 }
 
 export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app, opts) => {
@@ -79,7 +73,9 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
           .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
       }
 
-      const sessionId = (request.headers['x-session-token'] as string) || '';
+      const tokenHeader = request.headers['x-session-token'] as string | undefined;
+      const sessionId =
+        resolveSessionIdFromHeader(tokenHeader, config.sessionSecret, studio.id) || '';
       const order = await findOrderBySessionAndId(db, studio.id, sessionId, request.params.orderId);
       if (!order) {
         return reply
@@ -113,7 +109,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
 
       const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
       const now = new Date().toISOString();
-      const paymentRecord: PaymentRecord = {
+      await createPaymentRecord(db, {
         paymentId,
         orderId: order.orderId,
         studioId: studio.id,
@@ -125,9 +121,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
         gatewayOrderId: gatewayOrder.gatewayOrderId,
         createdAt: now,
         updatedAt: now,
-      };
-
-      await createPaymentRecord(db, paymentRecord);
+      });
 
       return reply.status(200).send(
         PaymentInitiateResponseSchema.parse({
@@ -217,7 +211,9 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
           .send({ statusCode: 404, code: 'STUDIO_NOT_FOUND', message: 'Studio not found.' });
       }
 
-      const sessionId = (request.headers['x-session-token'] as string) || '';
+      const tokenHeader = request.headers['x-session-token'] as string | undefined;
+      const sessionId =
+        resolveSessionIdFromHeader(tokenHeader, config.sessionSecret, studio.id) || '';
       const order = await findOrderBySessionAndId(db, studio.id, sessionId, request.params.orderId);
       if (!order) {
         return reply
