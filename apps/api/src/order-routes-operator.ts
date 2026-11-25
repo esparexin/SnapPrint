@@ -21,6 +21,7 @@ import {
   listOrdersByStudio,
   updateOrderStatus,
 } from './repositories/order.repository.js';
+import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 import { findStudioById } from './repositories/studio.repository.js';
 import { StorageService } from './storage/storage-service.js';
 
@@ -144,6 +145,27 @@ export const operatorOrderRoutes: FastifyPluginAsync<OperatorOrderRouteOptions> 
           code: 'ORDER_NOT_FOUND',
           message: 'Order was not found.',
         });
+      }
+
+      if (bodyResult.data.status === 'processing') {
+        try {
+          const dispatched = await autoDispatchOrderPrintJobs(
+            db,
+            request.studioId!,
+            request.params.orderId
+          );
+          if (dispatched.length === 0) {
+            request.log.warn(
+              { studioId: request.studioId, orderId: request.params.orderId },
+              'Auto-dispatch returned 0 print jobs during operator start-print transition'
+            );
+          }
+        } catch (dispatchErr) {
+          request.log.error(
+            { err: dispatchErr, studioId: request.studioId, orderId: request.params.orderId },
+            'Failed to auto-dispatch print jobs during operator start-print transition'
+          );
+        }
       }
 
       return reply.status(200).send(OrderRecordSchema.parse(updated));
