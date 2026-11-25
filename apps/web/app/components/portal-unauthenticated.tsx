@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { LoginForm } from './login-form';
 import { OwnerLoginOtpForm } from './owner-login-otp-form';
@@ -11,6 +11,33 @@ interface PortalUnauthenticatedProps {
   onSuccess: (auth: AuthResponse) => void;
   initialMode?: 'password' | 'email_otp' | 'register';
 }
+
+const cardStyle: CSSProperties = {
+  maxWidth: '440px',
+  width: '100%',
+  margin: '2rem auto',
+  backgroundColor: '#ffffff',
+  borderRadius: '1rem',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02)',
+  padding: '2rem 1.5rem',
+  boxSizing: 'border-box',
+};
+
+const switchRowStyle: CSSProperties = {
+  maxWidth: '400px',
+  margin: '0.5rem auto',
+  textAlign: 'center',
+  fontSize: '0.8125rem',
+};
+
+const switchLinkBtnStyle: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#2563eb',
+  cursor: 'pointer',
+  padding: 0,
+};
 
 export function PortalUnauthenticated({
   errorBanner,
@@ -25,19 +52,18 @@ export function PortalUnauthenticated({
   }, [initialMode]);
 
   return (
-    <div>
+    <div style={cardStyle}>
       {errorBanner && (
         <div
           role="alert"
           style={{
-            maxWidth: '420px',
-            margin: '1rem auto',
             padding: '0.75rem',
             background: '#fef2f2',
             border: '1px solid #f87171',
             color: '#991b1b',
             borderRadius: '0.375rem',
             fontSize: '0.875rem',
+            marginBottom: '1rem',
           }}
         >
           {errorBanner}
@@ -53,24 +79,11 @@ export function PortalUnauthenticated({
       ) : authMode === 'password' ? (
         <div>
           <LoginForm onSuccess={onSuccess} />
-          <div
-            style={{
-              maxWidth: '400px',
-              margin: '0.5rem auto',
-              textAlign: 'center',
-              fontSize: '0.8125rem',
-            }}
-          >
+          <div style={switchRowStyle}>
             <button
               type="button"
               onClick={() => setAuthMode('email_otp')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#2563eb',
-                cursor: 'pointer',
-                padding: 0,
-              }}
+              style={switchLinkBtnStyle}
             >
               Owner Email OTP Sign In
             </button>
@@ -78,13 +91,7 @@ export function PortalUnauthenticated({
             <button
               type="button"
               onClick={() => setAuthMode('register')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#2563eb',
-                cursor: 'pointer',
-                padding: 0,
-              }}
+              style={switchLinkBtnStyle}
             >
               Register
             </button>

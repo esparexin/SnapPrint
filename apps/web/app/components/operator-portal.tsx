@@ -41,23 +41,24 @@ export function OperatorPortal({
 
   useEffect(() => {
     let mounted = true;
+    let redirecting = false;
     fetchCurrentUser()
       .then((user) => {
         if (!mounted) return;
-        setAuth(user);
         if (isActivePlatformAdmin(user) && typeof window !== 'undefined') {
-          window.location.href = '/admin';
+          redirecting = true;
+          window.location.replace('/admin');
           return;
         }
+        setAuth(user);
         onAuthChange?.(user);
       })
-      .catch((err) => {
-        if (mounted)
-          setErrorBanner(
-            err instanceof AuthApiError ? err.message : 'Session verification failed.'
-          );
-      })
-      .finally(() => mounted && setLoading(false));
+      .catch(
+        (err) =>
+          mounted &&
+          setErrorBanner(err instanceof AuthApiError ? err.message : 'Session verification failed.')
+      )
+      .finally(() => mounted && !redirecting && setLoading(false));
     return () => {
       mounted = false;
     };
@@ -69,10 +70,6 @@ export function OperatorPortal({
     setErrorBanner(null);
     try {
       await signOutToHome();
-      setAuth(null);
-      setSelectedStudioId(null);
-      setActiveView('orders');
-      onAuthChange?.(null);
     } catch (err) {
       setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.');
     } finally {
@@ -94,12 +91,14 @@ export function OperatorPortal({
         initialMode={initialMode}
         errorBanner={errorBanner}
         onSuccess={(newAuth) => {
+          if (isActivePlatformAdmin(newAuth) && typeof window !== 'undefined') {
+            setLoading(true);
+            window.location.replace('/admin');
+            return;
+          }
           setAuth(newAuth);
           setErrorBanner(null);
           onAuthChange?.(newAuth);
-          if (isActivePlatformAdmin(newAuth) && typeof window !== 'undefined') {
-            window.location.href = '/admin';
-          }
         }}
       />
     );

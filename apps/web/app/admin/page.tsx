@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
-import { fetchCurrentUser, logoutOperator } from '../../src/auth-client';
+import { fetchCurrentUser, signOutToHome } from '../../src/auth-client';
 import { adminLayoutStyles } from './admin-layout-styles';
 import { AdminNoAdminCard } from './admin-no-admin-card';
 import { AdminPortalView } from './admin-portal-view';
@@ -23,8 +23,7 @@ export default function PlatformAdminPage() {
   }, []);
 
   const handleLogout = async () => {
-    await logoutOperator().catch(() => {});
-    setAuth(null);
+    await signOutToHome().catch(() => {});
   };
 
   if (loading) {
