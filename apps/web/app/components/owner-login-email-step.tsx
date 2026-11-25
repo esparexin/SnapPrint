@@ -43,6 +43,7 @@ export function OwnerLoginEmailStep({
             border: '1px solid #d1d5db',
             borderRadius: '0.375rem',
             boxSizing: 'border-box',
+            fontSize: '1rem',
           }}
         />
       </div>

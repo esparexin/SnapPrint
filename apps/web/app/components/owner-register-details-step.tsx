@@ -1,6 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { CSSProperties } from 'react';
+
+const inputStyle: CSSProperties = {
+  width: '100%',
+  padding: '0.5rem 0.75rem',
+  border: '1px solid #d1d5db',
+  borderRadius: '0.375rem',
+  boxSizing: 'border-box',
+  fontSize: '1rem',
+};
 
 interface OwnerRegisterDetailsStepProps {
   name: string;
@@ -53,13 +62,7 @@ export function OwnerRegisterDetailsStep({
           required
           disabled={isSubmitting}
           placeholder="e.g. Rajesh Kumar"
-          style={{
-            width: '100%',
-            padding: '0.5rem 0.75rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '0.375rem',
-            boxSizing: 'border-box',
-          }}
+          style={inputStyle}
         />
       </div>
       <div style={{ marginBottom: '0.875rem' }}>
@@ -82,13 +85,7 @@ export function OwnerRegisterDetailsStep({
           required
           disabled={isSubmitting}
           placeholder="owner@printshop.com"
-          style={{
-            width: '100%',
-            padding: '0.5rem 0.75rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '0.375rem',
-            boxSizing: 'border-box',
-          }}
+          style={inputStyle}
         />
       </div>
       <div style={{ marginBottom: '0.875rem' }}>
@@ -132,13 +129,10 @@ export function OwnerRegisterDetailsStep({
             disabled={isSubmitting}
             placeholder="9876512340"
             style={{
+              ...inputStyle,
               flex: 1,
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              border: '1px solid #d1d5db',
-              borderTopRightRadius: '0.375rem',
-              borderBottomRightRadius: '0.375rem',
-              boxSizing: 'border-box',
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
             }}
           />
         </div>
