@@ -77,4 +77,21 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(result.sizeBytes).toBeGreaterThan(10000);
     expect(result.outputPath).toContain('snapprint-agent.bundle.cjs');
   });
+
+  it('validates sea-config.json and customizable WiX SourceDir', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { dirname, join } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+
+    const __filename = fileURLToPath(import.meta.url);
+    const seaConfigPath = join(dirname(__filename), '..', 'sea-config.json');
+    const raw = readFileSync(seaConfigPath, 'utf-8');
+    const seaConfig = JSON.parse(raw);
+    expect(seaConfig.main).toContain('snapprint-agent.bundle.cjs');
+    expect(seaConfig.output).toContain('sea-prep.blob');
+    expect(seaConfig.disableExperimentalSEAWarning).toBe(true);
+
+    const customXml = generateWixManifest({ sourceDir: 'D:\\CustomDist' });
+    expect(customXml).toContain('Source="D:\\CustomDist\\snapprint-agent.exe"');
+  });
 });

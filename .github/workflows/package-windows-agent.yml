@@ -1,0 +1,161 @@
+name: Windows Print Agent Packaging & CI
+
+on:
+  push:
+    branches: [main, 'feat-*', 'fix-*']
+    paths:
+      - 'apps/print-agent/**'
+      - '.github/workflows/package-windows-agent.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/print-agent/**'
+      - '.github/workflows/package-windows-agent.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: windows-agent-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  package-and-verify-windows:
+    name: Build, Package & Verify Windows Agent (MSI + SEA)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Print Agent runtime bundle
+        run: pnpm --filter @snapprint/print-agent run build
+
+      - name: Install WiX Toolset v4
+        run: dotnet tool install --global wix
+
+      - name: Package Windows Executable and MSI Installer
+        run: pnpm --filter @snapprint/print-agent run package:windows
+
+      - name: Smoke test standalone snapprint-agent.exe
+        shell: pwsh
+        run: |
+          $exePath = "apps/print-agent/dist/snapprint-agent.exe"
+          if (-not (Test-Path $exePath)) {
+            throw "Executable not found at $exePath"
+          }
+
+          $bytes = [System.IO.File]::ReadAllBytes($exePath)
+          if ($bytes.Length -lt 20000000) {
+            throw "snapprint-agent.exe size is suspiciously small: $($bytes.Length) bytes (expected > 20 MB)"
+          }
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) {
+            throw "Invalid PE header: missing MZ signature (bytes: $($bytes[0]), $($bytes[1]))"
+          }
+          Write-Host "PE structural verification passed: $($bytes.Length) bytes."
+
+          $versionOutput = & $exePath --version
+          Write-Host "Output of snapprint-agent.exe --version: $versionOutput"
+          if ($versionOutput.Trim() -ne "0.1.0") {
+            throw "Expected version 0.1.0, got: $versionOutput"
+          }
+
+          $statusOutput = & $exePath status
+          Write-Host "Output of snapprint-agent.exe status: $statusOutput"
+
+      - name: Validate MSI installer structure
+        shell: pwsh
+        run: |
+          $msiPath = "apps/print-agent/dist/SnapPrint-Print-Agent.msi"
+          if (-not (Test-Path $msiPath)) {
+            throw "MSI not found at $msiPath"
+          }
+
+          $bytes = [System.IO.File]::ReadAllBytes($msiPath)
+          if ($bytes.Length -lt 1000000) {
+            throw "MSI size is suspiciously small: $($bytes.Length) bytes (expected > 1 MB)"
+          }
+
+          $expectedMagic = @(0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1)
+          for ($i = 0; $i -lt 8; $i++) {
+            if ($bytes[$i] -ne $expectedMagic[$i]) {
+              throw "Invalid MSI header: failed OLE CFB magic check at offset $i"
+            }
+          }
+          Write-Host "MSI structural verification passed: $($bytes.Length) bytes."
+
+      - name: Test Windows silent installation and verification
+        shell: pwsh
+        run: |
+          $msiPath = (Resolve-Path "apps/print-agent/dist/SnapPrint-Print-Agent.msi").Path
+          $logPath = (Join-Path $env:RUNNER_TEMP "install.log")
+          Write-Host "Installing MSI: $msiPath..."
+          $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /qn /norestart /log `"$logPath`"" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $logPath) {
+              Get-Content $logPath -Tail 50
+            }
+            throw "MSI installation failed with exit code $($process.ExitCode)"
+          }
+          Write-Host "MSI installation succeeded."
+
+          $installedExe = "C:\Program Files\SnapPrint\PrintAgent\snapprint-agent.exe"
+          if (-not (Test-Path $installedExe)) {
+            throw "Installed executable not found at $installedExe"
+          }
+
+          $installedVer = & $installedExe --version
+          Write-Host "Installed agent version: $installedVer"
+          if ($installedVer.Trim() -ne "0.1.0") {
+            throw "Installed agent version mismatch: $installedVer"
+          }
+          Write-Host "Installed agent executable verified successfully."
+
+      - name: Test Windows silent uninstallation
+        shell: pwsh
+        run: |
+          $msiPath = (Resolve-Path "apps/print-agent/dist/SnapPrint-Print-Agent.msi").Path
+          $logPath = (Join-Path $env:RUNNER_TEMP "uninstall.log")
+          Write-Host "Uninstalling MSI: $msiPath..."
+          $process = Start-Process msiexec.exe -ArgumentList "/x `"$msiPath`" /qn /norestart /log `"$logPath`"" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $logPath) {
+              Get-Content $logPath -Tail 50
+            }
+            throw "MSI uninstallation failed with exit code $($process.ExitCode)"
+          }
+          Write-Host "MSI uninstallation succeeded."
+
+          $installedExe = "C:\Program Files\SnapPrint\PrintAgent\snapprint-agent.exe"
+          if (Test-Path $installedExe) {
+            throw "Installed executable still exists after uninstall at $installedExe"
+          }
+          Write-Host "Cleanup verified: installed files cleanly removed."
+
+      - name: Generate SHA-256 Checksums
+        shell: pwsh
+        run: |
+          cd apps/print-agent/dist
+          Get-FileHash -Algorithm SHA256 SnapPrint-Print-Agent.msi, snapprint-agent.exe | Out-File -FilePath checksums.txt
+          Get-Content checksums.txt
+
+      - name: Upload Windows Packaging Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapprint-windows-agent-installer
+          path: |
+            apps/print-agent/dist/SnapPrint-Print-Agent.msi
+            apps/print-agent/dist/snapprint-agent.exe
+            apps/print-agent/dist/checksums.txt
+          if-no-files-found: error
