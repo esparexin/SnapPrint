@@ -6,7 +6,11 @@ import {
   PublicStudioSchema,
   StudioSchema,
 } from '@snapprint/contracts';
-import { calculateSessionExpiry } from '@snapprint/domain';
+import {
+  calculateSessionExpiry,
+  evaluateStorefrontCheckoutAvailability,
+  isSubscriptionActive,
+} from '@snapprint/domain';
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
 import { createSessionRecord } from './repositories/session.repository.js';
@@ -15,8 +19,11 @@ import {
   findStudioDocumentBySlug,
   toStudioContract,
 } from './repositories/studio.repository.js';
-import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
-import { getStudioPublicCapabilities } from './repositories/printer.repository.js';
+import { getStudioSubscription } from './repositories/subscription.repository.js';
+import {
+  getStudioActivePrintersAndCapabilities,
+  hasOnlineAgentDevice,
+} from './repositories/printer.repository.js';
 import { signSessionToken } from './session-token.js';
 
 export interface PublicRouteOptions {
@@ -53,14 +60,20 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
 
     const studio = toStudioContract(doc);
 
-    const [avail, capabilities] = await Promise.all([
-      checkStudioCheckoutAvailability(db, {
-        id: studio.id,
-        status: studio.status,
-        isAcceptingOrders: studio.settings.isAcceptingOrders,
-      }),
-      getStudioPublicCapabilities(db, studio.id),
+    const [printerData, sub, hasOnlineAgent] = await Promise.all([
+      getStudioActivePrintersAndCapabilities(db, studio.id),
+      getStudioSubscription(db, studio.id),
+      hasOnlineAgentDevice(db, studio.id),
     ]);
+
+    const avail = evaluateStorefrontCheckoutAvailability({
+      studioStatus: studio.status,
+      isAcceptingOrders: studio.settings.isAcceptingOrders ?? true,
+      hasActiveSubscription: Boolean(sub && isSubscriptionActive(sub.expiresAt)),
+      hasOnlineAgent,
+      hasActivePrinter: printerData.activePrinters.length > 0,
+    });
+    const capabilities = printerData.capabilities;
 
     const publicStudio = PublicStudioSchema.parse({
       id: studio.id,

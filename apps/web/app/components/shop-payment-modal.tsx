@@ -1,15 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PaperSize, Studio, StudioPrintRatesContract } from '@snapprint/contracts';
+import { Studio } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
 import { ModalSheetShell } from './modal-sheet-shell';
-import { DEFAULT_A4_RATES, getNoticeBoxStyle } from './operator-portal-styles';
+import { getNoticeBoxStyle } from './operator-portal-styles';
 import { ShopPaymentModalFooter } from './shop-payment-modal-footer';
 import { ShopPaymentModalHeader } from './shop-payment-modal-header';
 import { ShopPaymentPolicyFields } from './shop-payment-policy-fields';
-import { ShopPrintRatesFields } from './shop-print-rates-fields';
 import { ShopRazorpayForm } from './shop-razorpay-form';
 
 interface ShopPaymentModalProps {
@@ -37,9 +36,6 @@ export function ShopPaymentModal({
   const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(
     s?.counterPaymentEnabled ?? true
   );
-  const [printRates, setPrintRates] = useState<StudioPrintRatesContract>(
-    s?.printRates || DEFAULT_A4_RATES
-  );
   const [keyId, setKeyId] = useState(p?.razorpayKeyId || '');
   const [isConfirmed, setIsConfirmed] = useState(p?.isRazorpayConfirmed ?? false);
   const [saving, setSaving] = useState(false);
@@ -54,7 +50,6 @@ export function ShopPaymentModal({
         paymentPolicy,
         onlinePaymentEnabled,
         counterPaymentEnabled,
-        printRates,
       });
       await updateProfileApi(studioId, {
         payment: {
@@ -111,22 +106,6 @@ export function ShopPaymentModal({
             setOnlinePaymentEnabled={setOnlinePaymentEnabled}
             counterPaymentEnabled={counterPaymentEnabled}
             setCounterPaymentEnabled={setCounterPaymentEnabled}
-          />
-          <ShopPrintRatesFields
-            printRates={printRates}
-            supportedPaperSizes={
-              (studio as { capabilities?: { supportedPaperSizes?: PaperSize[] } })?.capabilities
-                ?.supportedPaperSizes
-            }
-            supportsColor={
-              (studio as { capabilities?: { supportsColor?: boolean } })?.capabilities
-                ?.supportsColor
-            }
-            supportsBlackAndWhite={
-              (studio as { capabilities?: { supportsBlackAndWhite?: boolean } })?.capabilities
-                ?.supportsBlackAndWhite
-            }
-            onChange={setPrintRates}
           />
           <ShopRazorpayForm
             studioId={studioId}

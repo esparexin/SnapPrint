@@ -23,23 +23,6 @@ export function PrinterFleetList({
 }: PrinterFleetListProps) {
   return (
     <>
-      <div
-        style={{
-          padding: '12px',
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #bbf7d0',
-          borderRadius: '8px',
-          fontSize: '0.8125rem',
-          color: '#166534',
-          marginBottom: '16px',
-          lineHeight: 1.5,
-        }}
-      >
-        <strong>💡 Smart Capability Routing:</strong> B&amp;W jobs route automatically to the{' '}
-        <strong>Active B&amp;W</strong> printer. Color jobs route automatically to the{' '}
-        <strong>Active Color</strong> printer. Standby printers act as backups.
-      </div>
-
       {loading ? (
         <div style={{ textAlign: 'center', padding: '32px 0', color: '#64748b' }}>
           Loading connected printers...

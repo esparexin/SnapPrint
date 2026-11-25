@@ -3,7 +3,7 @@ import type { StudioPrintRatesContract } from '@snapprint/contracts';
 
 export type OperatorView =
   | 'orders'
-  | 'printers'
+  | 'printer_setup'
   | 'qr'
   | 'profile'
   | 'payment'
@@ -30,7 +30,7 @@ export const getNoticeBoxStyle = (kind: 'error' | 'saved'): CSSProperties => ({
 
 export const VIEW_TITLES: Record<OperatorView, string> = {
   orders: 'Orders',
-  printers: 'Printers',
+  printer_setup: 'Printer & Page Setup',
   qr: 'QR Stand',
   profile: 'Shop Settings',
   payment: 'Payments',

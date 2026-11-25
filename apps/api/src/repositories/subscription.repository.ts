@@ -219,12 +219,17 @@ export async function isJobEntitledForFulfillment(
 export async function checkStudioCheckoutAvailability(
   db: Db,
   studio: { id: string; status: string; isAcceptingOrders?: boolean },
-  now: Date | string = new Date()
+  now: Date | string = new Date(),
+  cachedActivePrinter?: boolean
 ): Promise<StorefrontCheckoutAvailabilityDecision> {
-  const sub = await getStudioSubscription(db, studio.id, now);
+  const [sub, hasOnlineAgent, hasActivePrinter] = await Promise.all([
+    getStudioSubscription(db, studio.id, now),
+    hasOnlineAgentDevice(db, studio.id),
+    cachedActivePrinter !== undefined
+      ? cachedActivePrinter
+      : hasActivePrinterAssigned(db, studio.id),
+  ]);
   const hasActiveSubscription = Boolean(sub && isSubscriptionActive(sub.expiresAt, now));
-  const hasOnlineAgent = await hasOnlineAgentDevice(db, studio.id);
-  const hasActivePrinter = await hasActivePrinterAssigned(db, studio.id);
 
   return evaluateStorefrontCheckoutAvailability({
     studioStatus: studio.status,

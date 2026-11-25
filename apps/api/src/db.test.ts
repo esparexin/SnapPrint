@@ -133,6 +133,10 @@ describe('Database Indexes & Connection State', () => {
       unique: true,
       name: 'uid_agent_device_token',
     });
+    expect(createdIndexes['agent_devices']).toContainEqual({
+      key: { studioId: 1, status: 1, lastHeartbeatAt: -1 },
+      name: 'idx_agent_device_studio_status_heartbeat',
+    });
 
     // Verify studio_printers indexes
     expect(createdIndexes['studio_printers']).toBeDefined();

@@ -66,7 +66,7 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
 
     expect(SHOP_MENU_TABS.map((t) => t.label)).toEqual([
       'Orders',
-      'Printers',
+      'Printer & Page Setup',
       'QR Stand',
       'Payments',
       'Settings',
@@ -86,7 +86,7 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
   it('PortalModals renders every section inline inside tabpanel when inShell is true', () => {
     const views = [
       'orders',
-      'printers',
+      'printer_setup',
       'qr',
       'payment',
       'profile',
