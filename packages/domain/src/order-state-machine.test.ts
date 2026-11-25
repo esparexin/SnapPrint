@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { canTransitionOrderStatus } from './order-state-machine.js';
+import {
+  canConfirmCustomerHandover,
+  canDeleteOrderDocument,
+  canTransitionOrderStatus,
+} from './order-state-machine.js';
 
 describe('Order State Machine & Transition Rules', () => {
   it('allows valid progressive lifecycle transitions', () => {
@@ -54,5 +58,49 @@ describe('Order State Machine & Transition Rules', () => {
     const fromCancelled = canTransitionOrderStatus('cancelled', 'submitted');
     expect(fromCancelled.allowed).toBe(false);
     expect(fromCancelled.error).toBe('ORDER_IN_TERMINAL_STATE');
+  });
+
+  describe('Customer Handover Confirmation Rules', () => {
+    it('allows handover when order is ready and operator confirmed physical verification', () => {
+      const res = canConfirmCustomerHandover('ready', true);
+      expect(res.allowed).toBe(true);
+    });
+
+    it('blocks handover when operator has not verified physical output', () => {
+      const res = canConfirmCustomerHandover('ready', false);
+      expect(res.allowed).toBe(false);
+      expect(res.error).toBe('HANDOVER_NOT_CONFIRMED');
+      expect(res.message).toMatch(/Operator must verify physical print output/);
+    });
+
+    it('blocks handover when order is not in ready status', () => {
+      expect(canConfirmCustomerHandover('submitted', true).allowed).toBe(false);
+      expect(canConfirmCustomerHandover('submitted', true).error).toBe('INVALID_STATUS_TRANSITION');
+      expect(canConfirmCustomerHandover('processing', true).allowed).toBe(false);
+      expect(canConfirmCustomerHandover('completed', true).allowed).toBe(false);
+      expect(canConfirmCustomerHandover('cancelled', true).allowed).toBe(false);
+    });
+  });
+
+  describe('Post-Handover Document Deletion Rules', () => {
+    it('allows document deletion when order is completed and document is not yet deleted', () => {
+      const res = canDeleteOrderDocument('completed', false);
+      expect(res.allowed).toBe(true);
+    });
+
+    it('blocks document deletion before order is completed', () => {
+      const statuses = ['submitted', 'processing', 'ready', 'cancelled'] as const;
+      for (const status of statuses) {
+        const res = canDeleteOrderDocument(status, false);
+        expect(res.allowed).toBe(false);
+        expect(res.error).toBe('ORDER_NOT_COMPLETED');
+      }
+    });
+
+    it('blocks document deletion if document is already marked deleted', () => {
+      const res = canDeleteOrderDocument('completed', true);
+      expect(res.allowed).toBe(false);
+      expect(res.error).toBe('DOCUMENT_ALREADY_DELETED');
+    });
   });
 });

@@ -54,6 +54,8 @@ export const QuoteItemBreakdownSchema = z.object({
   sheetsCount: z.number().int().positive(),
   unitPriceMinor: z.number().int().nonnegative(),
   subtotalMinor: z.number().int().nonnegative(),
+  isDeleted: z.boolean().optional(),
+  deletedAt: z.string().datetime().optional(),
 });
 export type QuoteItemBreakdown = z.infer<typeof QuoteItemBreakdownSchema>;
 
@@ -93,6 +95,8 @@ export const OrderAuditEventSchema = z.object({
   operatorName: z.string().optional(),
   timestamp: z.string().datetime(),
   reason: z.string().max(500).optional(),
+  action: z.string().max(64).optional(),
+  assetId: z.string().max(128).optional(),
 });
 export type OrderAuditEvent = z.infer<typeof OrderAuditEventSchema>;
 
@@ -122,8 +126,17 @@ export type OrderRecordInput = z.input<typeof OrderRecordSchema>;
 export const OrderStatusUpdateRequestSchema = z.object({
   status: OrderStatusSchema,
   notes: z.string().max(500).optional(),
+  confirmedHandover: z.boolean().optional(),
 });
 export type OrderStatusUpdateRequest = z.infer<typeof OrderStatusUpdateRequestSchema>;
+
+export const DocumentDeletionResponseSchema = z.object({
+  success: z.boolean(),
+  orderId: z.string(),
+  assetId: z.string(),
+  deletedAt: z.string().datetime(),
+});
+export type DocumentDeletionResponse = z.infer<typeof DocumentDeletionResponseSchema>;
 
 export const OrderCancellationRequestSchema = z.object({
   reason: z.string().min(1).max(500),

@@ -2,7 +2,13 @@ import type { OrderStatus } from '@snapprint/contracts';
 
 export interface OrderTransitionValidation {
   allowed: boolean;
-  error?: 'INVALID_STATUS_TRANSITION' | 'ORDER_IN_TERMINAL_STATE';
+  error?: 'INVALID_STATUS_TRANSITION' | 'ORDER_IN_TERMINAL_STATE' | 'HANDOVER_NOT_CONFIRMED';
+  message?: string;
+}
+
+export interface DocumentDeletionValidation {
+  allowed: boolean;
+  error?: 'DOCUMENT_ALREADY_DELETED' | 'ORDER_NOT_COMPLETED';
   message?: string;
 }
 
@@ -55,6 +61,62 @@ export function canTransitionOrderStatus(
       allowed: false,
       error: 'INVALID_STATUS_TRANSITION',
       message: `Invalid order status transition from '${currentStatus}' to '${nextStatus}'.`,
+    };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Validates that an operator has physically verified prints and confirmed customer handover.
+ * Handover confirmation is required to transition an order from 'ready' to 'completed'.
+ */
+export function canConfirmCustomerHandover(
+  currentStatus: OrderStatus,
+  hasConfirmedReview: boolean
+): OrderTransitionValidation {
+  if (currentStatus !== 'ready') {
+    return {
+      allowed: false,
+      error: 'INVALID_STATUS_TRANSITION',
+      message: `Order must be in 'ready' status before confirming customer handover. Current status is '${currentStatus}'.`,
+    };
+  }
+
+  if (!hasConfirmedReview) {
+    return {
+      allowed: false,
+      error: 'HANDOVER_NOT_CONFIRMED',
+      message: 'Operator must verify physical print output before completing customer handover.',
+    };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Validates whether an order document can be safely deleted.
+ * Documents may only be purged after customer handover is confirmed ('completed' state),
+ * and cannot be deleted if already purged.
+ */
+export function canDeleteOrderDocument(
+  orderStatus: OrderStatus,
+  isAlreadyDeleted?: boolean
+): DocumentDeletionValidation {
+  if (isAlreadyDeleted) {
+    return {
+      allowed: false,
+      error: 'DOCUMENT_ALREADY_DELETED',
+      message: 'Document has already been deleted.',
+    };
+  }
+
+  if (orderStatus !== 'completed') {
+    return {
+      allowed: false,
+      error: 'ORDER_NOT_COMPLETED',
+      message:
+        'Documents can only be deleted after customer handover is confirmed and the order is completed.',
     };
   }
 
