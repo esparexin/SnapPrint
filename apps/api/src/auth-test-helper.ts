@@ -21,6 +21,7 @@ import { studioSettingsRoutes } from './studio-settings-routes.js';
 import { studioWorkspaceRoutes } from './studio-workspace-routes.js';
 import { printerRoutes } from './printer-routes.js';
 import { platformAdminRoutes } from './platform-admin-routes.js';
+import { platformAdminPlansRoutes } from './platform-admin-plans-routes.js';
 import { subscriptionRoutes } from './subscription-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 import { agentDownloadRoutes } from './agent-download-routes.js';
@@ -80,6 +81,7 @@ export async function createTestApp(
   await app.register(paymentRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(operatorPaymentRoutes, { db: mock.db });
   await app.register(platformAdminRoutes, { getCustomDb: () => mock.db });
+  await app.register(platformAdminPlansRoutes, { getCustomDb: () => mock.db });
   await app.register(subscriptionRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(webhookRoutes, { db: mock.db, config: testConfig, gateway });
   await app.register(agentDownloadRoutes);
