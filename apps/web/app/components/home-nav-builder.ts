@@ -2,8 +2,8 @@ import { AuthResponse } from '@snapprint/contracts';
 
 interface HomeNavOptions {
   auth: AuthResponse | null;
-  onOpenLogin: () => void;
-  onOpenRegister: () => void;
+  onOpenLogin?: () => void;
+  onOpenRegister?: () => void;
   onLogout: () => void;
 }
 
@@ -22,8 +22,18 @@ export function buildHomeTopNav({ auth, onOpenLogin, onOpenRegister, onLogout }:
           { label: 'Sign Out', onClick: onLogout, variant: 'button' as const },
         ]
       : [
-          { label: 'Login', onClick: onOpenLogin, variant: 'text' as const },
-          { label: 'Register', onClick: onOpenRegister, variant: 'button' as const },
+          {
+            label: 'Login',
+            href: '/portal',
+            onClick: onOpenLogin,
+            variant: 'text' as const,
+          },
+          {
+            label: 'Register',
+            href: '/portal?action=register',
+            onClick: onOpenRegister,
+            variant: 'button' as const,
+          },
         ]),
   ];
 }
