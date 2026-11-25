@@ -231,7 +231,9 @@ printer HP_LaserJet_1020 is idle. enabled since Mon 23 Nov 2026 10:00:00 AM IST
         await adapter.printFile('Epson_L3150', tempPdf, { copies: 3 });
 
         expect(executedCommands).toHaveLength(1);
-        expect(executedCommands[0]).toBe(`lp -d "Epson_L3150" -n 3 -o sides=one-sided "${tempPdf}"`);
+        expect(executedCommands[0]).toBe(
+          `lp -d "Epson_L3150" -n 3 -o sides=one-sided "${tempPdf}"`
+        );
       } finally {
         if (existsSync(tempPdf)) unlinkSync(tempPdf);
       }

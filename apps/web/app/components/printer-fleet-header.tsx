@@ -61,7 +61,12 @@ export function PrinterFleetHeader({
           {studioName || `Studio ${studioId}`}
           {allowance ? (
             <span>
-              {' '}· Active: <strong>{allowance.activeCount}/{allowance.maxActivePrinters}</strong> · Standby: {allowance.registeredCount - allowance.activeCount}
+              {' '}
+              · Active:{' '}
+              <strong>
+                {allowance.activeCount}/{allowance.maxActivePrinters}
+              </strong>{' '}
+              · Standby: {allowance.registeredCount - allowance.activeCount}
             </span>
           ) : (
             ' · Capability Routing & Discovery'

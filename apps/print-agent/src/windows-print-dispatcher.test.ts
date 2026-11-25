@@ -52,7 +52,9 @@ describe('Windows Print Dispatcher & Targeting', () => {
 
     it('configures vertical duplex for double-sided image printing', () => {
       const script = buildWindowsImagePrintScript('HP LaserJet Pro', tempPng, 1, true);
-      expect(script).toContain('PrinterSettings.Duplex = [System.Drawing.Printing.Duplex]::Vertical');
+      expect(script).toContain(
+        'PrinterSettings.Duplex = [System.Drawing.Printing.Duplex]::Vertical'
+      );
     });
 
     it('configures Set-PrintConfiguration TwoSidedLongEdge for PDF duplex printing', () => {

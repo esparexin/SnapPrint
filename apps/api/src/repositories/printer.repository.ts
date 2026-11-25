@@ -60,10 +60,9 @@ export async function syncDiscoveredPrinters(
     };
 
     if (existing) {
-      await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).updateOne(
-        { studioId, id: p.printerId },
-        { $set: pFields }
-      );
+      await db
+        .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+        .updateOne({ studioId, id: p.printerId }, { $set: pFields });
     } else {
       await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).insertOne({
         id: p.printerId,
@@ -75,17 +74,21 @@ export async function syncDiscoveredPrinters(
     }
   }
 
-  const activeCount = await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).countDocuments({
-    studioId,
-    role: { $in: ['active_bw', 'active_color'] },
-  });
+  const activeCount = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .countDocuments({
+      studioId,
+      role: { $in: ['active_bw', 'active_color'] },
+    });
   if (activeCount === 0 && physicalPrinters.length > 0) {
     const target = physicalPrinters.find((p) => p.isDefaultOsPrinter) || physicalPrinters[0];
     const targetRole: PrinterRole = target.isColorSupported ? 'active_color' : 'active_bw';
-    await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).updateOne(
-      { studioId, id: target.printerId },
-      { $set: { role: targetRole, updatedAt: now } }
-    );
+    await db
+      .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+      .updateOne(
+        { studioId, id: target.printerId },
+        { $set: { role: targetRole, updatedAt: now } }
+      );
   }
 }
 
@@ -125,16 +128,14 @@ export async function updateStudioPrinterRole(
       return false;
     }
 
-    await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).updateMany(
-      { studioId, role },
-      { $set: { role: 'standby', updatedAt: now } }
-    );
+    await db
+      .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+      .updateMany({ studioId, role }, { $set: { role: 'standby', updatedAt: now } });
   }
 
-  const res = await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).updateOne(
-    { studioId, id: printerId },
-    { $set: { role, updatedAt: now } }
-  );
+  const res = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .updateOne({ studioId, id: printerId }, { $set: { role, updatedAt: now } });
   return res.matchedCount > 0;
 }
 

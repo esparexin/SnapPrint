@@ -2,8 +2,14 @@
 
 import React, { useMemo } from 'react';
 import {
-  ColorMode, DocumentPrintConfig, PaperSize, PaperSizes,
-  PrintOrientation, PrintSides, StudioPrintRatesContract, StudioPublicCapabilities,
+  ColorMode,
+  DocumentPrintConfig,
+  PaperSize,
+  PaperSizes,
+  PrintOrientation,
+  PrintSides,
+  StudioPrintRatesContract,
+  StudioPublicCapabilities,
 } from '@snapprint/contracts';
 import { DocumentRateSelector } from './document-rate-selector';
 import { AutoOrientIcon, LandscapeIcon, PortraitIcon } from './storefront-icons';
@@ -17,11 +23,19 @@ interface DocumentOptionsGridProps {
 }
 
 const PAPER_SIZE_LABELS: Record<PaperSize, string> = {
-  A4: 'A4 (Standard)', A3: 'A3 (Large)', A5: 'A5 (Compact)', legal: 'Legal', letter: 'Letter',
+  A4: 'A4 (Standard)',
+  A3: 'A3 (Large)',
+  A5: 'A5 (Compact)',
+  legal: 'Legal',
+  letter: 'Letter',
 };
 
 const COMPACT_SIZE_LABELS: Record<PaperSize, string> = {
-  A4: 'A4', A3: 'A3', A5: 'A5', legal: 'Legal', letter: 'Letter',
+  A4: 'A4',
+  A3: 'A3',
+  A5: 'A5',
+  legal: 'Legal',
+  letter: 'Letter',
 };
 
 const ORIENTATION_OPTIONS: Array<{

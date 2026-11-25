@@ -85,8 +85,12 @@ export function PrinterManagementModal({
           <div
             role="alert"
             style={{
-              padding: '10px 12px', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '16px',
-              backgroundColor: '#fef2f2', color: '#b91c1c',
+              padding: '10px 12px',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              marginBottom: '16px',
+              backgroundColor: '#fef2f2',
+              color: '#b91c1c',
             }}
           >
             {error}

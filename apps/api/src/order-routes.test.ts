@@ -3,6 +3,17 @@ import { hashPassword } from '@snapprint/domain';
 import { createTestApp } from './auth-test-helper.js';
 import { signSessionToken } from './session-token.js';
 
+const makeItem = (assetId: string, sides: 'single_sided' | 'double_sided') => ({
+  assetId,
+  paperSize: 'A4' as const,
+  colorMode: 'black_and_white' as const,
+  sides,
+  orientation: 'portrait' as const,
+  scaling: 'fit_to_page' as const,
+  pageSelection: sides === 'single_sided' ? '1-5' : 'all',
+  copies: sides === 'single_sided' ? 2 : 1,
+});
+
 describe('Document Print Orders & Quotation Routes', () => {
   async function seedTestEnvironment() {
     const ctx = await createTestApp();
@@ -81,15 +92,22 @@ describe('Document Print Orders & Quotation Routes', () => {
       capabilityProvenance: 'driver_query',
       status: 'online',
       isDefaultOsPrinter: true,
-      lastSeenAt: now, createdAt: now, updatedAt: now,
+      lastSeenAt: now,
+      createdAt: now,
+      updatedAt: now,
     });
 
     const token = signSessionToken({ sessionId, studioId, expiresAt }, secret);
 
     // Operator with view_orders & manage_order_status
     ctx.users.push({
-      id: 'usr_staff_12345678', email: 'staff@xerox.com', name: 'Staff Member',
-      passwordHash, status: 'active', createdAt: now, updatedAt: now,
+      id: 'usr_staff_12345678',
+      email: 'staff@xerox.com',
+      name: 'Staff Member',
+      passwordHash,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
     });
 
     ctx.memberships.push({
@@ -106,16 +124,7 @@ describe('Document Print Orders & Quotation Routes', () => {
   it('calculates server-authoritative quotation for PDF print job', async () => {
     const { ctx, slug, sessionId, assetId, token } = await seedTestEnvironment();
 
-    const item = {
-      assetId,
-      paperSize: 'A4' as const,
-      colorMode: 'black_and_white' as const,
-      sides: 'single_sided' as const,
-      orientation: 'portrait' as const,
-      scaling: 'fit_to_page' as const,
-      pageSelection: '1-5',
-      copies: 2,
-    };
+    const item = makeItem(assetId, 'single_sided');
     const res = await ctx.app.inject({
       method: 'POST',
       url: `/public/studios/${slug}/sessions/${sessionId}/quote`,
@@ -136,16 +145,7 @@ describe('Document Print Orders & Quotation Routes', () => {
     const { ctx, slug, sessionId, assetId, token } = await seedTestEnvironment();
     const idempotencyKey = 'idem_checkout_req_99999';
 
-    const item = {
-      assetId,
-      paperSize: 'A4' as const,
-      colorMode: 'black_and_white' as const,
-      sides: 'double_sided' as const,
-      orientation: 'portrait' as const,
-      scaling: 'fit_to_page' as const,
-      pageSelection: 'all',
-      copies: 1,
-    };
+    const item = makeItem(assetId, 'double_sided');
     const orderPayload = {
       idempotencyKey,
       customerName: 'Kalyan Medaboina',

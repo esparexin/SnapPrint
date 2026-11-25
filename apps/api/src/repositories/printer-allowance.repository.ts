@@ -1,5 +1,6 @@
 import { Db } from 'mongodb';
-import { StudioPublicCapabilities } from '@snapprint/contracts';
+import { PaperSize, StudioPublicCapabilities } from '@snapprint/contracts';
+import { resolveItemsWithMeta } from './photo-asset.repository.js';
 import { PRINTERS_COLLECTION, StudioPrinterDocument } from './printer.repository.js';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
 
@@ -21,9 +22,7 @@ export async function getStudioFleetAllowance(
   db: Db,
   studioId: string
 ): Promise<StudioFleetAllowance> {
-  const studio = await db
-    .collection<StudioDocument>(STUDIOS_COLLECTION)
-    .findOne({ id: studioId });
+  const studio = await db.collection<StudioDocument>(STUDIOS_COLLECTION).findOne({ id: studioId });
   const maxActivePrinters = studio?.settings?.maxActivePrinters ?? 2;
 
   const printers = await db
@@ -107,9 +106,9 @@ export async function validateOrderDuplexFeasibility(
         if (p.duplexSupport !== 'supported') return false;
         if (item.colorMode === 'color' && !p.isColorSupported) return false;
         if (p.supportedDuplexSizes && p.supportedDuplexSizes.length > 0) {
-          return p.supportedDuplexSizes.includes(item.paperSize as any);
+          return p.supportedDuplexSizes.includes(item.paperSize as PaperSize);
         }
-        return p.supportedPaperSizes.includes(item.paperSize as any);
+        return p.supportedPaperSizes.includes(item.paperSize as PaperSize);
       });
       if (!match) {
         return {
@@ -120,4 +119,32 @@ export async function validateOrderDuplexFeasibility(
     }
   }
   return { allowed: true };
+}
+
+export async function prepareOrderAdmission<
+  T extends { assetId: string; paperSize: string; colorMode: string; sides?: string },
+>(
+  db: Db,
+  studioId: string,
+  sessionId: string,
+  items: readonly T[]
+): Promise<{
+  error?: { status: number; code: string; message: string };
+  items?: Array<{ config: T; filename: string; documentPageCount: number }>;
+}> {
+  const duplexCheck = await validateOrderDuplexFeasibility(db, studioId, items);
+  if (!duplexCheck.allowed) {
+    return {
+      error: {
+        status: 422,
+        code: 'NO_DUPLEX_SUPPORT',
+        message: duplexCheck.reason || 'No duplex support.',
+      },
+    };
+  }
+  const itemsWithMeta = await resolveItemsWithMeta(db, studioId, sessionId, items);
+  if (!itemsWithMeta) {
+    return { error: { status: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' } };
+  }
+  return { items: itemsWithMeta };
 }

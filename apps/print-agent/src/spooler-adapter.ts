@@ -47,10 +47,24 @@ export function inferIsColorSupported(name: string, driverName: string): boolean
 }
 
 export function inferSupportedPaperSizes(name: string, driverName: string): PaperSize[] {
-  const combined = `${name} ${driverName}`.toLowerCase();
-  const sizes: PaperSize[] = ['A4'];
-  if (/mfp|laserjet|legal|office|copier/i.test(combined)) sizes.push('legal');
-  return sizes;
+  return /mfp|laserjet|legal|office|copier/i.test(`${name} ${driverName}`)
+    ? ['A4', 'legal']
+    : ['A4'];
+}
+
+function resolveDuplexMode(mode: string, boolVal?: boolean) {
+  const m = mode.toLowerCase();
+  const isTwo = m.includes('twosided') || m.includes('duplex') || boolVal === true;
+  const isOne = m.includes('onesided') || m.includes('simplex') || boolVal === false;
+  return {
+    duplexSupport: (isTwo ? 'supported' : isOne ? 'unsupported' : 'unknown') as
+      | 'supported'
+      | 'unsupported'
+      | 'unknown',
+    capabilityProvenance: (isTwo || isOne ? 'driver_query' : 'unverified') as
+      | 'driver_query'
+      | 'unverified',
+  };
 }
 
 export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
@@ -62,26 +76,15 @@ export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
     const list = Array.isArray(parsed) ? parsed : [parsed];
 
     return list
-      .filter((item) => {
-        if (!item || typeof item.Name !== 'string') return false;
-        const name = String(item.Name).trim();
-        const driverName = String(item.DriverName || item.Name).trim();
-        return !isVirtualOrSoftwarePrinter(name, driverName);
-      })
       .map((item) => {
+        if (!item || typeof item.Name !== 'string') return null;
         const name = String(item.Name).trim();
         const driverName = String(item.DriverName || item.Name).trim();
-        const isDefault = Boolean(item.Default);
-        const duplexMode = String(item.DuplexMode || item.DuplexingMode || item.Duplex || '').toLowerCase();
-        let duplexSupport: 'supported' | 'unsupported' | 'unknown' = 'unknown';
-        let provenance: 'driver_query' | 'unverified' = 'unverified';
-        if (duplexMode.includes('twosided') || duplexMode.includes('duplex') || item.Duplex === true) {
-          duplexSupport = 'supported';
-          provenance = 'driver_query';
-        } else if (duplexMode.includes('onesided') || duplexMode.includes('simplex') || item.Duplex === false) {
-          duplexSupport = 'unsupported';
-          provenance = 'driver_query';
-        }
+        if (isVirtualOrSoftwarePrinter(name, driverName)) return null;
+        const { duplexSupport, capabilityProvenance } = resolveDuplexMode(
+          String(item.DuplexMode || item.DuplexingMode || item.Duplex || ''),
+          typeof item.Duplex === 'boolean' ? item.Duplex : undefined
+        );
         const supportedPaperSizes = inferSupportedPaperSizes(name, driverName);
         return {
           name,
@@ -90,10 +93,11 @@ export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
           supportedPaperSizes,
           duplexSupport,
           supportedDuplexSizes: duplexSupport === 'supported' ? supportedPaperSizes : [],
-          capabilityProvenance: provenance,
-          isDefault,
+          capabilityProvenance,
+          isDefault: Boolean(item.Default),
         };
-      });
+      })
+      .filter((p): p is DiscoveredPrinter => p !== null);
   } catch {
     return [];
   }
@@ -122,15 +126,13 @@ export function parseCupsPrinters(
 
     const isDefault = defaultPrinterName ? name === defaultPrinterName : false;
     const rawOptions = (optionsMap[name] || '').toLowerCase();
-    let duplexSupport: 'supported' | 'unsupported' | 'unknown' = 'unknown';
-    let provenance: 'driver_query' | 'unverified' = 'unverified';
-    if (rawOptions.includes('duplextumble') || rawOptions.includes('twosided')) {
-      duplexSupport = 'supported';
-      provenance = 'driver_query';
-    } else if (rawOptions.includes('*none') || rawOptions.includes('*onesided')) {
-      duplexSupport = 'unsupported';
-      provenance = 'driver_query';
-    }
+    const cupsMode =
+      rawOptions.includes('duplextumble') || rawOptions.includes('twosided')
+        ? 'twosided'
+        : rawOptions.includes('*none') || rawOptions.includes('*onesided')
+          ? 'onesided'
+          : '';
+    const { duplexSupport, capabilityProvenance } = resolveDuplexMode(cupsMode);
     const supportedPaperSizes = inferSupportedPaperSizes(name, driverName);
 
     printers.push({
@@ -140,7 +142,7 @@ export function parseCupsPrinters(
       supportedPaperSizes,
       duplexSupport,
       supportedDuplexSizes: duplexSupport === 'supported' ? supportedPaperSizes : [],
-      capabilityProvenance: provenance,
+      capabilityProvenance,
       isDefault,
     });
   }
@@ -202,9 +204,12 @@ export function createSystemSpoolerAdapter(options?: {
           await runner(`powershell -NoProfile -Command "${checkCmd}"`, { timeout: 10000 });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('PRINTER_NOT_FOUND')) throw new Error(`PRINTER_NOT_FOUND: Target printer '${printerName}' is not installed.`);
-          if (msg.includes('PRINTER_OFFLINE')) throw new Error(`PRINTER_OFFLINE: Target printer '${printerName}' is offline or disconnected.`);
-          throw new Error(`SPOOLER_SUBMISSION_FAILED: Validation failed for printer '${printerName}': ${msg}`);
+          const errType = msg.includes('PRINTER_NOT_FOUND')
+            ? `PRINTER_NOT_FOUND: Target printer '${printerName}' is not installed.`
+            : msg.includes('PRINTER_OFFLINE')
+              ? `PRINTER_OFFLINE: Target printer '${printerName}' is offline or disconnected.`
+              : `SPOOLER_SUBMISSION_FAILED: Validation failed for printer '${printerName}': ${msg}`;
+          throw new Error(errType);
         }
 
         const printCmd = ['.png', '.jpg', '.jpeg'].includes(validation.ext)
@@ -215,7 +220,9 @@ export function createSystemSpoolerAdapter(options?: {
           await runner(`powershell -NoProfile -Command "${printCmd}"`, { timeout: 30000 });
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          throw new Error(`SPOOLER_SUBMISSION_FAILED: Spooler dispatch failed for '${printerName}': ${msg}`);
+          throw new Error(
+            `SPOOLER_SUBMISSION_FAILED: Spooler dispatch failed for '${printerName}': ${msg}`
+          );
         }
         return;
       }
@@ -225,10 +232,14 @@ export function createSystemSpoolerAdapter(options?: {
       const safePrinter = printerName.replace(/"/g, '\\"');
       const duplexFlag = isDuplex ? '-o sides=two-sided-long-edge' : '-o sides=one-sided';
       try {
-        await runner(`lp -d "${safePrinter}" -n ${copies} ${duplexFlag} "${safePath}"`, { timeout: 30000 });
+        await runner(`lp -d "${safePrinter}" -n ${copies} ${duplexFlag} "${safePath}"`, {
+          timeout: 30000,
+        });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        throw new Error(`SPOOLER_SUBMISSION_FAILED: CUPS dispatch failed for '${printerName}': ${msg}`);
+        throw new Error(
+          `SPOOLER_SUBMISSION_FAILED: CUPS dispatch failed for '${printerName}': ${msg}`
+        );
       }
     },
   };

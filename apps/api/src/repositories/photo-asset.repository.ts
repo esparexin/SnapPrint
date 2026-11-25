@@ -139,3 +139,24 @@ export async function findPhotoAssetByStudioAndAssetId(
 
   return doc ? toPhotoAssetContract(doc) : null;
 }
+
+export async function resolveItemsWithMeta<T extends { assetId: string }>(
+  db: Db,
+  studioId: string,
+  sessionId: string,
+  items: readonly T[]
+): Promise<Array<{ config: T; filename: string; documentPageCount: number }> | null> {
+  const assetIds = Array.from(new Set(items.map((i) => i.assetId)));
+  const assetMap = await findPhotoAssetsByIds(db, studioId, sessionId, assetIds);
+  const result: Array<{ config: T; filename: string; documentPageCount: number }> = [];
+  for (const item of items) {
+    const asset = assetMap.get(item.assetId);
+    if (!asset) return null;
+    result.push({
+      config: item,
+      filename: asset.originalFilename,
+      documentPageCount: asset.pageCount || 1,
+    });
+  }
+  return result;
+}
