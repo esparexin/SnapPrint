@@ -5,7 +5,7 @@ import React from 'react';
 interface ShopPaymentModalHeaderProps {
   studioName: string;
   studioSlug: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function ShopPaymentModalHeader({
@@ -21,6 +21,7 @@ export function ShopPaymentModalHeader({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: '8px',
       }}
     >
       <div>
@@ -30,13 +31,16 @@ export function ShopPaymentModalHeader({
         >
           Payment & Gateway Settings
         </h2>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-          {studioName} ({studioSlug})
+        <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '2px' }}>
+          {studioName}
+          {studioSlug ? ` (${studioSlug})` : ''}
         </div>
       </div>
-      <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
-        ✕
-      </button>
+      {onClose && (
+        <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+          ✕
+        </button>
+      )}
     </div>
   );
 }

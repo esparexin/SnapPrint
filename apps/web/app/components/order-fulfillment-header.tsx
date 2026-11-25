@@ -25,32 +25,36 @@ export function OrderFulfillmentHeader({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
       }}
     >
       <div>
-        <h3
+        <h2
           id="order-fulfillment-title"
-          style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}
+          style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}
         >
           Xerox & Print Fulfillment Queue
-        </h3>
-        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+        </h2>
+        <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '2px' }}>
           {studioName} · {orderCount} Active Orders
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
           type="button"
           onClick={onRefresh}
           disabled={loading}
           style={{
             padding: '6px 12px',
+            minHeight: '38px',
             backgroundColor: '#f1f5f9',
             border: '1px solid #cbd5e1',
             borderRadius: '6px',
-            fontSize: '12px',
+            fontSize: '0.8125rem',
             fontWeight: 600,
+            color: '#334155',
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >

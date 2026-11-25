@@ -14,9 +14,15 @@ interface ShopSetupWizardProps {
   initialStudio?: StudioOnboardingProfile | { id: string };
   onComplete: (activatedStudio: StudioOnboardingProfile | null) => void;
   onCancel?: () => void;
+  inShell?: boolean;
 }
 
-export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSetupWizardProps) {
+export function ShopSetupWizard({
+  initialStudio,
+  onComplete,
+  onCancel,
+  inShell = false,
+}: ShopSetupWizardProps) {
   const [currentStep, setCurrentStep] = useState<number>(initialStudio ? 2 : 1);
   const [studio, setStudio] = useState<StudioOnboardingProfile | null>(
     initialStudio && 'name' in initialStudio ? (initialStudio as StudioOnboardingProfile) : null
@@ -47,12 +53,12 @@ export function ShopSetupWizard({ initialStudio, onComplete, onCancel }: ShopSet
     <div
       style={{
         background: '#ffffff',
-        borderRadius: '0.75rem',
-        padding: '1.5rem',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        maxHeight: 'min(90vh, calc(100dvh - 2rem))',
-        overflowY: 'auto',
+        borderRadius: inShell ? '0' : '0.75rem',
+        padding: '1.25rem',
+        border: inShell ? 'none' : '1px solid #e5e7eb',
+        boxShadow: inShell ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        maxHeight: inShell ? 'none' : 'min(90vh, calc(100dvh - 2rem))',
+        overflowY: inShell ? 'visible' : 'auto',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',

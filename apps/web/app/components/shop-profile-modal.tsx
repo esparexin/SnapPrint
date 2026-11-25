@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Studio } from '@snapprint/contracts';
 import { validateOptionalIndianMobile } from '../../src/mobile-validator';
 import { updateStudioProfile } from '../../src/workspace-client';
-import { useDialog } from '../hooks/use-dialog';
+import { ModalSheetShell } from './modal-sheet-shell';
 import { ShopProfileFields } from './shop-profile-fields';
 import { ShopProfileModalFooter } from './shop-profile-modal-footer';
 import { ShopProfileModalHeader } from './shop-profile-modal-header';
@@ -14,9 +14,16 @@ interface ShopProfileModalProps {
   studio: Studio;
   onClose: () => void;
   onUpdated: (updated: Studio) => void;
+  inShell?: boolean;
 }
 
-export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopProfileModalProps) {
+export function ShopProfileModal({
+  studioId,
+  studio,
+  onClose,
+  onUpdated,
+  inShell = false,
+}: ShopProfileModalProps) {
   const [tagline, setTagline] = useState('');
   const [contactPhone, setContactPhone] = useState(studio.settings?.contactPhone || '');
   const [address, setAddress] = useState('');
@@ -25,11 +32,13 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedNotice, setSavedNotice] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    setSavedNotice(false);
     const phoneError = validateOptionalIndianMobile(contactPhone);
     if (phoneError) {
       setError(phoneError);
@@ -44,7 +53,8 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
         isAcceptingOrders,
       });
       onUpdated(res.studio);
-      onClose();
+      if (inShell) setSavedNotice(true);
+      else onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update shop profile');
     } finally {
@@ -52,66 +62,68 @@ export function ShopProfileModal({ studioId, studio, onClose, onUpdated }: ShopP
     }
   };
 
-  const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen: true,
-    onClose,
-    enableSwipeDown: true,
-  });
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="profile-modal-title"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
+    <ModalSheetShell
+      onClose={onClose}
+      titleId="profile-modal-title"
+      maxWidth="500px"
+      inShell={inShell}
+      hideCloseButton={true}
+      contentStyle={{ padding: inShell ? '20px' : '24px' }}
     >
-      <div
-        className="dialog-content"
-        style={{ maxWidth: '500px', padding: '24px' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
-        <ShopProfileModalHeader
-          studioName={studio.name}
-          studioSlug={studio.slug}
-          onClose={onClose}
+      <ShopProfileModalHeader
+        studioName={studio.name}
+        studioSlug={studio.slug}
+        onClose={inShell ? undefined : onClose}
+      />
+
+      {error && (
+        <div
+          role="alert"
+          style={{
+            padding: '8px 12px',
+            backgroundColor: '#fef2f2',
+            color: '#b91c1c',
+            borderRadius: '6px',
+            fontSize: '0.8125rem',
+            marginBottom: '16px',
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {savedNotice && (
+        <div
+          role="status"
+          style={{
+            padding: '8px 12px',
+            backgroundColor: '#f0fdf4',
+            color: '#166534',
+            border: '1px solid #bbf7d0',
+            borderRadius: '6px',
+            fontSize: '0.8125rem',
+            marginBottom: '16px',
+          }}
+        >
+          ✓ Shop settings saved.
+        </div>
+      )}
+
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <ShopProfileFields
+          isAcceptingOrders={isAcceptingOrders}
+          setIsAcceptingOrders={setIsAcceptingOrders}
+          tagline={tagline}
+          setTagline={setTagline}
+          contactPhone={contactPhone}
+          setContactPhone={setContactPhone}
+          address={address}
+          setAddress={setAddress}
         />
 
-        {error && (
-          <div
-            role="alert"
-            style={{
-              padding: '8px 12px',
-              backgroundColor: '#fef2f2',
-              color: '#b91c1c',
-              borderRadius: '6px',
-              fontSize: '0.8125rem',
-              marginBottom: '16px',
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <form
-          onSubmit={handleSave}
-          style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
-        >
-          <ShopProfileFields
-            isAcceptingOrders={isAcceptingOrders}
-            setIsAcceptingOrders={setIsAcceptingOrders}
-            tagline={tagline}
-            setTagline={setTagline}
-            contactPhone={contactPhone}
-            setContactPhone={setContactPhone}
-            address={address}
-            setAddress={setAddress}
-          />
-
-          <ShopProfileModalFooter saving={saving} onClose={onClose} />
-        </form>
-      </div>
-    </div>
+        <ShopProfileModalFooter saving={saving} onClose={inShell ? undefined : onClose} />
+      </form>
+    </ModalSheetShell>
   );
 }

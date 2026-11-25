@@ -9,9 +9,15 @@ export interface SetupWizardModalProps {
   studioId?: string;
   onComplete: (saved: StudioOnboardingProfile | null) => void;
   onClose: () => void;
+  inShell?: boolean;
 }
 
-export function SetupWizardModal({ studioId, onComplete, onClose }: SetupWizardModalProps) {
+export function SetupWizardModal({
+  studioId,
+  onComplete,
+  onClose,
+  inShell = false,
+}: SetupWizardModalProps) {
   return (
     <ModalSheetShell
       onClose={onClose}
@@ -19,12 +25,14 @@ export function SetupWizardModal({ studioId, onComplete, onClose }: SetupWizardM
       maxWidth="620px"
       enableSwipeDown={false}
       hideCloseButton={true}
+      inShell={inShell}
       contentStyle={{ width: '100%', display: 'flex', flexDirection: 'column' }}
     >
       <ShopSetupWizard
         initialStudio={studioId ? { id: studioId } : undefined}
         onComplete={onComplete}
-        onCancel={onClose}
+        onCancel={inShell ? undefined : onClose}
+        inShell={inShell}
       />
     </ModalSheetShell>
   );
