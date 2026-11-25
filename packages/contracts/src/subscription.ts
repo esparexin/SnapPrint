@@ -111,3 +111,53 @@ export const CreateSubscriptionOrderRequestSchema = z.object({
   plan: SubscriptionPlanIdSchema,
 });
 export type CreateSubscriptionOrderRequest = z.infer<typeof CreateSubscriptionOrderRequestSchema>;
+
+/**
+ * Subscription Plan Catalog & Management (Dynamic Plan Designer SSOT)
+ */
+export const SubscriptionPlanCategorySchema = z.enum(['free', 'paid']);
+export type SubscriptionPlanCategory = z.infer<typeof SubscriptionPlanCategorySchema>;
+
+export const SubscriptionPlanDefinitionSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().trim().min(1).max(100),
+  durationDays: z.number().int().positive().max(3650),
+  priceRupees: z.number().int().nonnegative().max(1000000),
+  category: SubscriptionPlanCategorySchema,
+  intervalMonths: z.number().int().positive().max(120).optional(),
+  isActive: z.boolean().default(true),
+  description: z.string().trim().max(300).optional(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+export type SubscriptionPlanDefinition = z.infer<typeof SubscriptionPlanDefinitionSchema>;
+
+export const CreateSubscriptionPlanRequestSchema = z.object({
+  id: z.string().trim().min(1).max(64).regex(/^[a-z0-9_-]+$/i, 'Plan ID must be alphanumeric'),
+  name: z.string().trim().min(1).max(100),
+  durationDays: z.coerce.number().int().positive().max(3650),
+  priceRupees: z.coerce.number().int().nonnegative().max(1000000),
+  category: SubscriptionPlanCategorySchema,
+  intervalMonths: z.coerce.number().int().positive().max(120).optional(),
+  isActive: z.boolean().default(true).optional(),
+  description: z.string().trim().max(300).optional(),
+});
+export type CreateSubscriptionPlanRequest = z.infer<typeof CreateSubscriptionPlanRequestSchema>;
+
+export const UpdateSubscriptionPlanRequestSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  durationDays: z.coerce.number().int().positive().max(3650).optional(),
+  priceRupees: z.coerce.number().int().nonnegative().max(1000000).optional(),
+  category: SubscriptionPlanCategorySchema.optional(),
+  intervalMonths: z.coerce.number().int().positive().max(120).optional(),
+  isActive: z.boolean().optional(),
+  description: z.string().trim().max(300).optional(),
+});
+export type UpdateSubscriptionPlanRequest = z.infer<typeof UpdateSubscriptionPlanRequestSchema>;
+
+export const SubscriptionNotificationRequestSchema = z.object({
+  type: z.enum(['expiry_reminder', 'plan_update', 'custom']).default('expiry_reminder'),
+  message: z.string().trim().max(500).optional(),
+});
+export type SubscriptionNotificationRequest = z.infer<typeof SubscriptionNotificationRequestSchema>;
+

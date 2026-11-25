@@ -7,6 +7,10 @@ import {
   OrderEntitlementEvaluationSchema,
   OrderEntitlementResultSchema,
   AgentDownloadMetadataSchema,
+  SubscriptionPlanDefinitionSchema,
+  CreateSubscriptionPlanRequestSchema,
+  UpdateSubscriptionPlanRequestSchema,
+  SubscriptionNotificationRequestSchema,
 } from './index.js';
 
 describe('Subscription Contracts SSOT', () => {
@@ -91,5 +95,41 @@ describe('Subscription Contracts SSOT', () => {
         installerName: 'other.exe',
       })
     ).toThrow();
+  });
+
+  it('validates SubscriptionPlanDefinitionSchema, Create, and Update schemas', () => {
+    const validPlan = {
+      id: 'custom_31_day_plan',
+      name: 'Promotional 31-Day Plan',
+      durationDays: 31,
+      priceRupees: 499,
+      category: 'paid' as const,
+      intervalMonths: 1,
+      isActive: true,
+      description: 'Exclusive partner tier',
+    };
+    expect(SubscriptionPlanDefinitionSchema.parse(validPlan)).toEqual(validPlan);
+
+    const createReq = CreateSubscriptionPlanRequestSchema.parse({
+      id: 'plan_starter_32',
+      name: 'Starter Plan (32 Days)',
+      durationDays: '32',
+      priceRupees: '0',
+      category: 'free',
+      intervalMonths: '1',
+    });
+    expect(createReq.durationDays).toBe(32);
+    expect(createReq.priceRupees).toBe(0);
+    expect(createReq.category).toBe('free');
+
+    const updateReq = UpdateSubscriptionPlanRequestSchema.parse({
+      durationDays: '35',
+      priceRupees: '99',
+    });
+    expect(updateReq.durationDays).toBe(35);
+    expect(updateReq.priceRupees).toBe(99);
+
+    const notifReq = SubscriptionNotificationRequestSchema.parse({});
+    expect(notifReq.type).toBe('expiry_reminder');
   });
 });
