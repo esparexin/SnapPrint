@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import Fastify, { FastifyInstance } from 'fastify';
 import { AgentDownloadMetadataSchema } from '@snapprint/contracts';
 import { describe, expect, it } from 'vitest';
-import { agentDownloadRoutes } from './agent-download-routes.js';
+import { DEFAULT_VERIFIED_RELEASE, agentDownloadRoutes } from './agent-download-routes.js';
 import { createTestApp } from './auth-test-helper.js';
 
 function createValidDummyMsiPayload(): Buffer {
@@ -40,6 +40,18 @@ describe('Windows Print Agent Download Routes', () => {
     expect(body.message).toContain('installer artifact not found');
   });
 
+  it('GET /downloads/windows-agent returns 404 when installer artifact is not on disk', async () => {
+    const { app } = await createTestApp();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/downloads/windows-agent',
+    });
+
+    expect(res.statusCode).toBe(404);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('INSTALLER_NOT_FOUND');
+  });
+
   it('GET /downloads/windows-agent/metadata returns valid metadata conforming to schema when present', async () => {
     const tempMsiPath = join(tmpdir(), 'valid-snapprint-agent.msi');
     writeFileSync(tempMsiPath, createValidDummyMsiPayload());
@@ -66,7 +78,7 @@ describe('Windows Print Agent Download Routes', () => {
     }
   });
 
-  it('GET /downloads/windows-agent/latest.msi streams installer artifact when valid', async () => {
+  it('GET /downloads/windows-agent/latest.msi and /downloads/windows-agent stream installer artifact when valid', async () => {
     const tempMsiPath = join(tmpdir(), 'valid-stream-agent.msi');
     const payload = createValidDummyMsiPayload();
     writeFileSync(tempMsiPath, payload);
@@ -75,17 +87,48 @@ describe('Windows Print Agent Download Routes', () => {
       const app: FastifyInstance = Fastify();
       await app.register(agentDownloadRoutes, { installerPath: tempMsiPath });
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/downloads/windows-agent/latest.msi',
-      });
+      for (const url of ['/downloads/windows-agent/latest.msi', '/downloads/windows-agent']) {
+        const res = await app.inject({
+          method: 'GET',
+          url,
+        });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toBe('application/x-msi');
-      expect(res.headers['content-disposition']).toContain('SnapPrint-Print-Agent.msi');
-      expect(res.rawPayload.length).toBe(payload.length);
+        expect(res.statusCode).toBe(200);
+        expect(res.headers['content-type']).toBe('application/x-msi');
+        expect(res.headers['content-disposition']).toContain('SnapPrint-Print-Agent.msi');
+        expect(res.rawPayload.length).toBe(payload.length);
+      }
     } finally {
       if (existsSync(tempMsiPath)) unlinkSync(tempMsiPath);
+    }
+  });
+
+  it('serves verified GitHub release when allowRemoteRelease is enabled', async () => {
+    const app: FastifyInstance = Fastify();
+    await app.register(agentDownloadRoutes, {
+      installerPath: '/non-existent-path/agent.msi',
+      allowRemoteRelease: true,
+    });
+
+    // Metadata check
+    const metaRes = await app.inject({
+      method: 'GET',
+      url: '/downloads/windows-agent/metadata',
+    });
+    expect(metaRes.statusCode).toBe(200);
+    const metaData = JSON.parse(metaRes.body);
+    expect(metaData.sha256).toBe(DEFAULT_VERIFIED_RELEASE.sha256);
+    expect(metaData.sizeBytes).toBe(DEFAULT_VERIFIED_RELEASE.sizeBytes);
+    expect(AgentDownloadMetadataSchema.safeParse(metaData).success).toBe(true);
+
+    // Download redirect check
+    for (const url of ['/downloads/windows-agent', '/downloads/windows-agent/latest.msi']) {
+      const dlRes = await app.inject({
+        method: 'GET',
+        url,
+      });
+      expect(dlRes.statusCode).toBe(302);
+      expect(dlRes.headers.location).toBe(DEFAULT_VERIFIED_RELEASE.releaseUrl);
     }
   });
 
