@@ -7,6 +7,8 @@ import {
   formatDaysRemaining,
   formatPlanLabel,
   getSubscriptionBadgeStyle,
+  getSubscriptionStatusLabel,
+  SubscriptionBadgeState,
 } from './admin-subscription-helpers';
 
 export function AdminSubscriptionsTableRow({
@@ -19,16 +21,28 @@ export function AdminSubscriptionsTableRow({
   onManageSubscription: (studio: PlatformStudioItem) => void;
 }) {
   const sub = studio.subscription;
-  const isActive = sub?.status === 'active';
+  const badgeState: SubscriptionBadgeState = !sub
+    ? 'none'
+    : sub.status === 'active'
+      ? 'active'
+      : 'expired';
+  const statusLabel = getSubscriptionStatusLabel(sub);
+  const isEnrolled = Boolean(sub);
 
   return (
     <tr style={styles.tableRow} onClick={() => onInspect(studio)}>
       <td style={styles.tdBold}>{studio.name}</td>
-      <td style={styles.td}>{formatPlanLabel(sub?.plan)}</td>
       <td style={styles.td}>
-        <span style={getSubscriptionBadgeStyle(isActive)}>{isActive ? 'Active' : 'Expired'}</span>
+        {isEnrolled ? (
+          formatPlanLabel(sub?.plan)
+        ) : (
+          <span style={{ color: '#94a3b8' }}>None</span>
+        )}
       </td>
-      <td style={styles.td}>{formatDaysRemaining(sub?.expiresAt, isActive)}</td>
+      <td style={styles.td}>
+        <span style={getSubscriptionBadgeStyle(badgeState)}>{statusLabel}</span>
+      </td>
+      <td style={styles.td}>{formatDaysRemaining(sub?.expiresAt, badgeState === 'active')}</td>
       <td style={styles.td}>
         {sub?.expiresAt ? new Date(sub.expiresAt).toLocaleDateString() : '—'}
       </td>
@@ -37,18 +51,18 @@ export function AdminSubscriptionsTableRow({
           type="button"
           onClick={() => onManageSubscription(studio)}
           style={{
-            padding: '0.25rem 0.5rem',
+            padding: '0.25rem 0.65rem',
             minHeight: '44px',
-            backgroundColor: '#e0f2fe',
-            color: '#0369a1',
-            border: '1px solid #bae6fd',
+            backgroundColor: isEnrolled ? '#e0f2fe' : '#f0fdf4',
+            color: isEnrolled ? '#0369a1' : '#15803d',
+            border: `1px solid ${isEnrolled ? '#bae6fd' : '#bbf7d0'}`,
             borderRadius: '0.375rem',
             fontSize: '0.75rem',
             fontWeight: 600,
             cursor: 'pointer',
           }}
         >
-          ⚡ Manage Plan
+          {isEnrolled ? '⚡ Manage Plan' : '⚡ Assign Plan'}
         </button>
       </td>
     </tr>

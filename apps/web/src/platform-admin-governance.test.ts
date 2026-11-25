@@ -207,7 +207,7 @@ describe('Platform Admin Governance & RBAC Separation', () => {
     const past = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
     expect(formatDaysRemaining(future, true)).toBe('10d remaining');
     expect(formatDaysRemaining(past, false)).toBe('Expired 5d ago');
-    expect(formatDaysRemaining(undefined)).toBe('No expiry date');
+    expect(formatDaysRemaining(undefined)).toBe('—');
   });
 
   it('correctly maps studio item subscription presence to table badges', () => {
