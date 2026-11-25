@@ -7,7 +7,7 @@ import { AdminSubscriptionsView } from '../app/admin/admin-subscriptions-view';
 const renderToStaticMarkup = untypedRenderToStaticMarkup as (element: React.ReactElement) => string;
 
 describe('Admin Subscriptions Tab View', () => {
-  it('renders tenant plans & subscriptions table', () => {
+  it('renders tenant plans & subscriptions table for active and not-enrolled studios', () => {
     const html = renderToStaticMarkup(
       React.createElement(AdminSubscriptionsView, {
         studios: [
@@ -24,6 +24,14 @@ describe('Admin Subscriptions Tab View', () => {
               expiresAt: '2027-02-20T00:00:00.000Z',
             },
           },
+          {
+            id: 'std_2',
+            slug: 'hanvika-it-solutions',
+            name: 'HANVIKA IT SOLUTIONS',
+            status: 'active',
+            createdAt: '2026-11-20T00:00:00.000Z',
+            updatedAt: '2026-11-20T00:00:00.000Z',
+          },
         ],
         loading: false,
         onInspect: vi.fn(),
@@ -34,5 +42,14 @@ describe('Admin Subscriptions Tab View', () => {
     expect(html).toContain('Tenant Plans &amp; Subscriptions');
     expect(html).toContain('Vikram Mobiles');
     expect(html).toContain('Quarterly');
+    expect(html).toContain('Active');
+    expect(html).toContain('⚡ Manage Plan');
+
+    expect(html).toContain('HANVIKA IT SOLUTIONS');
+    expect(html).toContain('Not Enrolled');
+    expect(html).toContain('⚡ Assign Plan');
+
+    expect(html).toContain('Total Tenants');
+    expect(html).toContain('Active Plans');
   });
 });

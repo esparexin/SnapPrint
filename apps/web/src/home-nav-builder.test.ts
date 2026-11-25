@@ -17,19 +17,39 @@ describe('Home Navigation Builder (Session-Aware Top Nav)', () => {
     vi.clearAllMocks();
   });
 
-  it('renders standard anonymous nav when user is not authenticated', () => {
+  it('renders standard anonymous nav linking to /portal and /portal?action=register', () => {
     const nav = buildHomeTopNav({ auth: null, ...options });
 
     expect(nav).toHaveLength(3);
     expect(nav[0]).toEqual({ label: 'About', href: '/about', variant: 'text' });
     expect(nav[1].label).toBe('Login');
+    expect(nav[1].href).toBe('/portal');
     expect(nav[2].label).toBe('Register');
+    expect(nav[2].href).toBe('/portal?action=register');
 
     nav[1].onClick?.();
     expect(onOpenLogin).toHaveBeenCalledOnce();
 
     nav[2].onClick?.();
     expect(onOpenRegister).toHaveBeenCalledOnce();
+  });
+
+  it('provides direct links to /portal without callbacks', () => {
+    const nav = buildHomeTopNav({ auth: null, onLogout });
+
+    expect(nav).toHaveLength(3);
+    expect(nav[1]).toEqual({
+      label: 'Login',
+      href: '/portal',
+      onClick: undefined,
+      variant: 'text',
+    });
+    expect(nav[2]).toEqual({
+      label: 'Register',
+      href: '/portal?action=register',
+      onClick: undefined,
+      variant: 'button',
+    });
   });
 
   it('renders Admin Workspace link and Sign Out button for active platform_admin', () => {

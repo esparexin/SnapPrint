@@ -23,18 +23,14 @@ export function AdminSubscriptionsView({
   const [planFilter, setPlanFilter] = useState<string>('all');
 
   const counts = useMemo(() => {
-    const c = {
-      total: studios.length,
-      free: 0,
-      quarterly: 0,
-      half_yearly: 0,
-      yearly: 0,
-      expired: 0,
-    };
+    const c = { total: studios.length, active: 0, free: 0, paid: 0, expired: 0, none: 0 };
     for (const s of studios) {
-      if (!s.subscription) continue;
-      if (s.subscription.status === 'expired') c.expired++;
-      else if (s.subscription.plan in c) c[s.subscription.plan as keyof typeof c]++;
+      if (!s.subscription) c.none++;
+      else if (s.subscription.status === 'active') {
+        c.active++;
+        if (s.subscription.plan === 'free') c.free++;
+        else c.paid++;
+      } else c.expired++;
     }
     return c;
   }, [studios]);
@@ -44,13 +40,16 @@ export function AdminSubscriptionsView({
       const q = query.toLowerCase();
       const matchesQuery =
         !query || s.name.toLowerCase().includes(q) || s.slug.toLowerCase().includes(q);
-      const p = s.subscription?.plan || 'none';
-      const matchesPlan =
-        planFilter === 'all'
-          ? true
-          : planFilter === 'expired'
-            ? s.subscription?.status === 'expired'
-            : p === planFilter;
+      const isEnrolled = Boolean(s.subscription);
+      const isAct = s.subscription?.status === 'active';
+      const isExp = s.subscription?.status === 'expired';
+      const p = s.subscription?.plan;
+      let matchesPlan = true;
+      if (planFilter === 'active') matchesPlan = isAct;
+      else if (planFilter === 'none') matchesPlan = !isEnrolled;
+      else if (planFilter === 'free') matchesPlan = p === 'free' && isAct;
+      else if (planFilter === 'paid') matchesPlan = isEnrolled && p !== 'free' && isAct;
+      else if (planFilter === 'expired') matchesPlan = isExp;
       return matchesQuery && matchesPlan;
     });
   }, [studios, query, planFilter]);
@@ -91,12 +90,12 @@ export function AdminSubscriptionsView({
             backgroundColor: '#fff',
           }}
         >
-          <option value="all">All Plans</option>
-          <option value="free">Free Trial</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="half_yearly">Half-Yearly</option>
-          <option value="yearly">Yearly</option>
-          <option value="expired">Expired</option>
+          <option value="all">All Tenants ({counts.total})</option>
+          <option value="active">Active Plans ({counts.active})</option>
+          <option value="none">Not Enrolled ({counts.none})</option>
+          <option value="free">Free Trial ({counts.free})</option>
+          <option value="paid">Paid Plans ({counts.paid})</option>
+          <option value="expired">Expired ({counts.expired})</option>
         </select>
       </div>
 

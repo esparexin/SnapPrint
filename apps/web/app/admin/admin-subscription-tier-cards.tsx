@@ -4,20 +4,20 @@ import React from 'react';
 
 export interface TierCounts {
   total: number;
+  active: number;
   free: number;
-  quarterly: number;
-  half_yearly: number;
-  yearly: number;
+  paid: number;
   expired: number;
+  none: number;
 }
 
 export function AdminSubscriptionTierCards({ counts }: { counts: TierCounts }) {
   const cards = [
     { label: 'Total Tenants', value: counts.total, color: '#0f172a', bg: '#f8fafc' },
+    { label: 'Active Plans', value: counts.active, color: '#16a34a', bg: '#f0fdf4' },
     { label: 'Free Trial', value: counts.free, color: '#0284c7', bg: '#f0f9ff' },
-    { label: 'Quarterly', value: counts.quarterly, color: '#0d9488', bg: '#f0fdfa' },
-    { label: 'Half-Yearly', value: counts.half_yearly, color: '#4f46e5', bg: '#eef2ff' },
-    { label: 'Yearly Plan', value: counts.yearly, color: '#16a34a', bg: '#f0fdf4' },
+    { label: 'Paid Plans', value: counts.paid, color: '#4f46e5', bg: '#eef2ff' },
+    { label: 'Not Enrolled', value: counts.none, color: '#d97706', bg: '#fffbeb' },
     { label: 'Expired', value: counts.expired, color: '#dc2626', bg: '#fef2f2' },
   ];
 

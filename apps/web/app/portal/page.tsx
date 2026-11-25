@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthApiError, signOutToHome } from '../../src/auth-client';
 import { OperatorPortal } from '../components/operator-portal';
@@ -10,6 +10,18 @@ export default function PortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [initialMode, setInitialMode] = useState<'password' | 'email_otp' | 'register'>(
+    'email_otp'
+  );
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const action = new URLSearchParams(window.location.search).get('action');
+      if (action === 'register') {
+        setInitialMode('register');
+      }
+    }
+  }, []);
 
   const handleSignOut = async () => {
     if (signingOut) return;
@@ -56,7 +68,11 @@ export default function PortalPage() {
             {signOutError}
           </div>
         )}
-        <OperatorPortal hideHeaderSignOut onAuthChange={(u) => setIsAuthenticated(Boolean(u))} />
+        <OperatorPortal
+          initialMode={initialMode}
+          hideHeaderSignOut
+          onAuthChange={(u) => setIsAuthenticated(Boolean(u))}
+        />
       </main>
     </div>
   );
