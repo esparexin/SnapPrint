@@ -33,6 +33,7 @@ describe('Printer Client (apps/web)', () => {
     const [url, init] = mockFetch.mock.calls[0];
     expect(url).toContain('/studios/std_1/agent/pairing-keys');
     expect(init.method).toBe('POST');
+    expect(init.body).toBe('{}');
   });
 
   it('fetchStudioPrinters issues GET /studios/:id/printers', async () => {
