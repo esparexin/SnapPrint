@@ -66,7 +66,7 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
     }
     throw new Error(
       `WiX Toolset v4 is not installed. To compile the Windows MSI package, install WiX v4 ` +
-        `('dotnet tool install --global wix') on a Windows build runner.`
+        `('dotnet tool install --global wix --version 4.0.6') on a Windows build runner.`
     );
   }
 
@@ -77,18 +77,48 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
   // 4. Standalone Windows Executable preparation
   if (process.platform === 'win32') {
     if (!existsSync(exePath)) {
+      const seaConfigPath = join(packageRoot, 'sea-config.json');
+      const seaBlobPath = join(distDir, 'sea-prep.blob');
+
+      // 4a. Generate SEA preparation blob from runtime bundle
+      let seaResult = spawnSync(process.execPath, ['--experimental-sea-config', seaConfigPath], {
+        cwd: packageRoot,
+        encoding: 'utf-8',
+      });
+      if (seaResult.status !== 0) {
+        seaResult = spawnSync(process.execPath, ['--build-sea', seaConfigPath], {
+          cwd: packageRoot,
+          encoding: 'utf-8',
+        });
+      }
+      if (seaResult.status !== 0 || !existsSync(seaBlobPath)) {
+        throw new Error(
+          `Failed to generate SEA preparation blob: ${seaResult.stderr || seaResult.stdout || 'unknown error'}`
+        );
+      }
+
+      // 4b. Copy host node binary
       copyFileSync(process.execPath, exePath);
-      const postject = spawnSync('npx', [
-        'postject',
-        exePath,
-        'NODE_SEA_BLOB',
-        bundlePath,
-        '--sentinel-fuse',
-        'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
-      ]);
+
+      // 4c. Remove default binary signature if signtool is present
+      spawnSync('signtool', ['remove', '/s', exePath]);
+
+      // 4d. Inject SEA preparation blob into executable via postject
+      const postject = spawnSync(
+        'npx',
+        [
+          'postject',
+          exePath,
+          'NODE_SEA_BLOB',
+          seaBlobPath,
+          '--sentinel-fuse',
+          'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+        ],
+        { encoding: 'utf-8', shell: true }
+      );
       if (postject.status !== 0) {
         throw new Error(
-          `postject failed to inject runtime bundle into executable: ${postject.stderr}`
+          `postject failed to inject SEA blob into executable: ${postject.stderr || postject.stdout}`
         );
       }
     }
@@ -107,11 +137,15 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
     );
   }
 
-  // 5. Compile MSI with WiX v4
-  const buildResult = spawnSync('wix', ['build', '-o', msiPath, primaryWxsPath], {
-    encoding: 'utf-8',
-    stdio: 'inherit',
-  });
+  // 5. Compile MSI with WiX v4 (explicit x64 architecture)
+  const buildResult = spawnSync(
+    'wix',
+    ['build', '-arch', 'x64', '-d', `SourceDir=${distDir}`, '-o', msiPath, primaryWxsPath],
+    {
+      encoding: 'utf-8',
+      stdio: 'inherit',
+    }
+  );
 
   if (buildResult.status !== 0) {
     throw new Error(`wix build failed with exit code ${buildResult.status}.`);
