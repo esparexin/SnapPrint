@@ -9,7 +9,7 @@ import { DiscoveredPrinter, SpoolerAdapter } from './spooler-adapter.js';
 interface StateResponse {
   apiUrl: string;
   isEnrolled: boolean;
-  printers: DiscoveredPrinter[];
+  printers?: DiscoveredPrinter[];
   studioId?: string;
 }
 
@@ -29,7 +29,7 @@ describe('GUI Local Server & Endpoints', () => {
   let mockClient: AgentClient;
 
   beforeEach(() => {
-    saveAgentConfig({ apiUrl: 'https://api.snapprint.in' }, testConfigPath);
+    saveAgentConfig({ apiUrl: 'https://snapprint.onrender.com' }, testConfigPath);
 
     mockPrinters = [
       {
@@ -70,16 +70,48 @@ describe('GUI Local Server & Endpoints', () => {
     }
   });
 
-  it('GET /api/state returns current agent and printer telemetry', async () => {
+  it('GET /api/state returns current agent telemetry and /api/printers returns printers', async () => {
     const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
     try {
       const res = await fetch(`${handle.url}/api/state`);
       expect(res.status).toBe(200);
       const data = (await res.json()) as StateResponse;
-      expect(data.apiUrl).toBe('https://api.snapprint.in');
+      expect(data.apiUrl).toBe('https://snapprint.onrender.com');
       expect(data.isEnrolled).toBe(false);
-      expect(data.printers).toHaveLength(1);
-      expect(data.printers[0].name).toBe('Epson L3150 Series');
+
+      const printerRes = await fetch(`${handle.url}/api/printers`);
+      expect(printerRes.status).toBe(200);
+      const printerData = (await printerRes.json()) as { printers: DiscoveredPrinter[] };
+      expect(printerData.printers).toHaveLength(1);
+      expect(printerData.printers[0].name).toBe('Epson L3150 Series');
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('GET /favicon.ico returns branded image', async () => {
+    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
+    try {
+      const res = await fetch(`${handle.url}/favicon.ico`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('image/png');
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('POST /api/config updates apiUrl dynamically', async () => {
+    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
+    try {
+      const res = await fetch(`${handle.url}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiUrl: 'https://custom-server.snapprint.in' }),
+      });
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { success: boolean; apiUrl: string };
+      expect(data.success).toBe(true);
+      expect(data.apiUrl).toBe('https://custom-server.snapprint.in');
     } finally {
       await handle.close();
     }

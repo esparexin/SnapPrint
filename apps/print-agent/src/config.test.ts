@@ -92,4 +92,10 @@ describe('Agent Config Store & Credential Protection', () => {
     clearAgentConfig(testConfigPath);
     expect(existsSync(testConfigPath)).toBe(false);
   });
+
+  it('auto-heals legacy api.snapprint.in URL to production render URL', () => {
+    saveAgentConfig({ apiUrl: 'https://api.snapprint.in' }, testConfigPath);
+    const loaded = loadAgentConfig(testConfigPath);
+    expect(loaded.apiUrl).toBe('https://snapprint.onrender.com');
+  });
 });
