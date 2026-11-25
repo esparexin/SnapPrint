@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Studio } from '@snapprint/contracts';
-import { PrinterRole } from '@snapprint/contracts';
+import { PrinterRole, Studio } from '@snapprint/contracts';
 import {
   fetchStudioPrinters,
   StudioFleetAllowance,
