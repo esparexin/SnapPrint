@@ -3,34 +3,6 @@
 import React, { useState } from 'react';
 import { StudioApiError, verifyStudioRazorpay } from '../../src/studio-client';
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.375rem 0.5rem',
-  border: '1px solid #cbd5e1',
-  borderRadius: '0.375rem',
-  fontSize: '0.875rem',
-  boxSizing: 'border-box',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.8125rem',
-  fontWeight: 500,
-  marginBottom: '0.25rem',
-};
-
-const getVerifyBtnStyle = (verifying: boolean): React.CSSProperties => ({
-  alignSelf: 'flex-start',
-  padding: '0.375rem 0.75rem',
-  background: verifying ? '#9ca3af' : '#2563eb',
-  color: '#ffffff',
-  border: 'none',
-  borderRadius: '0.375rem',
-  fontSize: '0.8125rem',
-  fontWeight: 500,
-  cursor: verifying ? 'not-allowed' : 'pointer',
-});
-
 interface ShopRazorpayFormProps {
   studioId: string;
   isConfirmed: boolean;
@@ -78,39 +50,27 @@ export function ShopRazorpayForm({
 
   return (
     <div
-      style={{
-        padding: '1rem',
-        background: isConfirmed ? '#eff6ff' : '#f8fafc',
-        border: `1px solid ${isConfirmed ? '#bfdbfe' : '#e2e8f0'}`,
-        borderRadius: '0.5rem',
-      }}
+      className={`p-4 rounded-lg border ${
+        isConfirmed ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'
+      }`}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
-          Online Payment via Razorpay
-        </h3>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="m-0 text-base font-semibold">Online Payment via Razorpay</h3>
         <span
-          style={{
-            padding: '0.25rem 0.5rem',
-            borderRadius: '0.25rem',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            background: isConfirmed ? '#dcfce7' : '#f1f5f9',
-            color: isConfirmed ? '#15803d' : '#64748b',
-          }}
+          className={`px-2 py-1 rounded text-xs font-semibold ${
+            isConfirmed ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+          }`}
         >
           {isConfirmed ? '✓ Confirmed Active' : 'Unconfirmed (Cash-Only Mode)'}
         </span>
       </div>
-
-      <p style={{ margin: '0 0 0.75rem', fontSize: '0.8125rem', color: '#64748b' }}>
+      <p className="m-0 mb-3 text-xs text-slate-500">
         Online payments are strictly enabled only after verifying your Razorpay credentials.
       </p>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="rzp-key" style={labelStyle}>
+            <label htmlFor="rzp-key" className="block text-xs font-medium mb-1">
               Razorpay Key ID
             </label>
             <input
@@ -119,11 +79,11 @@ export function ShopRazorpayForm({
               value={keyId}
               onChange={(e) => onKeyIdChange(e.target.value)}
               placeholder="rzp_test_..."
-              style={inputStyle}
+              className="w-full px-2 py-1.5 border border-slate-300 rounded text-base md:text-sm box-border"
             />
           </div>
           <div>
-            <label htmlFor="rzp-secret" style={labelStyle}>
+            <label htmlFor="rzp-secret" className="block text-xs font-medium mb-1">
               Razorpay Key Secret
             </label>
             <input
@@ -132,7 +92,7 @@ export function ShopRazorpayForm({
               value={keySecret}
               onChange={(e) => setKeySecret(e.target.value)}
               placeholder="••••••••••••"
-              style={inputStyle}
+              className="w-full px-2 py-1.5 border border-slate-300 rounded text-base md:text-sm box-border"
             />
           </div>
         </div>
@@ -140,18 +100,16 @@ export function ShopRazorpayForm({
           type="button"
           onClick={handleVerify}
           disabled={verifying || !keyId || !keySecret}
-          style={getVerifyBtnStyle(verifying)}
+          className={`self-start px-3 py-1.5 text-white rounded text-xs font-medium ${
+            verifying || !keyId || !keySecret
+              ? 'bg-slate-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+          }`}
         >
           {verifying ? 'Verifying Gateway...' : 'Verify Gateway Handshake'}
         </button>
       </div>
-      {verifySuccess && (
-        <p
-          style={{ color: '#16a34a', fontSize: '0.8125rem', margin: '0.5rem 0 0', fontWeight: 500 }}
-        >
-          {verifySuccess}
-        </p>
-      )}
+      {verifySuccess && <p className="text-green-600 text-xs mt-2 font-medium">{verifySuccess}</p>}
     </div>
   );
 }

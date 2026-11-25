@@ -158,7 +158,8 @@ export function CustomerPaymentCard({
         </div>
 
         <div style={styles.counterAlert}>
-          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the desk to pay via cash or counter UPI QR stand.
+          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the
+          desk to pay via cash or counter UPI QR stand.
         </div>
       </div>
     );
@@ -192,7 +193,8 @@ export function CustomerPaymentCard({
         </div>
 
         <div style={styles.counterAlert}>
-          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the desk to pay via cash or counter UPI QR stand.
+          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the
+          desk to pay via cash or counter UPI QR stand.
         </div>
       </div>
     </div>

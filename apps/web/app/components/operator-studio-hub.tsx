@@ -23,11 +23,7 @@ export const SHOP_MENU_TABS: { id: OperatorView; label: string }[] = [
   { id: 'setup', label: 'Setup Guide' },
 ];
 
-export function OperatorStudioHub({
-  studioId,
-  activeView,
-  onNavigate,
-}: OperatorStudioHubProps) {
+export function OperatorStudioHub({ studioId, activeView, onNavigate }: OperatorStudioHubProps) {
   const tabRefs = useRef<Partial<Record<OperatorView, HTMLButtonElement | null>>>({});
 
   useEffect(() => {

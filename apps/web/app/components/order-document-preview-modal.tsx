@@ -99,7 +99,9 @@ export function OrderDocumentPreviewModal({
             }}
           >
             <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>🚫</span>
-            <strong style={{ display: 'block', color: '#334155', marginBottom: '4px', fontSize: '15px' }}>
+            <strong
+              style={{ display: 'block', color: '#334155', marginBottom: '4px', fontSize: '15px' }}
+            >
               Preview Unavailable
             </strong>
             <p style={{ margin: 0, fontSize: '13px' }}>

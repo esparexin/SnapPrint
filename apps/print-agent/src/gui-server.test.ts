@@ -171,6 +171,26 @@ describe('GUI Local Server & Endpoints', () => {
   });
 
   it('GET /api/update/check returns update check status', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      if (String(input).includes('/downloads/windows-agent/metadata')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              version: '0.1.0',
+              installerName: 'SnapPrint-Print-Agent.msi',
+              downloadUrl: 'https://snapprint.onrender.com/downloads/latest.msi',
+              sha256: 'a'.repeat(64),
+              sizeBytes: 1048576,
+              releaseDate: new Date().toISOString(),
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          )
+        );
+      }
+      return originalFetch(input, init);
+    });
+
     const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
     try {
       const res = await fetch(`${handle.url}/api/update/check`);
@@ -180,6 +200,7 @@ describe('GUI Local Server & Endpoints', () => {
       expect(data.currentVersion).toBe('0.1.0');
     } finally {
       await handle.close();
+      fetchSpy.mockRestore();
     }
   });
 });
