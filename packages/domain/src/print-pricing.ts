@@ -66,17 +66,26 @@ export function calculateItemQuote({
 
   const defaultPaperRates =
     DEFAULT_DOCUMENT_PRINT_RATES[config.paperSize] || DEFAULT_DOCUMENT_PRINT_RATES.A4;
-  const paperRates = rates?.[config.paperSize] || rates?.A4 || defaultPaperRates;
+  const paperRates = rates?.[config.paperSize] || defaultPaperRates;
   const defaultColorRates =
     defaultPaperRates[config.colorMode] || defaultPaperRates.black_and_white;
   const colorRates =
-    paperRates?.[config.colorMode] || paperRates?.black_and_white || defaultColorRates;
-  const unitPriceMinor = isDuplex
-    ? (colorRates.doubleSidedMinor ?? defaultColorRates.doubleSidedMinor)
-    : (colorRates.singleSidedMinor ?? defaultColorRates.singleSidedMinor);
+    paperRates?.[config.colorMode] || defaultColorRates;
+
+  const singleSidedRate = colorRates.singleSidedMinor ?? defaultColorRates.singleSidedMinor;
+  const doubleSidedRate = colorRates.doubleSidedMinor ?? defaultColorRates.doubleSidedMinor;
+  const unitPriceMinor = isDuplex ? doubleSidedRate : singleSidedRate;
 
   const copies = Math.max(1, Math.min(100, config.copies));
-  const subtotalMinor = sheetsCount * unitPriceMinor * copies;
+  let costPerCopyMinor: number;
+  if (!isDuplex) {
+    costPerCopyMinor = selectedPagesCount * singleSidedRate;
+  } else {
+    const fullSheets = Math.floor(selectedPagesCount / 2);
+    const hasOddPage = selectedPagesCount % 2 === 1;
+    costPerCopyMinor = fullSheets * doubleSidedRate + (hasOddPage ? singleSidedRate : 0);
+  }
+  const subtotalMinor = costPerCopyMinor * copies;
 
   return {
     assetId: config.assetId,
@@ -135,5 +144,70 @@ export function calculateOrderQuote({
     totalAmountMinor,
     currency: 'INR',
     calculatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Calculates per-copy cost following Issue #16 & #81 billing rules:
+ * - Single-sided is charged per printed page.
+ * - Double-sided is charged per physical sheet (2 pages per sheet).
+ * - For an odd page count, the odd final page is charged at single-sided rate.
+ */
+export function calculatePrintCostPerCopyMinor(
+  pagesCount: number,
+  isDuplex: boolean,
+  singleSidedRate: number,
+  doubleSidedRate: number
+): number {
+  if (pagesCount <= 0) return 0;
+  if (!isDuplex) {
+    return pagesCount * singleSidedRate;
+  }
+  const fullDuplexSheets = Math.floor(pagesCount / 2);
+  const hasOddPage = pagesCount % 2 === 1;
+  return fullDuplexSheets * doubleSidedRate + (hasOddPage ? singleSidedRate : 0);
+}
+
+export interface IncompletePricingDetail {
+  paperSize: PaperSize;
+  colorMode: ColorMode;
+  missingSides: ('singleSidedMinor' | 'doubleSidedMinor')[];
+}
+
+/**
+ * Validates whether a studio's print rate configuration covers all supported paper sizes
+ * and active color modes.
+ */
+export function validateShopPricingMatrix(
+  supportedPaperSizes: PaperSize[],
+  supportsColor: boolean,
+  supportsBlackAndWhite: boolean,
+  rates?: Partial<Record<string, Record<string, Partial<SheetPricingRate>>>>
+): { isComplete: boolean; missing: IncompletePricingDetail[] } {
+  const missing: IncompletePricingDetail[] = [];
+  const colorModes: ColorMode[] = [];
+  if (supportsBlackAndWhite) colorModes.push('black_and_white');
+  if (supportsColor) colorModes.push('color');
+
+  for (const size of supportedPaperSizes) {
+    const sizeRates = rates?.[size];
+    for (const mode of colorModes) {
+      const modeRate = sizeRates?.[mode];
+      const missingSides: ('singleSidedMinor' | 'doubleSidedMinor')[] = [];
+      if (typeof modeRate?.singleSidedMinor !== 'number' || modeRate.singleSidedMinor < 0) {
+        missingSides.push('singleSidedMinor');
+      }
+      if (typeof modeRate?.doubleSidedMinor !== 'number' || modeRate.doubleSidedMinor < 0) {
+        missingSides.push('doubleSidedMinor');
+      }
+      if (missingSides.length > 0) {
+        missing.push({ paperSize: size, colorMode: mode, missingSides });
+      }
+    }
+  }
+
+  return {
+    isComplete: missing.length === 0,
+    missing,
   };
 }
