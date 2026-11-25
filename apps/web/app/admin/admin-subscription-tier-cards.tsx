@@ -7,6 +7,10 @@ export interface TierCounts {
   active: number;
   free: number;
   paid: number;
+  oneMonth: number;
+  threeMonths: number;
+  sixMonths: number;
+  twelveMonths: number;
   expired: number;
   none: number;
 }
@@ -14,9 +18,12 @@ export interface TierCounts {
 export function AdminSubscriptionTierCards({ counts }: { counts: TierCounts }) {
   const cards = [
     { label: 'Total Tenants', value: counts.total, color: '#0f172a', bg: '#f8fafc' },
-    { label: 'Active Plans', value: counts.active, color: '#16a34a', bg: '#f0fdf4' },
-    { label: 'Free Trial', value: counts.free, color: '#0284c7', bg: '#f0f9ff' },
-    { label: 'Paid Plans', value: counts.paid, color: '#4f46e5', bg: '#eef2ff' },
+    { label: 'Free Plan Users', value: counts.free, color: '#0284c7', bg: '#f0f9ff' },
+    { label: 'Paid Plan Users', value: counts.paid, color: '#4f46e5', bg: '#eef2ff' },
+    { label: '1 Month', value: counts.oneMonth, color: '#0d9488', bg: '#f0fdfa' },
+    { label: '3 Months', value: counts.threeMonths, color: '#2563eb', bg: '#eff6ff' },
+    { label: '6 Months', value: counts.sixMonths, color: '#7c3aed', bg: '#f5f3ff' },
+    { label: '12 Months', value: counts.twelveMonths, color: '#16a34a', bg: '#f0fdf4' },
     { label: 'Not Enrolled', value: counts.none, color: '#d97706', bg: '#fffbeb' },
     { label: 'Expired', value: counts.expired, color: '#dc2626', bg: '#fef2f2' },
   ];
