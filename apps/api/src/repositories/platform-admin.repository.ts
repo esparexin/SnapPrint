@@ -72,7 +72,12 @@ export function toPlatformStudioItem(
   doc: StudioDocument,
   owner?: { name?: string; email?: string },
   printerCount?: number,
-  subscription?: { plan: SubscriptionPlanId; status: SubscriptionStatus; expiresAt?: string } | null
+  subscription?: {
+    plan: SubscriptionPlanId;
+    status: SubscriptionStatus;
+    startsAt?: string;
+    expiresAt?: string;
+  } | null
 ): PlatformStudioItem {
   return {
     id: doc.id,
@@ -152,7 +157,12 @@ export async function listPlatformStudios(
 
   const subMap = new Map<
     string,
-    { plan: SubscriptionPlanId; status: SubscriptionStatus; expiresAt?: string }
+    {
+      plan: SubscriptionPlanId;
+      status: SubscriptionStatus;
+      startsAt?: string;
+      expiresAt?: string;
+    }
   >();
   for (const sub of rawSubs) {
     const s = sub as Record<string, unknown>;
@@ -164,6 +174,7 @@ export async function listPlatformStudios(
       subMap.set(sId, {
         plan: s.plan as SubscriptionPlanId,
         status: isAct ? 'active' : 'expired',
+        startsAt: s.startsAt ? toIsoString(s.startsAt) : undefined,
         expiresAt: s.expiresAt ? toIsoString(s.expiresAt) : undefined,
       });
     }

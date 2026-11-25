@@ -37,6 +37,7 @@ export const PlatformStudioItemSchema = z.object({
     .object({
       plan: SubscriptionPlanIdSchema,
       status: SubscriptionStatusSchema,
+      startsAt: z.string().optional(),
       expiresAt: z.string().optional(),
     })
     .nullable()
