@@ -14,6 +14,7 @@ interface OrderQueueItemProps {
   order: OrderRecord;
   updating: boolean;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
+  onCollectPayment?: (order: OrderRecord) => void;
   onRecordPayment?: (order: OrderRecord) => void;
   onRequestHandover?: (order: OrderRecord) => void;
   onPreviewItem: (order: OrderRecord, item: QuoteItemBreakdown) => void;
@@ -39,6 +40,7 @@ export function OrderQueueItem({
   order,
   updating,
   onStatusChange,
+  onCollectPayment,
   onRecordPayment,
   onRequestHandover,
   onPreviewItem,
@@ -54,7 +56,7 @@ export function OrderQueueItem({
       style={{
         border: '1px solid #e2e8f0',
         borderRadius: '8px',
-        padding: '16px',
+        padding: '12px 14px',
         backgroundColor: '#fff',
       }}
     >
@@ -63,7 +65,7 @@ export function OrderQueueItem({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          marginBottom: '10px',
+          marginBottom: '8px',
           flexWrap: 'wrap',
           gap: '8px',
         }}
@@ -115,9 +117,9 @@ export function OrderQueueItem({
       <div
         style={{
           backgroundColor: '#f8fafc',
-          padding: '10px 12px',
+          padding: '8px 10px',
           borderRadius: '6px',
-          marginBottom: '12px',
+          marginBottom: '10px',
         }}
       >
         {order.items.map((item, idx) => (
@@ -157,6 +159,7 @@ export function OrderQueueItem({
           order={order}
           updating={updating}
           onStatusChange={onStatusChange}
+          onCollectPayment={onCollectPayment}
           onRecordPayment={onRecordPayment}
           onRequestHandover={onRequestHandover}
         />

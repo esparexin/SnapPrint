@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { OrderRecord, OrderStatus } from '@snapprint/contracts';
+import { isOrderEligibleForPayment } from '@snapprint/domain';
 
 interface OrderQueueActionsProps {
   order: OrderRecord;
   updating: boolean;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
+  onCollectPayment?: (order: OrderRecord) => void;
   onRecordPayment?: (order: OrderRecord) => void;
   onRequestHandover?: (order: OrderRecord) => void;
 }
@@ -28,21 +30,23 @@ export function OrderQueueActions({
   order,
   updating,
   onStatusChange,
+  onCollectPayment,
   onRecordPayment,
   onRequestHandover,
 }: OrderQueueActionsProps) {
-  const paymentStatus = order.paymentStatus ?? 'UNPAID';
+  const handlePayment = onCollectPayment || onRecordPayment;
+  const canCollect = isOrderEligibleForPayment(order) && Boolean(handlePayment);
 
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-      {paymentStatus !== 'PAID' && onRecordPayment && (
+      {canCollect && (
         <button
           type="button"
-          onClick={() => onRecordPayment(order)}
+          onClick={() => handlePayment?.(order)}
           disabled={updating}
           style={{ ...actionBtn, backgroundColor: '#16a34a' }}
         >
-          💰 Record Payment
+          💰 Collect Payment
         </button>
       )}
 

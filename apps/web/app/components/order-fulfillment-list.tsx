@@ -12,7 +12,8 @@ interface OrderFulfillmentListProps {
   successMessage?: string | null;
   updatingId: string | null;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
-  onRecordPayment: (order: OrderRecord) => void;
+  onCollectPayment?: (order: OrderRecord) => void;
+  onRecordPayment?: (order: OrderRecord) => void;
   onRequestHandover: (order: OrderRecord) => void;
   onPreviewItem: (order: OrderRecord, item: QuoteItemBreakdown) => void;
   onDeleteDocument: (orderId: string, assetId: string) => Promise<void>;
@@ -51,6 +52,7 @@ export function OrderFulfillmentList({
   successMessage,
   updatingId,
   onStatusChange,
+  onCollectPayment,
   onRecordPayment,
   onRequestHandover,
   onPreviewItem,
@@ -59,7 +61,7 @@ export function OrderFulfillmentList({
   onDismissSuccess,
 }: OrderFulfillmentListProps) {
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
       {error && (
         <div
           role="alert"
@@ -115,13 +117,14 @@ export function OrderFulfillmentList({
       ) : orders.length === 0 ? (
         <OrderQueueEmptyState />
       ) : (
-        <div style={{ display: 'grid', gap: '14px' }}>
+        <div style={{ display: 'grid', gap: '10px' }}>
           {orders.map((order) => (
             <OrderQueueItem
               key={order.orderId}
               order={order}
               updating={updatingId === order.orderId}
               onStatusChange={onStatusChange}
+              onCollectPayment={onCollectPayment}
               onRecordPayment={onRecordPayment}
               onRequestHandover={onRequestHandover}
               onPreviewItem={onPreviewItem}

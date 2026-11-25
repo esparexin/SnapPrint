@@ -17,7 +17,15 @@ export function OrderQueueDocumentRow({
   onDeleteDocument,
 }: OrderQueueDocumentRowProps) {
   const isDeleted = Boolean(item.isDeleted);
+  const isCancelled = order.status === 'cancelled';
   const isCompleted = order.status === 'completed';
+  const isPreviewAvailable = !isDeleted && !isCancelled;
+
+  const previewBtnTitle = isCancelled
+    ? 'Document preview is unavailable for cancelled orders'
+    : isDeleted
+      ? 'Document was permanently deleted'
+      : `Preview ${item.filename}`;
 
   return (
     <div
@@ -35,7 +43,7 @@ export function OrderQueueDocumentRow({
       <span style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '100%' }}>
         <span
           style={{
-            maxWidth: '180px',
+            maxWidth: 'min(300px, 45vw)',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -70,22 +78,25 @@ export function OrderQueueDocumentRow({
         <span style={{ fontWeight: 600 }}>₹{(item.subtotalMinor / 100).toFixed(2)}</span>
         <button
           type="button"
-          onClick={() => onPreview(order, item)}
+          onClick={() => isPreviewAvailable && onPreview(order, item)}
+          disabled={!isPreviewAvailable}
+          title={previewBtnTitle}
           style={{
             minHeight: '36px',
             padding: '4px 10px',
-            backgroundColor: isDeleted ? '#f8fafc' : '#f0f9ff',
-            border: `1px solid ${isDeleted ? '#cbd5e1' : '#bae6fd'}`,
+            backgroundColor: !isPreviewAvailable ? '#f1f5f9' : '#f0f9ff',
+            border: `1px solid ${!isPreviewAvailable ? '#cbd5e1' : '#bae6fd'}`,
             borderRadius: '4px',
             fontSize: '11px',
-            color: isDeleted ? '#64748b' : '#0284c7',
+            color: !isPreviewAvailable ? '#94a3b8' : '#0284c7',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: !isPreviewAvailable ? 'not-allowed' : 'pointer',
+            opacity: !isPreviewAvailable ? 0.65 : 1,
             display: 'inline-flex',
             alignItems: 'center',
           }}
         >
-          {isDeleted ? '🔒 Details' : '📄 Preview'}
+          {isCancelled ? '🚫 Preview' : isDeleted ? '🔒 Deleted' : '📄 Preview'}
         </button>
         {isCompleted && !isDeleted && onDeleteDocument && (
           <button

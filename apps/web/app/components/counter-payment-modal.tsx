@@ -26,6 +26,7 @@ export function CounterPaymentModal({
   const paidMinor = order.paidAmountMinor ?? 0;
   const remainingMinor = Math.max(0, order.totalAmountMinor - paidMinor);
   const formattedRemaining = (remainingMinor / 100).toFixed(2);
+  const isCancelled = order.status === 'cancelled';
   const [method, setMethod] = useState<'counter_cash' | 'counter_upi'>('counter_cash');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +34,10 @@ export function CounterPaymentModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (isCancelled) {
+      setError('Cannot collect payment for a cancelled order.');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await recordOperatorCounterPayment(studioId, order.orderId, {
@@ -42,7 +47,7 @@ export function CounterPaymentModal({
       onPaymentSuccess(res.order);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to record counter payment');
+      setError(err instanceof Error ? err.message : 'Failed to collect counter payment');
     } finally {
       setSubmitting(false);
     }
@@ -82,6 +87,11 @@ export function CounterPaymentModal({
 
         <CounterPaymentBillCard order={order} formattedRemaining={formattedRemaining} />
 
+        {isCancelled && (
+          <div role="alert" style={styles.errorBox}>
+            Cannot collect payment: this order has already been cancelled.
+          </div>
+        )}
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
@@ -119,11 +129,11 @@ export function CounterPaymentModal({
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || isCancelled}
               style={{
                 ...styles.btnConfirm,
-                opacity: submitting ? 0.7 : 1,
-                cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting || isCancelled ? 0.7 : 1,
+                cursor: submitting || isCancelled ? 'not-allowed' : 'pointer',
               }}
             >
               {submitting

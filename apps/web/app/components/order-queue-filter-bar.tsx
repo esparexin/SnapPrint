@@ -8,7 +8,14 @@ interface OrderQueueFilterBarProps {
   onSelectStatus: (status: OrderStatus | 'all') => void;
 }
 
-const filterOptions = ['all', 'submitted', 'processing', 'ready', 'completed'] as const;
+const filterOptions = [
+  'all',
+  'submitted',
+  'processing',
+  'ready',
+  'completed',
+  'cancelled',
+] as const;
 
 export function OrderQueueFilterBar({ statusFilter, onSelectStatus }: OrderQueueFilterBarProps) {
   return (
@@ -16,7 +23,7 @@ export function OrderQueueFilterBar({ statusFilter, onSelectStatus }: OrderQueue
       style={{
         display: 'flex',
         gap: '6px',
-        padding: '10px 20px',
+        padding: '8px 16px',
         borderBottom: '1px solid #e2e8f0',
         backgroundColor: '#f8fafc',
         overflowX: 'auto',
@@ -29,9 +36,9 @@ export function OrderQueueFilterBar({ statusFilter, onSelectStatus }: OrderQueue
           type="button"
           onClick={() => onSelectStatus(st)}
           style={{
-            padding: '5px 12px',
-            borderRadius: '16px',
-            fontSize: '12px',
+            padding: '4px 10px',
+            borderRadius: '14px',
+            fontSize: '11px',
             fontWeight: 600,
             border: '1px solid',
             borderColor: statusFilter === st ? '#0284c7' : '#cbd5e1',
