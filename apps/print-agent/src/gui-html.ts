@@ -55,7 +55,7 @@ export function getGuiHtml(): string {
       <div class="logo">SP</div>
       <div>
         <div class="title">SnapPrint Print Agent</div>
-        <div style="font-size: 0.75rem; color: #64748b;" id="serverLabel">https://api.snapprint.in</div>
+        <div style="font-size: 0.75rem; color: #64748b;" id="serverLabel">https://snapprint.onrender.com</div>
       </div>
     </div>
     <span class="version">v0.1.0</span>
