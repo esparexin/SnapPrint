@@ -3,6 +3,13 @@ import { Db, MongoClient } from 'mongodb';
 let clientInstance: MongoClient | null = null;
 let dbInstance: Db | null = null;
 
+export const MONGO_CLIENT_OPTIONS = {
+  maxPoolSize: 20,
+  minPoolSize: 2,
+  serverSelectionTimeoutMS: 5000,
+  ignoreUndefined: true,
+} as const;
+
 export async function connectDb(
   uri: string,
   dbName: string
@@ -11,11 +18,7 @@ export async function connectDb(
     return { client: clientInstance, db: dbInstance };
   }
 
-  const client = new MongoClient(uri, {
-    maxPoolSize: 20,
-    minPoolSize: 2,
-    serverSelectionTimeoutMS: 5000,
-  });
+  const client = new MongoClient(uri, MONGO_CLIENT_OPTIONS);
 
   await client.connect();
   const db = client.db(dbName);

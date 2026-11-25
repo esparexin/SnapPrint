@@ -64,9 +64,16 @@ export function calculateItemQuote({
   const isDuplex = config.sides === 'double_sided';
   const sheetsCount = isDuplex ? Math.ceil(selectedPagesCount / 2) : selectedPagesCount;
 
-  const paperRates = rates[config.paperSize] || rates.A4;
-  const colorRates = paperRates[config.colorMode] || paperRates.black_and_white;
-  const unitPriceMinor = isDuplex ? colorRates.doubleSidedMinor : colorRates.singleSidedMinor;
+  const defaultPaperRates =
+    DEFAULT_DOCUMENT_PRINT_RATES[config.paperSize] || DEFAULT_DOCUMENT_PRINT_RATES.A4;
+  const paperRates = rates?.[config.paperSize] || rates?.A4 || defaultPaperRates;
+  const defaultColorRates =
+    defaultPaperRates[config.colorMode] || defaultPaperRates.black_and_white;
+  const colorRates =
+    paperRates?.[config.colorMode] || paperRates?.black_and_white || defaultColorRates;
+  const unitPriceMinor = isDuplex
+    ? (colorRates.doubleSidedMinor ?? defaultColorRates.doubleSidedMinor)
+    : (colorRates.singleSidedMinor ?? defaultColorRates.singleSidedMinor);
 
   const copies = Math.max(1, Math.min(100, config.copies));
   const subtotalMinor = sheetsCount * unitPriceMinor * copies;

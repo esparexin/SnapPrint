@@ -29,7 +29,8 @@ export async function requestPrintQuote(
   slug: string,
   sessionId: string,
   token: string,
-  items: DocumentPrintConfig[]
+  items: DocumentPrintConfig[],
+  signal?: AbortSignal
 ): Promise<QuoteResponse> {
   QuoteRequestSchema.parse({ items });
 
@@ -41,6 +42,7 @@ export async function requestPrintQuote(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ items }),
+    signal,
   });
 
   const data = await res.json().catch(() => null);
