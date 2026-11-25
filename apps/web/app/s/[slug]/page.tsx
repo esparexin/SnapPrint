@@ -1,6 +1,14 @@
+import type { Viewport } from 'next';
 import { PublicStudio } from '@snapprint/contracts';
 import { CustomerStudioView } from './customer-studio-view';
 import { fetchPublicStudio } from '../../../src/customer-client';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+};
 
 interface StudioLandingPageProps {
   params: Promise<{ slug: string }>;

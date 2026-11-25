@@ -67,7 +67,7 @@ export function PhotoUploader({
         disabled={items.length >= UploadLimits.maxFilesPerSession}
       />
       {pendingItems.length > 0 && (
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginTop: '8px' }}>
           {pendingItems.map((item) => (
             <PhotoItemCard
               key={item.id}

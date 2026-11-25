@@ -79,35 +79,13 @@ export function CustomerStudioView({
   if (studio.status !== 'active') return <CustomerStudioInactive studio={studio} />;
 
   return (
-    <div
-      style={{
-        maxWidth: '640px',
-        margin: '0 auto',
-        padding: '24px 16px 48px',
-        overflowX: 'hidden',
-      }}
-    >
+    <div className="sf-shell">
       <CustomerStudioHeader studio={studio} />
 
       {session && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 12px',
-            marginBottom: '20px',
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #dcfce7',
-            borderRadius: '8px',
-            fontSize: '12px',
-            color: '#166534',
-          }}
-        >
-          <span>
-            🔒 <strong>Private Session Active</strong>
-          </span>
-          <span style={{ fontWeight: 600 }}>Expires in 2 hours</span>
+        <div className="sf-session-banner">
+          <span style={{ fontWeight: 600 }}>🔒 Private Session Active</span>
+          <span style={{ fontWeight: 500 }}>Expires in 2 hours</span>
         </div>
       )}
 
@@ -123,16 +101,7 @@ export function CustomerStudioView({
         />
       )}
 
-      <footer
-        style={{
-          marginTop: '36px',
-          borderTop: '1px solid #e2e8f0',
-          paddingTop: '20px',
-          textAlign: 'center',
-          fontSize: '12px',
-          color: '#94a3b8',
-        }}
-      >
+      <footer className="sf-footer">
         <div>
           Developed by{' '}
           <a

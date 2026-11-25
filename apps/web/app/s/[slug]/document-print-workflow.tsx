@@ -66,12 +66,12 @@ export function DocumentPrintWorkflow({
     );
   }
 
+  const hasStickyCta = activeConfigs.length > 0;
+
   return (
-    <div>
-      <section style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
-          1. Upload Documents (PDF / Images)
-        </h2>
+    <div className={hasStickyCta ? 'sf-workflow--has-sticky' : undefined}>
+      <section className="sf-section">
+        <h2 className="sf-section-heading">1. Upload Documents (PDF / Images)</h2>
         <PhotoUploader
           items={items}
           feedback={feedback}
@@ -84,9 +84,9 @@ export function DocumentPrintWorkflow({
       </section>
 
       {docs.length > 0 && (
-        <section style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
-            2. Configure Print & Xerox Options ({docs.length})
+        <section className="sf-section">
+          <h2 className="sf-section-heading">
+            2. Configure Print &amp; Xerox Options ({docs.length})
           </h2>
           {docs.map((doc, idx) => (
             <DocumentConfigForm
@@ -104,8 +104,8 @@ export function DocumentPrintWorkflow({
         </section>
       )}
 
-      {activeConfigs.length > 0 && (
-        <section style={{ marginBottom: '20px' }}>
+      {hasStickyCta && (
+        <section className="sf-section">
           <OrderSummaryCard
             slug={slug}
             sessionId={sessionId}

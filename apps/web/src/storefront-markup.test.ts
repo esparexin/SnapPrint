@@ -4,7 +4,10 @@ import { renderToStaticMarkup as untypedRenderToStaticMarkup } from 'react-dom/s
 import { describe, expect, it, vi } from 'vitest';
 
 const renderToStaticMarkup = untypedRenderToStaticMarkup as (element: React.ReactElement) => string;
+import { CustomerStudioHeader } from '../app/s/[slug]/customer-status-views.js';
 import { DocumentConfigForm } from '../app/s/[slug]/document-config-form.js';
+import { OrderItemsBreakdown } from '../app/s/[slug]/order-items-breakdown.js';
+import { OrderStickyCtaBar } from '../app/s/[slug]/order-sticky-cta-bar.js';
 import { PhotoUploader } from '../app/s/[slug]/photo-uploader.js';
 import {
   createDefaultConfig,
@@ -62,8 +65,15 @@ describe('Storefront Markup, Accessibility & Helper Logic', () => {
     );
     expect(idleHtml).toContain('aria-label="Delete report.pdf"');
     expect(idleHtml).toContain('aria-label="Preview report.pdf"');
-    expect(idleHtml).toContain('🗑️ Delete');
-    expect(idleHtml).not.toContain('disabled=""');
+    expect(idleHtml).toContain('Delete');
+    expect(idleHtml).toContain('role="radiogroup"');
+    expect(idleHtml).toContain('aria-label="Paper Size"');
+    expect(idleHtml).toContain('aria-label="Orientation"');
+    expect(idleHtml).not.toContain('▯');
+    const idleDeleteBtn = idleHtml.match(/<button[^>]*aria-label="Delete report\.pdf"[^>]*>/)?.[0];
+    expect(idleDeleteBtn).toBeTruthy();
+    expect(idleDeleteBtn).not.toContain('disabled=""');
+    expect(idleHtml).toContain('aria-label="Decrease copies" disabled=""');
 
     const removingHtml = renderToStaticMarkup(
       React.createElement(DocumentConfigForm, {
@@ -77,7 +87,72 @@ describe('Storefront Markup, Accessibility & Helper Logic', () => {
       })
     );
     expect(removingHtml).toContain('Deleting...');
-    expect(removingHtml).toContain('disabled=""');
+    const removingDeleteBtn = removingHtml.match(
+      /<button[^>]*aria-label="Delete report\.pdf"[^>]*>/
+    )?.[0];
+    expect(removingDeleteBtn).toContain('disabled=""');
+  });
+
+  it('renders left-aligned storefront header lockup, singular sheet grammar, and accessible sticky CTA bar', () => {
+    const headerHtml = renderToStaticMarkup(
+      React.createElement(CustomerStudioHeader, {
+        studio: { name: 'Vikram Mobiles', contactPhone: '9876543210' },
+      })
+    );
+    expect(headerHtml).toContain('sf-header');
+    expect(headerHtml).toContain('sf-brand-logo');
+    expect(headerHtml).toContain('Vikram Mobiles');
+    expect(headerHtml).toContain('Xerox &amp; Digital Document Printing');
+
+    const singlePageConfigHtml = renderToStaticMarkup(
+      React.createElement(DocumentConfigForm, {
+        config: createDefaultConfig('asset_1234567890abcdef'),
+        filename: '2.png',
+        pageCount: 1,
+        onUpdate: vi.fn(),
+        onPreview: vi.fn(),
+        onRemove: vi.fn(),
+      })
+    );
+    expect(singlePageConfigHtml).toContain('1 (Single page)');
+    expect(singlePageConfigHtml).toContain('aria-label="Decrease copies"');
+    expect(singlePageConfigHtml).toContain('aria-label="Increase copies"');
+
+    const breakdownHtml = renderToStaticMarkup(
+      React.createElement(OrderItemsBreakdown, {
+        items: [
+          {
+            assetId: 'asset_1234567890abcdef',
+            filename: '2.png',
+            paperSize: 'A4',
+            colorMode: 'black_and_white',
+            sides: 'single_sided',
+            orientation: 'portrait',
+            scaling: 'fit_to_page',
+            pageSelection: 'all',
+            copies: 1,
+            documentPageCount: 1,
+            selectedPagesCount: 1,
+            sheetsCount: 1,
+            unitPriceMinor: 200,
+            subtotalMinor: 200,
+          },
+        ],
+      })
+    );
+    expect(breakdownHtml).toContain('1 sheet × 1 copy');
+
+    const stickyHtml = renderToStaticMarkup(
+      React.createElement(OrderStickyCtaBar, {
+        quote: null,
+        loadingQuote: false,
+        submitting: false,
+        isAcceptingOrders: false,
+        onSubmit: vi.fn(),
+      })
+    );
+    expect(stickyHtml).toContain('sf-sticky-bar');
+    expect(stickyHtml).toContain('Printer Offline');
   });
 
   it('infers MIME types cleanly, reconciles configs on delete, and resolves preview targets', () => {
