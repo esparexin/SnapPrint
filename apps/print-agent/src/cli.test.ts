@@ -1,6 +1,6 @@
 import { tmpdir } from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { runCli } from './cli.js';
+import { AGENT_VERSION, runCli } from './cli.js';
 
 describe('CLI Commands', () => {
   beforeEach(() => {
@@ -39,6 +39,18 @@ describe('CLI Commands', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith(
       expect.stringContaining('Device credentials cleared successfully')
     );
+    consoleLogSpy.mockRestore();
+  });
+
+  it('prints version and returns 0 for version, --version, and -v', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    for (const flag of ['version', '--version', '-v']) {
+      const exitCode = await runCli([flag]);
+      expect(exitCode).toBe(0);
+      expect(consoleLogSpy).toHaveBeenCalledWith(AGENT_VERSION);
+    }
+
     consoleLogSpy.mockRestore();
   });
 });

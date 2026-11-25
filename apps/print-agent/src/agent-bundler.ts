@@ -1,10 +1,12 @@
 import { existsSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import * as esbuild from 'esbuild';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const req = createRequire(import.meta.url);
+const esbuild = req('esbuild') as typeof import('esbuild');
 const defaultPackageRoot = join(__dirname, '..');
 const defaultEntryPoint = join(defaultPackageRoot, 'src', 'cli.ts');
 const defaultOutputFile = join(defaultPackageRoot, 'dist', 'snapprint-agent.bundle.cjs');

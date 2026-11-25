@@ -8,8 +8,15 @@ import { AgentDaemon } from './daemon.js';
 import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
 
+export const AGENT_VERSION = '0.1.0';
+
 export async function runCli(argv: string[] = process.argv.slice(2)): Promise<number> {
   const command = argv[0] || 'status';
+  if (command === 'version' || command === '--version' || command === '-v') {
+    console.log(AGENT_VERSION);
+    return 0;
+  }
+
   const config = loadAgentConfig();
   const client = new AgentClient(config.apiUrl);
   const spooler = createSystemSpoolerAdapter();
@@ -131,7 +138,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
   }
 
   console.log(
-    'Usage: snapprint-agent [enroll <code?> | unpair | sync | start | status | printers]'
+    'Usage: snapprint-agent [enroll <code?> | unpair | sync | start | status | printers | version]'
   );
   return 1;
 }
