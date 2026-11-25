@@ -8,6 +8,7 @@ interface OrderQueueActionsProps {
   updating: boolean;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
   onRecordPayment?: (order: OrderRecord) => void;
+  onRequestHandover?: (order: OrderRecord) => void;
 }
 
 const actionBtn = {
@@ -28,6 +29,7 @@ export function OrderQueueActions({
   updating,
   onStatusChange,
   onRecordPayment,
+  onRequestHandover,
 }: OrderQueueActionsProps) {
   const paymentStatus = order.paymentStatus ?? 'UNPAID';
 
@@ -68,7 +70,11 @@ export function OrderQueueActions({
       {order.status === 'ready' && (
         <button
           type="button"
-          onClick={() => onStatusChange(order.orderId, 'completed')}
+          onClick={() =>
+            onRequestHandover
+              ? onRequestHandover(order)
+              : onStatusChange(order.orderId, 'completed')
+          }
           disabled={updating}
           style={{ ...actionBtn, backgroundColor: '#15803d' }}
         >

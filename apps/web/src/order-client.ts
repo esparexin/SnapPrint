@@ -144,14 +144,15 @@ export async function updateOperatorOrderStatus(
   studioId: string,
   orderId: string,
   status: OrderStatus,
-  notes?: string
+  notes?: string,
+  confirmedHandover?: boolean
 ): Promise<OrderRecord> {
   const url = `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders/${encodeURIComponent(orderId)}/status`;
   const res = await fetch(url, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ status, notes }),
+    body: JSON.stringify({ status, notes, confirmedHandover }),
   });
 
   const data = await res.json().catch(() => null);
@@ -164,4 +165,27 @@ export async function updateOperatorOrderStatus(
   }
 
   return OrderRecordSchema.parse(data);
+}
+
+export async function deleteOperatorOrderDocument(
+  studioId: string,
+  orderId: string,
+  assetId: string
+): Promise<{ success: boolean; orderId: string; assetId: string; deletedAt: string }> {
+  const url = `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders/${encodeURIComponent(orderId)}/documents/${encodeURIComponent(assetId)}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new OrderApiError(
+      data?.message || `Failed to delete document with status ${res.status}`,
+      res.status,
+      data?.code
+    );
+  }
+
+  return data;
 }

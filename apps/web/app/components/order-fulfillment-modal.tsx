@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { OrderRecord, OrderStatus } from '@snapprint/contracts';
-import { fetchOperatorOrderQueue, updateOperatorOrderStatus } from '../../src/order-client';
+import React, { useState } from 'react';
+import { OrderRecord, OrderStatus, QuoteItemBreakdown } from '@snapprint/contracts';
 import { useDialog } from '../hooks/use-dialog';
-import { CounterPaymentModal } from './counter-payment-modal';
+import { useOperatorQueue } from '../hooks/use-operator-queue';
 import { OrderFulfillmentHeader } from './order-fulfillment-header';
 import { OrderFulfillmentList } from './order-fulfillment-list';
+import { OrderFulfillmentOverlays } from './order-fulfillment-overlays';
 import { OrderQueueFilterBar } from './order-queue-filter-bar';
 
 interface OrderFulfillmentModalProps {
@@ -22,59 +22,45 @@ export function OrderFulfillmentModal({
   onClose,
   inShell = false,
 }: OrderFulfillmentModalProps) {
-  const [orders, setOrders] = useState<OrderRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [paymentOrder, setPaymentOrder] = useState<OrderRecord | null>(null);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [paymentOrder, setPaymentOrder] = useState<OrderRecord | null>(null);
+  const [handoverOrder, setHandoverOrder] = useState<OrderRecord | null>(null);
+  const [previewTarget, setPreviewTarget] = useState<{
+    order: OrderRecord;
+    item: QuoteItemBreakdown;
+  } | null>(null);
 
-  async function loadOrders() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchOperatorOrderQueue(
-        studioId,
-        statusFilter === 'all' ? undefined : statusFilter
-      );
-      setOrders(res.orders);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load order queue');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadOrders();
-  }, [studioId, statusFilter]);
-
-  async function handleStatusChange(orderId: string, newStatus: OrderStatus) {
-    setUpdatingId(orderId);
-    try {
-      const updated = await updateOperatorOrderStatus(studioId, orderId, newStatus);
-      setOrders((prev) => prev.map((o) => (o.orderId === orderId ? updated : o)));
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to update status';
-      alert(
-        msg.includes('PAYMENT_REQUIRED_BEFORE_PRINT') || msg.includes('Payment is required')
-          ? '⚠️ Payment Required: This order is unpaid. Under studio policy, you must collect payment before printing.'
-          : msg
-      );
-    } finally {
-      setUpdatingId(null);
-    }
-  }
-
-  function handlePaymentSuccess(updatedOrder: OrderRecord) {
-    setOrders((prev) => prev.map((o) => (o.orderId === updatedOrder.orderId ? updatedOrder : o)));
-  }
+  const {
+    orders,
+    loading,
+    error,
+    updatingId,
+    loadOrders,
+    handleStatusChange,
+    handleDeleteDocument,
+    handlePaymentSuccess,
+  } = useOperatorQueue(studioId, statusFilter);
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
     isOpen: !inShell,
     onClose,
     enableSwipeDown: true,
   });
+
+  async function handleConfirmHandover() {
+    if (!handoverOrder) return;
+    await handleStatusChange(handoverOrder.orderId, 'completed', true);
+    setHandoverOrder(null);
+  }
+
+  async function onDeleteDocument(orderId: string, assetId: string) {
+    await handleDeleteDocument(orderId, assetId);
+    if (previewTarget?.item.assetId === assetId) {
+      setPreviewTarget((prev) =>
+        prev ? { ...prev, item: { ...prev.item, isDeleted: true } } : null
+      );
+    }
+  }
 
   const content = (
     <>
@@ -91,17 +77,24 @@ export function OrderFulfillmentModal({
         loading={loading}
         error={error}
         updatingId={updatingId}
-        onStatusChange={handleStatusChange}
+        onStatusChange={(id, st) => handleStatusChange(id, st)}
         onRecordPayment={(ord) => setPaymentOrder(ord)}
+        onRequestHandover={(ord) => setHandoverOrder(ord)}
+        onPreviewItem={(ord, it) => setPreviewTarget({ order: ord, item: it })}
+        onDeleteDocument={onDeleteDocument}
       />
-      {paymentOrder && (
-        <CounterPaymentModal
-          studioId={studioId}
-          order={paymentOrder}
-          onClose={() => setPaymentOrder(null)}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
+      <OrderFulfillmentOverlays
+        studioId={studioId}
+        paymentOrder={paymentOrder}
+        handoverOrder={handoverOrder}
+        previewTarget={previewTarget}
+        onClosePayment={() => setPaymentOrder(null)}
+        onPaymentSuccess={handlePaymentSuccess}
+        onCloseHandover={() => setHandoverOrder(null)}
+        onConfirmHandover={handleConfirmHandover}
+        onClosePreview={() => setPreviewTarget(null)}
+        onDeleteDocument={onDeleteDocument}
+      />
     </>
   );
 

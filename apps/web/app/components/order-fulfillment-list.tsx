@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { OrderRecord, OrderStatus } from '@snapprint/contracts';
+import { OrderRecord, OrderStatus, QuoteItemBreakdown } from '@snapprint/contracts';
 import { OrderQueueEmptyState } from './order-queue-empty-state';
 import { OrderQueueItem } from './order-queue-item';
 
@@ -12,6 +12,9 @@ interface OrderFulfillmentListProps {
   updatingId: string | null;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
   onRecordPayment: (order: OrderRecord) => void;
+  onRequestHandover: (order: OrderRecord) => void;
+  onPreviewItem: (order: OrderRecord, item: QuoteItemBreakdown) => void;
+  onDeleteDocument: (orderId: string, assetId: string) => Promise<void>;
 }
 
 export function OrderFulfillmentList({
@@ -21,6 +24,9 @@ export function OrderFulfillmentList({
   updatingId,
   onStatusChange,
   onRecordPayment,
+  onRequestHandover,
+  onPreviewItem,
+  onDeleteDocument,
 }: OrderFulfillmentListProps) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
@@ -54,6 +60,9 @@ export function OrderFulfillmentList({
               updating={updatingId === order.orderId}
               onStatusChange={onStatusChange}
               onRecordPayment={onRecordPayment}
+              onRequestHandover={onRequestHandover}
+              onPreviewItem={onPreviewItem}
+              onDeleteDocument={onDeleteDocument}
             />
           ))}
         </div>
