@@ -28,48 +28,18 @@ export interface SpoolerAdapter {
   printFile(printerName: string, filePath: string, options?: PrintFileOptions): Promise<void>;
 }
 
-const COLOR_KEYWORDS = [
-  'color',
-  'colour',
-  'cmyk',
-  'photo',
-  'l3150',
-  'l3250',
-  'l3110',
-  'l805',
-  'ecotank',
-  'inktank',
-  'deskjet',
-  'pixma',
-  'surecolor',
-  'envy',
-];
+const COLOR_REGEX =
+  /color|colour|cmyk|photo|l3150|l3250|l3110|l805|ecotank|inktank|deskjet|pixma|surecolor|envy/i;
 
-const VIRTUAL_KEYWORDS = [
-  'print to pdf',
-  'onenote',
-  'anydesk',
-  'xps document',
-  'fax',
-  'cutepdf',
-  'adobe pdf',
-  'foxit',
-  'pdf creator',
-  'pdf24',
-  'bullzip',
-  'virtual print',
-  'root print queue',
-  'cups-pdf',
-];
+const VIRTUAL_REGEX =
+  /print to pdf|onenote|anydesk|xps document|fax|cutepdf|adobe pdf|foxit|pdf creator|pdf24|bullzip|virtual print|root print queue|cups-pdf/i;
 
 export function isVirtualOrSoftwarePrinter(name: string, driverName = ''): boolean {
-  const combined = `${name} ${driverName}`.toLowerCase();
-  return VIRTUAL_KEYWORDS.some((kw) => combined.includes(kw));
+  return VIRTUAL_REGEX.test(`${name} ${driverName}`);
 }
 
 export function inferIsColorSupported(name: string, driverName: string): boolean {
-  const combined = `${name} ${driverName}`.toLowerCase();
-  return COLOR_KEYWORDS.some((kw) => combined.includes(kw));
+  return COLOR_REGEX.test(`${name} ${driverName}`);
 }
 
 export function inferSupportedPaperSizes(name: string, driverName: string): PaperSize[] {

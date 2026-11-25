@@ -124,37 +124,28 @@ export async function syncDiscoveredPrinters(
     const existing = await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
       .findOne({ studioId, id: p.printerId });
+    const pFields = {
+      name: p.name,
+      driverName: p.driverName,
+      isColorSupported: p.isColorSupported,
+      supportedPaperSizes: p.supportedPaperSizes,
+      status: p.status,
+      isDefaultOsPrinter: p.isDefaultOsPrinter,
+      lastSeenAt: now,
+      updatedAt: now,
+    };
 
     if (existing) {
-      await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).updateOne(
-        { studioId, id: p.printerId },
-        {
-          $set: {
-            name: p.name,
-            driverName: p.driverName,
-            isColorSupported: p.isColorSupported,
-            supportedPaperSizes: p.supportedPaperSizes,
-            status: p.status,
-            isDefaultOsPrinter: p.isDefaultOsPrinter,
-            lastSeenAt: now,
-            updatedAt: now,
-          },
-        }
-      );
+      await db
+        .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+        .updateOne({ studioId, id: p.printerId }, { $set: pFields });
     } else {
       await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).insertOne({
         id: p.printerId,
         studioId,
-        name: p.name,
-        driverName: p.driverName,
         role: 'standby',
-        isColorSupported: p.isColorSupported,
-        supportedPaperSizes: p.supportedPaperSizes,
-        status: p.status,
-        isDefaultOsPrinter: p.isDefaultOsPrinter,
-        lastSeenAt: now,
+        ...pFields,
         createdAt: now,
-        updatedAt: now,
       });
     }
   }
