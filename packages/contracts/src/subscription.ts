@@ -133,7 +133,12 @@ export const SubscriptionPlanDefinitionSchema = z.object({
 export type SubscriptionPlanDefinition = z.infer<typeof SubscriptionPlanDefinitionSchema>;
 
 export const CreateSubscriptionPlanRequestSchema = z.object({
-  id: z.string().trim().min(1).max(64).regex(/^[a-z0-9_-]+$/i, 'Plan ID must be alphanumeric'),
+  id: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_-]+$/i, 'Plan ID must be alphanumeric'),
   name: z.string().trim().min(1).max(100),
   durationDays: z.coerce.number().int().positive().max(3650),
   priceRupees: z.coerce.number().int().nonnegative().max(1000000),
@@ -160,4 +165,3 @@ export const SubscriptionNotificationRequestSchema = z.object({
   message: z.string().trim().max(500).optional(),
 });
 export type SubscriptionNotificationRequest = z.infer<typeof SubscriptionNotificationRequestSchema>;
-

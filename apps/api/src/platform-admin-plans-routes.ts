@@ -20,9 +20,10 @@ export interface PlatformAdminPlansRoutesOptions {
   getCustomDb?: () => Db;
 }
 
-export const platformAdminPlansRoutes: FastifyPluginAsync<
-  PlatformAdminPlansRoutesOptions
-> = async (fastify: FastifyInstance, options) => {
+export const platformAdminPlansRoutes: FastifyPluginAsync<PlatformAdminPlansRoutesOptions> = async (
+  fastify: FastifyInstance,
+  options
+) => {
   const getActiveDb = options.getCustomDb || getDb;
   const adminAuth = requirePlatformAdminAuth(getActiveDb);
 

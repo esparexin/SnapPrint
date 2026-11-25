@@ -20,9 +20,7 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}));
-    throw new Error(
-      errorBody.message || `Request to ${path} failed with status ${res.status}`
-    );
+    throw new Error(errorBody.message || `Request to ${path} failed with status ${res.status}`);
   }
 
   return res.json() as Promise<T>;

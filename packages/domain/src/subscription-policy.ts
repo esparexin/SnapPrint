@@ -216,4 +216,3 @@ export function categorizePlanInterval(durationDays: number): SubscriptionInterv
   if (durationDays >= 360 && durationDays <= 370) return '12 Months';
   return 'Custom';
 }
-
