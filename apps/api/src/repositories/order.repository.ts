@@ -184,14 +184,22 @@ export async function markOrderDocumentDeleted(
   event: OrderAuditEvent
 ): Promise<OrderRecord | null> {
   const now = new Date();
+  const existing = await findOrderById(db, studioId, orderId);
+  if (!existing) return null;
+
+  const updatedItems = existing.items.map((item) =>
+    item.assetId === assetId
+      ? { ...item, isDeleted: true, deletedAt: now.toISOString() }
+      : item
+  );
+
   const result = await db
     .collection<OrderDocument>(ORDERS_COLLECTION)
     .findOneAndUpdate(
-      { studioId, orderId, 'items.assetId': assetId },
+      { studioId, orderId },
       {
         $set: {
-          'items.$.isDeleted': true,
-          'items.$.deletedAt': now.toISOString(),
+          items: updatedItems,
           updatedAt: now,
         },
         $push: { events: event },
