@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hashPassword } from '@snapprint/domain';
 import { createTestApp } from './auth-test-helper.js';
+import { signSessionToken } from './session-token.js';
 
 describe('Payment Routes & Authorization Policy', () => {
   const setupBaseFixture = async () => {
@@ -127,13 +128,21 @@ describe('Payment Routes & Authorization Policy', () => {
     return { ctx, studio, order, opCookie, patchStatus, payCounter };
   };
 
-  it('customer initiates and verifies online payment successfully', async () => {
+  it('customer initiates and verifies online payment successfully with signed session token', async () => {
     const { ctx, studio, order } = await setupBaseFixture();
+    const sessionToken = signSessionToken(
+      {
+        sessionId: order.sessionId,
+        studioId: studio.id,
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      },
+      'test-session-secret-at-least-32-chars-long!'
+    );
 
     const initRes = await ctx.app.inject({
       method: 'POST',
       url: `/public/studios/${studio.slug}/orders/${order.orderId}/pay/initiate`,
-      headers: { 'x-session-token': order.sessionId },
+      headers: { 'x-session-token': sessionToken },
       payload: { orderId: order.orderId, method: 'razorpay' },
     });
 
@@ -161,7 +170,7 @@ describe('Payment Routes & Authorization Policy', () => {
     const historyRes = await ctx.app.inject({
       method: 'GET',
       url: `/public/studios/${studio.slug}/orders/${order.orderId}/payments`,
-      headers: { 'x-session-token': order.sessionId },
+      headers: { 'x-session-token': sessionToken },
     });
     const history = JSON.parse(historyRes.body);
     expect(history.totalPaidMinor).toBe(500);

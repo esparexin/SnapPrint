@@ -82,4 +82,35 @@ export function verifySessionToken(
   return session;
 }
 
+/**
+ * Resolves a customer session ID from a request token header or Bearer token.
+ * Validates cryptographic signature and expiration if a signed token is provided,
+ * and checks studio match if expectedStudioId is supplied.
+ */
+export function resolveSessionIdFromHeader(
+  tokenHeader: string | undefined,
+  secret: string,
+  expectedStudioId?: string
+): string | null {
+  if (!tokenHeader || typeof tokenHeader !== 'string') return null;
+  const token = tokenHeader.startsWith('Bearer ')
+    ? tokenHeader.slice(7).trim()
+    : tokenHeader.trim();
+  if (!token) return null;
+
+  if (token.includes('.')) {
+    try {
+      const payload = verifySessionToken(token, secret);
+      if (expectedStudioId && payload.studioId !== expectedStudioId) {
+        return null;
+      }
+      return payload.sessionId;
+    } catch {
+      return null;
+    }
+  }
+
+  return token;
+}
+
 export { SessionExpiredError, SessionNotActiveError };

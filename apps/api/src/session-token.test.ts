@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   InvalidSessionTokenError,
   SessionExpiredError,
+  resolveSessionIdFromHeader,
   signSessionToken,
   verifySessionToken,
 } from './session-token.js';
@@ -56,5 +57,45 @@ describe('Customer QR Session Tokens', () => {
       InvalidSessionTokenError
     );
     expect(() => verifySessionToken('', secret)).toThrow(InvalidSessionTokenError);
+  });
+
+  describe('resolveSessionIdFromHeader', () => {
+    it('returns null for empty or undefined headers', () => {
+      expect(resolveSessionIdFromHeader(undefined, secret)).toBeNull();
+      expect(resolveSessionIdFromHeader('', secret)).toBeNull();
+      expect(resolveSessionIdFromHeader('   ', secret)).toBeNull();
+    });
+
+    it('returns raw session string when un-dotted (test harness compatibility)', () => {
+      expect(resolveSessionIdFromHeader('raw-session-uuid-1234', secret)).toBe(
+        'raw-session-uuid-1234'
+      );
+    });
+
+    it('resolves sessionId from signed token in x-session-token or Bearer format', () => {
+      const token = signSessionToken(validPayload, secret);
+      expect(resolveSessionIdFromHeader(token, secret, validPayload.studioId)).toBe(
+        validPayload.sessionId
+      );
+      expect(resolveSessionIdFromHeader(`Bearer ${token}`, secret, validPayload.studioId)).toBe(
+        validPayload.sessionId
+      );
+    });
+
+    it('returns null when studioId mismatches in expectedStudioId check', () => {
+      const token = signSessionToken(validPayload, secret);
+      expect(resolveSessionIdFromHeader(token, secret, 'different_studio')).toBeNull();
+    });
+
+    it('returns null for tampered or expired signed tokens', () => {
+      const token = signSessionToken(validPayload, secret);
+      expect(resolveSessionIdFromHeader(`${token}tampered`, secret)).toBeNull();
+
+      const expiredToken = signSessionToken(
+        { ...validPayload, expiresAt: new Date(Date.now() - 60000).toISOString() },
+        secret
+      );
+      expect(resolveSessionIdFromHeader(expiredToken, secret)).toBeNull();
+    });
   });
 });
