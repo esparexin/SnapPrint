@@ -7,6 +7,7 @@ import {
   StudioPrintRatesContract,
   StudioPublicCapabilities,
 } from '@snapprint/contracts';
+import { clearStoredCustomerSession } from '../../../src/customer-client';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { createDefaultConfig, resolvePreviewTarget } from './document-print-workflow-helpers';
@@ -65,6 +66,7 @@ export function DocumentPrintWorkflow({
         sessionToken={token}
         payment={payment}
         onNewOrder={() => {
+          clearStoredCustomerSession(slug);
           setSubmittedOrder(null);
           setPreviewAssetId(null);
           resetDocuments();

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 const renderToStaticMarkup = untypedRenderToStaticMarkup as (element: React.ReactElement) => string;
 import { CustomerStudioHeader } from '../app/s/[slug]/customer-status-views.js';
 import { DocumentConfigForm } from '../app/s/[slug]/document-config-form.js';
+import { OrderCustomerForm } from '../app/s/[slug]/order-customer-form.js';
 import { OrderItemsBreakdown } from '../app/s/[slug]/order-items-breakdown.js';
 import { OrderStickyCtaBar } from '../app/s/[slug]/order-sticky-cta-bar.js';
 import { PhotoUploader } from '../app/s/[slug]/photo-uploader.js';
@@ -186,5 +187,41 @@ describe('Storefront Markup, Accessibility & Helper Logic', () => {
     expect(queued).toHaveLength(1);
     expect(queued[0].mimeType).toBe('application/pdf');
     expect(error).toContain('not a supported document format');
+  });
+
+  it('validates mobile number input inline and only displays errors when incomplete', () => {
+    const emptyHtml = renderToStaticMarkup(
+      React.createElement(OrderCustomerForm, {
+        customerName: '',
+        customerPhone: '',
+        onChangeName: vi.fn(),
+        onChangePhone: vi.fn(),
+      })
+    );
+    expect(emptyHtml).not.toContain('role="alert"');
+    expect(emptyHtml).not.toContain('Please enter a 10-digit mobile number');
+
+    const incompleteHtml = renderToStaticMarkup(
+      React.createElement(OrderCustomerForm, {
+        customerName: 'Ravi',
+        customerPhone: '98765',
+        onChangeName: vi.fn(),
+        onChangePhone: vi.fn(),
+      })
+    );
+    expect(incompleteHtml).toContain('role="alert"');
+    expect(incompleteHtml).toContain('Please enter a 10-digit mobile number (5/10)');
+    expect(incompleteHtml).toContain('aria-invalid="true"');
+
+    const completeHtml = renderToStaticMarkup(
+      React.createElement(OrderCustomerForm, {
+        customerName: 'Ravi',
+        customerPhone: '9876543210',
+        onChangeName: vi.fn(),
+        onChangePhone: vi.fn(),
+      })
+    );
+    expect(completeHtml).not.toContain('role="alert"');
+    expect(completeHtml).not.toContain('Please enter a 10-digit mobile number');
   });
 });

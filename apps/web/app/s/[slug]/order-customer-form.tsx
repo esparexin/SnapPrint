@@ -18,6 +18,13 @@ export function OrderCustomerForm({
   const nameId = useId();
   const phoneId = useId();
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyNumbers = e.target.value.replace(/\D/g, '').slice(0, 10);
+    onChangePhone(onlyNumbers);
+  };
+
+  const isPhoneIncomplete = customerPhone.length > 0 && customerPhone.length < 10;
+
   return (
     <div className="sf-customer-grid">
       <div style={{ minWidth: 0 }}>
@@ -43,13 +50,32 @@ export function OrderCustomerForm({
           id={phoneId}
           type="tel"
           value={customerPhone}
-          onChange={(e) => onChangePhone(e.target.value)}
+          onChange={handlePhoneChange}
           placeholder="10-digit mobile"
           autoComplete="tel"
-          inputMode="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={10}
           enterKeyHint="done"
           className="sf-customer-input"
+          style={isPhoneIncomplete ? { borderColor: '#ef4444' } : undefined}
+          aria-invalid={isPhoneIncomplete}
+          aria-describedby={isPhoneIncomplete ? `${phoneId}-error` : undefined}
         />
+        {isPhoneIncomplete && (
+          <div
+            id={`${phoneId}-error`}
+            role="alert"
+            style={{
+              color: '#dc2626',
+              fontSize: '11px',
+              marginTop: '4px',
+              fontWeight: 500,
+            }}
+          >
+            Please enter a 10-digit mobile number ({customerPhone.length}/10)
+          </div>
+        )}
       </div>
     </div>
   );
