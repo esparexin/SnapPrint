@@ -9,6 +9,7 @@ import {
   PrintOrientation,
   PrintSides,
   StudioPrintRatesContract,
+  StudioPublicCapabilities,
 } from '@snapprint/contracts';
 import { DocumentRateSelector } from './document-rate-selector';
 import { AutoOrientIcon, LandscapeIcon, PortraitIcon } from './storefront-icons';
@@ -17,6 +18,7 @@ interface DocumentOptionsGridProps {
   config: DocumentPrintConfig;
   pageCount?: number;
   printRates?: StudioPrintRatesContract;
+  capabilities?: StudioPublicCapabilities;
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
 
@@ -50,6 +52,7 @@ export function DocumentOptionsGrid({
   config,
   pageCount,
   printRates,
+  capabilities,
   onUpdate,
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
@@ -89,6 +92,7 @@ export function DocumentOptionsGrid({
         sides={config.sides}
         paperSize={effectivePaperSize}
         printRates={printRates}
+        capabilities={capabilities}
         isSinglePage={isSinglePage}
         onSelect={handleRateSelect}
       />

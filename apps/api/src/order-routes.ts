@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { Db } from 'mongodb';
 import {
   OrderRecordSchema,
@@ -17,8 +17,8 @@ import {
   findOrderBySessionAndId,
   findOrderByStudioAndIdempotency,
 } from './repositories/order.repository.js';
-import { findPhotoAssetsByIds } from './repositories/photo-asset.repository.js';
 import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
+import { prepareOrderAdmission } from './repositories/printer-allowance.repository.js';
 import { StorageService } from './storage/storage-service.js';
 
 export interface OrderRouteOptions {
@@ -26,6 +26,9 @@ export interface OrderRouteOptions {
   config?: AppConfig;
   storage?: StorageService;
 }
+
+const sendError = (reply: FastifyReply, status: number, code: string, message: string) =>
+  reply.status(status).send({ statusCode: status, code, message });
 
 export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, opts) => {
   const config = opts?.config ?? loadConfig();
@@ -48,28 +51,24 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const bodyResult = QuoteRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply
-          .status(400)
-          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
+        return sendError(reply, 400, 'VALIDATION_ERROR', 'Invalid payload.');
       }
 
-      const assetIds = Array.from(new Set(bodyResult.data.items.map((i) => i.assetId)));
-      const assetMap = await findPhotoAssetsByIds(db, studio.id, session.sessionId, assetIds);
-
-      const itemsWithMeta = [];
-      for (const item of bodyResult.data.items) {
-        const asset = assetMap.get(item.assetId);
-        if (!asset) {
-          return reply
-            .status(404)
-            .send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
-        }
-        itemsWithMeta.push({
-          config: item,
-          filename: asset.originalFilename,
-          documentPageCount: asset.pageCount || 1,
-        });
+      const admission = await prepareOrderAdmission(
+        db,
+        studio.id,
+        session.sessionId,
+        bodyResult.data.items
+      );
+      if (admission.error) {
+        return sendError(
+          reply,
+          admission.error.status,
+          admission.error.code,
+          admission.error.message
+        );
       }
+      const itemsWithMeta = admission.items!;
 
       try {
         const quote = calculateOrderQuote({
@@ -78,11 +77,12 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         });
         return reply.status(200).send(QuoteResponseSchema.parse(quote));
       } catch (err) {
-        return reply.status(400).send({
-          statusCode: 400,
-          code: 'PRICING_CALCULATION_ERROR',
-          message: err instanceof Error ? err.message : 'Failed to calculate quotation.',
-        });
+        return sendError(
+          reply,
+          400,
+          'PRICING_CALCULATION_ERROR',
+          err instanceof Error ? err.message : 'Failed to calculate quotation.'
+        );
       }
     }
   );
@@ -101,16 +101,12 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const avail = await checkStudioCheckoutAvailability(db, studio);
       if (!avail.allowed) {
-        return reply
-          .status(403)
-          .send({ statusCode: 403, code: avail.reason, message: avail.reason });
+        return sendError(reply, 403, avail.reason, avail.reason);
       }
 
       const bodyResult = OrderSubmissionRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply
-          .status(400)
-          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
+        return sendError(reply, 400, 'VALIDATION_ERROR', 'Invalid payload.');
       }
 
       const existing = await findOrderByStudioAndIdempotency(
@@ -122,23 +118,21 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         return reply.status(200).send(OrderRecordSchema.parse(existing));
       }
 
-      const assetIds = Array.from(new Set(bodyResult.data.items.map((i) => i.assetId)));
-      const assetMap = await findPhotoAssetsByIds(db, studio.id, session.sessionId, assetIds);
-
-      const itemsWithMeta = [];
-      for (const item of bodyResult.data.items) {
-        const asset = assetMap.get(item.assetId);
-        if (!asset) {
-          return reply
-            .status(404)
-            .send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
-        }
-        itemsWithMeta.push({
-          config: item,
-          filename: asset.originalFilename,
-          documentPageCount: asset.pageCount || 1,
-        });
+      const admission = await prepareOrderAdmission(
+        db,
+        studio.id,
+        session.sessionId,
+        bodyResult.data.items
+      );
+      if (admission.error) {
+        return sendError(
+          reply,
+          admission.error.status,
+          admission.error.code,
+          admission.error.message
+        );
       }
+      const itemsWithMeta = admission.items!;
 
       const quote = calculateOrderQuote({
         items: itemsWithMeta,
@@ -185,9 +179,7 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
         request.params.orderId
       );
       if (!order) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'ORDER_NOT_FOUND', message: 'Order was not found.' });
+        return sendError(reply, 404, 'ORDER_NOT_FOUND', 'Order was not found.');
       }
 
       return reply.status(200).send(OrderRecordSchema.parse(order));

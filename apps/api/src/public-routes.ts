@@ -16,6 +16,7 @@ import {
   toStudioContract,
 } from './repositories/studio.repository.js';
 import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
+import { getStudioPublicCapabilities } from './repositories/printer.repository.js';
 import { signSessionToken } from './session-token.js';
 
 export interface PublicRouteOptions {
@@ -52,11 +53,14 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
 
     const studio = toStudioContract(doc);
 
-    const avail = await checkStudioCheckoutAvailability(db, {
-      id: studio.id,
-      status: studio.status,
-      isAcceptingOrders: studio.settings.isAcceptingOrders,
-    });
+    const [avail, capabilities] = await Promise.all([
+      checkStudioCheckoutAvailability(db, {
+        id: studio.id,
+        status: studio.status,
+        isAcceptingOrders: studio.settings.isAcceptingOrders,
+      }),
+      getStudioPublicCapabilities(db, studio.id),
+    ]);
 
     const publicStudio = PublicStudioSchema.parse({
       id: studio.id,
@@ -68,6 +72,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       contactEmail: studio.settings.contactEmail,
       isAcceptingOrders: avail.allowed,
       printRates: studio.settings.printRates,
+      capabilities,
       payment: doc.payment
         ? {
             enableCounterPayment: doc.payment.enableCounterPayment ?? true,

@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { DocumentPrintConfig, StudioPrintRatesContract } from '@snapprint/contracts';
+import {
+  DocumentPrintConfig,
+  StudioPrintRatesContract,
+  StudioPublicCapabilities,
+} from '@snapprint/contracts';
 import { DocumentCopiesStepper } from './document-copies-stepper';
 import { DocumentOptionsGrid } from './document-options-grid';
 import { EyeIcon, TrashIcon } from './storefront-icons';
@@ -11,6 +15,7 @@ interface DocumentConfigFormProps {
   filename: string;
   pageCount: number;
   printRates?: StudioPrintRatesContract;
+  capabilities?: StudioPublicCapabilities;
   isRemoving?: boolean;
   onUpdate: (updated: DocumentPrintConfig) => void;
   onPreview: () => void;
@@ -22,6 +27,7 @@ export function DocumentConfigForm({
   filename,
   pageCount,
   printRates,
+  capabilities,
   isRemoving = false,
   onUpdate,
   onPreview,
@@ -109,6 +115,7 @@ export function DocumentConfigForm({
         config={config}
         pageCount={pageCount}
         printRates={printRates}
+        capabilities={capabilities}
         onUpdate={onUpdate}
       />
 

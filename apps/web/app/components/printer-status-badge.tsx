@@ -38,13 +38,18 @@ export function PrinterStatusBadge({ studioId, initialStatus }: PrinterStatusBad
 
   useEffect(() => {
     let mounted = true;
-    fetchStudioFleetStatus(studioId)
-      .then((res) => {
-        if (mounted) setStatus(res.status);
-      })
-      .catch(() => {});
+    const updateFleet = () => {
+      fetchStudioFleetStatus(studioId)
+        .then((res) => {
+          if (mounted) setStatus(res.status);
+        })
+        .catch(() => {});
+    };
+    updateFleet();
+    const interval = setInterval(updateFleet, 20_000);
     return () => {
       mounted = false;
+      clearInterval(interval);
     };
   }, [studioId]);
 

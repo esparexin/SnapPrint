@@ -85,6 +85,14 @@ export const PublicPaymentSettingsSchema = z.object({
 
 export type PublicPaymentSettings = z.infer<typeof PublicPaymentSettingsSchema>;
 
+export const StudioPublicCapabilitiesSchema = z.object({
+  supportsDuplex: z.boolean().default(false),
+  supportedDuplexSizes: z.array(z.string()).default([]),
+  supportsColor: z.boolean().default(false),
+  supportedPaperSizes: z.array(z.string()).default(['A4']),
+});
+export type StudioPublicCapabilities = z.infer<typeof StudioPublicCapabilitiesSchema>;
+
 export const PublicStudioSchema = z.object({
   id: StudioIdSchema,
   slug: StudioSlugSchema,
@@ -96,6 +104,7 @@ export const PublicStudioSchema = z.object({
   isAcceptingOrders: z.boolean().default(true).optional(),
   payment: PublicPaymentSettingsSchema.optional(),
   printRates: StudioPrintRatesSchema.optional(),
+  capabilities: StudioPublicCapabilitiesSchema.optional(),
 });
 
 export type PublicStudio = z.infer<typeof PublicStudioSchema>;

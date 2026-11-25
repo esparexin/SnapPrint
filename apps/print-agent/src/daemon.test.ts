@@ -136,7 +136,7 @@ describe('AgentDaemon', () => {
     expect(mockSpooler.printFile).toHaveBeenCalledWith(
       'HP LaserJet Pro M126nw',
       expect.stringContaining('snapprint_job_test_456_ticket.pdf'),
-      { copies: 2, paperSize: 'A4' }
+      { copies: 2, paperSize: 'A4', sides: 'single' }
     );
     expect(mockClient.updateJobStatus).toHaveBeenCalledWith(
       'tok_device_test',

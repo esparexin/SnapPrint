@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { OrderRecord, PublicPaymentSettings, StudioPrintRatesContract } from '@snapprint/contracts';
+import {
+  OrderRecord,
+  PublicPaymentSettings,
+  StudioPrintRatesContract,
+  StudioPublicCapabilities,
+} from '@snapprint/contracts';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { createDefaultConfig, resolvePreviewTarget } from './document-print-workflow-helpers';
@@ -18,6 +23,7 @@ interface DocumentPrintWorkflowProps {
   payment?: PublicPaymentSettings;
   isAcceptingOrders?: boolean;
   printRates?: StudioPrintRatesContract;
+  capabilities?: StudioPublicCapabilities;
 }
 
 export function DocumentPrintWorkflow({
@@ -28,6 +34,7 @@ export function DocumentPrintWorkflow({
   payment,
   isAcceptingOrders = true,
   printRates,
+  capabilities,
 }: DocumentPrintWorkflowProps) {
   const {
     items,
@@ -95,6 +102,7 @@ export function DocumentPrintWorkflow({
               filename={doc.filename}
               pageCount={doc.pageCount}
               printRates={printRates}
+              capabilities={capabilities}
               isRemoving={removingKeys.includes(doc.assetId)}
               onUpdate={(updated) => handleUpdateConfig(doc.assetId, updated)}
               onPreview={() => setPreviewAssetId(doc.assetId)}

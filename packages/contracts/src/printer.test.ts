@@ -6,7 +6,9 @@ import {
   AgentPendingJobsResponseSchema,
   AgentSyncPrintersRequestSchema,
   AssignedStudioPrinterSchema,
+  CapabilityProvenanceSchema,
   DiscoveredPrinterSchema,
+  DuplexSupportSchema,
   PrinterIdSchema,
   PrinterRoleSchema,
   PrinterStatusSchema,
@@ -19,6 +21,21 @@ describe('Printer Schemas (contracts)', () => {
     it('validates printer ID with letters, numbers, and dashes', () => {
       expect(PrinterIdSchema.parse('prn_hp-laserjet_01')).toBe('prn_hp-laserjet_01');
       expect(() => PrinterIdSchema.parse('p!')).toThrow();
+    });
+
+    it('validates duplex support enum', () => {
+      expect(DuplexSupportSchema.parse('supported')).toBe('supported');
+      expect(DuplexSupportSchema.parse('unsupported')).toBe('unsupported');
+      expect(DuplexSupportSchema.parse('unknown')).toBe('unknown');
+      expect(() => DuplexSupportSchema.parse('invalid')).toThrow();
+    });
+
+    it('validates capability provenance enum', () => {
+      expect(CapabilityProvenanceSchema.parse('driver_query')).toBe('driver_query');
+      expect(CapabilityProvenanceSchema.parse('system_detected')).toBe('system_detected');
+      expect(CapabilityProvenanceSchema.parse('manual_verified')).toBe('manual_verified');
+      expect(CapabilityProvenanceSchema.parse('unverified')).toBe('unverified');
+      expect(() => CapabilityProvenanceSchema.parse('guessed')).toThrow();
     });
 
     it('validates printer role enums', () => {
@@ -49,6 +66,26 @@ describe('Printer Schemas (contracts)', () => {
       expect(valid.supportedPaperSizes).toEqual(['A4']);
       expect(valid.status).toBe('online');
       expect(valid.isColorSupported).toBe(false);
+      expect(valid.duplexSupport).toBe('unknown');
+      expect(valid.supportedDuplexSizes).toEqual([]);
+      expect(valid.capabilityProvenance).toBe('unverified');
+    });
+
+    it('parses verified duplex printer with supported duplex sizes', () => {
+      const valid = DiscoveredPrinterSchema.parse({
+        printerId: 'prn_canon_duplex',
+        name: 'Canon imageRUNNER 2520',
+        driverName: 'Canon Generic UFR II',
+        isColorSupported: false,
+        supportedPaperSizes: ['A4', 'A3', 'legal'],
+        duplexSupport: 'supported',
+        supportedDuplexSizes: ['A4', 'A3'],
+        capabilityProvenance: 'driver_query',
+        lastSeenAt: new Date().toISOString(),
+      });
+      expect(valid.duplexSupport).toBe('supported');
+      expect(valid.supportedDuplexSizes).toEqual(['A4', 'A3']);
+      expect(valid.capabilityProvenance).toBe('driver_query');
     });
 
     it('rejects empty driver name or invalid date', () => {

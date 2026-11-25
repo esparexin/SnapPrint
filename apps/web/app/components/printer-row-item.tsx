@@ -10,8 +10,22 @@ interface PrinterRowItemProps {
   onRoleChange: (printerId: string, role: PrinterRole) => void;
 }
 
+function getDuplexBadge(support?: string) {
+  if (support === 'supported')
+    return { label: '🔄 Duplex supported', bg: '#dcfce7', fg: '#166534' };
+  if (support === 'unsupported') return { label: '⇥ Simplex only', bg: '#f1f5f9', fg: '#475569' };
+  return { label: '⚠️ Duplex unverified', bg: '#fef3c7', fg: '#92400e' };
+}
+
+const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
+  active_bw: { bg: '#f0fdf4', color: '#166534' },
+  active_color: { bg: '#eff6ff', color: '#1d4ed8' },
+};
+
 export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRowItemProps) {
   const isOnline = printer.status === 'online';
+  const duplexBadge = getDuplexBadge(printer.duplexSupport);
+  const roleTheme = ROLE_COLORS[printer.role] || { bg: '#f8fafc', color: '#475569' };
 
   return (
     <div
@@ -62,13 +76,25 @@ export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRow
             style={{
               fontSize: '0.6875rem',
               padding: '2px 8px',
-              backgroundColor: printer.isColorSupported ? '#fef3c7' : '#f1f5f9',
-              color: printer.isColorSupported ? '#92400e' : '#475569',
               borderRadius: '4px',
               fontWeight: 600,
+              backgroundColor: printer.isColorSupported ? '#fef3c7' : '#f1f5f9',
+              color: printer.isColorSupported ? '#92400e' : '#475569',
             }}
           >
             {printer.isColorSupported ? '🌈 Color' : '⬛ Monochromatic (B&W)'}
+          </span>
+          <span
+            style={{
+              fontSize: '0.6875rem',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontWeight: 600,
+              backgroundColor: duplexBadge.bg,
+              color: duplexBadge.fg,
+            }}
+          >
+            {duplexBadge.label}
           </span>
           {printer.supportedPaperSizes.map((size) => (
             <span
@@ -100,18 +126,8 @@ export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRow
             border: '1px solid #cbd5e1',
             fontSize: '0.8125rem',
             fontWeight: 600,
-            backgroundColor:
-              printer.role === 'active_bw'
-                ? '#f0fdf4'
-                : printer.role === 'active_color'
-                  ? '#eff6ff'
-                  : '#f8fafc',
-            color:
-              printer.role === 'active_bw'
-                ? '#166534'
-                : printer.role === 'active_color'
-                  ? '#1d4ed8'
-                  : '#475569',
+            backgroundColor: roleTheme.bg,
+            color: roleTheme.color,
             cursor: isUpdating ? 'not-allowed' : 'pointer',
           }}
         >

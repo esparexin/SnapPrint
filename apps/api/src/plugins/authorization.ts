@@ -181,7 +181,9 @@ export function requireStudioPermission(
     }
 
     if (!effectiveMembership) {
-      const platformAdmin = memberships.find((m) => m.role === 'platform_admin');
+      const platformAdmin = memberships.find(
+        (m) => m.role === 'platform_admin' && m.status === 'active'
+      );
       if (platformAdmin) {
         effectiveMembership = platformAdmin;
       }

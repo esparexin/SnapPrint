@@ -151,6 +151,7 @@ export class AgentDaemon {
         await this.spooler.printFile(job.printerName, tempFilePath, {
           copies: job.copies,
           paperSize: job.paperSize,
+          sides: job.sides,
         });
         this.jobTracker.clearInFlight(job.jobId);
 
@@ -196,7 +197,7 @@ export class AgentDaemon {
     if (this.isRevoked) return;
 
     const heartbeatMs = this.options.heartbeatIntervalMs ?? 30_000;
-    const syncMs = this.options.syncIntervalMs ?? 300_000;
+    const syncMs = this.options.syncIntervalMs ?? 30_000;
     const pollMs = this.options.jobPollIntervalMs ?? 3_000;
 
     this.heartbeatTimer = setInterval(() => {

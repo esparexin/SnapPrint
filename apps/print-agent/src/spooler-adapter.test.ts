@@ -58,11 +58,13 @@ describe('Spooler Adapter & Drivers Discovery', () => {
           Name: 'HP LaserJet Pro MFP M126nw',
           DriverName: 'HP LaserJet M126 Driver',
           Default: true,
+          DuplexMode: 'OneSided',
         },
         {
           Name: 'Epson L3150 Series',
           DriverName: 'EPSON L3150 Series',
           Default: false,
+          DuplexMode: 'TwoSidedLongEdge',
         },
       ]);
 
@@ -70,11 +72,13 @@ describe('Spooler Adapter & Drivers Discovery', () => {
       expect(printers).toHaveLength(2);
       expect(printers[0].name).toBe('HP LaserJet Pro MFP M126nw');
       expect(printers[0].isColorSupported).toBe(false);
+      expect(printers[0].duplexSupport).toBe('unsupported');
       expect(printers[0].isDefault).toBe(true);
       expect(printers[0].supportedPaperSizes).toContain('legal');
 
       expect(printers[1].name).toBe('Epson L3150 Series');
       expect(printers[1].isColorSupported).toBe(true);
+      expect(printers[1].duplexSupport).toBe('supported');
       expect(printers[1].isDefault).toBe(false);
     });
 
@@ -227,7 +231,9 @@ printer HP_LaserJet_1020 is idle. enabled since Mon 23 Nov 2026 10:00:00 AM IST
         await adapter.printFile('Epson_L3150', tempPdf, { copies: 3 });
 
         expect(executedCommands).toHaveLength(1);
-        expect(executedCommands[0]).toBe(`lp -d "Epson_L3150" -n 3 "${tempPdf}"`);
+        expect(executedCommands[0]).toBe(
+          `lp -d "Epson_L3150" -n 3 -o sides=one-sided "${tempPdf}"`
+        );
       } finally {
         if (existsSync(tempPdf)) unlinkSync(tempPdf);
       }

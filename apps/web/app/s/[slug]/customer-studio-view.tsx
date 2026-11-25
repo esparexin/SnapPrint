@@ -98,6 +98,7 @@ export function CustomerStudioView({
           payment={studio.payment}
           isAcceptingOrders={studio.isAcceptingOrders !== false}
           printRates={studio.printRates}
+          capabilities={studio.capabilities}
         />
       )}
 

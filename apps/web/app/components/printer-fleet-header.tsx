@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { getAgentDownloadUrl } from '../../src/printer-client';
+import { getAgentDownloadUrl, StudioFleetAllowance } from '../../src/printer-client';
 import { PrinterStatusBadge } from './printer-status-badge';
 
 interface PrinterFleetHeaderProps {
   studioId: string;
   studioName?: string;
+  allowance?: StudioFleetAllowance | null;
   onOpenPairing: () => void;
   onClose?: () => void;
 }
@@ -14,6 +15,7 @@ interface PrinterFleetHeaderProps {
 export function PrinterFleetHeader({
   studioId,
   studioName,
+  allowance,
   onOpenPairing,
   onClose,
 }: PrinterFleetHeaderProps) {
@@ -40,9 +42,35 @@ export function PrinterFleetHeader({
             Hardware &amp; Printers Fleet
           </h2>
           <PrinterStatusBadge studioId={studioId} />
+          {allowance?.isLimitReached && (
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 600,
+                padding: '2px 8px',
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                borderRadius: '4px',
+              }}
+            >
+              Active Limit (2/2)
+            </span>
+          )}
         </div>
         <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
-          {studioName || `Studio ${studioId}`} · Capability Routing &amp; Discovery
+          {studioName || `Studio ${studioId}`}
+          {allowance ? (
+            <span>
+              {' '}
+              · Active:{' '}
+              <strong>
+                {allowance.activeCount}/{allowance.maxActivePrinters}
+              </strong>{' '}
+              · Standby: {allowance.registeredCount - allowance.activeCount}
+            </span>
+          ) : (
+            ' · Capability Routing & Discovery'
+          )}
         </p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>

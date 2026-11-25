@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { fetchCurrentUser, logoutOperator } from '../../src/auth-client';
 import { adminLayoutStyles } from './admin-layout-styles';
-import { AdminLoginCard } from './admin-login-card';
 import { AdminNoAdminCard } from './admin-no-admin-card';
 import { AdminPortalView } from './admin-portal-view';
 
@@ -38,19 +37,11 @@ export default function PlatformAdminPage() {
     );
   }
 
-  if (!auth) {
-    return (
-      <div style={adminLayoutStyles.centeredScreen}>
-        <AdminLoginCard onSuccess={(newAuth) => setAuth(newAuth)} />
-      </div>
-    );
-  }
-
-  const isPlatformAdmin = auth.memberships.some(
+  const isPlatformAdmin = auth?.memberships.some(
     (m) => m.role === 'platform_admin' && m.status === 'active'
   );
 
-  if (!isPlatformAdmin) {
+  if (!auth || !isPlatformAdmin) {
     return (
       <div style={adminLayoutStyles.centeredScreen}>
         <AdminNoAdminCard />

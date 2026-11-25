@@ -9,6 +9,7 @@ import { registerPrinterJobRoutes } from './printer-job-routes.js';
 import { requeuePrintJob } from './repositories/print-job-claim.repository.js';
 import {
   createPairingKey,
+  getStudioFleetAllowance,
   listStudioDevices,
   listStudioPrinters,
   revokeAgentDevice,
@@ -45,14 +46,18 @@ export async function printerRoutes(
     }
   );
 
-  // 2. Operator: List Studio Printers
+  // 2. Operator: List Studio Printers & Fleet Allowance
   app.get<{ Params: { studioId: string } }>(
     '/studios/:studioId/printers',
     { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
     async (request, reply) => {
       const db = getEffectiveDb();
-      const printers = await listStudioPrinters(db, request.params.studioId);
+      const [printers, allowance] = await Promise.all([
+        listStudioPrinters(db, request.params.studioId),
+        getStudioFleetAllowance(db, request.params.studioId),
+      ]);
       return reply.send({
+        allowance,
         printers: printers.map((p) => ({
           id: p.id,
           studioId: p.studioId,
@@ -61,6 +66,9 @@ export async function printerRoutes(
           role: p.role,
           isColorSupported: p.isColorSupported,
           supportedPaperSizes: p.supportedPaperSizes,
+          duplexSupport: p.duplexSupport || 'unknown',
+          supportedDuplexSizes: p.supportedDuplexSizes || [],
+          capabilityProvenance: p.capabilityProvenance || 'unverified',
           status: p.status,
           isDefaultOsPrinter: p.isDefaultOsPrinter,
           lastSeenAt: p.lastSeenAt.toISOString(),
