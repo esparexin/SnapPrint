@@ -76,24 +76,20 @@ describe('Document Print Orders & Quotation Routes', () => {
       role: 'active_bw',
       isColorSupported: false,
       supportedPaperSizes: ['A4'],
+      duplexSupport: 'supported',
+      supportedDuplexSizes: ['A4'],
+      capabilityProvenance: 'driver_query',
       status: 'online',
       isDefaultOsPrinter: true,
-      lastSeenAt: now,
-      createdAt: now,
-      updatedAt: now,
+      lastSeenAt: now, createdAt: now, updatedAt: now,
     });
 
     const token = signSessionToken({ sessionId, studioId, expiresAt }, secret);
 
     // Operator with view_orders & manage_order_status
     ctx.users.push({
-      id: 'usr_staff_12345678',
-      email: 'staff@xerox.com',
-      name: 'Staff Member',
-      passwordHash,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      id: 'usr_staff_12345678', email: 'staff@xerox.com', name: 'Staff Member',
+      passwordHash, status: 'active', createdAt: now, updatedAt: now,
     });
 
     ctx.memberships.push({
@@ -101,7 +97,7 @@ describe('Document Print Orders & Quotation Routes', () => {
       studioId,
       role: 'studio_staff',
       status: 'active',
-      createdAt: new Date(),
+      createdAt: now,
     });
 
     return { ctx, studioId, slug, sessionId, assetId, token };

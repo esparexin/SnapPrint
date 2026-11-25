@@ -19,6 +19,7 @@ import {
 } from './repositories/order.repository.js';
 import { findPhotoAssetsByIds } from './repositories/photo-asset.repository.js';
 import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
+import { validateOrderDuplexFeasibility } from './repositories/printer-allowance.repository.js';
 import { StorageService } from './storage/storage-service.js';
 
 export interface OrderRouteOptions {
@@ -48,9 +49,12 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const bodyResult = QuoteRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply
-          .status(400)
-          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
+        return reply.status(400).send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
+      }
+
+      const duplexCheck = await validateOrderDuplexFeasibility(db, studio.id, bodyResult.data.items);
+      if (!duplexCheck.allowed) {
+        return reply.status(422).send({ statusCode: 422, code: 'NO_DUPLEX_SUPPORT', message: duplexCheck.reason });
       }
 
       const assetIds = Array.from(new Set(bodyResult.data.items.map((i) => i.assetId)));
@@ -60,9 +64,7 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       for (const item of bodyResult.data.items) {
         const asset = assetMap.get(item.assetId);
         if (!asset) {
-          return reply
-            .status(404)
-            .send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
+          return reply.status(404).send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
         }
         itemsWithMeta.push({
           config: item,
@@ -108,9 +110,12 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
 
       const bodyResult = OrderSubmissionRequestSchema.safeParse(request.body);
       if (!bodyResult.success) {
-        return reply
-          .status(400)
-          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
+        return reply.status(400).send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
+      }
+
+      const duplexCheck = await validateOrderDuplexFeasibility(db, studio.id, bodyResult.data.items);
+      if (!duplexCheck.allowed) {
+        return reply.status(422).send({ statusCode: 422, code: 'NO_DUPLEX_SUPPORT', message: duplexCheck.reason });
       }
 
       const existing = await findOrderByStudioAndIdempotency(
@@ -129,9 +134,7 @@ export const orderRoutes: FastifyPluginAsync<OrderRouteOptions> = async (app, op
       for (const item of bodyResult.data.items) {
         const asset = assetMap.get(item.assetId);
         if (!asset) {
-          return reply
-            .status(404)
-            .send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
+          return reply.status(404).send({ statusCode: 404, code: 'ASSET_NOT_FOUND', message: 'Asset not found.' });
         }
         itemsWithMeta.push({
           config: item,

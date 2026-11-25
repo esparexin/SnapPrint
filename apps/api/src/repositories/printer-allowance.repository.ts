@@ -1,4 +1,5 @@
 import { Db } from 'mongodb';
+import { StudioPublicCapabilities } from '@snapprint/contracts';
 import { PRINTERS_COLLECTION, StudioPrinterDocument } from './printer.repository.js';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
 
@@ -45,4 +46,78 @@ export async function getStudioFleetAllowance(
     activeColorPrinterId: activeColor?.id,
     isLimitReached: remainingActiveCapacity === 0,
   };
+}
+
+/**
+ * Returns public capabilities for active, online studio printers.
+ */
+export async function getStudioPublicCapabilities(
+  db: Db,
+  studioId: string
+): Promise<StudioPublicCapabilities> {
+  const activePrinters = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .find({ studioId, role: { $in: ['active_bw', 'active_color'] }, status: 'online' })
+    .toArray();
+
+  const supportsColor = activePrinters.some((p) => p.isColorSupported);
+  const duplexPrinters = activePrinters.filter((p) => p.duplexSupport === 'supported');
+  const supportsDuplex = duplexPrinters.length > 0;
+  const supportedDuplexSizes = Array.from(
+    new Set(
+      duplexPrinters.flatMap((p) =>
+        p.supportedDuplexSizes && p.supportedDuplexSizes.length > 0
+          ? p.supportedDuplexSizes
+          : p.supportedPaperSizes
+      )
+    )
+  );
+  const supportedPaperSizes = Array.from(
+    new Set(activePrinters.flatMap((p) => p.supportedPaperSizes))
+  );
+
+  return {
+    supportsColor,
+    supportsDuplex,
+    supportedDuplexSizes,
+    supportedPaperSizes: supportedPaperSizes.length > 0 ? supportedPaperSizes : ['A4'],
+  };
+}
+
+/**
+ * Validates that requested duplex print options are supported by an online active printer in the shop.
+ * Fail-closed: returns allowed: false if any requested duplex item cannot be fulfilled.
+ */
+export async function validateOrderDuplexFeasibility(
+  db: Db,
+  studioId: string,
+  items: readonly { paperSize: string; colorMode: string; sides?: string }[]
+): Promise<{ allowed: boolean; reason?: string }> {
+  const hasDuplex = items.some((i) => i.sides === 'double_sided' || i.sides === 'double');
+  if (!hasDuplex) return { allowed: true };
+
+  const printers = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .find({ studioId, role: { $in: ['active_bw', 'active_color'] }, status: 'online' })
+    .toArray();
+
+  for (const item of items) {
+    if (item.sides === 'double_sided' || item.sides === 'double') {
+      const match = printers.find((p) => {
+        if (p.duplexSupport !== 'supported') return false;
+        if (item.colorMode === 'color' && !p.isColorSupported) return false;
+        if (p.supportedDuplexSizes && p.supportedDuplexSizes.length > 0) {
+          return p.supportedDuplexSizes.includes(item.paperSize as any);
+        }
+        return p.supportedPaperSizes.includes(item.paperSize as any);
+      });
+      if (!match) {
+        return {
+          allowed: false,
+          reason: `Double-sided (duplex) printing is not supported for ${item.paperSize} (${item.colorMode}).`,
+        };
+      }
+    }
+  }
+  return { allowed: true };
 }
