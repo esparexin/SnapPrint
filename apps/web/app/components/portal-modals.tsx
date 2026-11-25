@@ -13,6 +13,7 @@ import { ShopPaymentModal } from './shop-payment-modal';
 import { ShopProfileModal } from './shop-profile-modal';
 import { StaffManagementModal } from './staff-management-modal';
 import { StudioQrModal } from './studio-qr-modal';
+import { StudioSubscriptionModal } from './studio-subscription-modal';
 
 const fallbackStudio = (id: string, slug?: string, name?: string): Studio => ({
   id,
@@ -106,6 +107,7 @@ export function PortalModals({
       qr: <StudioQrModal studio={qrStudio} onClose={handleClose} inShell={inShell} />,
       profile: <ShopProfileModal {...studioFormProps} />,
       payment: <ShopPaymentModal {...studioFormProps} />,
+      subscription: <StudioSubscriptionModal {...base} />,
     };
     return activeView ? views[activeView] || null : null;
   };

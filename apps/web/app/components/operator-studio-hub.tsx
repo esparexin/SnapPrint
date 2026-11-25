@@ -14,14 +14,15 @@ interface OperatorStudioHubProps {
   onOpenPairing?: () => void;
 }
 
-export const SHOP_MENU_TABS: { id: OperatorView; label: string; icon: string }[] = [
-  { id: 'orders', label: 'Orders', icon: '📄' },
-  { id: 'printers', label: 'Printers', icon: '🖨️' },
-  { id: 'qr', label: 'QR Stand', icon: '📱' },
-  { id: 'payment', label: 'Payments', icon: '💰' },
-  { id: 'profile', label: 'Settings', icon: '🏪' },
-  { id: 'staff', label: 'Staff', icon: '👥' },
-  { id: 'setup', label: 'Setup Guide', icon: '⚙️' },
+export const SHOP_MENU_TABS: { id: OperatorView; label: string }[] = [
+  { id: 'orders', label: 'Orders' },
+  { id: 'printers', label: 'Printers' },
+  { id: 'qr', label: 'QR Stand' },
+  { id: 'payment', label: 'Payments' },
+  { id: 'profile', label: 'Settings' },
+  { id: 'subscription', label: 'Subscription' },
+  { id: 'staff', label: 'Staff' },
+  { id: 'setup', label: 'Setup Guide' },
 ];
 
 export function OperatorStudioHub({
@@ -77,7 +78,6 @@ export function OperatorStudioHub({
                 onKeyDown={(e) => handleTabKeyDown(e, idx)}
                 className="portal-tab"
               >
-                <span aria-hidden="true">{tab.icon}</span>
                 <span>{tab.label}</span>
               </button>
             );

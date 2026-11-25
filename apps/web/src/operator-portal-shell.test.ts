@@ -60,6 +60,9 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
     expect(html).toContain('Pages');
     expect(html).not.toContain('Printing is Currently Offline');
     expect(html).not.toContain('Windows Print Agent is running');
+    expect(html).not.toContain('📄');
+    expect(html).not.toContain('🖨️');
+    expect(html).not.toContain('⚡');
 
     expect(SHOP_MENU_TABS.map((t) => t.label)).toEqual([
       'Orders',
@@ -67,6 +70,7 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
       'QR Stand',
       'Payments',
       'Settings',
+      'Subscription',
       'Staff',
       'Setup Guide',
     ]);
@@ -80,7 +84,16 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
   });
 
   it('PortalModals renders every section inline inside tabpanel when inShell is true', () => {
-    const views = ['orders', 'printers', 'qr', 'payment', 'profile', 'staff', 'setup'] as const;
+    const views = [
+      'orders',
+      'printers',
+      'qr',
+      'payment',
+      'profile',
+      'subscription',
+      'staff',
+      'setup',
+    ] as const;
     for (const view of views) {
       const html = renderToStaticMarkup(
         React.createElement(PortalModals, {

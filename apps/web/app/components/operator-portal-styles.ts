@@ -1,7 +1,15 @@
 import { CSSProperties } from 'react';
 import type { StudioPrintRatesContract } from '@snapprint/contracts';
 
-export type OperatorView = 'orders' | 'printers' | 'qr' | 'profile' | 'payment' | 'staff' | 'setup';
+export type OperatorView =
+  | 'orders'
+  | 'printers'
+  | 'qr'
+  | 'profile'
+  | 'payment'
+  | 'staff'
+  | 'setup'
+  | 'subscription';
 
 export const DEFAULT_A4_RATES: StudioPrintRatesContract = {
   A4: {
@@ -28,6 +36,7 @@ export const VIEW_TITLES: Record<OperatorView, string> = {
   payment: 'Payments',
   staff: 'Staff',
   setup: 'Setup Guide',
+  subscription: 'Subscription',
 };
 
 export const portalStyles: Record<string, CSSProperties> = {
