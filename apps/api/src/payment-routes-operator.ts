@@ -69,6 +69,7 @@ export const operatorPaymentRoutes: FastifyPluginAsync<OperatorPaymentRouteOptio
           totalAmountMinor: order.totalAmountMinor,
           paidAmountMinor: order.paidAmountMinor ?? 0,
           paymentStatus: order.paymentStatus ?? 'UNPAID',
+          status: order.status,
         },
         bodyResult.data.amountMinor
       );

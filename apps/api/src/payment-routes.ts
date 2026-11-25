@@ -89,6 +89,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
           totalAmountMinor: order.totalAmountMinor,
           paidAmountMinor: paidMinor,
           paymentStatus: order.paymentStatus ?? 'UNPAID',
+          status: order.status,
         },
         order.totalAmountMinor - paidMinor
       );

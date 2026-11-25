@@ -1,4 +1,4 @@
-import type { OrderPaymentStatus, PaymentRecord } from '@snapprint/contracts';
+import type { OrderPaymentStatus, OrderStatus, PaymentRecord } from '@snapprint/contracts';
 
 export interface DerivedPaymentSummary {
   paidAmountMinor: number;
@@ -30,14 +30,46 @@ export function deriveOrderPaymentStatus(
 
 export interface PaymentAttemptValidation {
   valid: boolean;
-  error?: 'ORDER_ALREADY_PAID' | 'INVALID_AMOUNT' | 'AMOUNT_EXCEEDS_REMAINING';
+  error?: 'ORDER_CANCELLED' | 'ORDER_ALREADY_PAID' | 'INVALID_AMOUNT' | 'AMOUNT_EXCEEDS_REMAINING';
   remainingMinor: number;
 }
 
+export function isOrderEligibleForPayment(order: {
+  status: OrderStatus;
+  paymentStatus?: OrderPaymentStatus;
+  totalAmountMinor?: number;
+  paidAmountMinor?: number;
+}): boolean {
+  if (order.status === 'cancelled') {
+    return false;
+  }
+  if (order.paymentStatus === 'PAID') {
+    return false;
+  }
+  if (
+    order.totalAmountMinor !== undefined &&
+    order.paidAmountMinor !== undefined &&
+    order.totalAmountMinor > 0 &&
+    order.paidAmountMinor >= order.totalAmountMinor
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export function validatePaymentAttempt(
-  order: { totalAmountMinor: number; paidAmountMinor: number; paymentStatus: OrderPaymentStatus },
+  order: {
+    totalAmountMinor: number;
+    paidAmountMinor: number;
+    paymentStatus: OrderPaymentStatus;
+    status?: OrderStatus;
+  },
   attemptAmountMinor: number
 ): PaymentAttemptValidation {
+  if (order.status === 'cancelled') {
+    return { valid: false, error: 'ORDER_CANCELLED', remainingMinor: 0 };
+  }
+
   const remainingMinor = Math.max(0, order.totalAmountMinor - order.paidAmountMinor);
 
   if (order.paymentStatus === 'PAID' || remainingMinor === 0) {

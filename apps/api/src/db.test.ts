@@ -88,6 +88,10 @@ describe('Database Indexes & Connection State', () => {
       key: { studioId: 1, createdAt: -1 },
       name: 'idx_order_studio_created',
     });
+    expect(createdIndexes['orders']).toContainEqual({
+      key: { studioId: 1, status: 1, createdAt: -1 },
+      name: 'idx_order_studio_status_created',
+    });
     expect(createdIndexes['payments']).toBeDefined();
     expect(createdIndexes['payments']).toContainEqual({
       key: { studioId: 1, orderId: 1, createdAt: 1 },

@@ -103,27 +103,21 @@ describe('Payment Routes & Authorization Policy', () => {
     };
     ctx.orders.push(order);
 
-    const patchStatus = (status = 'processing') =>
+    const injectOp = (method: 'PATCH' | 'POST', subPath: string, payload?: object) =>
       ctx.app.inject({
-        method: 'PATCH',
-        url: `/studios/${studio.id}/orders/${order.orderId}/status`,
+        method,
+        url: `/studios/${studio.id}/orders/${order.orderId}/${subPath}`,
         cookies: { [opCookie.name]: opCookie.value },
         headers: { 'x-studio-id': studio.id },
-        payload: { status },
+        payload,
       });
 
+    const patchStatus = (status = 'processing') => injectOp('PATCH', 'status', { status });
     const payCounter = (
       amountMinor: number,
       method: 'counter_cash' | 'counter_upi',
       notes?: string
-    ) =>
-      ctx.app.inject({
-        method: 'POST',
-        url: `/studios/${studio.id}/orders/${order.orderId}/payments/counter`,
-        cookies: { [opCookie.name]: opCookie.value },
-        headers: { 'x-studio-id': studio.id },
-        payload: { method, amountMinor, ...(notes ? { notes } : {}) },
-      });
+    ) => injectOp('POST', 'payments/counter', { method, amountMinor, ...(notes ? { notes } : {}) });
 
     return { ctx, studio, order, opCookie, patchStatus, payCounter };
   };
@@ -241,5 +235,15 @@ describe('Payment Routes & Authorization Policy', () => {
     const printRes = await patchStatus('processing');
     expect(printRes.statusCode).toBe(200);
     expect(JSON.parse(printRes.body).status).toBe('processing');
+  });
+
+  it('rejects recording counter payment for a cancelled order', async () => {
+    const { patchStatus, payCounter } = await setupBaseFixture();
+    const cancelRes = await patchStatus('cancelled');
+    expect(cancelRes.statusCode).toBe(200);
+
+    const payRes = await payCounter(500, 'counter_cash');
+    expect(payRes.statusCode).toBe(400);
+    expect(JSON.parse(payRes.body).code).toBe('ORDER_CANCELLED');
   });
 });
