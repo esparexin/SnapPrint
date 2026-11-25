@@ -4,7 +4,7 @@ import { hostname } from 'node:os';
 import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
-import { getGuiHtml } from './gui-html.js';
+import { FAVICON_BASE64, getGuiHtml } from './gui-html.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
 export interface GuiServerHandle {
@@ -73,16 +73,41 @@ export function createGuiServer(
       return res.end(getGuiHtml());
     }
 
+    if (req.method === 'GET' && url.pathname === '/favicon.ico') {
+      const buf = Buffer.from(FAVICON_BASE64, 'base64');
+      res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Content-Length': buf.length,
+        'Cache-Control': 'public, max-age=86400',
+      });
+      return res.end(buf);
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/state') {
       const config = loadAgentConfig(configPath);
-      const printers = await spooler.getPrinters().catch(() => []);
       return sendJson(res, 200, {
         isEnrolled: Boolean(config.deviceToken),
         studioId: config.studioId,
         deviceId: config.deviceId,
         apiUrl: config.apiUrl,
-        printers,
       });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/printers') {
+      const printers = await spooler.getPrinters().catch(() => []);
+      return sendJson(res, 200, { printers });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/config') {
+      const body = await parseJsonBody<{ apiUrl?: string }>(req);
+      const newUrl = body?.apiUrl?.trim().replace(/\/+$/, '');
+      if (newUrl && (newUrl.startsWith('http://') || newUrl.startsWith('https://'))) {
+        const config = loadAgentConfig(configPath);
+        config.apiUrl = newUrl;
+        saveAgentConfig(config, configPath);
+        return sendJson(res, 200, { success: true, apiUrl: config.apiUrl });
+      }
+      return sendJson(res, 400, { message: 'Valid http:// or https:// URL required.' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/pair') {

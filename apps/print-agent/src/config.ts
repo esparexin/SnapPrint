@@ -84,8 +84,13 @@ export function loadAgentConfig(customPath?: string): AgentConfig {
     const rawToken = typeof parsed.deviceToken === 'string' ? parsed.deviceToken : undefined;
     const deviceToken = rawToken ? unprotectCredential(rawToken) : undefined;
 
+    let apiUrl = typeof parsed.apiUrl === 'string' ? parsed.apiUrl : getDefaultApiUrl();
+    if (apiUrl === 'https://api.snapprint.in') {
+      apiUrl = getDefaultApiUrl();
+    }
+
     return {
-      apiUrl: typeof parsed.apiUrl === 'string' ? parsed.apiUrl : getDefaultApiUrl(),
+      apiUrl,
       deviceToken,
       studioId: typeof parsed.studioId === 'string' ? parsed.studioId : undefined,
       deviceId: typeof parsed.deviceId === 'string' ? parsed.deviceId : undefined,

@@ -47,14 +47,14 @@ describe('CLI Commands', () => {
 
   it('config command displays and updates API URL', async () => {
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const exitCode = await runCli(['config', '--api-url', 'https://api.snapprint.in']);
+    const exitCode = await runCli(['config', '--api-url', 'https://custom-print.example.com']);
     expect(exitCode).toBe(0);
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      expect.stringContaining('API URL updated to: https://api.snapprint.in')
+      expect.stringContaining('API URL updated to: https://custom-print.example.com')
     );
 
     const saved = loadAgentConfig();
-    expect(saved.apiUrl).toBe('https://api.snapprint.in');
+    expect(saved.apiUrl).toBe('https://custom-print.example.com');
     consoleLogSpy.mockRestore();
   });
 
