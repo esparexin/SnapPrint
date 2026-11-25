@@ -60,6 +60,7 @@ export async function generateAgentPairingKey(
   const res = await fetchImpl(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
     credentials: 'include',
   });
 
@@ -150,6 +151,7 @@ export async function revokeAgentDevice(
   const res = await fetchImpl(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
     credentials: 'include',
   });
 
