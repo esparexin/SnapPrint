@@ -7,7 +7,7 @@ import { fetchStudio } from '../../src/workspace-client';
 import { AgentPairingModal } from './agent-pairing-modal';
 import { OperatorView } from './operator-portal-header';
 import { OrderFulfillmentModal } from './order-fulfillment-modal';
-import { PrinterManagementModal } from './printer-management-modal';
+import { PrinterPageSetupModal } from './printer-page-setup-modal';
 import { SetupWizardModal } from './setup-wizard-modal';
 import { ShopPaymentModal } from './shop-payment-modal';
 import { ShopProfileModal } from './shop-profile-modal';
@@ -102,7 +102,7 @@ export function PortalModals({
     };
     const views: Partial<Record<OperatorView, React.ReactNode>> = {
       orders: <OrderFulfillmentModal {...base} />,
-      printers: <PrinterManagementModal {...base} />,
+      printer_setup: <PrinterPageSetupModal {...base} />,
       staff: <StaffManagementModal {...base} />,
       qr: <StudioQrModal studio={qrStudio} onClose={handleClose} inShell={inShell} />,
       profile: <ShopProfileModal {...studioFormProps} />,

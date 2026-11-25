@@ -16,7 +16,7 @@ interface OperatorStudioHubProps {
 
 export const SHOP_MENU_TABS: { id: OperatorView; label: string }[] = [
   { id: 'orders', label: 'Orders' },
-  { id: 'printers', label: 'Printers' },
+  { id: 'printer_setup', label: 'Printer & Page Setup' },
   { id: 'qr', label: 'QR Stand' },
   { id: 'payment', label: 'Payments' },
   { id: 'profile', label: 'Settings' },
