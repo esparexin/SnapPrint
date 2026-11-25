@@ -3,6 +3,7 @@ import { OrderRecord, OrderStatus } from '@snapprint/contracts';
 import {
   deleteOperatorOrderDocument,
   fetchOperatorOrderQueue,
+  OrderApiError,
   updateOperatorOrderStatus,
 } from '../../src/order-client';
 
@@ -10,11 +11,13 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   async function loadOrders() {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const res = await fetchOperatorOrderQueue(
         studioId,
@@ -38,6 +41,8 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
     confirmedHandover?: boolean
   ) {
     setUpdatingId(orderId);
+    setError(null);
+    setSuccessMessage(null);
     try {
       const updated = await updateOperatorOrderStatus(
         studioId,
@@ -47,19 +52,34 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
         confirmedHandover
       );
       setOrders((prev) => prev.map((o) => (o.orderId === orderId ? updated : o)));
+      if (newStatus === 'processing') {
+        setSuccessMessage(
+          `Order #${updated.orderNumber} printing started & dispatched to printer spooler.`
+        );
+      } else if (newStatus === 'ready') {
+        setSuccessMessage(`Order #${updated.orderNumber} marked ready for pickup.`);
+      } else if (newStatus === 'completed') {
+        setSuccessMessage(`Order #${updated.orderNumber} handover completed.`);
+      } else if (newStatus === 'cancelled') {
+        setSuccessMessage(`Order #${updated.orderNumber} cancelled.`);
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to update status';
-      alert(
-        msg.includes('PAYMENT_REQUIRED_BEFORE_PRINT')
-          ? '⚠️ Payment Required: Collect payment before printing.'
-          : msg
-      );
+      const isPaymentRequired =
+        (err instanceof OrderApiError && err.code === 'PAYMENT_REQUIRED_BEFORE_PRINT') ||
+        (err instanceof Error && err.message.includes('PAYMENT_REQUIRED_BEFORE_PRINT'));
+      const msg = isPaymentRequired
+        ? '⚠️ Payment Required: Collect payment before printing this order.'
+        : err instanceof Error
+          ? err.message
+          : 'Failed to update status';
+      setError(msg);
     } finally {
       setUpdatingId(null);
     }
   }
 
   async function handleDeleteDocument(orderId: string, assetId: string) {
+    setError(null);
     try {
       await deleteOperatorOrderDocument(studioId, orderId, assetId);
       setOrders((prev) =>
@@ -76,23 +96,30 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
               }
         )
       );
+      setSuccessMessage('Document deleted successfully.');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete document');
+      setError(err instanceof Error ? err.message : 'Failed to delete document');
     }
   }
 
   function handlePaymentSuccess(updatedOrder: OrderRecord) {
     setOrders((prev) => prev.map((o) => (o.orderId === updatedOrder.orderId ? updatedOrder : o)));
+    setSuccessMessage(`Payment recorded for order #${updatedOrder.orderNumber}.`);
   }
 
   return {
     orders,
     loading,
     error,
+    successMessage,
     updatingId,
     loadOrders,
     handleStatusChange,
     handleDeleteDocument,
     handlePaymentSuccess,
+    clearFeedback: () => {
+      setError(null);
+      setSuccessMessage(null);
+    },
   };
 }
