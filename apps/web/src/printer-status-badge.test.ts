@@ -6,6 +6,7 @@ import { OperatorPortalHeader } from '../app/components/operator-portal-header.j
 import { PrinterFleetHeader } from '../app/components/printer-fleet-header.js';
 import { PrinterStatusBadge } from '../app/components/printer-status-badge.js';
 import { PrinterTroubleshootingPopover } from '../app/components/printer-troubleshooting-popover.js';
+import { AdminTenantFleetSection } from '../app/admin/admin-tenant-fleet-section.js';
 import { computePrinterStatus } from './printer-client.js';
 
 const renderToStaticMarkup = untypedRenderToStaticMarkup as (element: React.ReactElement) => string;
@@ -109,5 +110,28 @@ describe('Printer Status Badge & Troubleshooting Help', () => {
     expect(html).toContain('Hardware &amp; Printers Fleet');
     expect(html).toContain('portal-printer-status-wrapper');
     expect(html).toContain('portal-printer-help-btn');
+  });
+
+  it('AdminTenantFleetSection renders online status with green pill', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AdminTenantFleetSection, {
+        printers: [
+          {
+            id: 'p1',
+            name: 'LaserJet',
+            driverName: 'HP Driver',
+            role: 'active_bw',
+            isColorSupported: false,
+            supportedPaperSizes: ['A4'],
+            status: 'online',
+            isDefaultOsPrinter: true,
+            lastSeenAt: new Date().toISOString(),
+          },
+        ],
+        devices: [],
+      })
+    );
+    expect(html).toContain('online');
+    expect(html).toContain('background-color:#ecfdf5');
   });
 });

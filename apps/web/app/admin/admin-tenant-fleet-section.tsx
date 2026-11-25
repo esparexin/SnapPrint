@@ -50,8 +50,9 @@ export function AdminTenantFleetSection({
                       fontWeight: 600,
                       padding: '0.1rem 0.4rem',
                       borderRadius: '0.25rem',
-                      backgroundColor: p.status === 'idle' ? '#ecfdf5' : '#fef2f2',
-                      color: p.status === 'idle' ? '#065f46' : '#991b1b',
+                      backgroundColor:
+                        p.status === 'online' || p.status === 'idle' ? '#ecfdf5' : '#fef2f2',
+                      color: p.status === 'online' || p.status === 'idle' ? '#065f46' : '#991b1b',
                     }}
                   >
                     {p.status}

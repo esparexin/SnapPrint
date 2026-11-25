@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import { PaperSize } from '@snapprint/contracts';
+import { PaperSize, PrinterStatus } from '@snapprint/contracts';
 import {
   buildWindowsImagePrintScript,
   buildWindowsPdfPrintScript,
@@ -19,6 +19,7 @@ export interface DiscoveredPrinter {
   supportedDuplexSizes?: PaperSize[];
   capabilityProvenance?: 'driver_query' | 'system_detected' | 'manual_verified' | 'unverified';
   isDefault?: boolean;
+  status?: PrinterStatus;
 }
 
 export interface PrintFileOptions {
@@ -56,15 +57,23 @@ function resolveDuplexMode(mode: string, boolVal?: boolean) {
   const m = mode.toLowerCase();
   const isTwo = m.includes('twosided') || m.includes('duplex') || boolVal === true;
   const isOne = m.includes('onesided') || m.includes('simplex') || boolVal === false;
-  return {
-    duplexSupport: (isTwo ? 'supported' : isOne ? 'unsupported' : 'unknown') as
-      | 'supported'
-      | 'unsupported'
-      | 'unknown',
-    capabilityProvenance: (isTwo || isOne ? 'driver_query' : 'unverified') as
-      | 'driver_query'
-      | 'unverified',
-  };
+  const duplexSupport = (isTwo ? 'supported' : isOne ? 'unsupported' : 'unknown') as
+    | 'supported'
+    | 'unsupported'
+    | 'unknown';
+  const capabilityProvenance = (isTwo || isOne ? 'driver_query' : 'unverified') as
+    | 'driver_query'
+    | 'unverified';
+  return { duplexSupport, capabilityProvenance };
+}
+
+export function resolvePrinterStatus(workOffline?: boolean, printerStatus?: string): PrinterStatus {
+  if (workOffline === true) return 'offline';
+  const s = String(printerStatus || '').toLowerCase();
+  if (s.includes('offline') || s.includes('paused') || s.includes('userintervention'))
+    return 'offline';
+  if (s.includes('error')) return 'error';
+  return 'online';
 }
 
 export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
@@ -74,30 +83,35 @@ export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
   try {
     const parsed = JSON.parse(trimmed);
     const list = Array.isArray(parsed) ? parsed : [parsed];
+    const printers: DiscoveredPrinter[] = [];
 
-    return list
-      .map((item) => {
-        if (!item || typeof item.Name !== 'string') return null;
-        const name = String(item.Name).trim();
-        const driverName = String(item.DriverName || item.Name).trim();
-        if (isVirtualOrSoftwarePrinter(name, driverName)) return null;
-        const { duplexSupport, capabilityProvenance } = resolveDuplexMode(
-          String(item.DuplexMode || item.DuplexingMode || item.Duplex || ''),
-          typeof item.Duplex === 'boolean' ? item.Duplex : undefined
-        );
-        const supportedPaperSizes = inferSupportedPaperSizes(name, driverName);
-        return {
-          name,
-          driverName,
-          isColorSupported: inferIsColorSupported(name, driverName),
-          supportedPaperSizes,
-          duplexSupport,
-          supportedDuplexSizes: duplexSupport === 'supported' ? supportedPaperSizes : [],
-          capabilityProvenance,
-          isDefault: Boolean(item.Default),
-        };
-      })
-      .filter((p): p is DiscoveredPrinter => p !== null);
+    for (const item of list) {
+      if (!item || typeof item.Name !== 'string') continue;
+      const name = String(item.Name).trim();
+      const driverName = String(item.DriverName || item.Name).trim();
+      if (isVirtualOrSoftwarePrinter(name, driverName)) continue;
+      const { duplexSupport, capabilityProvenance } = resolveDuplexMode(
+        String(item.DuplexMode || item.DuplexingMode || item.Duplex || ''),
+        typeof item.Duplex === 'boolean' ? item.Duplex : undefined
+      );
+      const supportedPaperSizes = inferSupportedPaperSizes(name, driverName);
+      const status = resolvePrinterStatus(
+        Boolean(item.WorkOffline),
+        typeof item.PrinterStatus === 'string' ? item.PrinterStatus : undefined
+      );
+      printers.push({
+        name,
+        driverName,
+        isColorSupported: inferIsColorSupported(name, driverName),
+        supportedPaperSizes,
+        duplexSupport,
+        supportedDuplexSizes: duplexSupport === 'supported' ? supportedPaperSizes : [],
+        capabilityProvenance,
+        isDefault: Boolean(item.Default),
+        status,
+      });
+    }
+    return printers;
   } catch {
     return [];
   }
@@ -108,23 +122,17 @@ export function parseCupsPrinters(
   lpstatDStdout: string = '',
   optionsMap: Record<string, string> = {}
 ): DiscoveredPrinter[] {
-  const defaultPrinterMatch = lpstatDStdout.match(/system default destination:\s*([^\s]+)/i);
-  const defaultPrinterName = defaultPrinterMatch ? defaultPrinterMatch[1].trim() : null;
-
-  const lines = lpstatPStdout.split('\n');
+  const defaultMatch = lpstatDStdout.match(/system default destination:\s*([^\s]+)/i);
+  const defaultName = defaultMatch ? defaultMatch[1].trim() : null;
   const printers: DiscoveredPrinter[] = [];
 
-  for (const line of lines) {
+  for (const line of lpstatPStdout.split('\n')) {
     const match = line.match(/^printer\s+([^\s]+)\s+(?:is\s+)?(.*)/i);
-    if (!match) continue;
-
+    if (!match || !match[1]?.trim()) continue;
     const name = match[1].trim();
-    if (!name) continue;
-
     const driverName = name.replace(/_/g, ' ');
     if (isVirtualOrSoftwarePrinter(name, driverName)) continue;
 
-    const isDefault = defaultPrinterName ? name === defaultPrinterName : false;
     const rawOptions = (optionsMap[name] || '').toLowerCase();
     const cupsMode =
       rawOptions.includes('duplextumble') || rawOptions.includes('twosided')
@@ -134,6 +142,7 @@ export function parseCupsPrinters(
           : '';
     const { duplexSupport, capabilityProvenance } = resolveDuplexMode(cupsMode);
     const supportedPaperSizes = inferSupportedPaperSizes(name, driverName);
+    const isOffline = /disabled|offline|stopped/i.test(match[2] || '');
 
     printers.push({
       name,
@@ -143,7 +152,8 @@ export function parseCupsPrinters(
       duplexSupport,
       supportedDuplexSizes: duplexSupport === 'supported' ? supportedPaperSizes : [],
       capabilityProvenance,
-      isDefault,
+      isDefault: defaultName === name,
+      status: isOffline ? 'offline' : 'online',
     });
   }
 
@@ -169,10 +179,11 @@ export function createSystemSpoolerAdapter(options?: {
     async getPrinters(): Promise<DiscoveredPrinter[]> {
       if (platform === 'win32') {
         try {
-          const { stdout } = await runner(
-            'powershell -NoProfile -Command "Get-Printer | ForEach-Object { $p = $_; $cfg = Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; Default = [bool]$p.Default; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { \'\' } } } | ConvertTo-Json"',
-            { timeout: 5000 }
-          );
+          const psCmd =
+            "Get-Printer | ForEach-Object { $p = $_; $cfg = Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json";
+          const { stdout } = await runner(`powershell -NoProfile -Command "${psCmd}"`, {
+            timeout: 5000,
+          });
           return parseWindowsPrintersJson(String(stdout));
         } catch {
           return [];
@@ -199,17 +210,22 @@ export function createSystemSpoolerAdapter(options?: {
       const isDuplex = opts?.sides === 'double';
 
       if (platform === 'win32') {
-        const checkCmd = buildWindowsPrinterValidationScript(printerName);
         try {
-          await runner(`powershell -NoProfile -Command "${checkCmd}"`, { timeout: 10000 });
+          await runner(
+            `powershell -NoProfile -Command "${buildWindowsPrinterValidationScript(printerName)}"`,
+            { timeout: 10000 }
+          );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          const errType = msg.includes('PRINTER_NOT_FOUND')
-            ? `PRINTER_NOT_FOUND: Target printer '${printerName}' is not installed.`
-            : msg.includes('PRINTER_OFFLINE')
-              ? `PRINTER_OFFLINE: Target printer '${printerName}' is offline or disconnected.`
-              : `SPOOLER_SUBMISSION_FAILED: Validation failed for printer '${printerName}': ${msg}`;
-          throw new Error(errType);
+          if (msg.includes('PRINTER_NOT_FOUND'))
+            throw new Error(`PRINTER_NOT_FOUND: Target printer '${printerName}' is not installed.`);
+          if (msg.includes('PRINTER_OFFLINE'))
+            throw new Error(
+              `PRINTER_OFFLINE: Target printer '${printerName}' is offline or disconnected.`
+            );
+          throw new Error(
+            `SPOOLER_SUBMISSION_FAILED: Validation failed for printer '${printerName}': ${msg}`
+          );
         }
 
         const printCmd = ['.png', '.jpg', '.jpeg'].includes(validation.ext)

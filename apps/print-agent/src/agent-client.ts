@@ -116,7 +116,7 @@ export class AgentClient {
             duplexSupport: p.duplexSupport || 'unknown',
             supportedDuplexSizes: p.supportedDuplexSizes || [],
             capabilityProvenance: p.capabilityProvenance || 'unverified',
-            status: 'online',
+            status: p.status || 'online',
             isDefaultOsPrinter: Boolean(p.isDefault),
             lastSeenAt: now,
           };
