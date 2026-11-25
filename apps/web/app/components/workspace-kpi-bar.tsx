@@ -3,14 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { StudioMetricsResponse } from '@snapprint/contracts';
 import { fetchStudioMetrics } from '../../src/workspace-client';
-import type { OperatorView } from './operator-portal-header';
 
 interface WorkspaceKpiBarProps {
   studioId: string;
-  onNavigate?: (view: OperatorView) => void;
 }
 
-export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) {
+export function WorkspaceKpiBar({ studioId }: WorkspaceKpiBarProps) {
   const [metrics, setMetrics] = useState<StudioMetricsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,7 +53,6 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
     {
       label: 'Orders',
       val: loading ? '…' : ordersCount,
-      view: 'orders' as OperatorView,
       bg: '#f8fafc',
       border: '#e2e8f0',
       color: '#0f172a',
@@ -64,7 +61,6 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
     {
       label: 'Cash',
       val: loading ? '…' : `₹${cashTotal}`,
-      view: 'payment' as OperatorView,
       bg: '#f0fdf4',
       border: '#bbf7d0',
       color: '#166534',
@@ -73,7 +69,6 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
     {
       label: 'Pending',
       val: loading ? '…' : pendingCount,
-      view: 'orders' as OperatorView,
       bg: pendingCount > 0 ? '#fffbeb' : '#f8fafc',
       border: pendingCount > 0 ? '#fde68a' : '#e2e8f0',
       color: pendingCount > 0 ? '#b45309' : '#0f172a',
@@ -82,7 +77,6 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
     {
       label: 'Pages',
       val: loading ? '…' : totalPages,
-      view: 'orders' as OperatorView,
       bg: '#f8fafc',
       border: '#e2e8f0',
       color: '#0f172a',
@@ -93,10 +87,10 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
   return (
     <div role="region" aria-label="Today's Operational Summary" className="portal-kpi-grid">
       {kpis.map((kpi) => (
-        <button
+        <div
           key={kpi.label}
-          type="button"
-          onClick={() => onNavigate?.(kpi.view)}
+          role="status"
+          aria-label={`${kpi.label}: ${kpi.val}`}
           className="portal-kpi-btn"
           style={{
             backgroundColor: kpi.bg,
@@ -106,13 +100,14 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
             minHeight: '56px',
             minWidth: 0,
             textAlign: 'center',
-            cursor: onNavigate ? 'pointer' : 'default',
+            cursor: 'default',
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '2px',
+            boxSizing: 'border-box',
           }}
         >
           <span
@@ -137,7 +132,7 @@ export function WorkspaceKpiBar({ studioId, onNavigate }: WorkspaceKpiBarProps) 
           >
             {kpi.val}
           </span>
-        </button>
+        </div>
       ))}
     </div>
   );

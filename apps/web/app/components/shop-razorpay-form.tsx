@@ -9,6 +9,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid #cbd5e1',
   borderRadius: '0.375rem',
   fontSize: '0.875rem',
+  boxSizing: 'border-box',
 };
 
 const labelStyle: React.CSSProperties = {
@@ -17,6 +18,18 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 500,
   marginBottom: '0.25rem',
 };
+
+const getVerifyBtnStyle = (verifying: boolean): React.CSSProperties => ({
+  alignSelf: 'flex-start',
+  padding: '0.375rem 0.75rem',
+  background: verifying ? '#9ca3af' : '#2563eb',
+  color: '#ffffff',
+  border: 'none',
+  borderRadius: '0.375rem',
+  fontSize: '0.8125rem',
+  fontWeight: 500,
+  cursor: verifying ? 'not-allowed' : 'pointer',
+});
 
 interface ShopRazorpayFormProps {
   studioId: string;
@@ -72,14 +85,7 @@ export function ShopRazorpayForm({
         borderRadius: '0.5rem',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '0.5rem',
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
           Online Payment via Razorpay
         </h3>
@@ -102,47 +108,39 @@ export function ShopRazorpayForm({
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div>
-          <label htmlFor="rzp-key" style={labelStyle}>
-            Razorpay Key ID
-          </label>
-          <input
-            id="rzp-key"
-            type="text"
-            value={keyId}
-            onChange={(e) => onKeyIdChange(e.target.value)}
-            placeholder="rzp_test_..."
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label htmlFor="rzp-secret" style={labelStyle}>
-            Razorpay Key Secret
-          </label>
-          <input
-            id="rzp-secret"
-            type="password"
-            value={keySecret}
-            onChange={(e) => setKeySecret(e.target.value)}
-            placeholder="••••••••••••"
-            style={inputStyle}
-          />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+          <div>
+            <label htmlFor="rzp-key" style={labelStyle}>
+              Razorpay Key ID
+            </label>
+            <input
+              id="rzp-key"
+              type="text"
+              value={keyId}
+              onChange={(e) => onKeyIdChange(e.target.value)}
+              placeholder="rzp_test_..."
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label htmlFor="rzp-secret" style={labelStyle}>
+              Razorpay Key Secret
+            </label>
+            <input
+              id="rzp-secret"
+              type="password"
+              value={keySecret}
+              onChange={(e) => setKeySecret(e.target.value)}
+              placeholder="••••••••••••"
+              style={inputStyle}
+            />
+          </div>
         </div>
         <button
           type="button"
           onClick={handleVerify}
           disabled={verifying || !keyId || !keySecret}
-          style={{
-            alignSelf: 'flex-start',
-            padding: '0.375rem 0.75rem',
-            background: verifying ? '#9ca3af' : '#2563eb',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '0.375rem',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            cursor: verifying ? 'not-allowed' : 'pointer',
-          }}
+          style={getVerifyBtnStyle(verifying)}
         >
           {verifying ? 'Verifying Gateway...' : 'Verify Gateway Handshake'}
         </button>

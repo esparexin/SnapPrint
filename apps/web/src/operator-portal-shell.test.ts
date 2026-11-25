@@ -42,15 +42,18 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
       })
     );
     expect(modalHeaderHtml).toContain('Sign Out');
+    expect(modalHeaderHtml).toContain('/downloads/windows-agent/latest.msi');
+    expect(modalHeaderHtml).toContain('download="SnapPrint-Print-Agent.msi"');
+    expect(modalHeaderHtml).toContain('📥');
+    expect(modalHeaderHtml).toContain('Download');
   });
 
-  it('OperatorStudioHub renders KPI summary bar, 9-item menu with Download & Pair, active Orders state, and zero offline alert banner', () => {
+  it('OperatorStudioHub renders KPI summary bar, 8 clean menu tabs, active Orders state, and zero offline alert banner', () => {
     const html = renderToStaticMarkup(
       React.createElement(OperatorStudioHub, {
         studioId: 'std_vikram',
         activeView: 'orders',
         onNavigate: vi.fn(),
-        onOpenPairing: vi.fn(),
       })
     );
 
@@ -76,11 +79,8 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
     ]);
     expect(html).toContain('id="portal-tab-orders"');
     expect(html).toContain('aria-selected="true"');
-    expect(html).toContain('/downloads/windows-agent/latest.msi');
-    expect(html).toContain('download="SnapPrint-Print-Agent.msi"');
-    expect(html).toContain('📥');
-    expect(html).toContain('Download');
-    expect(html).toContain('>Pair<');
+    expect(html).not.toContain('portal-menu-action');
+    expect(html).not.toContain('>Pair<');
   });
 
   it('PortalModals renders every section inline inside tabpanel when inShell is true', () => {

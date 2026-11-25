@@ -8,7 +8,6 @@ import { ModalSheetShell } from './modal-sheet-shell';
 import { getNoticeBoxStyle } from './operator-portal-styles';
 import { ShopPaymentModalFooter } from './shop-payment-modal-footer';
 import { ShopPaymentModalHeader } from './shop-payment-modal-header';
-import { ShopPaymentPolicyFields } from './shop-payment-policy-fields';
 import { ShopRazorpayForm } from './shop-razorpay-form';
 
 interface ShopPaymentModalProps {
@@ -26,16 +25,8 @@ export function ShopPaymentModal({
   onUpdated,
   inShell = false,
 }: ShopPaymentModalProps) {
-  const s = studio.settings;
   const p = (studio as { payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string } })
     .payment;
-  const [paymentPolicy, setPaymentPolicy] = useState<'payment_required' | 'pay_at_counter'>(
-    s?.paymentPolicy || 'payment_required'
-  );
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(s?.onlinePaymentEnabled ?? true);
-  const [counterPaymentEnabled, setCounterPaymentEnabled] = useState(
-    s?.counterPaymentEnabled ?? true
-  );
   const [keyId, setKeyId] = useState(p?.razorpayKeyId || '');
   const [isConfirmed, setIsConfirmed] = useState(p?.isRazorpayConfirmed ?? false);
   const [saving, setSaving] = useState(false);
@@ -47,14 +38,14 @@ export function ShopPaymentModal({
     setNotice(null);
     try {
       const updated = await updateStudioSettings(studioId, {
-        paymentPolicy,
-        onlinePaymentEnabled,
-        counterPaymentEnabled,
+        paymentPolicy: 'payment_required',
+        onlinePaymentEnabled: isConfirmed,
+        counterPaymentEnabled: true,
       });
       await updateProfileApi(studioId, {
         payment: {
-          enableCounterPayment: counterPaymentEnabled,
-          enableOnlinePayment: onlinePaymentEnabled && isConfirmed,
+          enableCounterPayment: true,
+          enableOnlinePayment: isConfirmed,
           isRazorpayConfirmed: isConfirmed,
           ...(keyId.trim() ? { razorpayKeyId: keyId.trim() } : {}),
         },
@@ -99,14 +90,6 @@ export function ShopPaymentModal({
           onSubmit={handleSave}
           style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
         >
-          <ShopPaymentPolicyFields
-            paymentPolicy={paymentPolicy}
-            setPaymentPolicy={setPaymentPolicy}
-            onlinePaymentEnabled={onlinePaymentEnabled}
-            setOnlinePaymentEnabled={setOnlinePaymentEnabled}
-            counterPaymentEnabled={counterPaymentEnabled}
-            setCounterPaymentEnabled={setCounterPaymentEnabled}
-          />
           <ShopRazorpayForm
             studioId={studioId}
             isConfirmed={isConfirmed}

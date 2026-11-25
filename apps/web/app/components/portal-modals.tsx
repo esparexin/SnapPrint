@@ -93,7 +93,6 @@ export function PortalModals({
       name: currentStudio.name,
     };
     const studioFormProps = {
-      key: studioKey,
       studioId,
       studio: currentStudio,
       onClose: handleClose,
@@ -105,8 +104,8 @@ export function PortalModals({
       printer_setup: <PrinterPageSetupModal {...base} />,
       staff: <StaffManagementModal {...base} />,
       qr: <StudioQrModal studio={qrStudio} onClose={handleClose} inShell={inShell} />,
-      profile: <ShopProfileModal {...studioFormProps} />,
-      payment: <ShopPaymentModal {...studioFormProps} />,
+      profile: <ShopProfileModal key={studioKey} {...studioFormProps} />,
+      payment: <ShopPaymentModal key={studioKey} {...studioFormProps} />,
       subscription: <StudioSubscriptionModal {...base} />,
     };
     return activeView ? views[activeView] || null : null;
