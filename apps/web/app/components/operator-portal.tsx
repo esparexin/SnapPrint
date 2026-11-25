@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
-import { AuthApiError, fetchCurrentUser, logoutOperator } from '../../src/auth-client';
+import { AuthApiError, fetchCurrentUser, signOutToHome } from '../../src/auth-client';
 import { resolveStudioAuthorization } from '../../src/studio-authorization';
 import { OperatorPortalHeader, OperatorView } from './operator-portal-header';
+import { portalStyles } from './operator-portal-styles';
 import { OperatorStudioHub } from './operator-studio-hub';
 import { PlatformScopeHub } from './platform-scope-hub';
 import { PortalMembershipStatus } from './portal-membership-status';
@@ -12,25 +13,30 @@ import { PortalModals } from './portal-modals';
 import { PortalUnauthenticated } from './portal-unauthenticated';
 import { StudioSelector } from './studio-selector';
 import { useStudioNames } from './use-studio-names';
-import { portalStyles } from './operator-portal-styles';
 
 export interface OperatorPortalProps {
   initialMode?: 'password' | 'email_otp' | 'register';
   onAuthChange?: (auth: AuthResponse | null) => void;
   onClosePortal?: () => void;
+  hideHeaderSignOut?: boolean;
 }
+
+const isActivePlatformAdmin = (user: AuthResponse | null) =>
+  Boolean(user?.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active'));
 
 export function OperatorPortal({
   initialMode = 'email_otp',
   onAuthChange,
   onClosePortal,
+  hideHeaderSignOut = false,
 }: OperatorPortalProps = {}) {
   const [auth, setAuth] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [selectedStudioId, setSelectedStudioId] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<OperatorView>('hub');
+  const [activeView, setActiveView] = useState<OperatorView>('orders');
+  const [showPairingModal, setShowPairingModal] = useState(false);
   const studioNames = useStudioNames(auth?.memberships);
 
   useEffect(() => {
@@ -39,10 +45,11 @@ export function OperatorPortal({
       .then((user) => {
         if (!mounted) return;
         setAuth(user);
-        const isSuper = user?.memberships.some(
-          (m) => m.role === 'platform_admin' && m.status === 'active'
-        );
-        if (isSuper && typeof window !== 'undefined') window.location.href = '/admin';
+        if (isActivePlatformAdmin(user) && typeof window !== 'undefined') {
+          window.location.href = '/admin';
+          return;
+        }
+        onAuthChange?.(user);
       })
       .catch((err) => {
         if (mounted)
@@ -61,12 +68,11 @@ export function OperatorPortal({
     setLogoutLoading(true);
     setErrorBanner(null);
     try {
-      await logoutOperator();
+      await signOutToHome();
       setAuth(null);
       setSelectedStudioId(null);
-      setActiveView('hub');
+      setActiveView('orders');
       onAuthChange?.(null);
-      if (typeof window !== 'undefined') window.location.href = '/';
     } catch (err) {
       setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.');
     } finally {
@@ -91,10 +97,7 @@ export function OperatorPortal({
           setAuth(newAuth);
           setErrorBanner(null);
           onAuthChange?.(newAuth);
-          const isSuper = newAuth.memberships.some(
-            (m) => m.role === 'platform_admin' && m.status === 'active'
-          );
-          if (isSuper && typeof window !== 'undefined') {
+          if (isActivePlatformAdmin(newAuth) && typeof window !== 'undefined') {
             window.location.href = '/admin';
           }
         }}
@@ -104,23 +107,30 @@ export function OperatorPortal({
 
   const authState = resolveStudioAuthorization(auth, selectedStudioId);
   const isPlatformScope = authState.selectedStudioId === 'platform_scope';
-  const activeStudioId =
-    !isPlatformScope && authState.selectedStudioId ? authState.selectedStudioId : undefined;
+  const activeStudioId = !isPlatformScope ? authState.selectedStudioId || undefined : undefined;
+  const activeStudioName = activeStudioId ? studioNames[activeStudioId] : undefined;
+  const showStudioWorkspace =
+    authState.uiState === 'ready' && !isPlatformScope && Boolean(activeStudioId);
+
+  const handleSetupComplete = async (saved: { id?: string } | null) => {
+    setActiveView('orders');
+    const fresh = await fetchCurrentUser().catch(() => null);
+    if (fresh) setAuth(fresh);
+    if (saved?.id) setSelectedStudioId(saved.id);
+  };
 
   return (
     <div style={portalStyles.wrapper}>
       <OperatorPortalHeader
         userName={auth.user.name}
         userEmail={auth.user.email}
-        isPlatformAdmin={auth.memberships.some(
-          (m) => m.role === 'platform_admin' && m.status === 'active'
-        )}
+        isPlatformAdmin={isActivePlatformAdmin(auth)}
         logoutLoading={logoutLoading}
         onLogout={handleLogout}
-        activeView={activeView}
-        onNavigate={setActiveView}
+        hideSignOut={hideHeaderSignOut}
         onClosePortal={onClosePortal}
-        studioName={activeStudioId ? studioNames[activeStudioId] : undefined}
+        studioName={activeStudioName}
+        studioId={activeStudioId}
       />
 
       {errorBanner && (
@@ -140,45 +150,38 @@ export function OperatorPortal({
 
       {authState.uiState === 'ready' && (
         <div>
-          {activeView === 'hub' ? (
-            <div>
-              <StudioSelector
-                activeMemberships={authState.activeMemberships}
-                selectedStudioId={authState.selectedStudioId}
-                onSelectStudio={setSelectedStudioId}
-                effectiveRole={authState.effectiveRole}
-                studioNames={studioNames}
-              />
-
-              {isPlatformScope ? (
-                <PlatformScopeHub onOpenWizard={() => setActiveView('setup')} />
-              ) : (
-                <OperatorStudioHub
-                  studioId={activeStudioId}
-                  can={authState.can}
-                  onNavigate={setActiveView}
-                />
-              )}
-            </div>
+          <StudioSelector
+            activeMemberships={authState.activeMemberships}
+            selectedStudioId={authState.selectedStudioId}
+            onSelectStudio={setSelectedStudioId}
+            effectiveRole={authState.effectiveRole}
+            studioNames={studioNames}
+          />
+          {isPlatformScope ? (
+            <PlatformScopeHub onOpenWizard={() => setActiveView('setup')} />
           ) : (
-            <PortalModals
+            <OperatorStudioHub
               studioId={activeStudioId}
-              studioName={
-                activeStudioId
-                  ? studioNames[activeStudioId] || `Studio ${activeStudioId}`
-                  : undefined
-              }
               activeView={activeView}
-              onBackToHub={() => setActiveView('hub')}
-              onSetupComplete={async (saved) => {
-                setActiveView('hub');
-                const fresh = await fetchCurrentUser().catch(() => null);
-                if (fresh) setAuth(fresh);
-                if (saved?.id) setSelectedStudioId(saved.id);
-              }}
+              can={authState.can}
+              onNavigate={setActiveView}
+              onOpenPairing={() => setShowPairingModal(true)}
             />
           )}
         </div>
+      )}
+
+      {(showStudioWorkspace || activeView === 'setup') && (
+        <PortalModals
+          studioId={activeStudioId}
+          studioName={activeStudioName || (activeStudioId ? `Studio ${activeStudioId}` : undefined)}
+          activeView={activeView}
+          inShell={showStudioWorkspace}
+          showPairingModal={showPairingModal}
+          onClosePairing={() => setShowPairingModal(false)}
+          onBackToHub={() => setActiveView('orders')}
+          onSetupComplete={handleSetupComplete}
+        />
       )}
     </div>
   );

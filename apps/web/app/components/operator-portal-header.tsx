@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { OperatorView, VIEW_TITLES } from './operator-portal-styles';
+import { OperatorView } from './operator-portal-styles';
+import { PrinterStatusBadge } from './printer-status-badge';
 
 export type { OperatorView };
 
@@ -11,10 +12,10 @@ interface OperatorPortalHeaderProps {
   isPlatformAdmin: boolean;
   logoutLoading: boolean;
   onLogout: () => void;
-  activeView?: OperatorView;
-  onNavigate?: (view: OperatorView) => void;
+  hideSignOut?: boolean;
   onClosePortal?: () => void;
   studioName?: string;
+  studioId?: string;
 }
 
 export function OperatorPortalHeader({
@@ -23,15 +24,13 @@ export function OperatorPortalHeader({
   isPlatformAdmin,
   logoutLoading,
   onLogout,
-  activeView = 'hub',
-  onNavigate,
+  hideSignOut = false,
   onClosePortal,
   studioName,
+  studioId,
 }: OperatorPortalHeaderProps) {
-  const isSubView = activeView !== 'hub';
-  const headingTitle = isSubView
-    ? VIEW_TITLES[activeView] || 'Operator Portal'
-    : studioName || 'SnapPrint Operator Portal';
+  const headingTitle = studioName || 'SnapPrint Operator Portal';
+  const showActions = isPlatformAdmin || !hideSignOut || Boolean(onClosePortal);
 
   return (
     <header
@@ -41,95 +40,79 @@ export function OperatorPortalHeader({
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '0.75rem',
-        marginBottom: '1.25rem',
+        marginBottom: '1rem',
         paddingBottom: '0.75rem',
-        borderBottom: '1px solid #e5e7eb',
+        borderBottom: '1px solid #e2e8f0',
       }}
     >
-      <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        {isSubView && onNavigate && (
-          <button
-            type="button"
-            onClick={() => onNavigate('hub')}
+      <div style={{ minWidth: 0, flex: '1 1 220px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <h1
             style={{
-              padding: '0.35rem 0.65rem',
-              backgroundColor: '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              borderRadius: '0.375rem',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: '#334155',
-              cursor: 'pointer',
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              margin: 0,
+              color: '#0f172a',
+              textWrap: 'balance',
             }}
           >
-            ← Dashboard
-          </button>
-        )}
-        <div>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#111827' }}>
             {headingTitle}
           </h1>
-          <p
-            style={{
-              margin: '0.15rem 0 0',
-              color: '#6b7280',
-              fontSize: '0.8rem',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Signed in as <strong>{userName}</strong> ({userEmail})
-          </p>
+          {studioId && <PrinterStatusBadge studioId={studioId} />}
         </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
-        {isPlatformAdmin && (
-          <a
-            href="/admin"
-            style={{
-              padding: '0.35rem 0.65rem',
-              backgroundColor: '#0284c7',
-              color: '#ffffff',
-              borderRadius: '0.375rem',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            Admin Workspace →
-          </a>
-        )}
-        <button
-          type="button"
-          onClick={onLogout}
-          disabled={logoutLoading}
+        <p
           style={{
-            padding: '0.35rem 0.75rem',
-            background: logoutLoading ? '#9ca3af' : '#dc2626',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: logoutLoading ? 'not-allowed' : 'pointer',
-            fontSize: '0.8rem',
-            fontWeight: 500,
+            margin: '0.2rem 0 0',
+            color: '#64748b',
+            fontSize: '0.8125rem',
+            overflowWrap: 'anywhere',
           }}
         >
-          {logoutLoading ? 'Signing out...' : 'Sign Out'}
-        </button>
-        {onClosePortal && (
-          <button
-            type="button"
-            onClick={onClosePortal}
-            aria-label="Close Portal"
-            className="dialog-close-btn"
-            style={{ minWidth: '32px', minHeight: '32px', fontSize: '1.1rem' }}
-          >
-            ✕
-          </button>
-        )}
+          Signed in as <strong>{userName}</strong> ({userEmail})
+        </p>
       </div>
+
+      {showActions && (
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+          {isPlatformAdmin && (
+            <a
+              href="/admin"
+              style={{
+                padding: '0.4rem 0.75rem',
+                backgroundColor: '#0284c7',
+                color: '#ffffff',
+                borderRadius: '0.375rem',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Admin Workspace →
+            </a>
+          )}
+          {!hideSignOut && (
+            <button
+              type="button"
+              onClick={onLogout}
+              disabled={logoutLoading}
+              className="portal-signout-btn"
+            >
+              {logoutLoading ? 'Signing out...' : 'Sign Out'}
+            </button>
+          )}
+          {onClosePortal && (
+            <button
+              type="button"
+              onClick={onClosePortal}
+              aria-label="Close Portal"
+              className="dialog-close-btn"
+              style={{ minWidth: '32px', minHeight: '32px', fontSize: '1.1rem' }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
     </header>
   );
 }
