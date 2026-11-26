@@ -1,65 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
+import { CustomPaperSizeSummary, OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
 import { CustomerPaymentCard } from './customer-payment-card';
+import { resolveFormatLabel } from './format-size-label';
+import { confirmationStyles as styles } from './order-confirmation-styles';
 
-const styles = {
-  card: {
-    padding: '32px 20px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #bbf7d0',
-    borderRadius: '16px',
-    textAlign: 'center',
-    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-  } as React.CSSProperties,
-  orderBox: {
-    display: 'inline-block',
-    padding: '16px 32px',
-    backgroundColor: '#f0fdf4',
-    border: '2px dashed #86efac',
-    borderRadius: '12px',
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  manifest: {
-    textAlign: 'left',
-    backgroundColor: '#f8fafc',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  counterPickup: {
-    padding: '14px',
-    backgroundColor: '#eff6ff',
-    borderRadius: '8px',
-    fontSize: '13px',
-    color: '#1e40af',
-    marginBottom: '24px',
-    lineHeight: 1.5,
-  } as React.CSSProperties,
-  itemRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '8px',
-    fontSize: '13px',
-    borderBottom: '1px solid #e2e8f0',
-    paddingBottom: '6px',
-  } as React.CSSProperties,
-  btn: {
-    padding: '10px 20px',
-    backgroundColor: '#0f172a',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 600,
-    cursor: 'pointer',
-  } as React.CSSProperties,
-};
-
-function formatItemSummary(i: OrderRecord['items'][number]): string {
-  return `(${i.paperSize.toUpperCase()}, ${i.colorMode === 'color' ? 'Color' : 'B&W'}, ${i.sides === 'double_sided' ? 'Duplex' : 'Single-sided'}, ${i.sheetsCount} sheets × ${i.copies})`;
+function formatItemSummary(
+  i: OrderRecord['items'][number],
+  customSizes?: readonly CustomPaperSizeSummary[]
+): string {
+  const size = resolveFormatLabel(i.paperSize, customSizes);
+  const color = i.colorMode === 'color' ? 'Color' : 'B&W';
+  const sides = i.sides === 'double_sided' ? 'Duplex' : 'Single-sided';
+  return `(${size}, ${color}, ${sides}, ${i.sheetsCount} sheets × ${i.copies})`;
 }
 
 interface OrderConfirmationViewProps {
@@ -68,6 +22,7 @@ interface OrderConfirmationViewProps {
   slug?: string;
   sessionToken?: string;
   payment?: PublicPaymentSettings;
+  customPaperSizes?: readonly CustomPaperSizeSummary[];
   onNewOrder: () => void;
 }
 
@@ -77,6 +32,7 @@ export function OrderConfirmationView({
   slug,
   sessionToken,
   payment,
+  customPaperSizes,
   onNewOrder,
 }: OrderConfirmationViewProps) {
   const [order, setOrder] = useState<OrderRecord>(initialOrder);
@@ -134,7 +90,7 @@ export function OrderConfirmationView({
               >
                 <span style={{ fontWeight: 600, color: '#0f172a' }}>{item.filename}</span>
                 <span style={{ color: '#64748b', marginLeft: '6px' }}>
-                  {formatItemSummary(item)}
+                  {formatItemSummary(item, customPaperSizes)}
                 </span>
               </div>
               <div style={{ fontWeight: 700, color: '#0f172a', flexShrink: 0 }}>

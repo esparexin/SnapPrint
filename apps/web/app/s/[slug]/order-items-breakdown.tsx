@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { QuoteItemBreakdown } from '@snapprint/contracts';
+import { CustomPaperSizeSummary, QuoteItemBreakdown } from '@snapprint/contracts';
+import { resolveFormatLabel } from './format-size-label';
 
 interface OrderItemsBreakdownProps {
   items: QuoteItemBreakdown[];
+  customPaperSizes?: readonly CustomPaperSizeSummary[];
 }
 
-export function OrderItemsBreakdown({ items }: OrderItemsBreakdownProps) {
+export function OrderItemsBreakdown({ items, customPaperSizes }: OrderItemsBreakdownProps) {
   return (
     <div style={{ display: 'grid', gap: '6px', marginBottom: '10px' }}>
       {items.map((item, idx) => (
@@ -38,7 +40,8 @@ export function OrderItemsBreakdown({ items }: OrderItemsBreakdownProps) {
               {item.filename}
             </div>
             <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.3 }}>
-              {item.paperSize.toUpperCase()} · {item.colorMode === 'color' ? 'Color' : 'B&W'} ·{' '}
+              {resolveFormatLabel(item.paperSize, customPaperSizes)} ·{' '}
+              {item.colorMode === 'color' ? 'Color' : 'B&W'} ·{' '}
               {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'} · {item.sheetsCount}{' '}
               {item.sheetsCount === 1 ? 'sheet' : 'sheets'} × {item.copies}{' '}
               {item.copies === 1 ? 'copy' : 'copies'}

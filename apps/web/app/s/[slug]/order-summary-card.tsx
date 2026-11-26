@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { DocumentPrintConfig, OrderRecord, QuoteResponse } from '@snapprint/contracts';
+import {
+  CustomPaperSizeSummary,
+  DocumentPrintConfig,
+  OrderRecord,
+  QuoteResponse,
+} from '@snapprint/contracts';
 import { clearStoredCustomerSession } from '../../../src/customer-client';
 import { OrderApiError, requestPrintQuote, submitPrintOrder } from '../../../src/order-client';
 import { hasInvalidPageSelection } from './document-print-workflow-helpers';
@@ -16,6 +21,7 @@ interface OrderSummaryCardProps {
   configs: DocumentPrintConfig[];
   onOrderSubmitted: (order: OrderRecord) => void;
   isAcceptingOrders?: boolean;
+  customPaperSizes?: readonly CustomPaperSizeSummary[];
 }
 
 export function OrderSummaryCard({
@@ -25,6 +31,7 @@ export function OrderSummaryCard({
   configs,
   onOrderSubmitted,
   isAcceptingOrders = true,
+  customPaperSizes,
 }: OrderSummaryCardProps) {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
@@ -166,7 +173,7 @@ export function OrderSummaryCard({
 
       {quote && (
         <div>
-          <OrderItemsBreakdown items={quote.items} />
+          <OrderItemsBreakdown items={quote.items} customPaperSizes={customPaperSizes} />
           <div
             style={{
               display: 'flex',

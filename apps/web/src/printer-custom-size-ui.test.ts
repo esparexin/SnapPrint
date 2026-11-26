@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CustomPaperSize, PaperSize, PaperSizeSchema } from '@snapprint/contracts';
+import { resolveFormatLabel } from '../app/s/[slug]/format-size-label';
 
 describe('Operator Dashboard Custom Paper Size UI Resolution', () => {
   const mockCustomSizes: CustomPaperSize[] = [
@@ -105,5 +106,23 @@ describe('Operator Dashboard Custom Paper Size UI Resolution', () => {
     const customMap = new Map(capabilities.customPaperSizes.map((c) => [c.id, c.name]));
     expect(customMap.get('cps_poster_12x18')).toBe('12x18 Poster');
     expect(customMap.get('A4')).toBeUndefined();
+  });
+
+  it('resolves format labels using resolveFormatLabel helper for previews and orders', () => {
+    const customSummaries = [
+      {
+        id: 'cps_poster_12x18',
+        name: '12x18 Poster',
+        width: 12,
+        height: 18,
+        unit: 'in' as const,
+      },
+    ];
+
+    expect(resolveFormatLabel('A4', customSummaries)).toBe('A4');
+    expect(resolveFormatLabel('legal', customSummaries)).toBe('LEGAL');
+    expect(resolveFormatLabel('cps_poster_12x18', customSummaries)).toBe('12x18 Poster');
+    expect(resolveFormatLabel('cps_unknown', customSummaries)).toBe('cps_unknown');
+    expect(resolveFormatLabel('A4', undefined)).toBe('A4');
   });
 });

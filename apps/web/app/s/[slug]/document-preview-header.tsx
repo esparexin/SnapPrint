@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
-import { DocumentPrintConfig } from '@snapprint/contracts';
+import { CustomPaperSizeSummary, DocumentPrintConfig } from '@snapprint/contracts';
+import { resolveFormatLabel } from './format-size-label';
 
 interface DocumentPreviewHeaderProps {
   filename: string;
   config: DocumentPrintConfig;
   pageCount: number;
+  customPaperSizes?: readonly CustomPaperSizeSummary[];
   onClose: () => void;
 }
 
@@ -14,6 +16,7 @@ export function DocumentPreviewHeader({
   filename,
   config,
   pageCount,
+  customPaperSizes,
   onClose,
 }: DocumentPreviewHeaderProps) {
   return (
@@ -53,7 +56,7 @@ export function DocumentPreviewHeader({
             whiteSpace: 'nowrap',
           }}
         >
-          {`${config.paperSize.toUpperCase()} · ${config.colorMode === 'color' ? 'Color' : 'B&W'} · ${config.sides === 'double_sided' ? 'Duplex' : 'Single-Sided'} · ${pageCount} Pages`}
+          {`${resolveFormatLabel(config.paperSize, customPaperSizes)} · ${config.colorMode === 'color' ? 'Color' : 'B&W'} · ${config.sides === 'double_sided' ? 'Duplex' : 'Single-Sided'} · ${pageCount} Pages`}
         </div>
       </div>
       <button
