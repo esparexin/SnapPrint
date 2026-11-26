@@ -10,11 +10,7 @@ interface CustomPaperSizeFormProps {
   onSuccess: () => void;
 }
 
-export function CustomPaperSizeForm({
-  studioId,
-  printers,
-  onSuccess,
-}: CustomPaperSizeFormProps) {
+export function CustomPaperSizeForm({ studioId, printers, onSuccess }: CustomPaperSizeFormProps) {
   const [name, setName] = useState('');
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
@@ -48,7 +44,10 @@ export function CustomPaperSizeForm({
   };
 
   return (
-    <form onSubmit={handleAdd} className="flex flex-wrap gap-2 items-end bg-slate-50 p-3 rounded-lg">
+    <form
+      onSubmit={handleAdd}
+      className="flex flex-wrap gap-2 items-end bg-slate-50 p-3 rounded-lg"
+    >
       {error && <div className="w-full text-red-700 text-xs mb-1">{error}</div>}
       <div className="flex-1 min-w-[120px]">
         <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Format Name</label>
@@ -97,7 +96,9 @@ export function CustomPaperSizeForm({
         </select>
       </div>
       <div className="flex-1 min-w-[120px]">
-        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Physical Printer</label>
+        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
+          Physical Printer
+        </label>
         <select
           value={printerId}
           onChange={(e) => setPrinterId(e.target.value)}
@@ -120,4 +121,3 @@ export function CustomPaperSizeForm({
     </form>
   );
 }
-
