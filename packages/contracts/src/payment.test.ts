@@ -24,6 +24,7 @@ describe('Payment Contracts', () => {
     expect(PaymentStatusSchema.parse('CREATED')).toBe('CREATED');
     expect(PaymentStatusSchema.parse('SUCCEEDED')).toBe('SUCCEEDED');
     expect(PaymentStatusSchema.parse('FAILED')).toBe('FAILED');
+    expect(PaymentStatusSchema.parse('REFUNDED')).toBe('REFUNDED');
     expect(() => PaymentStatusSchema.parse('UNKNOWN')).toThrow();
   });
 
@@ -32,6 +33,7 @@ describe('Payment Contracts', () => {
     expect(OrderPaymentStatusSchema.parse('PARTIALLY_PAID')).toBe('PARTIALLY_PAID');
     expect(OrderPaymentStatusSchema.parse('PAID')).toBe('PAID');
     expect(OrderPaymentStatusSchema.parse('PAYMENT_FAILED')).toBe('PAYMENT_FAILED');
+    expect(OrderPaymentStatusSchema.parse('REFUNDED')).toBe('REFUNDED');
   });
 
   it('validates full PaymentRecord', () => {

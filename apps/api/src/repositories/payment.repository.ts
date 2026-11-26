@@ -21,6 +21,8 @@ export interface PaymentDocument {
   gatewayPaymentId?: string;
   gatewaySignature?: string;
   gatewayCapturedAt?: Date;
+  refundId?: string;
+  refundedAt?: Date;
   recordedByUserId?: string;
   notes?: string;
   createdAt: Date;
@@ -32,21 +34,27 @@ export function toPaymentContract(doc: PaymentDocument): PaymentRecord {
     paymentId: doc.paymentId,
     orderId: doc.orderId,
     studioId: doc.studioId,
-    sessionId: doc.sessionId,
+    sessionId: doc.sessionId ?? undefined,
     method: doc.method,
     amountMinor: doc.amountMinor,
     currency: doc.currency,
     status: doc.status,
-    gatewayOrderId: doc.gatewayOrderId,
-    gatewayPaymentId: doc.gatewayPaymentId,
-    gatewaySignature: doc.gatewaySignature,
+    gatewayOrderId: doc.gatewayOrderId ?? undefined,
+    gatewayPaymentId: doc.gatewayPaymentId ?? undefined,
+    gatewaySignature: doc.gatewaySignature ?? undefined,
     gatewayCapturedAt: doc.gatewayCapturedAt
       ? doc.gatewayCapturedAt instanceof Date
         ? doc.gatewayCapturedAt.toISOString()
         : new Date(doc.gatewayCapturedAt).toISOString()
       : undefined,
-    recordedByUserId: doc.recordedByUserId,
-    notes: doc.notes,
+    refundId: doc.refundId ?? undefined,
+    refundedAt: doc.refundedAt
+      ? doc.refundedAt instanceof Date
+        ? doc.refundedAt.toISOString()
+        : new Date(doc.refundedAt).toISOString()
+      : undefined,
+    recordedByUserId: doc.recordedByUserId ?? undefined,
+    notes: doc.notes ?? undefined,
     createdAt:
       doc.createdAt instanceof Date
         ? doc.createdAt.toISOString()
@@ -129,6 +137,8 @@ export async function updatePaymentStatus(
     gatewayPaymentId?: string;
     gatewaySignature?: string;
     gatewayCapturedAt?: Date | string;
+    refundId?: string;
+    refundedAt?: Date | string;
   }
 ): Promise<PaymentRecord | null> {
   const now = new Date();
@@ -146,6 +156,16 @@ export async function updatePaymentStatus(
         : new Date(metadata.gatewayCapturedAt);
     if (!Number.isNaN(d.getTime())) {
       updateFields.gatewayCapturedAt = d;
+    }
+  }
+  if (metadata?.refundId) {
+    updateFields.refundId = metadata.refundId;
+  }
+  if (metadata?.refundedAt) {
+    const d =
+      metadata.refundedAt instanceof Date ? metadata.refundedAt : new Date(metadata.refundedAt);
+    if (!Number.isNaN(d.getTime())) {
+      updateFields.refundedAt = d;
     }
   }
 

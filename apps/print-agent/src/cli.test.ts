@@ -1,11 +1,12 @@
 import { tmpdir } from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AGENT_VERSION, extractApiUrlFlag, extractUrlFlags, runCli } from './cli.js';
-import { loadAgentConfig } from './config.js';
+import { clearAgentConfig, loadAgentConfig } from './config.js';
 
 describe('CLI Commands', () => {
   beforeEach(() => {
     process.env.SNAPPRINT_CONFIG_DIR = tmpdir();
+    clearAgentConfig();
   });
 
   it('displays status without failing', async () => {
