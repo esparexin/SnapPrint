@@ -45,7 +45,13 @@ export function DocumentPreviewModal({
     >
       <div
         className="dialog-content"
-        style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        style={{
+          maxWidth: '720px',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />

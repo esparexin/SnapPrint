@@ -38,6 +38,8 @@ export function PhotoItemCard({ item, onRetry, onCancel, onDelete }: PhotoItemCa
         borderRadius: '8px',
         gap: '12px',
         marginBottom: '10px',
+        minWidth: 0,
+        maxWidth: '100%',
       }}
     >
       {isPdf ? (
@@ -61,19 +63,13 @@ export function PhotoItemCard({ item, onRetry, onCancel, onDelete }: PhotoItemCa
         <img
           src={item.previewUrl}
           alt={item.file.name}
-          style={{
-            width: '56px',
-            height: '56px',
-            objectFit: 'cover',
-            borderRadius: '6px',
-            backgroundColor: '#f1f5f9',
-            flexShrink: 0,
-          }}
+          style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '6px', backgroundColor: '#f1f5f9', flexShrink: 0 }}
         />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
+          title={item.file.name}
           style={{
             fontWeight: 600,
             fontSize: '14px',
@@ -119,7 +115,15 @@ export function PhotoItemCard({ item, onRetry, onCancel, onDelete }: PhotoItemCa
         )}
 
         {item.status === 'failed' && (
-          <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px' }}>
+          <div
+            style={{
+              fontSize: '11px',
+              color: '#dc2626',
+              marginTop: '4px',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+            }}
+          >
             ⚠️ {item.error || 'Upload failed'}
           </div>
         )}
@@ -130,14 +134,7 @@ export function PhotoItemCard({ item, onRetry, onCancel, onDelete }: PhotoItemCa
           <button
             type="button"
             onClick={() => onCancel(item.id)}
-            style={{
-              padding: '6px 10px',
-              backgroundColor: '#f1f5f9',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
+            style={{ padding: '6px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
           >
             Cancel
           </button>
@@ -147,16 +144,7 @@ export function PhotoItemCard({ item, onRetry, onCancel, onDelete }: PhotoItemCa
           <button
             type="button"
             onClick={() => onRetry(item.id)}
-            style={{
-              padding: '6px 10px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '6px',
-              fontSize: '12px',
-              color: '#dc2626',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+            style={{ padding: '6px 10px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', color: '#dc2626', fontWeight: 600, cursor: 'pointer' }}
           >
             Retry
           </button>

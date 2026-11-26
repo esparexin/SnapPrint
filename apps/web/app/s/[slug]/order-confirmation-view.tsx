@@ -101,20 +101,20 @@ export function OrderConfirmationView({
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '8px',
                 fontSize: '13px',
                 borderBottom: '1px solid #e2e8f0',
                 paddingBottom: '6px',
               }}
             >
-              <div>
+              <div style={{ minWidth: 0, flex: 1, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 <span style={{ fontWeight: 600, color: '#0f172a' }}>{item.filename}</span>
                 <span style={{ color: '#64748b', marginLeft: '6px' }}>
-                  ({item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
-                  {item.sides === 'double_sided' ? 'Duplex' : 'Single-sided'}, {item.sheetsCount}{' '}
-                  sheets × {item.copies})
+                  ({item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'}, {item.sides === 'double_sided' ? 'Duplex' : 'Single-sided'}, {item.sheetsCount} sheets × {item.copies})
                 </span>
               </div>
-              <div style={{ fontWeight: 700, color: '#0f172a' }}>
+              <div style={{ fontWeight: 700, color: '#0f172a', flexShrink: 0 }}>
                 ₹{(item.subtotalMinor / 100).toFixed(2)}
               </div>
             </div>

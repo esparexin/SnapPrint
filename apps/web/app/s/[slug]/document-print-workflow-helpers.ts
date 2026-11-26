@@ -227,5 +227,9 @@ export function getFeedbackBannerStyle(kind: WorkflowFeedback['kind']): CSSPrope
     fontSize: '13px',
     marginBottom: '14px',
     fontWeight: 500,
+    wordBreak: 'break-word',
+    overflowWrap: 'anywhere',
+    minWidth: 0,
+    maxWidth: '100%',
   };
 }
