@@ -1,37 +1,41 @@
-import crypto from 'node:crypto';
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { Db } from 'mongodb';
 import {
-  PaymentHistoryResponseSchema,
   PaymentInitiateRequestSchema,
   PaymentInitiateResponseSchema,
-  PaymentRecordSchema,
   PaymentVerifyRequestSchema,
+  PaymentRecordSchema,
+  PaymentHistoryResponseSchema,
 } from '@snapprint/contracts';
 import { deriveOrderPaymentStatus, validatePaymentAttempt } from '@snapprint/domain';
 import { AppConfig, loadConfig } from './config.js';
 import { getDb } from './db.js';
-import { createPaymentGatewayService, PaymentGatewayService } from './payment/gateway-service.js';
+import {
+  createPaymentGatewayService,
+  PaymentGatewayService,
+  resolveEffectiveGateway,
+} from './payment/gateway-service.js';
 import { resolveSessionIdFromHeader } from './session-token.js';
 import {
   findOrderBySessionAndId,
-  updateOrderPaymentSummary,
-} from './repositories/order.repository.js';
-import {
   createPaymentRecord,
   findPaymentById,
   listPaymentsByOrder,
+  updateOrderPaymentSummary,
   updatePaymentStatus,
 } from './repositories/payment.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
-import { findStudioBySlug } from './repositories/studio.repository.js';
+import { findStudioDocumentBySlug } from './repositories/studio.repository.js';
 import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
 
 export interface PaymentRouteOptions {
-  db?: Db;
   config?: AppConfig;
+  db?: Db;
   gateway?: PaymentGatewayService;
 }
+
+const sendErr = (reply: FastifyReply, code: number, errCode: string, msg: string) =>
+  reply.status(code).send({ statusCode: code, code: errCode, message: msg });
 
 async function syncPayment(db: Db, studioId: string, orderId: string, totalAmountMinor: number) {
   const allPayments = await listPaymentsByOrder(db, studioId, orderId);
@@ -45,43 +49,54 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
   const getEffectiveDb = (): Db => opts?.db ?? getDb();
   const gateway = opts?.gateway ?? createPaymentGatewayService(config);
 
+  const getStudioAndGw = async (db: Db, slug: string) => {
+    const doc = await findStudioDocumentBySlug(db, slug);
+    if (!doc) return null;
+    const studio = {
+      id: doc.id,
+      slug: doc.slug,
+      name: doc.name,
+      status: doc.status,
+      settings: doc.settings,
+    };
+    const gw =
+      opts?.gateway ??
+      resolveEffectiveGateway(
+        gateway,
+        doc.payment?.razorpayKeyId,
+        doc.razorpayKeySecret,
+        config.razorpayWebhookSecret
+      );
+    return { doc, studio, gw };
+  };
+
   // Customer: Initiate Online Payment
   app.post<{ Params: { slug: string; orderId: string } }>(
     '/public/studios/:slug/orders/:orderId/pay/initiate',
     async (request, reply) => {
       const db = getEffectiveDb();
-      const studio = await findStudioBySlug(db, request.params.slug);
-      if (!studio) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'STUDIO_NOT_FOUND', message: 'Studio not found.' });
-      }
+      const ctx = await getStudioAndGw(db, request.params.slug);
+      if (!ctx) return sendErr(reply, 404, 'STUDIO_NOT_FOUND', 'Studio not found.');
+      const { studio, gw } = ctx;
 
       const avail = await checkStudioCheckoutAvailability(db, studio);
       if (!avail.allowed) {
-        return reply.status(403).send({
-          statusCode: 403,
-          code: avail.reason,
-          message: `Studio checkout is currently unavailable: ${avail.reason}`,
-        });
+        return sendErr(
+          reply,
+          403,
+          avail.reason,
+          `Studio checkout is currently unavailable: ${avail.reason}`
+        );
       }
 
       const bodyResult = PaymentInitiateRequestSchema.safeParse(request.body);
-      if (!bodyResult.success) {
-        return reply
-          .status(400)
-          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
-      }
+      if (!bodyResult.success) return sendErr(reply, 400, 'VALIDATION_ERROR', 'Invalid payload.');
 
       const tokenHeader = request.headers['x-session-token'] as string | undefined;
       const sessionId =
         resolveSessionIdFromHeader(tokenHeader, config.sessionSecret, studio.id) || '';
       const order = await findOrderBySessionAndId(db, studio.id, sessionId, request.params.orderId);
-      if (!order) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'ORDER_NOT_FOUND', message: 'Order not found.' });
-      }
+      if (!order) return sendErr(reply, 404, 'ORDER_NOT_FOUND', 'Order not found.');
 
       const paidMinor = order.paidAmountMinor ?? 0;
       const validation = validatePaymentAttempt(
@@ -93,22 +108,24 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
         },
         order.totalAmountMinor - paidMinor
       );
-      if (!validation.valid) {
-        return reply.status(400).send({
-          statusCode: 400,
-          code: validation.error,
-          message: `Invalid: ${validation.error}`,
-        });
+
+      if (!validation.allowed) {
+        return sendErr(
+          reply,
+          400,
+          validation.reason,
+          `Payment attempt rejected: ${validation.reason}`
+        );
       }
 
-      const gatewayOrder = await gateway.createGatewayOrder({
-        orderId: order.orderId,
+      const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const gatewayOrder = await gw.createOrder({
         amountMinor: validation.remainingMinor,
         currency: 'INR',
-        notes: { studioId: studio.id, orderId: order.orderId, orderNumber: order.orderNumber },
+        receipt: paymentId,
+        notes: { studioId: studio.id, orderId: order.orderId, paymentId },
       });
 
-      const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
       const now = new Date().toISOString();
       await createPaymentRecord(db, {
         paymentId,
@@ -131,7 +148,7 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
           amountMinor: validation.remainingMinor,
           currency: 'INR',
           gatewayOrderId: gatewayOrder.gatewayOrderId,
-          keyId: gateway.getKeyId(),
+          keyId: gw.getKeyId(),
           customerName: order.customerName,
           customerPhone: order.customerPhone,
         })
@@ -144,44 +161,27 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
     '/public/studios/:slug/orders/:orderId/pay/verify',
     async (request, reply) => {
       const db = getEffectiveDb();
-      const studio = await findStudioBySlug(db, request.params.slug);
-      if (!studio) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'STUDIO_NOT_FOUND', message: 'Studio not found.' });
-      }
+      const ctx = await getStudioAndGw(db, request.params.slug);
+      if (!ctx) return sendErr(reply, 404, 'STUDIO_NOT_FOUND', 'Studio not found.');
+      const { studio, gw } = ctx;
 
       const bodyResult = PaymentVerifyRequestSchema.safeParse(request.body);
-      if (!bodyResult.success) {
-        return reply
-          .status(400)
-          .send({ statusCode: 400, code: 'VALIDATION_ERROR', message: 'Invalid payload.' });
-      }
+      if (!bodyResult.success) return sendErr(reply, 400, 'VALIDATION_ERROR', 'Invalid payload.');
 
       const { paymentId, gatewayOrderId, gatewayPaymentId, gatewaySignature } = bodyResult.data;
       const payment = await findPaymentById(db, studio.id, paymentId);
       if (!payment || payment.orderId !== request.params.orderId) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'PAYMENT_NOT_FOUND', message: 'Payment not found.' });
+        return sendErr(reply, 404, 'PAYMENT_NOT_FOUND', 'Payment not found.');
       }
 
-      const isValid = gateway.verifyPaymentSignature(
-        gatewayOrderId,
-        gatewayPaymentId,
-        gatewaySignature
-      );
+      const isValid = gw.verifyPaymentSignature(gatewayOrderId, gatewayPaymentId, gatewaySignature);
       if (!isValid) {
         await updatePaymentStatus(db, studio.id, paymentId, 'FAILED', {
           gatewayPaymentId,
           gatewaySignature,
         });
         await syncPayment(db, studio.id, payment.orderId, payment.amountMinor);
-        return reply.status(400).send({
-          statusCode: 400,
-          code: 'INVALID_PAYMENT_SIGNATURE',
-          message: 'Signature failed.',
-        });
+        return sendErr(reply, 400, 'INVALID_PAYMENT_SIGNATURE', 'Signature failed.');
       }
 
       const capturedAt = new Date().toISOString();
@@ -205,24 +205,16 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
     '/public/studios/:slug/orders/:orderId/payments',
     async (request, reply) => {
       const db = getEffectiveDb();
-      const studio = await findStudioBySlug(db, request.params.slug);
-      if (!studio) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'STUDIO_NOT_FOUND', message: 'Studio not found.' });
-      }
+      const ctx = await getStudioAndGw(db, request.params.slug);
+      if (!ctx) return sendErr(reply, 404, 'STUDIO_NOT_FOUND', 'Studio not found.');
+      const { doc } = ctx;
 
       const tokenHeader = request.headers['x-session-token'] as string | undefined;
-      const sessionId =
-        resolveSessionIdFromHeader(tokenHeader, config.sessionSecret, studio.id) || '';
-      const order = await findOrderBySessionAndId(db, studio.id, sessionId, request.params.orderId);
-      if (!order) {
-        return reply
-          .status(404)
-          .send({ statusCode: 404, code: 'ORDER_NOT_FOUND', message: 'Order was not found.' });
-      }
+      const sessionId = resolveSessionIdFromHeader(tokenHeader, config.sessionSecret, doc.id) || '';
+      const order = await findOrderBySessionAndId(db, doc.id, sessionId, request.params.orderId);
+      if (!order) return sendErr(reply, 404, 'ORDER_NOT_FOUND', 'Order was not found.');
 
-      const payments = await listPaymentsByOrder(db, studio.id, order.orderId);
+      const payments = await listPaymentsByOrder(db, doc.id, order.orderId);
       const summary = deriveOrderPaymentStatus(order.totalAmountMinor, payments);
 
       return reply.status(200).send(

@@ -125,7 +125,7 @@ export const studioSettingsRoutes: FastifyPluginAsync<StudioSettingsRouteOptions
         });
       }
 
-      await updateStudioRazorpayVerification(db, studioId, true, keyId);
+      await updateStudioRazorpayVerification(db, studioId, true, keyId, keySecret);
       return reply.status(200).send({
         isConfirmed: true,
         message: 'Razorpay credentials verified successfully. Online payments are now enabled.',

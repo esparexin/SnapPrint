@@ -26,8 +26,7 @@ export function ShopPaymentModal({
   onUpdated,
   inShell = false,
 }: ShopPaymentModalProps) {
-  const p = (studio as { payment?: { isRazorpayConfirmed?: boolean; razorpayKeyId?: string } })
-    .payment;
+  const p = studio.payment;
   const [keyId, setKeyId] = useState(p?.razorpayKeyId || '');
   const [isConfirmed, setIsConfirmed] = useState(p?.isRazorpayConfirmed ?? false);
   const [saving, setSaving] = useState(false);
@@ -40,20 +39,20 @@ export function ShopPaymentModal({
     setSaving(true);
     setNotice(null);
     try {
+      const payment = {
+        enableCounterPayment: true,
+        enableOnlinePayment: isConfirmed,
+        isRazorpayConfirmed: isConfirmed,
+        ...(keyId.trim() ? { razorpayKeyId: keyId.trim() } : {}),
+      };
+      await updateProfileApi(studioId, { payment });
       const updated = await updateStudioSettings(studioId, {
         paymentPolicy: 'payment_required',
         onlinePaymentEnabled: isConfirmed,
         counterPaymentEnabled: true,
       });
-      await updateProfileApi(studioId, {
-        payment: {
-          enableCounterPayment: true,
-          enableOnlinePayment: isConfirmed,
-          isRazorpayConfirmed: isConfirmed,
-          ...(keyId.trim() ? { razorpayKeyId: keyId.trim() } : {}),
-        },
-      }).catch(() => null);
-      onUpdated(updated);
+      const mergedStudio: Studio = { ...updated, payment };
+      onUpdated(mergedStudio);
       if (inShell) setNotice({ kind: 'saved', text: '✓ Payment settings saved.' });
       else onClose();
     } catch (err) {
@@ -97,8 +96,17 @@ export function ShopPaymentModal({
             studioId={studioId}
             isConfirmed={isConfirmed}
             keyId={keyId}
-            onKeyIdChange={setKeyId}
-            onVerificationSuccess={() => setIsConfirmed(true)}
+            onKeyIdChange={(newKey) => {
+              setKeyId(newKey);
+              if (newKey !== p?.razorpayKeyId) setIsConfirmed(false);
+            }}
+            onVerificationSuccess={() => {
+              setIsConfirmed(true);
+              setNotice({
+                kind: 'saved',
+                text: '✓ Gateway verified. Click "Save Payment Settings" to persist.',
+              });
+            }}
             onError={(msg) => setNotice(msg ? { kind: 'error', text: msg } : null)}
           />
           <ShopPaymentModalFooter saving={saving} onClose={inShell ? undefined : onClose} />

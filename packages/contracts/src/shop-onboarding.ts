@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { StudioNameSchema, StudioSlugSchema, StudioStatusSchema } from './tenant.js';
+import {
+  ShopPaymentSettings,
+  ShopPaymentSettingsSchema,
+  StudioNameSchema,
+  StudioSlugSchema,
+  StudioStatusSchema,
+} from './tenant.js';
+export { ShopPaymentSettingsSchema, type ShopPaymentSettings };
 import { PaperSizeSchema } from './document-print.js';
 
 export const ReservedSlugs = [
@@ -104,14 +111,6 @@ export const ShopCapabilitiesConfigSchema = z.object({
   supportedPaperSizes: z.array(PaperSizeSchema).min(1).default(['A4']),
 });
 export type ShopCapabilitiesConfig = z.infer<typeof ShopCapabilitiesConfigSchema>;
-
-export const ShopPaymentSettingsSchema = z.object({
-  enableCounterPayment: z.boolean().default(true),
-  enableOnlinePayment: z.boolean().default(false),
-  isRazorpayConfirmed: z.boolean().default(false),
-  razorpayKeyId: z.string().trim().min(1).optional(),
-});
-export type ShopPaymentSettings = z.infer<typeof ShopPaymentSettingsSchema>;
 
 export const CreateShopRequestSchema = z.object({
   name: StudioNameSchema,

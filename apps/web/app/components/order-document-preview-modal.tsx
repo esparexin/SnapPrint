@@ -46,12 +46,18 @@ export function OrderDocumentPreviewModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="preview-modal-title"
-      className="dialog-overlay max-md:items-end"
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div
-        className="dialog-content pb-safe max-md:rounded-b-none"
-        style={{ maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column' }}
+        className="dialog-content pb-safe"
+        style={{
+          maxWidth: '680px',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '20px',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />

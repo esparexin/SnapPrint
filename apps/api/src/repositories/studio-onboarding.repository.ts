@@ -106,7 +106,8 @@ export async function updateStudioRazorpayVerification(
   db: Db,
   id: string,
   isConfirmed: boolean,
-  keyId?: string
+  keyId?: string,
+  keySecret?: string
 ): Promise<boolean> {
   const current = await findStudioDocumentById(db, id);
   if (!current) return false;
@@ -119,9 +120,18 @@ export async function updateStudioRazorpayVerification(
     ...(keyId ? { razorpayKeyId: keyId } : {}),
   };
 
+  const updateFields: Record<string, unknown> = {
+    payment,
+    'settings.onlinePaymentEnabled': isConfirmed,
+    updatedAt: new Date(),
+  };
+  if (keySecret) {
+    updateFields.razorpayKeySecret = keySecret;
+  }
+
   const result = await db
     .collection<StudioDocument>(STUDIOS_COLLECTION)
-    .updateOne({ id }, { $set: { payment, updatedAt: new Date() } });
+    .updateOne({ id }, { $set: updateFields });
 
   return result.matchedCount > 0;
 }

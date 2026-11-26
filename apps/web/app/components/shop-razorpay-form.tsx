@@ -38,7 +38,9 @@ export function ShopRazorpayForm({
         keySecret: keySecret.trim(),
       });
       if (res.isConfirmed) {
-        setVerifySuccess(res.message);
+        setVerifySuccess(
+          '✓ Gateway handshake verified. Click "Save Payment Settings" below to persist.'
+        );
         onVerificationSuccess(res.message);
       }
     } catch (err) {

@@ -114,7 +114,13 @@ export function PrinterPageSetupModal({
     </>
   );
 
-  if (inShell) return <div className="portal-section-card flex flex-col">{content}</div>;
+  if (inShell) {
+    return (
+      <div className="portal-section-card" style={{ display: 'flex', flexDirection: 'column' }}>
+        {content}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -124,7 +130,11 @@ export function PrinterPageSetupModal({
       className="dialog-overlay"
       onClick={handleBackdropClick}
     >
-      <div className="dialog-content max-w-3xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="dialog-content"
+        style={{ maxWidth: '850px', display: 'flex', flexDirection: 'column' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         {content}
       </div>

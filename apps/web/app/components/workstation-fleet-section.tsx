@@ -10,6 +10,56 @@ interface WorkstationFleetSectionProps {
   onPairAgent: () => void;
 }
 
+const S = {
+  cardStyle: (unbound: boolean) => ({
+    padding: '12px 16px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap' as const,
+    gap: '8px',
+    backgroundColor: unbound ? '#f8fafc' : '#ffffff',
+  }),
+  dot: (online: boolean) => ({
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    backgroundColor: online ? '#22c55e' : '#94a3b8',
+    display: 'inline-block',
+  }),
+  pill: (bg: string, fg: string) => ({
+    fontSize: '11px',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    backgroundColor: bg,
+    color: fg,
+  }),
+  pairBtn: {
+    minHeight: '44px',
+    padding: '0 14px',
+    borderRadius: '6px',
+    border: '1px solid #0284c7',
+    backgroundColor: '#f0f9ff',
+    color: '#0284c7',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  unbindBtn: {
+    minHeight: '44px',
+    padding: '0 12px',
+    borderRadius: '6px',
+    border: '1px solid #fecaca',
+    backgroundColor: '#fef2f2',
+    color: '#b91c1c',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+};
+
 export function WorkstationFleetSection({
   devices,
   loading,
@@ -17,76 +67,75 @@ export function WorkstationFleetSection({
   onPairAgent,
 }: WorkstationFleetSectionProps) {
   return (
-    <div className="mt-4">
-      <div className="flex justify-between items-center mb-3">
+    <div style={{ marginTop: '16px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
+      >
         <div>
-          <h3 className="text-base font-semibold text-slate-900 m-0">
-            Connected Computers & Workstations
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+            Connected Computers &amp; Workstations
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5 mb-0">
-            Workstations hosting your local physical printers. Unbind old laptops when migrating to
-            a new PC.
+          <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '2px 0 0' }}>
+            Workstations hosting physical printers. Unbind old PCs when migrating.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onPairAgent}
-          className="min-h-[44px] px-3.5 rounded-md border border-sky-600 bg-sky-50 text-sky-700 text-xs font-semibold hover:bg-sky-100"
-        >
+        <button type="button" onClick={onPairAgent} style={S.pairBtn}>
           + Pair Workstation
         </button>
       </div>
 
-      {loading ? (
-        <div className="py-6 text-center text-slate-500 text-sm">Loading workstations...</div>
-      ) : devices.length === 0 ? (
-        <div className="p-6 text-center border border-dashed border-slate-300 rounded-lg text-slate-500 text-sm">
+      {loading && (
+        <div
+          style={{ padding: '24px 0', textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}
+        >
+          Loading workstations...
+        </div>
+      )}
+      {!loading && devices.length === 0 && (
+        <div
+          style={{
+            padding: '24px',
+            textAlign: 'center',
+            border: '1px dashed #cbd5e1',
+            borderRadius: '8px',
+            color: '#64748b',
+            fontSize: '0.875rem',
+          }}
+        >
           No computers enrolled yet. Click &quot;Pair Workstation&quot; to link your first computer.
         </div>
-      ) : (
-        <div className="flex flex-col gap-2">
+      )}
+      {!loading && devices.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {devices.map((device) => {
             const isUnbound = device.status === ('unbound' as string);
             return (
-              <div
-                key={device.deviceId}
-                className={`p-3 px-4 border border-slate-200 rounded-lg flex justify-between items-center flex-wrap gap-2 ${
-                  isUnbound ? 'bg-slate-50' : 'bg-white'
-                }`}
-              >
+              <div key={device.deviceId} style={S.cardStyle(isUnbound)}>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        device.isOnline ? 'bg-green-500' : 'bg-slate-400'
-                      }`}
-                    />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={S.dot(device.isOnline)} />
                     <strong
-                      className={`text-sm ${isUnbound ? 'text-slate-400' : 'text-slate-900'}`}
+                      style={{ fontSize: '0.875rem', color: isUnbound ? '#94a3b8' : '#0f172a' }}
                     >
                       {device.hostname}
                     </strong>
-                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
-                      {device.osPlatform}
-                    </span>
-                    {isUnbound && (
-                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-red-100 text-red-700">
-                        Unbound
-                      </span>
-                    )}
+                    <span style={S.pill('#e2e8f0', '#475569')}>{device.osPlatform}</span>
+                    {isUnbound && <span style={S.pill('#fee2e2', '#b91c1c')}>Unbound</span>}
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
                     Agent v{device.agentVersion} · Last heartbeat:{' '}
                     {new Date(device.lastHeartbeatAt).toLocaleTimeString()}
                   </div>
                 </div>
-
                 {!isUnbound && (
-                  <button
-                    type="button"
-                    onClick={() => onUnbindDevice(device)}
-                    className="min-h-[44px] px-3 rounded-md border border-red-200 bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100"
-                  >
+                  <button type="button" onClick={() => onUnbindDevice(device)} style={S.unbindBtn}>
                     Unbind Workstation
                   </button>
                 )}

@@ -65,18 +65,6 @@ export const StudioNameSchema = z.string().trim().min(1).max(120);
 
 export type StudioName = z.infer<typeof StudioNameSchema>;
 
-export const StudioSchema = z.object({
-  id: StudioIdSchema,
-  slug: StudioSlugSchema,
-  name: StudioNameSchema,
-  status: StudioStatusSchema,
-  settings: StudioSettingsSchema,
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
-
-export type Studio = z.infer<typeof StudioSchema>;
-
 export const PublicPaymentSettingsSchema = z.object({
   enableCounterPayment: z.boolean().default(true),
   enableOnlinePayment: z.boolean().default(false),
@@ -84,6 +72,25 @@ export const PublicPaymentSettingsSchema = z.object({
 });
 
 export type PublicPaymentSettings = z.infer<typeof PublicPaymentSettingsSchema>;
+
+export const ShopPaymentSettingsSchema = PublicPaymentSettingsSchema.extend({
+  razorpayKeyId: z.string().trim().min(1).optional(),
+});
+
+export type ShopPaymentSettings = z.infer<typeof ShopPaymentSettingsSchema>;
+
+export const StudioSchema = z.object({
+  id: StudioIdSchema,
+  slug: StudioSlugSchema,
+  name: StudioNameSchema,
+  status: StudioStatusSchema,
+  settings: StudioSettingsSchema,
+  payment: ShopPaymentSettingsSchema.optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type Studio = z.infer<typeof StudioSchema>;
 
 export const StudioPublicCapabilitiesSchema = z.object({
   supportsDuplex: z.boolean().default(false),

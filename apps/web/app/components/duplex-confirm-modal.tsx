@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { StudioPrinter } from '../../src/printer-client';
 import { confirmPrinterCapability } from '../../src/printer-capability-client';
-import { useDialog } from '../hooks/use-dialog';
+import { ModalSheetShell } from './modal-sheet-shell';
 
 interface DuplexConfirmModalProps {
   studioId: string;
@@ -11,6 +11,19 @@ interface DuplexConfirmModalProps {
   onClose: () => void;
   onConfirmed: () => void;
 }
+
+const OPTIONS = [
+  {
+    v: 'unsupported' as const,
+    t: '⇥ Simplex Only',
+    d: 'Prints on one side only. Customers cannot choose double-sided.',
+  },
+  {
+    v: 'supported' as const,
+    t: '🔄 Automatic Duplex',
+    d: 'Hardware feeds and flips paper automatically.',
+  },
+];
 
 export function DuplexConfirmModal({
   studioId,
@@ -21,8 +34,6 @@ export function DuplexConfirmModal({
   const [duplexSupport, setDuplexSupport] = useState<'supported' | 'unsupported'>('unsupported');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { handleBackdropClick } = useDialog({ isOpen: true, onClose, enableSwipeDown: true });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,83 +51,95 @@ export function DuplexConfirmModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="duplex-modal-title"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
+    <ModalSheetShell
+      isOpen
+      isNested
+      onClose={onClose}
+      titleId="duplex-modal-title"
+      title="Confirm Duplex Capability"
+      maxWidth="480px"
+      contentStyle={{ padding: '20px' }}
     >
-      <div className="dialog-content max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 id="duplex-modal-title" className="text-lg font-bold text-slate-900 mb-2">
-          Confirm Duplex Capability
-        </h2>
-        <p className="text-sm text-slate-600 mb-4">
-          Does <strong>{printer.name}</strong> support automatic double-sided printing?
-        </p>
-
-        {error && (
-          <div role="alert" className="p-2.5 bg-red-50 text-red-700 rounded-md text-sm mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
-              <input
-                type="radio"
-                name="duplex"
-                value="unsupported"
-                checked={duplexSupport === 'unsupported'}
-                onChange={() => setDuplexSupport('unsupported')}
-                className="w-4 h-4 text-sky-600"
-              />
-              <div>
-                <strong className="block text-sm text-slate-900">⇥ Simplex Only</strong>
-                <span className="text-xs text-slate-500">
-                  Prints on one side only. Customers cannot choose double-sided.
-                </span>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-2.5 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
-              <input
-                type="radio"
-                name="duplex"
-                value="supported"
-                checked={duplexSupport === 'supported'}
-                onChange={() => setDuplexSupport('supported')}
-                className="w-4 h-4 text-sky-600"
-              />
-              <div>
-                <strong className="block text-sm text-slate-900">🔄 Automatic Duplex</strong>
-                <span className="text-xs text-slate-500">
-                  Hardware feeds and flips paper automatically.
-                </span>
-              </div>
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-2.5 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="min-h-[44px] px-4 rounded-md border border-slate-300 bg-white text-sm font-semibold hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="min-h-[44px] px-5 rounded-md bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700"
-            >
-              {submitting ? 'Saving...' : 'Save Verification'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 0 14px', lineHeight: 1.5 }}>
+        Does <strong>{printer.name}</strong> support automatic double-sided printing?
+      </p>
+      {error && (
+        <div
+          role="alert"
+          style={{
+            padding: '8px 12px',
+            background: '#fef2f2',
+            color: '#b91c1c',
+            borderRadius: '6px',
+            fontSize: '0.8125rem',
+            marginBottom: '14px',
+          }}
+        >
+          {error}
+        </div>
+      )}
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+      >
+        {OPTIONS.map((opt) => (
+          <label
+            key={opt.v}
+            className={`duplex-card ${duplexSupport === opt.v ? 'duplex-card-selected' : ''}`}
+          >
+            <input
+              type="radio"
+              name="duplex"
+              value={opt.v}
+              checked={duplexSupport === opt.v}
+              onChange={() => setDuplexSupport(opt.v)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <div>
+              <strong style={{ display: 'block', fontSize: '0.875rem', color: '#0f172a' }}>
+                {opt.t}
+              </strong>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{opt.d}</span>
+            </div>
+          </label>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            style={{
+              minHeight: '44px',
+              padding: '0 16px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              background: '#fff',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{
+              minHeight: '44px',
+              padding: '0 20px',
+              borderRadius: '6px',
+              background: '#0284c7',
+              color: '#fff',
+              border: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {submitting ? 'Saving...' : 'Save Verification'}
+          </button>
+        </div>
+      </form>
+    </ModalSheetShell>
   );
 }
