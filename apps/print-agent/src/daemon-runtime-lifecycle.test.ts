@@ -74,4 +74,44 @@ describe('AgentDaemon Runtime Lifecycle & Safety', () => {
     expect(tracker.getInFlightJobs()).toEqual([]);
     daemon.stop();
   });
+
+  it('gracefully shuts down daemon, server, tray, and releases lock without throwing', async () => {
+    const { shutdownGracefully, createLifecycleCoordinator } = await import('./lifecycle.js');
+    const { writeFileSync, existsSync, unlinkSync } = await import('node:fs');
+
+    const testLock = join(tmpdir(), `test-lock-lifecycle-${Date.now()}.lock`);
+    writeFileSync(testLock, String(process.pid), 'utf-8');
+    expect(existsSync(testLock)).toBe(true);
+
+    const mockDaemon = { stop: vi.fn() } as unknown as AgentDaemon;
+    const mockTray = { stop: vi.fn() };
+    const mockServer = {
+      close: vi.fn((cb?: () => void) => cb?.()),
+    } as unknown as import('node:http').Server;
+
+    await shutdownGracefully({
+      daemon: mockDaemon,
+      tray: mockTray,
+      server: mockServer,
+      lockPath: testLock,
+      delayMs: 10,
+      exitProcess: false,
+    });
+
+    expect(mockDaemon.stop).toHaveBeenCalled();
+    expect(mockTray.stop).toHaveBeenCalled();
+    expect(mockServer.close).toHaveBeenCalled();
+    expect(existsSync(testLock)).toBe(false);
+
+    // LifecycleCoordinator registration
+    const coordinator = createLifecycleCoordinator();
+    coordinator.registerDaemon(mockDaemon);
+    coordinator.registerTray(mockTray);
+    coordinator.registerServer(mockServer);
+
+    const testLock2 = join(tmpdir(), `test-lock-lifecycle2-${Date.now()}.lock`);
+    writeFileSync(testLock2, String(process.pid), 'utf-8');
+    await coordinator.shutdown({ lockPath: testLock2, exitProcess: false });
+    expect(existsSync(testLock2)).toBe(false);
+  });
 });

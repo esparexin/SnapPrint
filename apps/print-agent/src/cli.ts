@@ -8,6 +8,7 @@ import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { launchGuiWindow, startGuiServer } from './gui-server.js';
 import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
+import { shutdownGracefully } from './lifecycle.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
 import { hideConsoleWindow, startSystemTray } from './system-tray.js';
 
@@ -67,10 +68,7 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
 
     let tray: { stop: () => void } | null = null;
     const handleExit = () => {
-      tray?.stop();
-      handle.close();
-      releaseInstanceLock();
-      process.exit(0);
+      shutdownGracefully({ server: handle.server, tray, exitProcess: true });
     };
     tray = startSystemTray({ url: handle.url, onExit: handleExit });
     hideConsoleWindow();
@@ -175,9 +173,7 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
     await daemon.start();
 
     const handleExit = () => {
-      daemon.stop();
-      releaseInstanceLock();
-      process.exit(0);
+      shutdownGracefully({ daemon, exitProcess: true });
     };
     process.on('SIGINT', handleExit);
     process.on('SIGTERM', handleExit);

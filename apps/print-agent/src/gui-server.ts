@@ -1,61 +1,22 @@
-import { spawn } from 'node:child_process';
-import { createServer, IncomingMessage, Server, ServerResponse } from 'node:http';
+import { createServer, Server } from 'node:http';
 import { hostname } from 'node:os';
 import { AGENT_VERSION, applyAgentUpdate, checkForUpdate } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { FAVICON_BASE64, getGuiHtml } from './gui-html.js';
+import { launchGuiWindow, parseJsonBody, sendJson } from './gui-http-helpers.js';
+import { shutdownGracefully } from './lifecycle.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
+
+export { launchGuiWindow } from './gui-http-helpers.js';
 
 export interface GuiServerHandle {
   server: Server;
   port: number;
   url: string;
   close: () => Promise<void>;
-}
-
-export function launchGuiWindow(url: string, platform = process.platform): void {
-  try {
-    if (platform === 'win32') {
-      spawn('cmd.exe', ['/c', 'start', 'msedge', `--app=${url}`, '--window-size=500,700'], {
-        detached: true,
-        stdio: 'ignore',
-      });
-    } else if (platform === 'darwin') {
-      spawn('open', [url], { detached: true, stdio: 'ignore' });
-    } else {
-      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' });
-    }
-  } catch {
-    // Non-fatal if launcher cannot spawn
-  }
-}
-
-async function parseJsonBody<T>(req: IncomingMessage): Promise<T | null> {
-  return new Promise((resolve) => {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk;
-      if (body.length > 100_000) req.destroy();
-    });
-    req.on('end', () => {
-      try {
-        resolve(JSON.parse(body) as T);
-      } catch {
-        resolve(null);
-      }
-    });
-    req.on('error', () => resolve(null));
-  });
-}
-
-function sendJson(res: ServerResponse, status: number, data: unknown): void {
-  res.writeHead(status, {
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store',
-  });
-  res.end(JSON.stringify(data));
+  shutdown: (delayMs?: number) => Promise<void>;
 }
 
 export function createGuiServer(
@@ -237,6 +198,11 @@ export async function startGuiServer(
           new Promise((done) => {
             (server as unknown as { stopDaemon?: () => void }).stopDaemon?.();
             server.close(() => done());
+          }),
+        shutdown: (delayMs?: number) =>
+          shutdownGracefully({
+            server,
+            delayMs,
           }),
       });
     });
