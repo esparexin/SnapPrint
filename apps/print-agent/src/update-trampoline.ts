@@ -122,7 +122,7 @@ export function buildPosixTrampolineScript(options: TrampolineScriptOptions): st
 
   return `#!/bin/sh
 LOG="${log}"
-log() { echo "[\$(date '+%Y-%m-%d %H:%M:%S')] \$1" >> "\$LOG" 2>&1; }
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG" 2>&1; }
 
 log "=== SnapPrint In-Place Updater Started ==="
 if [ "${options.parentPid}" -gt 0 ]; then
@@ -134,14 +134,14 @@ if [ -f "${target}" ]; then
 fi
 cp "${installer}" "${target}"
 chmod +x "${target}"
-if "${target}" --version >> "\$LOG" 2>&1; then
+if "${target}" --version >> "$LOG" 2>&1; then
   rm -f "${target}.bak"
   log "Updated agent verified successfully."
 else
   log "[ROLLBACK] Reverting to backup..."
   cp "${target}.bak" "${target}"
 fi
-nohup "${target}" ${args} >> "\$LOG" 2>&1 &
+nohup "${target}" ${args} >> "$LOG" 2>&1 &
 log "=== Update Sequence Finished ==="
 `.trim();
 }

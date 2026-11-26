@@ -5,7 +5,7 @@ import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { FAVICON_BASE64, getGuiHtml } from './gui-html.js';
-import { launchGuiWindow, parseJsonBody, sendJson } from './gui-http-helpers.js';
+import { parseJsonBody, sendJson } from './gui-http-helpers.js';
 import { shutdownGracefully } from './lifecycle.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 

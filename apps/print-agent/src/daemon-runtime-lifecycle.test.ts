@@ -77,7 +77,7 @@ describe('AgentDaemon Runtime Lifecycle & Safety', () => {
 
   it('gracefully shuts down daemon, server, tray, and releases lock without throwing', async () => {
     const { shutdownGracefully, createLifecycleCoordinator } = await import('./lifecycle.js');
-    const { writeFileSync, existsSync, unlinkSync } = await import('node:fs');
+    const { writeFileSync, existsSync } = await import('node:fs');
 
     const testLock = join(tmpdir(), `test-lock-lifecycle-${Date.now()}.lock`);
     writeFileSync(testLock, String(process.pid), 'utf-8');

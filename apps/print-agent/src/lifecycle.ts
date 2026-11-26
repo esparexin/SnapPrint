@@ -58,7 +58,9 @@ export async function shutdownGracefully(options: ShutdownOptions = {}): Promise
   }
 }
 
-export function createLifecycleCoordinator(defaultOptions: ShutdownOptions = {}): LifecycleCoordinator {
+export function createLifecycleCoordinator(
+  defaultOptions: ShutdownOptions = {}
+): LifecycleCoordinator {
   let activeServer: Server | undefined = defaultOptions.server;
   let activeDaemon: AgentDaemon | null | undefined = defaultOptions.daemon;
   let activeTray: { stop: () => void } | null | undefined = defaultOptions.tray;

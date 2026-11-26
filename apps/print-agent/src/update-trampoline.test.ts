@@ -49,7 +49,9 @@ describe('Update Trampoline & Rollback Engine', () => {
 
     expect(script).toContain('#!/bin/sh');
     expect(script).toContain('kill "7890"');
-    expect(script).toContain('cp "/usr/local/bin/snapprint-agent" "/usr/local/bin/snapprint-agent.bak"');
+    expect(script).toContain(
+      'cp "/usr/local/bin/snapprint-agent" "/usr/local/bin/snapprint-agent.bak"'
+    );
     expect(script).toContain('chmod +x "/usr/local/bin/snapprint-agent"');
     expect(script).toContain('[ROLLBACK] Reverting to backup');
     expect(script).toContain('nohup "/usr/local/bin/snapprint-agent" start');
