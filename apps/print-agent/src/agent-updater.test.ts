@@ -152,7 +152,7 @@ describe('Agent Updater', () => {
   });
 
   describe('applyUpdate', () => {
-    it('spawns msiexec on win32 platform', () => {
+    it('spawns trampoline updater on win32 platform', () => {
       const mockSpawn = vi.fn().mockReturnValue({
         pid: 12345,
         unref: vi.fn(),
@@ -161,13 +161,14 @@ describe('Agent Updater', () => {
       const res = applyUpdate(
         'C:\\temp\\installer.msi',
         'win32',
-        mockSpawn as unknown as typeof spawn
+        mockSpawn as unknown as typeof spawn,
+        { parentPid: 555 }
       );
       expect(res.success).toBe(true);
       expect(res.pid).toBe(12345);
       expect(mockSpawn).toHaveBeenCalledWith(
-        'msiexec.exe',
-        ['/i', 'C:\\temp\\installer.msi', '/passive', '/norestart'],
+        'powershell.exe',
+        expect.arrayContaining(['-File', expect.stringContaining('snapprint-updater-')]),
         expect.objectContaining({ detached: true })
       );
     });

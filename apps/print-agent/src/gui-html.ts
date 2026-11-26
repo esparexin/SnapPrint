@@ -1,3 +1,5 @@
+import { AGENT_VERSION } from './agent-updater.js';
+
 export const FAVICON_BASE64 =
   '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';
 
@@ -29,19 +31,15 @@ export function getGuiHtml(): string {
     .input { padding: 9px 12px; font-size: 0.95rem; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; font-family: monospace; }
     .input:focus { outline: none; border-color: #0284c7; }
     .btn { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
-    .btn-primary { background: #0284c7; color: #fff; }
-    .btn-primary:hover { background: #0369a1; }
-    .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
-    .btn-outline:hover { background: #f1f5f9; }
+    .btn-primary { background: #0284c7; color: #fff; } .btn-primary:hover { background: #0369a1; }
+    .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; } .btn-outline:hover { background: #f1f5f9; }
     .btn-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
     .printer-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
     .printer-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.825rem; }
     .tag { font-size: 0.675rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
-    .tag-color { background: #eff6ff; color: #1d4ed8; }
-    .tag-bw { background: #f1f5f9; color: #475569; }
+    .tag-color { background: #eff6ff; color: #1d4ed8; } .tag-bw { background: #f1f5f9; color: #475569; }
     .alert { padding: 8px 12px; border-radius: 6px; font-size: 0.825rem; display: none; }
-    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .alert-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; } .alert-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
     .footer { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: auto; padding-top: 8px; }
   </style>
 </head>
@@ -59,7 +57,7 @@ export function getGuiHtml(): string {
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
       <button id="updateBtn" class="btn" style="display:none;width:auto;padding:2px 8px;font-size:0.75rem;background:#059669;color:#fff;cursor:pointer;" onclick="performUpdate()">Update</button>
-      <span style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 8px; border-radius: 999px;">v0.1.0</span>
+      <span style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 8px; border-radius: 999px;">v${AGENT_VERSION}</span>
     </div>
   </div>
 
@@ -220,6 +218,17 @@ export function getGuiHtml(): string {
         if (!res.ok || !data.success) throw new Error(data.message || 'Update failed');
         showAlert(data.message || 'Update launched! Restarting agent...', 'success');
         btn.textContent = 'Restarting...';
+        const interval = setInterval(async () => {
+          try {
+            const r = await fetch('/api/state');
+            if (r.ok) {
+              clearInterval(interval);
+              showAlert('Agent updated and reconnected successfully!', 'success');
+              loadState();
+              checkUpdates();
+            }
+          } catch {}
+        }, 2000);
       } catch (err) {
         showAlert(err.message, 'error');
         btn.disabled = false;

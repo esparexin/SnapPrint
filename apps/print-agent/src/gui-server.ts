@@ -154,7 +154,14 @@ export function createGuiServer(
 
     if (req.method === 'POST' && url.pathname === '/api/update/apply') {
       const config = loadAgentConfig(configPath);
-      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION);
+      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, {
+        relaunchArgs: 'gui',
+      });
+      if (result.success) {
+        setTimeout(() => {
+          shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true });
+        }, 500);
+      }
       return sendJson(res, result.success ? 200 : 400, result);
     }
 

@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
+import { launchTrampolineUpdater } from './update-trampoline.js';
 
 export const AGENT_VERSION = '0.1.0';
 
@@ -115,39 +116,50 @@ export async function downloadUpdate(
   return targetPath;
 }
 
+export interface ApplyUpdateOptions {
+  platform?: NodeJS.Platform;
+  spawnImpl?: typeof spawn;
+  parentPid?: number;
+  targetExePath?: string;
+  relaunchArgs?: string;
+  logPath?: string;
+  tempDir?: string;
+}
+
+export interface ApplyAgentUpdateOptions extends ApplyUpdateOptions {
+  downloadDir?: string;
+  fetchImpl?: typeof fetch;
+}
+
 export function applyUpdate(
   installerPath: string,
   platform = process.platform,
-  spawnImpl: typeof spawn = spawn
-): { success: boolean; command: string; pid?: number } {
-  if (platform === 'win32') {
-    const child = spawnImpl('msiexec.exe', ['/i', installerPath, '/passive', '/norestart'], {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-    return {
-      success: true,
-      command: `msiexec.exe /i "${installerPath}" /passive /norestart`,
-      pid: child.pid,
-    };
-  }
+  spawnImpl: typeof spawn = spawn,
+  options?: ApplyUpdateOptions
+): { success: boolean; command: string; pid?: number; scriptPath?: string } {
+  const trampoline = launchTrampolineUpdater({
+    parentPid: options?.parentPid ?? process.pid,
+    installerPath,
+    targetExePath: options?.targetExePath ?? process.execPath,
+    platform,
+    spawnImpl,
+    relaunchArgs: options?.relaunchArgs ?? 'start',
+    logPath: options?.logPath,
+    tempDir: options?.tempDir,
+  });
 
   return {
-    success: true,
-    command: `file://${installerPath}`,
+    success: trampoline.success,
+    command: trampoline.scriptPath,
+    pid: trampoline.pid,
+    scriptPath: trampoline.scriptPath,
   };
 }
 
 export async function applyAgentUpdate(
   apiUrl: string,
   currentVersion = AGENT_VERSION,
-  options?: {
-    downloadDir?: string;
-    fetchImpl?: typeof fetch;
-    platform?: NodeJS.Platform;
-    spawnImpl?: typeof spawn;
-  }
+  options?: ApplyAgentUpdateOptions
 ): Promise<UpdateApplyResult> {
   const check = await checkForUpdate(apiUrl, currentVersion, options?.fetchImpl);
   if (!check.updateAvailable || !check.metadata) {
@@ -163,11 +175,11 @@ export async function applyAgentUpdate(
     options?.downloadDir,
     options?.fetchImpl
   );
-  const execResult = applyUpdate(installerPath, options?.platform, options?.spawnImpl);
+  const execResult = applyUpdate(installerPath, options?.platform, options?.spawnImpl, options);
 
   return {
     success: true,
-    message: `Update v${check.metadata.version} downloaded and installer launched.`,
+    message: `Update v${check.metadata.version} downloaded and trampoline launcher dispatched.`,
     version: check.metadata.version,
     installerPath,
     command: execResult.command,
@@ -177,16 +189,14 @@ export async function applyAgentUpdate(
 export async function handleUpdateCommand(
   apiUrl: string,
   currentVersion = AGENT_VERSION,
-  options?: {
-    downloadDir?: string;
-    fetchImpl?: typeof fetch;
-    platform?: NodeJS.Platform;
-    spawnImpl?: typeof spawn;
-  }
+  options?: ApplyAgentUpdateOptions
 ): Promise<number> {
   console.log(`Checking for agent updates from ${apiUrl}...`);
   console.log(`Current version: v${currentVersion}`);
-  const result = await applyAgentUpdate(apiUrl, currentVersion, options);
+  const result = await applyAgentUpdate(apiUrl, currentVersion, {
+    relaunchArgs: 'start',
+    ...options,
+  });
   if (!result.success) {
     if (result.message.includes('already up to date')) {
       console.log(result.message);
