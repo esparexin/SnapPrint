@@ -70,6 +70,22 @@ describe('Storage Service Implementation', () => {
     expect(storage).toBeInstanceOf(CloudinaryStorageService);
   });
 
+  it('factory selects CloudinaryStorageService when cloudinaryUrl is provided', () => {
+    const storage = createStorageService({
+      cloudinaryUrl: 'cloudinary://1234567890:test_secret@test_cloud',
+    });
+    expect(storage).toBeInstanceOf(CloudinaryStorageService);
+  });
+
+  it('factory configures custom storageBaseDir on LocalDiskStorageService in production', () => {
+    const customDir = '/custom/persistent/storage';
+    const storage = createStorageService({
+      nodeEnv: 'production',
+      storageBaseDir: customDir,
+    });
+    expect(storage).toBeInstanceOf(LocalDiskStorageService);
+  });
+
   it('MemoryStorageService strictly forbids production instantiation without explicit opt-in', () => {
     const prevEnv = process.env.NODE_ENV;
     try {

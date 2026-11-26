@@ -100,16 +100,16 @@ export class CloudinaryStorageService implements StorageService {
     }
 
     const fullPublicId = this.buildFullPublicId(storageKey);
-    const candidates = [
-      {
-        url: `https://res.cloudinary.com/${this.cloudName}/image/upload/${fullPublicId}`,
-        mimeType: 'image/jpeg',
-      },
-      {
-        url: `https://res.cloudinary.com/${this.cloudName}/raw/upload/${fullPublicId}`,
-        mimeType: 'application/pdf',
-      },
-    ];
+    const isPdf = storageKey.toLowerCase().endsWith('.pdf');
+    const rawCandidate = {
+      url: `https://res.cloudinary.com/${this.cloudName}/raw/upload/${fullPublicId}`,
+      mimeType: 'application/pdf',
+    };
+    const imageCandidate = {
+      url: `https://res.cloudinary.com/${this.cloudName}/image/upload/${fullPublicId}`,
+      mimeType: 'image/jpeg',
+    };
+    const candidates = isPdf ? [rawCandidate, imageCandidate] : [imageCandidate, rawCandidate];
 
     for (const candidate of candidates) {
       try {
@@ -117,6 +117,7 @@ export class CloudinaryStorageService implements StorageService {
         if (res.ok) {
           const buf = await res.arrayBuffer();
           const detectedMime = res.headers.get('content-type') || candidate.mimeType;
+          this.urlCache.set(storageKey, { secureUrl: candidate.url, mimeType: detectedMime });
           return { data: new Uint8Array(buf), mimeType: detectedMime };
         }
       } catch {
@@ -131,35 +132,39 @@ export class CloudinaryStorageService implements StorageService {
     const fullPublicId = this.buildFullPublicId(storageKey);
     const timestamp = Math.floor(Date.now() / 1000);
     const resourceTypes: Array<'image' | 'raw'> = ['image', 'raw'];
+    const strippedId = fullPublicId.replace(/\.[^/.]+$/, '');
+    const idTargets = strippedId !== fullPublicId ? [strippedId, fullPublicId] : [fullPublicId];
 
     for (const resourceType of resourceTypes) {
-      const signParams: Record<string, string | number> = {
-        public_id: fullPublicId,
-        timestamp,
-      };
-      const signature = generateCloudinarySignature(signParams, this.apiSecret);
+      for (const targetId of idTargets) {
+        const signParams: Record<string, string | number> = {
+          public_id: targetId,
+          timestamp,
+        };
+        const signature = generateCloudinarySignature(signParams, this.apiSecret);
 
-      const formData = new FormData();
-      formData.append('public_id', fullPublicId);
-      formData.append('timestamp', String(timestamp));
-      formData.append('api_key', this.apiKey);
-      formData.append('signature', signature);
+        const formData = new FormData();
+        formData.append('public_id', targetId);
+        formData.append('timestamp', String(timestamp));
+        formData.append('api_key', this.apiKey);
+        formData.append('signature', signature);
 
-      const destroyUrl = `https://api.cloudinary.com/v1_1/${this.cloudName}/${resourceType}/destroy`;
-      try {
-        const res = await this.fetchFn(destroyUrl, {
-          method: 'POST',
-          body: formData,
-        });
-        if (res.ok) {
-          const result = (await res.json().catch(() => ({}))) as { result?: string };
-          if (result.result === 'ok') {
-            this.urlCache.delete(storageKey);
-            return true;
+        const destroyUrl = `https://api.cloudinary.com/v1_1/${this.cloudName}/${resourceType}/destroy`;
+        try {
+          const res = await this.fetchFn(destroyUrl, {
+            method: 'POST',
+            body: formData,
+          });
+          if (res.ok) {
+            const result = (await res.json().catch(() => ({}))) as { result?: string };
+            if (result.result === 'ok') {
+              this.urlCache.delete(storageKey);
+              return true;
+            }
           }
+        } catch {
+          // Try other target or resource type
         }
-      } catch {
-        // Try other resource type
       }
     }
 
