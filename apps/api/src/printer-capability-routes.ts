@@ -87,11 +87,7 @@ export async function registerPrinterCapabilityRoutes(
         });
       }
 
-      const unbound = await unbindAgentDevice(
-        db,
-        request.params.studioId,
-        request.params.deviceId
-      );
+      const unbound = await unbindAgentDevice(db, request.params.studioId, request.params.deviceId);
 
       if (!unbound) {
         return reply.status(404).send({

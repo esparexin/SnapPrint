@@ -52,11 +52,11 @@ describe('Printer Claim Workstation Isolation', () => {
       },
     ]);
 
-    const claimedDev1 = await atomicClaimNextPendingJobs(ctx.db as any, studioId, 'dev_pc_1');
+    const claimedDev1 = await atomicClaimNextPendingJobs(ctx.db, studioId, 'dev_pc_1');
     expect(claimedDev1).toHaveLength(1);
     expect(claimedDev1[0].jobId).toBe('job_dev_1');
 
-    const claimedDev2 = await atomicClaimNextPendingJobs(ctx.db as any, studioId, 'dev_pc_2');
+    const claimedDev2 = await atomicClaimNextPendingJobs(ctx.db, studioId, 'dev_pc_2');
     expect(claimedDev2).toHaveLength(1);
     expect(claimedDev2[0].jobId).toBe('job_dev_2');
   });

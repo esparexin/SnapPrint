@@ -101,10 +101,7 @@ export const ShopCapabilitiesConfigSchema = z.object({
   isAutoPrintEnabled: z.boolean().default(true),
   supportsColor: z.boolean().default(true),
   supportsBlackAndWhite: z.boolean().default(true),
-  supportedPaperSizes: z
-    .array(PaperSizeSchema)
-    .min(1)
-    .default(['A4']),
+  supportedPaperSizes: z.array(PaperSizeSchema).min(1).default(['A4']),
 });
 export type ShopCapabilitiesConfig = z.infer<typeof ShopCapabilitiesConfigSchema>;
 

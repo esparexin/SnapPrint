@@ -65,12 +65,25 @@ describe('Printer Capability Client (apps/web)', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        standard: [{ id: 'A4', name: 'A4 Document', widthMm: 210, heightMm: 297, widthIn: 8.27, heightIn: 11.69 }],
+        standard: [
+          {
+            id: 'A4',
+            name: 'A4 Document',
+            widthMm: 210,
+            heightMm: 297,
+            widthIn: 8.27,
+            heightIn: 11.69,
+          },
+        ],
         custom: [],
       }),
     });
 
-    const res = await fetchStudioPaperSizes(studioId, undefined, mockFetch as unknown as typeof fetch);
+    const res = await fetchStudioPaperSizes(
+      studioId,
+      undefined,
+      mockFetch as unknown as typeof fetch
+    );
     expect(res.standard).toHaveLength(1);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/studios/std_test_client/paper-sizes'),
@@ -79,10 +92,17 @@ describe('Printer Capability Client (apps/web)', () => {
   });
 
   it('createCustomPaperSize and deleteCustomPaperSize interact with paper-sizes API', async () => {
-    const mockFetch = vi.fn()
+    const mockFetch = vi
+      .fn()
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ id: 'cps_123', name: '12x18 Poster', width: 12, height: 18, unit: 'in' }),
+        json: async () => ({
+          id: 'cps_123',
+          name: '12x18 Poster',
+          width: 12,
+          height: 18,
+          unit: 'in',
+        }),
       })
       .mockResolvedValueOnce({
         ok: true,

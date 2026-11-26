@@ -22,11 +22,7 @@ export function UnbindDeviceModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { handleBackdropClick } = useDialog({
-    isOpen: true,
-    onClose,
-    enableSwipeDown: true,
-  });
+  const { handleBackdropClick } = useDialog({ isOpen: true, onClose, enableSwipeDown: true });
 
   const handleUnbind = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,48 +41,31 @@ export function UnbindDeviceModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="unbind-modal-title"
+      className="dialog-overlay"
       onClick={handleBackdropClick}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: '16px',
-      }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="unbind-modal-title"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          width: '100%',
-          maxWidth: '460px',
-          padding: '24px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <h2 id="unbind-modal-title" style={{ fontSize: '1.125rem', fontWeight: 700, margin: '0 0 8px', color: '#b91c1c' }}>
+      <div className="dialog-content max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+        <h2 id="unbind-modal-title" className="text-lg font-bold text-red-700 mb-2">
           Unbind Workstation Computer
         </h2>
-        <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 0 16px', lineHeight: 1.5 }}>
-          Are you sure you want to disconnect <strong>{device.hostname}</strong> ({device.osPlatform})? Any physical printers attached solely to this PC will go offline. You can pair a new computer anytime.
+        <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+          Are you sure you want to disconnect <strong>{device.hostname}</strong> (
+          {device.osPlatform})? Any physical printers attached solely to this PC will go offline.
+          You can pair a new computer anytime.
         </p>
 
         {error && (
-          <div role="alert" style={{ padding: '10px', backgroundColor: '#fef2f2', color: '#b91c1c', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '16px' }}>
+          <div role="alert" className="p-2.5 bg-red-50 text-red-700 rounded-md text-sm mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleUnbind}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+        <form onSubmit={handleUnbind} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
               Reason for Unbinding (Optional)
             </label>
             <input
@@ -94,23 +73,23 @@ export function UnbindDeviceModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Purchased new laptop"
-              style={{ width: '100%', minHeight: '44px', padding: '0 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', boxSizing: 'border-box' }}
+              className="w-full min-h-[44px] px-3 rounded-md border border-slate-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div className="flex justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              style={{ minHeight: '44px', padding: '0 16px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}
+              className="min-h-[44px] px-4 rounded-md border border-slate-300 bg-white text-sm font-semibold hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              style={{ minHeight: '44px', padding: '0 20px', borderRadius: '6px', border: 'none', backgroundColor: '#dc2626', color: '#ffffff', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}
+              className="min-h-[44px] px-5 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
             >
               {submitting ? 'Unbinding...' : 'Confirm Unbind'}
             </button>

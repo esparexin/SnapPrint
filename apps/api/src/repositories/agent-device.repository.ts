@@ -142,18 +142,16 @@ export async function unbindAgentDevice(
     .findOne({ studioId, deviceId });
   if (!existing || existing.status === 'unbound') return false;
 
-  const res = await db
-    .collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION)
-    .updateOne(
-      { studioId, deviceId },
-      {
-        $set: {
-          status: 'unbound',
-          deviceToken: `unbound_${existing.deviceToken}`,
-          unboundAt: now,
-        },
-      }
-    );
+  const res = await db.collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION).updateOne(
+    { studioId, deviceId },
+    {
+      $set: {
+        status: 'unbound',
+        deviceToken: `unbound_${existing.deviceToken}`,
+        unboundAt: now,
+      },
+    }
+  );
   if (res.modifiedCount > 0) {
     await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)

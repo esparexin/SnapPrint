@@ -16,7 +16,12 @@ export async function confirmPrinterCapability(
   printerId: string,
   payload: ConfirmPrinterCapabilityRequest,
   fetchImpl: typeof fetch = fetch
-): Promise<{ success: boolean; printerId: string; duplexSupport: string; capabilityProvenance: string }> {
+): Promise<{
+  success: boolean;
+  printerId: string;
+  duplexSupport: string;
+  capabilityProvenance: string;
+}> {
   const url = `${getApiBaseUrl()}/studios/${encodeURIComponent(studioId)}/printers/${encodeURIComponent(printerId)}/capabilities/confirm`;
   const res = await fetchImpl(url, {
     method: 'PATCH',

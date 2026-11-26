@@ -172,9 +172,7 @@ export const ConfirmPrinterCapabilityRequestSchema = z.object({
   duplexSupport: z.enum(['supported', 'unsupported']),
   supportedDuplexSizes: z.array(PaperSizeSchema).optional(),
 });
-export type ConfirmPrinterCapabilityRequest = z.infer<
-  typeof ConfirmPrinterCapabilityRequestSchema
->;
+export type ConfirmPrinterCapabilityRequest = z.infer<typeof ConfirmPrinterCapabilityRequestSchema>;
 
 export const UnbindDeviceRequestSchema = z.object({
   reason: z.string().trim().max(200).optional(),

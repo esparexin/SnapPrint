@@ -1,7 +1,11 @@
 import { Db } from 'mongodb';
 import { PaperSize, StudioPublicCapabilities } from '@snapprint/contracts';
 import { resolveItemsWithMeta } from './photo-asset.repository.js';
-import { PRINTERS_COLLECTION, StudioPrinterDocument, listStudioPrintersWithLiveness } from './printer.repository.js';
+import {
+  PRINTERS_COLLECTION,
+  StudioPrinterDocument,
+  listStudioPrintersWithLiveness,
+} from './printer.repository.js';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
 
 export interface StudioFleetAllowance {

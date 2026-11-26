@@ -190,7 +190,10 @@ export function computePrinterStatus(
     return 'not_added';
   }
   const onlineDeviceIds = new Set(
-    devices.filter((d) => d.isOnline).map((d) => d.deviceId).filter(Boolean)
+    devices
+      .filter((d) => d.isOnline)
+      .map((d) => d.deviceId)
+      .filter(Boolean)
   );
   const hasLivePrinter = printers.some((p) => {
     if (p.status !== 'online') return false;

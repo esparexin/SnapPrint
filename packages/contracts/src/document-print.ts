@@ -32,11 +32,32 @@ export interface StandardPaperSizeDefinition {
 
 export const STANDARD_PAPER_CATALOGUE: readonly StandardPaperSizeDefinition[] = Object.freeze([
   { id: 'A4', name: 'A4 Document', widthMm: 210, heightMm: 297, widthIn: 8.27, heightIn: 11.69 },
-  { id: 'A3', name: 'A3 Ledger/Plan', widthMm: 297, heightMm: 420, widthIn: 11.69, heightIn: 16.54 },
+  {
+    id: 'A3',
+    name: 'A3 Ledger/Plan',
+    widthMm: 297,
+    heightMm: 420,
+    widthIn: 11.69,
+    heightIn: 16.54,
+  },
   { id: 'A5', name: 'A5 Booklet', widthMm: 148, heightMm: 210, widthIn: 5.83, heightIn: 8.27 },
   { id: 'A6', name: 'A6 Postcard', widthMm: 105, heightMm: 148, widthIn: 4.13, heightIn: 5.83 },
-  { id: 'letter', name: 'Letter Standard', widthMm: 215.9, heightMm: 279.4, widthIn: 8.5, heightIn: 11.0 },
-  { id: 'legal', name: 'Legal Document', widthMm: 215.9, heightMm: 355.6, widthIn: 8.5, heightIn: 14.0 },
+  {
+    id: 'letter',
+    name: 'Letter Standard',
+    widthMm: 215.9,
+    heightMm: 279.4,
+    widthIn: 8.5,
+    heightIn: 11.0,
+  },
+  {
+    id: 'legal',
+    name: 'Legal Document',
+    widthMm: 215.9,
+    heightMm: 355.6,
+    widthIn: 8.5,
+    heightIn: 14.0,
+  },
   { id: '4x6', name: '4 × 6″ Photo', widthMm: 101.6, heightMm: 152.4, widthIn: 4.0, heightIn: 6.0 },
   { id: '5x7', name: '5 × 7″ Photo', widthMm: 127.0, heightMm: 177.8, widthIn: 5.0, heightIn: 7.0 },
 ]);

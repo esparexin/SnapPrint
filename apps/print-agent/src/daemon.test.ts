@@ -193,7 +193,9 @@ describe('AgentDaemon', () => {
 
   it('halts daemon operations and marks revoked when API returns DEVICE_UNBOUND', async () => {
     const mockClient = {
-      sendHeartbeat: vi.fn().mockRejectedValue(new Error('401 DEVICE_UNBOUND: Workstation unbound')),
+      sendHeartbeat: vi
+        .fn()
+        .mockRejectedValue(new Error('401 DEVICE_UNBOUND: Workstation unbound')),
     } as unknown as AgentClient;
 
     const daemon = new AgentDaemon(

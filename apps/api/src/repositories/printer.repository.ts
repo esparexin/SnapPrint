@@ -55,7 +55,8 @@ export async function syncDiscoveredPrinters(
 
     const isManualVerified = existing?.capabilityProvenance === 'manual_verified';
     const existingCustomSizes =
-      existing?.supportedPaperSizes?.filter((s) => typeof s === 'string' && s.startsWith('cps_')) ?? [];
+      existing?.supportedPaperSizes?.filter((s) => typeof s === 'string' && s.startsWith('cps_')) ??
+      [];
     const mergedSupportedPaperSizes = Array.from(
       new Set([...p.supportedPaperSizes, ...existingCustomSizes])
     );

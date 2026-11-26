@@ -22,14 +22,15 @@ interface DocumentOptionsGridProps {
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
 
-const PAPER_SIZE_LABELS: Record<string, string> = {
-  A4: 'A4 (Standard)', A3: 'A3 (Large)', A5: 'A5 (Compact)', A6: 'A6',
-  legal: 'Legal', letter: 'Letter', '4x6': '4 × 6″ Photo', '5x7': '5 × 7″ Photo',
-};
-
-const COMPACT_SIZE_LABELS: Record<string, string> = {
-  A4: 'A4', A3: 'A3', A5: 'A5', A6: 'A6',
-  legal: 'Legal', letter: 'Letter', '4x6': '4×6″', '5x7': '5×7″',
+const SIZES: Record<string, [string, string]> = {
+  A4: ['A4 (Standard)', 'A4'],
+  A3: ['A3 (Large)', 'A3'],
+  A5: ['A5 (Compact)', 'A5'],
+  A6: ['A6', 'A6'],
+  legal: ['Legal', 'Legal'],
+  letter: ['Letter', 'Letter'],
+  '4x6': ['4 × 6″ Photo', '4×6″'],
+  '5x7': ['5 × 7″ Photo', '5×7″'],
 };
 
 const ORIENTATION_OPTIONS: Array<{
@@ -96,10 +97,7 @@ export function DocumentOptionsGrid({
         <div role="radiogroup" aria-label="Paper Size" className="sf-segmented-group">
           {availableSizes.map((size) => {
             const active = effectivePaperSize === size;
-            const label =
-              availableSizes.length === 1
-                ? PAPER_SIZE_LABELS[size] || size
-                : COMPACT_SIZE_LABELS[size] || size;
+            const label = SIZES[size]?.[availableSizes.length === 1 ? 0 : 1] || size;
             return (
               <button
                 key={size}

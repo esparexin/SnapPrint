@@ -20,7 +20,7 @@ describe('Audit Verification: 4 Critical PC Ownership & Fleet Liveness Defects',
   it('Defect 1 Fixed: Printers strictly store deviceId PC ownership', async () => {
     // Computer 1 (Office) syncs its Canon printer
     await syncDiscoveredPrinters(
-      ctx.db as any,
+      ctx.db,
       studioId,
       [
         {
@@ -43,7 +43,7 @@ describe('Audit Verification: 4 Critical PC Ownership & Fleet Liveness Defects',
 
     // Computer 2 (Home) syncs its Epson printer
     await syncDiscoveredPrinters(
-      ctx.db as any,
+      ctx.db,
       studioId,
       [
         {
@@ -64,10 +64,7 @@ describe('Audit Verification: 4 Critical PC Ownership & Fleet Liveness Defects',
       'dev_computer_2'
     );
 
-    const printers = await ctx.db
-      .collection(PRINTERS_COLLECTION)
-      .find({ studioId })
-      .toArray();
+    const printers = await ctx.db.collection(PRINTERS_COLLECTION).find({ studioId }).toArray();
 
     const officePrinter = printers.find((p: any) => p.id === 'prn_canon_office');
     const homePrinter = printers.find((p: any) => p.id === 'prn_epson_home');
@@ -129,7 +126,7 @@ describe('Audit Verification: 4 Critical PC Ownership & Fleet Liveness Defects',
     ]);
 
     // Live reconciliation must detect Computer 1 is off and mark Canon as offline!
-    const livePrinters = await listStudioPrintersWithLiveness(ctx.db as any, studioId);
+    const livePrinters = await listStudioPrintersWithLiveness(ctx.db, studioId);
     const officePrinter = livePrinters.find((p) => p.id === 'prn_canon_office');
     const homePrinter = livePrinters.find((p) => p.id === 'prn_epson_home');
 
@@ -137,7 +134,10 @@ describe('Audit Verification: 4 Critical PC Ownership & Fleet Liveness Defects',
     expect(homePrinter?.status).toBe('online');
 
     // Public studio capabilities must NOT offer A4 because the office PC is off!
-    const { activePrinters } = await getStudioActivePrintersAndCapabilities(ctx.db as any, studioId);
+    const { activePrinters } = await getStudioActivePrintersAndCapabilities(
+      ctx.db,
+      studioId
+    );
     expect(activePrinters).toHaveLength(1);
     expect(activePrinters[0].id).toBe('prn_epson_home');
   });
@@ -184,12 +184,20 @@ describe('Audit Verification: 4 Critical PC Ownership & Fleet Liveness Defects',
     });
 
     // Computer 2 polls / claims jobs
-    const claimedByComputer2 = await atomicClaimNextPendingJobs(ctx.db as any, studioId, 'dev_computer_2');
+    const claimedByComputer2 = await atomicClaimNextPendingJobs(
+      ctx.db,
+      studioId,
+      'dev_computer_2'
+    );
     // Computer 2 must receive ZERO jobs! Cross-computer hijacking is blocked!
     expect(claimedByComputer2).toHaveLength(0);
 
     // Computer 1 polls / claims jobs
-    const claimedByComputer1 = await atomicClaimNextPendingJobs(ctx.db as any, studioId, 'dev_computer_1');
+    const claimedByComputer1 = await atomicClaimNextPendingJobs(
+      ctx.db,
+      studioId,
+      'dev_computer_1'
+    );
     // Computer 1 claims its own job!
     expect(claimedByComputer1).toHaveLength(1);
     expect(claimedByComputer1[0].jobId).toBe('job_shop_invoice_101');

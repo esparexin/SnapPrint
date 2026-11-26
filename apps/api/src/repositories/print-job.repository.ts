@@ -2,7 +2,7 @@ import { Db } from 'mongodb';
 import { PaperSize, PrintJobRecord, PrintJobStatus } from '@snapprint/contracts';
 import { createPrintJobsForOrder, GeneratedPrintJobDescriptor } from '@snapprint/domain';
 import { findOrderById, updateOrderStatus } from './order.repository.js';
-import { listStudioPrinters, listStudioPrintersWithLiveness } from './printer.repository.js';
+import { listStudioPrintersWithLiveness } from './printer.repository.js';
 
 export const PRINT_JOBS_COLLECTION = 'print_jobs';
 

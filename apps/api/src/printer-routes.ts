@@ -38,7 +38,13 @@ export async function printerRoutes(
       const code = generatePairingCode();
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
       const boundUserId = request.operator?.user.id;
-      const created = await createPairingKey(db, request.params.studioId, code, expiresAt, boundUserId);
+      const created = await createPairingKey(
+        db,
+        request.params.studioId,
+        code,
+        expiresAt,
+        boundUserId
+      );
       return reply.status(201).send({
         code: created.code,
         studioId: created.studioId,

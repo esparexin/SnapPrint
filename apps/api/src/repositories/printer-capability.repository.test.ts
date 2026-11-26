@@ -16,7 +16,6 @@ import { getStudioFleetAllowance } from './printer-allowance.repository.js';
 import {
   confirmPrinterCapability,
   listStudioPrinters,
-  PRINTERS_COLLECTION,
   syncDiscoveredPrinters,
   updateStudioPrinterRole,
 } from './printer.repository.js';
@@ -47,18 +46,18 @@ describe('Printer Capability & Workstation Repositories', () => {
       },
     ];
 
-    await syncDiscoveredPrinters(ctx.db as any, studioId, discovered, 'dev_pc_1');
-    let printers = await listStudioPrinters(ctx.db as any, studioId);
+    await syncDiscoveredPrinters(ctx.db, studioId, discovered, 'dev_pc_1');
+    let printers = await listStudioPrinters(ctx.db, studioId);
     expect(printers).toHaveLength(1);
     expect(printers[0].deviceId).toBe('dev_pc_1');
     expect(printers[0].duplexSupport).toBe('unknown');
 
     // Operator confirms duplex support manually
-    await confirmPrinterCapability(ctx.db as any, studioId, 'prn_laser_a4', 'supported', ['A4']);
+    await confirmPrinterCapability(ctx.db, studioId, 'prn_laser_a4', 'supported', ['A4']);
 
     // Next sync from OS driver reports unknown duplex
-    await syncDiscoveredPrinters(ctx.db as any, studioId, discovered, 'dev_pc_1');
-    printers = await listStudioPrinters(ctx.db as any, studioId);
+    await syncDiscoveredPrinters(ctx.db, studioId, discovered, 'dev_pc_1');
+    printers = await listStudioPrinters(ctx.db, studioId);
     expect(printers[0].duplexSupport).toBe('supported');
     expect(printers[0].capabilityProvenance).toBe('manual_verified');
     expect(printers[0].supportedDuplexSizes).toEqual(['A4']);
@@ -96,15 +95,15 @@ describe('Printer Capability & Workstation Repositories', () => {
       },
     ];
 
-    await syncDiscoveredPrinters(ctx.db as any, studioId, discovered, 'dev_pc_1');
-    await updateStudioPrinterRole(ctx.db as any, studioId, 'prn_1', 'active_bw');
-    await updateStudioPrinterRole(ctx.db as any, studioId, 'prn_2', 'active_bw');
+    await syncDiscoveredPrinters(ctx.db, studioId, discovered, 'dev_pc_1');
+    await updateStudioPrinterRole(ctx.db, studioId, 'prn_1', 'active_bw');
+    await updateStudioPrinterRole(ctx.db, studioId, 'prn_2', 'active_bw');
 
-    const printers = await listStudioPrinters(ctx.db as any, studioId);
+    const printers = await listStudioPrinters(ctx.db, studioId);
     const activePrinters = printers.filter((p) => p.role === 'active_bw');
     expect(activePrinters).toHaveLength(2);
 
-    const allowance = await getStudioFleetAllowance(ctx.db as any, studioId);
+    const allowance = await getStudioFleetAllowance(ctx.db, studioId);
     expect(allowance.activeCount).toBe(2);
   });
 
@@ -125,9 +124,9 @@ describe('Printer Capability & Workstation Repositories', () => {
         lastSeenAt: new Date().toISOString(),
       },
     ];
-    await syncDiscoveredPrinters(ctx.db as any, studioId, discovered, 'dev_pc_1');
+    await syncDiscoveredPrinters(ctx.db, studioId, discovered, 'dev_pc_1');
 
-    const created = await createCustomPaperSize(ctx.db as any, studioId, {
+    const created = await createCustomPaperSize(ctx.db, studioId, {
       printerId: 'prn_photo',
       name: '12x18 Matte Poster',
       width: 12,
@@ -137,27 +136,27 @@ describe('Printer Capability & Workstation Repositories', () => {
     });
     expect(created.id).toMatch(/^cps_/);
 
-    const listed = await listCustomPaperSizes(ctx.db as any, studioId, 'prn_photo');
+    const listed = await listCustomPaperSizes(ctx.db, studioId, 'prn_photo');
     expect(listed).toHaveLength(1);
     expect(listed[0].name).toBe('12x18 Matte Poster');
 
-    let printers = await listStudioPrinters(ctx.db as any, studioId);
+    let printers = await listStudioPrinters(ctx.db, studioId);
     expect(printers[0].supportedPaperSizes).toContain(created.id);
 
     // Toggle custom paper size
-    await toggleCustomPaperSize(ctx.db as any, studioId, created.id, false);
-    const updatedSizes = await listCustomPaperSizes(ctx.db as any, studioId, 'prn_photo');
+    await toggleCustomPaperSize(ctx.db, studioId, created.id, false);
+    const updatedSizes = await listCustomPaperSizes(ctx.db, studioId, 'prn_photo');
     expect(updatedSizes[0].isEnabled).toBe(false);
 
     // Delete custom paper size
-    await deleteCustomPaperSize(ctx.db as any, studioId, created.id);
-    printers = await listStudioPrinters(ctx.db as any, studioId);
+    await deleteCustomPaperSize(ctx.db, studioId, created.id);
+    printers = await listStudioPrinters(ctx.db, studioId);
     expect(printers[0].supportedPaperSizes).not.toContain(created.id);
   });
 
   it('unbinds workstation PC, sets printers offline, and reports DEVICE_UNBOUND', async () => {
     const token = 'dvt_secret_test_token';
-    await registerAgentDevice(ctx.db as any, {
+    await registerAgentDevice(ctx.db, {
       deviceId: 'dev_old_laptop',
       studioId,
       hostname: 'Old-Dell-Laptop',
@@ -169,7 +168,7 @@ describe('Printer Capability & Workstation Repositories', () => {
     });
 
     await syncDiscoveredPrinters(
-      ctx.db as any,
+      ctx.db,
       studioId,
       [
         {
@@ -190,20 +189,20 @@ describe('Printer Capability & Workstation Repositories', () => {
       'dev_old_laptop'
     );
 
-    let authCheck = await findActiveOrUnboundDevice(ctx.db as any, token);
+    let authCheck = await findActiveOrUnboundDevice(ctx.db, token);
     expect(authCheck.device?.deviceId).toBe('dev_old_laptop');
     expect(authCheck.isUnbound).toBe(false);
 
     // Unbind workstation
-    const unbound = await unbindAgentDevice(ctx.db as any, studioId, 'dev_old_laptop');
+    const unbound = await unbindAgentDevice(ctx.db, studioId, 'dev_old_laptop');
     expect(unbound).toBe(true);
 
     // Printers attached to that workstation are now offline
-    const printers = await listStudioPrinters(ctx.db as any, studioId);
+    const printers = await listStudioPrinters(ctx.db, studioId);
     expect(printers[0].status).toBe('offline');
 
     // Authenticating with old token reports unbound
-    authCheck = await findActiveOrUnboundDevice(ctx.db as any, token);
+    authCheck = await findActiveOrUnboundDevice(ctx.db, token);
     expect(authCheck.device).toBeUndefined();
     expect(authCheck.isUnbound).toBe(true);
   });
