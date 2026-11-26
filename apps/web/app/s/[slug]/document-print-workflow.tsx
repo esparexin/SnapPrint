@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   OrderRecord,
   PublicPaymentSettings,
   StudioPrintRatesContract,
   StudioPublicCapabilities,
 } from '@snapprint/contracts';
-import { clearStoredCustomerSession } from '../../../src/customer-client';
+import {
+  clearStoredCustomerActiveOrder,
+  clearStoredCustomerSession,
+  getStoredCustomerActiveOrder,
+  storeCustomerActiveOrder,
+} from '../../../src/customer-client';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { createDefaultConfig, resolvePreviewTarget } from './document-print-workflow-helpers';
@@ -39,24 +44,20 @@ export function DocumentPrintWorkflow({
   printRates,
   capabilities,
 }: DocumentPrintWorkflowProps) {
-  const {
-    items,
-    docs,
-    activeConfigs,
-    removingKeys,
-    feedback,
-    setFeedback,
-    handleFilesSelected,
-    handleCancelUpload,
-    handleRetryUpload,
-    handleDeleteItem,
-    handleRemoveAsset,
-    handleUpdateConfig,
-    resetDocuments,
-  } = useStorefrontDocuments(slug, sessionId, token, isNewSession);
-
   const [previewAssetId, setPreviewAssetId] = useState<string | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);
+
+  useEffect(() => {
+    const cached = getStoredCustomerActiveOrder(slug);
+    if (cached) setSubmittedOrder(cached);
+  }, [slug]);
+
+  const {
+    items, docs, activeConfigs, removingKeys, feedback, setFeedback,
+    handleFilesSelected, handleCancelUpload, handleRetryUpload,
+    handleDeleteItem, handleRemoveAsset, handleUpdateConfig, resetDocuments,
+  } = useStorefrontDocuments(slug, sessionId, token, isNewSession, Boolean(submittedOrder));
+
   const previewTarget = resolvePreviewTarget(docs, activeConfigs, previewAssetId);
 
   if (submittedOrder) {
@@ -68,6 +69,7 @@ export function DocumentPrintWorkflow({
         sessionToken={token}
         payment={payment}
         onNewOrder={() => {
+          clearStoredCustomerActiveOrder(slug);
           clearStoredCustomerSession(slug);
           setSubmittedOrder(null);
           setPreviewAssetId(null);
@@ -96,9 +98,7 @@ export function DocumentPrintWorkflow({
 
       {docs.length > 0 && (
         <section className="sf-section">
-          <h2 className="sf-section-heading">
-            2. Configure Print &amp; Xerox Options ({docs.length})
-          </h2>
+          <h2 className="sf-section-heading">2. Configure Print &amp; Xerox Options ({docs.length})</h2>
           {docs.map((doc, idx) => (
             <DocumentConfigForm
               key={doc.assetId}
@@ -119,11 +119,11 @@ export function DocumentPrintWorkflow({
       {hasStickyCta && (
         <section className="sf-section">
           <OrderSummaryCard
-            slug={slug}
-            sessionId={sessionId}
-            token={token}
-            configs={activeConfigs}
-            onOrderSubmitted={(order) => setSubmittedOrder(order)}
+            slug={slug} sessionId={sessionId} token={token} configs={activeConfigs}
+            onOrderSubmitted={(order) => {
+              storeCustomerActiveOrder(slug, order);
+              setSubmittedOrder(order);
+            }}
             isAcceptingOrders={isAcceptingOrders}
           />
         </section>
@@ -131,9 +131,7 @@ export function DocumentPrintWorkflow({
 
       {previewTarget && (
         <DocumentPreviewModal
-          slug={slug}
-          sessionId={sessionId}
-          token={token}
+          slug={slug} sessionId={sessionId} token={token}
           filename={previewTarget.doc.filename}
           pageCount={previewTarget.doc.pageCount}
           config={previewTarget.config}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AllowedMimeType, DocumentPrintConfig } from '@snapprint/contracts';
-import { ensureCustomerSession } from '../../../src/customer-client';
+import { ensureCustomerSession, getStoredCustomerActiveOrder } from '../../../src/customer-client';
 import * as docHelpers from './document-print-workflow-helpers';
 import { UploadItem } from './photo-item-card';
 
@@ -10,7 +10,8 @@ export function useStorefrontDocuments(
   slug: string,
   sessionId: string,
   token: string,
-  isNewSession = false
+  isNewSession = false,
+  hasActiveOrder = false
 ) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
@@ -20,13 +21,14 @@ export function useStorefrontDocuments(
 
   useEffect(() => {
     let mounted = true;
-    if (sessionId && token && !isNewSession) {
+    const hasCachedOrder = Boolean(getStoredCustomerActiveOrder(slug));
+    if (sessionId && token && !isNewSession && !hasActiveOrder && !hasCachedOrder) {
       docHelpers.syncSessionPhotos(slug, sessionId, token, (loaded) => mounted && setItems(loaded));
     }
     return () => {
       mounted = false;
     };
-  }, [slug, sessionId, token, isNewSession]);
+  }, [slug, sessionId, token, isNewSession, hasActiveOrder]);
 
   const docs = useMemo(() => docHelpers.toCompletedDocs(items), [items]);
   const activeConfigs = useMemo(
@@ -36,8 +38,7 @@ export function useStorefrontDocuments(
 
   const uploadFile = useCallback(
     async (item: UploadItem, mimeType?: AllowedMimeType) => {
-      const resolvedMime =
-        mimeType ?? docHelpers.inferUploadMimeType(item.file) ?? 'application/pdf';
+      const resolvedMime = mimeType ?? docHelpers.inferUploadMimeType(item.file) ?? 'application/pdf';
       const abort = new AbortController();
       const patch = (p: Partial<UploadItem>) =>
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...p } : i)));
@@ -119,9 +120,7 @@ export function useStorefrontDocuments(
 
   const handleUpdateConfig = (assetId: string, updated: DocumentPrintConfig) =>
     setConfigs((prev) =>
-      docHelpers
-        .reconcileDocumentConfigs(docs, prev)
-        .map((c) => (c.assetId === assetId ? updated : c))
+      docHelpers.reconcileDocumentConfigs(docs, prev).map((c) => (c.assetId === assetId ? updated : c))
     );
 
   const resetDocuments = () => {
