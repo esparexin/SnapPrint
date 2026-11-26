@@ -1,3 +1,7 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /**
  * SnapPrint Desktop Print Agent — Windows MSI & Packaging Configuration.
  * Single source of truth for WiX v4 installer definitions and artifact metadata.
@@ -32,9 +36,27 @@ export const DEFAULT_PACKAGING_METADATA: PackagingMetadata = {
   startupRegistryName: 'SnapPrintAgent',
 };
 
+export function getPackageVersion(): string {
+  try {
+    const pkgPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+    if (existsSync(pkgPath)) {
+      const raw = readFileSync(pkgPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.version === 'string' && parsed.version.trim()) {
+        return parsed.version.trim();
+      }
+    }
+  } catch {
+    // Fallback if filesystem read is unavailable
+  }
+  return DEFAULT_PACKAGING_METADATA.version;
+}
+
 export function generateWixManifest(options: WixManifestOptions = {}): string {
+  const dynamicVersion = options.metadata?.version || getPackageVersion();
   const meta: PackagingMetadata = {
     ...DEFAULT_PACKAGING_METADATA,
+    version: dynamicVersion,
     ...(options.metadata || {}),
   };
   const sourceDir = options.sourceDir || '$(var.SourceDir)';
@@ -49,7 +71,9 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
     Scope="perMachine"
     Language="1033">
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of ${meta.productName} is already installed." />
+    <MajorUpgrade
+      Schedule="afterInstallValidate"
+      DowngradeErrorMessage="A newer version of ${meta.productName} is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
@@ -83,13 +107,15 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
             WorkingDirectory="INSTALLFOLDER"
             Advertise="yes" />
         </File>
+      </Component>
+      <Component Id="AgentStartupRegistryComponent" Guid="C6F4A8E1-3D5B-4C9A-8E2F-7A1B3C5D7E9F" Directory="INSTALLFOLDER">
         <RegistryValue
           Root="HKCU"
           Key="Software\\Microsoft\\Windows\\CurrentVersion\\Run"
           Name="${meta.startupRegistryName}"
           Value="&quot;[INSTALLFOLDER]${meta.binaryName}&quot; start"
           Type="string"
-          KeyPath="no" />
+          KeyPath="yes" />
       </Component>
       <Component Id="ApplicationShortcutsComponent" Guid="B5E3F6D9-2C4B-5E8F-0D3E-6F9B2C4D6E8B" Directory="ApplicationProgramsFolder">
         <Shortcut

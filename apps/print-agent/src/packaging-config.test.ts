@@ -2,7 +2,11 @@ import { homedir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { bundleAgentRuntime } from './agent-bundler.js';
 import { getDefaultConfigPath } from './config.js';
-import { DEFAULT_PACKAGING_METADATA, generateWixManifest } from './packaging-config.js';
+import {
+  DEFAULT_PACKAGING_METADATA,
+  generateWixManifest,
+  getPackageVersion,
+} from './packaging-config.js';
 import {
   validateMsiHeader,
   validateMsiIntegrity,
@@ -23,21 +27,33 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     );
   });
 
-  it('generates valid WiX v4 manifest containing essential install directives', () => {
+  it('resolves package version dynamically from package.json', () => {
+    const version = getPackageVersion();
+    expect(version).toBe('0.1.0');
+  });
+
+  it('generates valid WiX v4 manifest with upgrade scheduling and component separation', () => {
     const xml = generateWixManifest();
     expect(xml).toContain('<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">');
     expect(xml).toContain('Name="SnapPrint Desktop Print Agent"');
     expect(xml).toContain('Manufacturer="SnapPrint Technologies"');
     expect(xml).toContain('Version="0.1.0"');
     expect(xml).toContain('Scope="perMachine"');
+    expect(xml).toContain('Schedule="afterInstallValidate"');
     expect(xml).toContain('Directory Id="SnapPrintVendorFolder" Name="SnapPrint"');
     expect(xml).toContain('Directory Id="INSTALLFOLDER" Name="PrintAgent"');
+    expect(xml).toContain('Id="AgentStartupRegistryComponent"');
     expect(xml).toContain('Id="ApplicationStartMenuShortcut"');
     expect(xml).toContain('Id="ApplicationDesktopShortcut"');
     expect(xml).toContain('Id="UninstallProductShortcut"');
     expect(xml).toContain('Target="[System64Folder]msiexec.exe"');
     expect(xml).toContain('Arguments="/x [ProductCode]"');
     expect(xml).toContain('Key="Software\\Microsoft\\Windows\\CurrentVersion\\Run"');
+  });
+
+  it('supports custom dynamic version overrides in WiX manifest', () => {
+    const xml = generateWixManifest({ metadata: { version: '0.2.5' } });
+    expect(xml).toContain('Version="0.2.5"');
   });
 
   it('isolates mutable agent credentials outside the Program Files installation directory', () => {
