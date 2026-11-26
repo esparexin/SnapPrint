@@ -61,6 +61,7 @@ export const CreateCustomPaperSizeRequestSchema = z.object({
   width: z.coerce.number().positive().max(2000),
   height: z.coerce.number().positive().max(2000),
   unit: z.enum(['mm', 'in']),
+  isEnabled: z.boolean().default(true).optional(),
 });
 export type CreateCustomPaperSizeRequest = z.infer<typeof CreateCustomPaperSizeRequestSchema>;
 

@@ -32,7 +32,15 @@ export async function atomicClaimNextPendingJobs(
   const claimed: PrintJobDocument[] = [];
   for (let i = 0; i < limit; i++) {
     const res = await db.collection<PrintJobDocument>(PRINT_JOBS_COLLECTION).findOneAndUpdate(
-      { studioId, status: 'pending' },
+      {
+        studioId,
+        status: 'pending',
+        $or: [
+          { deviceId },
+          { deviceId: { $exists: false } },
+          { deviceId: '' },
+        ],
+      },
       {
         $set: {
           status: 'processing',

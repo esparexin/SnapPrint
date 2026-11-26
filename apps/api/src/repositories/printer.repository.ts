@@ -23,6 +23,7 @@ export interface StudioPrinterDocument {
   capabilityProvenance: CapabilityProvenance;
   status: PrinterStatus;
   isDefaultOsPrinter: boolean;
+  deviceId?: string;
   lastSeenAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -31,7 +32,8 @@ export interface StudioPrinterDocument {
 export async function syncDiscoveredPrinters(
   db: Db,
   studioId: string,
-  printers: DiscoveredPrinter[]
+  printers: DiscoveredPrinter[],
+  deviceId?: string
 ): Promise<void> {
   const now = new Date();
   const vRegex = /anydesk|print to pdf|onenote|xps document|fax|cutepdf|adobe pdf|virtual print/i;
@@ -45,16 +47,29 @@ export async function syncDiscoveredPrinters(
     const existing = await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
       .findOne({ studioId, id: p.printerId });
-    const pFields = {
+
+    const isManualVerified = existing?.capabilityProvenance === 'manual_verified';
+    const existingCustomSizes =
+      existing?.supportedPaperSizes?.filter((s) => typeof s === 'string' && s.startsWith('cps_')) ?? [];
+    const mergedSupportedPaperSizes = Array.from(
+      new Set([...p.supportedPaperSizes, ...existingCustomSizes])
+    );
+
+    const pFields: Partial<StudioPrinterDocument> = {
       name: p.name,
       driverName: p.driverName,
       isColorSupported: p.isColorSupported,
-      supportedPaperSizes: p.supportedPaperSizes,
-      duplexSupport: p.duplexSupport ?? 'unknown',
-      supportedDuplexSizes: p.supportedDuplexSizes ?? [],
-      capabilityProvenance: p.capabilityProvenance ?? 'unverified',
+      supportedPaperSizes: mergedSupportedPaperSizes,
+      duplexSupport: isManualVerified ? existing.duplexSupport : (p.duplexSupport ?? 'unknown'),
+      supportedDuplexSizes: isManualVerified
+        ? existing.supportedDuplexSizes
+        : (p.supportedDuplexSizes ?? []),
+      capabilityProvenance: isManualVerified
+        ? 'manual_verified'
+        : (p.capabilityProvenance ?? 'unverified'),
       status: p.status,
       isDefaultOsPrinter: p.isDefaultOsPrinter,
+      deviceId: p.deviceId || deviceId || existing?.deviceId,
       lastSeenAt: now,
       updatedAt: now,
     };
@@ -70,7 +85,7 @@ export async function syncDiscoveredPrinters(
         role: 'standby',
         ...pFields,
         createdAt: now,
-      });
+      } as StudioPrinterDocument);
     }
   }
 
@@ -111,31 +126,32 @@ export async function updateStudioPrinterRole(
   if (!printer) return false;
   if (role === 'active_color' && !printer.isColorSupported) return false;
 
-  const studio = await db
-    .collection<{ id: string; settings?: { maxActivePrinters?: number } }>('studios')
-    .findOne({ id: studioId });
-  const maxActivePrinters = studio?.settings?.maxActivePrinters ?? 2;
-
   const now = new Date();
-  if (role === 'active_bw' || role === 'active_color') {
-    const activePrinters = await db
-      .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
-      .find({ studioId, role: { $in: ['active_bw', 'active_color'] } })
-      .toArray();
-
-    const otherActive = activePrinters.filter((p) => p.id !== printerId && p.role !== role);
-    if (otherActive.length + 1 > maxActivePrinters) {
-      return false;
-    }
-
-    await db
-      .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
-      .updateMany({ studioId, role }, { $set: { role: 'standby', updatedAt: now } });
-  }
-
   const res = await db
     .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
     .updateOne({ studioId, id: printerId }, { $set: { role, updatedAt: now } });
+  return res.matchedCount > 0;
+}
+
+export async function confirmPrinterCapability(
+  db: Db,
+  studioId: string,
+  printerId: string,
+  duplexSupport: DuplexSupport,
+  supportedDuplexSizes?: PaperSize[]
+): Promise<boolean> {
+  const now = new Date();
+  const updateData: Partial<StudioPrinterDocument> = {
+    duplexSupport,
+    capabilityProvenance: 'manual_verified',
+    updatedAt: now,
+  };
+  if (supportedDuplexSizes && supportedDuplexSizes.length > 0) {
+    updateData.supportedDuplexSizes = supportedDuplexSizes;
+  }
+  const res = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .updateOne({ studioId, id: printerId }, { $set: updateData });
   return res.matchedCount > 0;
 }
 

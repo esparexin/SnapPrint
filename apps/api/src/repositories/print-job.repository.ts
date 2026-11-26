@@ -14,6 +14,7 @@ export interface PrintJobDocument {
   assetId: string;
   targetPrinterId: string;
   printerName: string;
+  deviceId?: string;
   colorMode: 'bw' | 'color';
   paperSize: PaperSize;
   sides: 'single' | 'double';
@@ -39,6 +40,7 @@ export function toPrintJobRecord(doc: PrintJobDocument): PrintJobRecord {
     assetId: doc.assetId,
     targetPrinterId: doc.targetPrinterId,
     printerName: doc.printerName,
+    deviceId: doc.deviceId,
     colorMode: doc.colorMode,
     paperSize: doc.paperSize,
     sides: doc.sides,
@@ -81,6 +83,7 @@ export async function createPrintJobs(
       assetId: j.assetId,
       targetPrinterId: j.targetPrinterId,
       printerName: j.printerName,
+      deviceId: j.deviceId,
       colorMode: j.colorMode,
       paperSize: j.paperSize,
       sides: j.sides,

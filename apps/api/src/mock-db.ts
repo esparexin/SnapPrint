@@ -36,9 +36,7 @@ function matchComparisonOp(actual: unknown, op: string, target: unknown): boolea
   if (Number.isNaN(a) || Number.isNaN(b)) return false;
   if (op === '$gt') return a > b;
   if (op === '$gte') return a >= b;
-  if (op === '$lt') return a < b;
-  if (op === '$lte') return a <= b;
-  return false;
+  return op === '$lt' ? a < b : op === '$lte' ? a <= b : false;
 }
 
 function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
@@ -50,7 +48,10 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
     }
     if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, unknown>;
-      if ('$exists' in obj && (item[k] !== undefined) !== Boolean(obj.$exists)) return false;
+      if ('$exists' in obj) {
+        if ((item[k] !== undefined) !== Boolean(obj.$exists)) return false;
+        continue;
+      }
       if ('$in' in obj && Array.isArray(obj.$in)) {
         if (!obj.$in.includes(item[k])) return false;
         continue;

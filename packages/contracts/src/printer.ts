@@ -126,6 +126,7 @@ export const PrintJobRecordSchema = z.object({
   assetId: z.string().trim().min(1).max(128),
   targetPrinterId: PrinterIdSchema,
   printerName: z.string().trim().min(1).max(120),
+  deviceId: z.string().optional(),
   colorMode: z.enum(['bw', 'color']),
   paperSize: PaperSizeSchema,
   sides: z.enum(['single', 'double']),
@@ -169,6 +170,7 @@ export type StudioDeviceRecord = z.infer<typeof StudioDeviceRecordSchema>;
 
 export const ConfirmPrinterCapabilityRequestSchema = z.object({
   duplexSupport: z.enum(['supported', 'unsupported']),
+  supportedDuplexSizes: z.array(PaperSizeSchema).optional(),
 });
 export type ConfirmPrinterCapabilityRequest = z.infer<
   typeof ConfirmPrinterCapabilityRequestSchema

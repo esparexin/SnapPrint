@@ -6,7 +6,7 @@ import { updateOrderStatus } from './repositories/order.repository.js';
 import { findPhotoAssetByStudioAndAssetId } from './repositories/photo-asset.repository.js';
 import { atomicClaimNextPendingJobs } from './repositories/print-job-claim.repository.js';
 import {
-  findAgentDeviceByToken,
+  findActiveOrUnboundDevice,
   findPrintJobById,
   findPrintJobsByOrderId,
   toPrintJobRecord,
@@ -33,12 +33,20 @@ async function authDevice(request: FastifyRequest, reply: FastifyReply, db: Db) 
     });
     return null;
   }
-  const device = await findAgentDeviceByToken(db, token);
+  const { device, isUnbound } = await findActiveOrUnboundDevice(db, token);
+  if (isUnbound) {
+    reply.status(401).send({
+      statusCode: 401,
+      code: 'DEVICE_UNBOUND',
+      message: 'This workstation was unbound by the operator.',
+    });
+    return null;
+  }
   if (!device) {
     reply.status(401).send({
       statusCode: 401,
       code: 'DEVICE_UNAUTHORIZED',
-      message: 'Invalid device token.',
+      message: 'Invalid or revoked device token.',
     });
     return null;
   }

@@ -23,7 +23,7 @@ export async function getStudioFleetAllowance(
   studioId: string
 ): Promise<StudioFleetAllowance> {
   const studio = await db.collection<StudioDocument>(STUDIOS_COLLECTION).findOne({ id: studioId });
-  const maxActivePrinters = studio?.settings?.maxActivePrinters ?? 2;
+  const maxActivePrinters = studio?.settings?.maxActivePrinters ?? 20;
 
   const printers = await db
     .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
@@ -31,9 +31,10 @@ export async function getStudioFleetAllowance(
     .toArray();
 
   const registeredCount = printers.length;
-  const activeBw = printers.find((p) => p.role === 'active_bw');
-  const activeColor = printers.find((p) => p.role === 'active_color');
-  const activeCount = (activeBw ? 1 : 0) + (activeColor ? 1 : 0);
+  const activePrinters = printers.filter(
+    (p) => p.role === 'active_bw' || p.role === 'active_color'
+  );
+  const activeCount = activePrinters.length;
   const remainingActiveCapacity = Math.max(0, maxActivePrinters - activeCount);
 
   return {
@@ -41,8 +42,8 @@ export async function getStudioFleetAllowance(
     activeCount,
     maxActivePrinters,
     remainingActiveCapacity,
-    activeBwPrinterId: activeBw?.id,
-    activeColorPrinterId: activeColor?.id,
+    activeBwPrinterId: printers.find((p) => p.role === 'active_bw')?.id,
+    activeColorPrinterId: printers.find((p) => p.role === 'active_color')?.id,
     isLimitReached: remainingActiveCapacity === 0,
   };
 }

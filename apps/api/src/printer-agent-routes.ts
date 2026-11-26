@@ -6,7 +6,7 @@ import { canRedeemPairingKey } from '@snapprint/domain';
 import { getDb } from './db.js';
 import {
   consumePairingKey,
-  findAgentDeviceByToken,
+  findActiveOrUnboundDevice,
   findPairingKey,
   registerAgentDevice,
   syncDiscoveredPrinters,
@@ -93,6 +93,8 @@ export async function registerPrinterAgentRoutes(
       agentVersion: body.data.agentVersion,
       deviceToken,
       status: 'active',
+      boundUserId: key.boundUserId,
+      workstationLabel: body.data.hostname,
     });
 
     return reply.status(201).send({
@@ -115,12 +117,19 @@ export async function registerPrinterAgentRoutes(
       });
     }
 
-    const device = await findAgentDeviceByToken(db, token);
+    const { device, isUnbound } = await findActiveOrUnboundDevice(db, token);
+    if (isUnbound) {
+      return reply.status(401).send({
+        statusCode: 401,
+        code: 'DEVICE_UNBOUND',
+        message: 'This workstation was unbound by the operator.',
+      });
+    }
     if (!device) {
       return reply.status(401).send({
         statusCode: 401,
         code: 'DEVICE_UNAUTHORIZED',
-        message: 'Invalid device token.',
+        message: 'Invalid or revoked device token.',
       });
     }
 
@@ -133,7 +142,7 @@ export async function registerPrinterAgentRoutes(
       });
     }
 
-    await syncDiscoveredPrinters(db, device.studioId, body.data.printers);
+    await syncDiscoveredPrinters(db, device.studioId, body.data.printers, device.deviceId);
     await updateDeviceHeartbeat(db, device.deviceId);
 
     return reply.send({
@@ -154,12 +163,19 @@ export async function registerPrinterAgentRoutes(
       });
     }
 
-    const device = await findAgentDeviceByToken(db, token);
+    const { device, isUnbound } = await findActiveOrUnboundDevice(db, token);
+    if (isUnbound) {
+      return reply.status(401).send({
+        statusCode: 401,
+        code: 'DEVICE_UNBOUND',
+        message: 'This workstation was unbound by the operator.',
+      });
+    }
     if (!device) {
       return reply.status(401).send({
         statusCode: 401,
         code: 'DEVICE_UNAUTHORIZED',
-        message: 'Invalid device token.',
+        message: 'Invalid or revoked device token.',
       });
     }
 
