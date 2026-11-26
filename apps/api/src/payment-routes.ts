@@ -17,13 +17,15 @@ import {
 } from './payment/gateway-service.js';
 import { resolveSessionIdFromHeader } from './session-token.js';
 import {
-  findOrderBySessionAndId,
   createPaymentRecord,
   findPaymentById,
   listPaymentsByOrder,
-  updateOrderPaymentSummary,
   updatePaymentStatus,
 } from './repositories/payment.repository.js';
+import {
+  findOrderBySessionAndId,
+  updateOrderPaymentSummary,
+} from './repositories/order.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 import { findStudioDocumentBySlug } from './repositories/studio.repository.js';
 import { checkStudioCheckoutAvailability } from './repositories/subscription.repository.js';
@@ -59,14 +61,12 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
       status: doc.status,
       settings: doc.settings,
     };
-    const gw =
-      opts?.gateway ??
-      resolveEffectiveGateway(
-        gateway,
-        doc.payment?.razorpayKeyId,
-        doc.razorpayKeySecret,
-        config.razorpayWebhookSecret
-      );
+    const gw = resolveEffectiveGateway(
+      opts?.gateway ?? gateway,
+      doc.payment?.razorpayKeyId,
+      doc.razorpayKeySecret,
+      config.razorpayWebhookSecret
+    );
     return { doc, studio, gw };
   };
 
@@ -109,17 +109,18 @@ export const paymentRoutes: FastifyPluginAsync<PaymentRouteOptions> = async (app
         order.totalAmountMinor - paidMinor
       );
 
-      if (!validation.allowed) {
+      if (!validation.valid) {
         return sendErr(
           reply,
           400,
-          validation.reason,
-          `Payment attempt rejected: ${validation.reason}`
+          validation.error ?? 'PAYMENT_REJECTED',
+          `Payment attempt rejected: ${validation.error}`
         );
       }
 
       const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const gatewayOrder = await gw.createOrder({
+      const gatewayOrder = await gw.createGatewayOrder({
+        orderId: order.orderId,
         amountMinor: validation.remainingMinor,
         currency: 'INR',
         receipt: paymentId,
