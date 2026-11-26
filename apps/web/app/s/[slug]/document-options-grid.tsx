@@ -52,19 +52,25 @@ export function DocumentOptionsGrid({
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
 
-  // Filter available paper sizes strictly to those configured in studio.printRates
+  // Primary: printer hardware sizes reported by the backend capabilities object.
+  // Secondary: sizes the operator has configured rates for (printRates keys).
+  // No hardcoded 'A4' fallback — operator controls which sizes are available.
   const availableSizes = useMemo(() => {
-    const configured = Object.keys(printRates || {}).filter((k) =>
+    const capSizes = (capabilities?.supportedPaperSizes ?? []).filter((k) =>
       PaperSizes.includes(k as (typeof PaperSizes)[number])
     ) as PaperSize[];
-    return configured.length > 0 ? configured : (['A4'] as PaperSize[]);
-  }, [printRates]);
+    if (capSizes.length > 0) return capSizes;
+    return Object.keys(printRates || {}).filter((k) =>
+      PaperSizes.includes(k as (typeof PaperSizes)[number])
+    ) as PaperSize[];
+  }, [printRates, capabilities]);
 
-  const effectivePaperSize = availableSizes.includes(config.paperSize)
+  const effectivePaperSize: PaperSize | undefined = availableSizes.includes(config.paperSize)
     ? config.paperSize
     : availableSizes[0];
 
   function handleRateSelect(colorMode: ColorMode, sides: PrintSides) {
+    if (!effectivePaperSize) return;
     onUpdate({
       ...config,
       paperSize: effectivePaperSize,
@@ -80,18 +86,25 @@ export function DocumentOptionsGrid({
     });
   }
 
+  if (availableSizes.length === 0) {
+    return (
+      <div className="sf-field-label" style={{ color: '#94a3b8', padding: '8px 0' }}>
+        No print sizes configured. Contact the shop for assistance.
+      </div>
+    );
+  }
+
   return (
     <div>
       <DocumentRateSelector
         colorMode={config.colorMode}
         sides={config.sides}
-        paperSize={effectivePaperSize}
+        paperSize={effectivePaperSize!}
         printRates={printRates}
         capabilities={capabilities}
         isSinglePage={isSinglePage}
         onSelect={handleRateSelect}
       />
-
       <div style={{ marginBottom: '10px' }}>
         <div className="sf-field-label">Paper Size</div>
         <div role="radiogroup" aria-label="Paper Size" className="sf-segmented-group">
@@ -99,36 +112,25 @@ export function DocumentOptionsGrid({
             const active = effectivePaperSize === size;
             const label = SIZES[size]?.[availableSizes.length === 1 ? 0 : 1] || size;
             return (
-              <button
-                key={size}
-                type="button"
-                role="radio"
-                aria-checked={active}
+              <button key={size} type="button" role="radio" aria-checked={active}
                 onClick={() => handlePaperSizeChange(size)}
-                className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
-              >
+                className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}>
                 {label}
               </button>
             );
           })}
         </div>
       </div>
-
       <div style={{ marginBottom: '10px' }}>
         <div className="sf-field-label">Orientation</div>
         <div role="radiogroup" aria-label="Orientation" className="sf-orientation-group">
           {ORIENTATION_OPTIONS.map((opt) => {
             const active = config.orientation === opt.value;
             return (
-              <button
-                key={opt.value}
-                type="button"
-                role="radio"
-                aria-checked={active}
+              <button key={opt.value} type="button" role="radio" aria-checked={active}
                 onClick={() => onUpdate({ ...config, orientation: opt.value })}
                 className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
-                style={{ width: '100%' }}
-              >
+                style={{ width: '100%' }}>
                 {opt.icon}
                 <span>{opt.label}</span>
               </button>

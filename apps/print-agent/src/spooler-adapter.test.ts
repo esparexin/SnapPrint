@@ -21,12 +21,12 @@ describe('Spooler Adapter & Drivers Discovery', () => {
       expect(inferIsColorSupported('HP Color LaserJet Pro', 'HP Color Driver')).toBe(true);
     });
 
-    it('infers paper sizes based on printer capabilities', () => {
-      expect(inferSupportedPaperSizes('HP LaserJet Pro MFP M126nw', 'HP Driver')).toEqual([
-        'A4',
-        'legal',
-      ]);
-      expect(inferSupportedPaperSizes('Epson L3150', 'Epson Driver')).toEqual(['A4']);
+    it('returns all standard paper sizes as initial estimate (operator confirms hardware capabilities)', () => {
+      const allStandardSizes = ['A4', 'A3', 'A5', 'A6', 'legal', 'letter', '4x6', '5x7'];
+      expect(inferSupportedPaperSizes('HP LaserJet Pro MFP M126nw', 'HP Driver')).toEqual(
+        allStandardSizes
+      );
+      expect(inferSupportedPaperSizes('Epson L3150', 'Epson Driver')).toEqual(allStandardSizes);
     });
 
     it('identifies and flags virtual and software printer queues', () => {

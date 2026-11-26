@@ -21,7 +21,8 @@ function deriveSupportedSizes(printers: StudioPrinter[]): PaperSize[] {
       seen.add(size);
     }
   }
-  return seen.size > 0 ? Array.from(seen) : ['A4'];
+  // No fallback to ['A4'] — operator must configure printer capabilities manually.
+  return Array.from(seen);
 }
 
 function deriveCapabilities(printers: StudioPrinter[]) {

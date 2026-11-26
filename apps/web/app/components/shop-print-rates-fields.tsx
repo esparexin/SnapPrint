@@ -14,7 +14,8 @@ export interface ShopPrintRatesFieldsProps {
   onChange: (rates: StudioPrintRatesContract) => void;
 }
 
-const ALL_SIZES: PaperSize[] = ['A4', 'A3', 'A5', 'legal', 'letter'];
+// All sizes from STANDARD_PAPER_CATALOGUE — rates fields cover the full catalogue.
+const ALL_SIZES: PaperSize[] = ['A4', 'A3', 'A5', 'A6', 'legal', 'letter', '4x6', '5x7'];
 
 const tabBtnStyle = (isSelected: boolean): React.CSSProperties => ({
   minHeight: '44px',
@@ -42,16 +43,16 @@ export function ShopPrintRatesFields({
   const configured: PaperSize[] = Object.keys(printRates).filter((k): k is PaperSize =>
     ALL_SIZES.includes(k as PaperSize)
   );
+  // Priority: explicitly passed sizes > configured rate keys.
+  // No A4 default fallback — operator must enable sizes manually.
   const activeSizes: PaperSize[] = supportedPaperSizes?.length
     ? supportedPaperSizes
-    : configured.length
-      ? configured
-      : (['A4'] as PaperSize[]);
+    : configured;
 
-  const [selectedSize, setSelectedSize] = useState<PaperSize>(activeSizes[0] || 'A4');
+  const [selectedSize, setSelectedSize] = useState<PaperSize>(activeSizes[0] ?? 'A4');
   const currentSize: PaperSize = activeSizes.includes(selectedSize)
     ? selectedSize
-    : activeSizes[0] || 'A4';
+    : (activeSizes[0] ?? 'A4');
 
   const defaultRates = DEFAULT_DOCUMENT_PRINT_RATES[currentSize] || DEFAULT_DOCUMENT_PRINT_RATES.A4;
   const currentSizeRates = printRates[currentSize] || defaultRates;

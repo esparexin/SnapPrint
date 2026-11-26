@@ -1,5 +1,4 @@
 import { CSSProperties } from 'react';
-import type { StudioPrintRatesContract } from '@snapprint/contracts';
 
 export type OperatorView =
   | 'orders'
@@ -10,13 +9,6 @@ export type OperatorView =
   | 'staff'
   | 'setup'
   | 'subscription';
-
-export const DEFAULT_A4_RATES: StudioPrintRatesContract = {
-  A4: {
-    black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
-    color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
-  },
-};
 
 export const getNoticeBoxStyle = (kind: 'error' | 'saved'): CSSProperties => ({
   padding: '8px 12px',

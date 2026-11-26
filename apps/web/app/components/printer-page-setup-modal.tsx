@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { StudioPrinter } from '../../src/printer-client';
+import { AgentDevice, StudioPrinter } from '../../src/printer-client';
 import { useDialog } from '../hooks/use-dialog';
-import { usePrinterPageSetup } from '../hooks/use-printer-page-setup';
+import { usePrinterFleetData } from '../hooks/use-printer-fleet-data';
 import { portalStyles } from './operator-portal-styles';
 import { AgentPairingModal } from './agent-pairing-modal';
 import { DuplexConfirmModal } from './duplex-confirm-modal';
 import { PrinterFleetFooter } from './printer-fleet-footer';
 import { PrinterFleetHeader } from './printer-fleet-header';
-import { PrinterFleetList } from './printer-fleet-list';
+import { PrinterFleetTabContent } from './printer-fleet-tab-content';
 import { PrinterPageSetupSection } from './printer-page-setup-section';
+import { UnbindDeviceModal } from './unbind-device-modal';
 
 interface PrinterPageSetupModalProps {
   studioId: string;
@@ -25,11 +26,23 @@ export function PrinterPageSetupModal({
   onClose,
   inShell = false,
 }: PrinterPageSetupModalProps) {
-  const { printers, allowance, studio, loading, error, updatingId, loadData, handleRoleChange } =
-    usePrinterPageSetup(studioId);
+  const {
+    printers,
+    devices,
+    standardSizes,
+    customSizes,
+    allowance,
+    studio,
+    loading,
+    error,
+    updatingId,
+    loadAll,
+    handleRoleChange,
+  } = usePrinterFleetData(studioId);
 
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [printerForDuplex, setPrinterForDuplex] = useState<StudioPrinter | null>(null);
+  const [deviceToUnbind, setDeviceToUnbind] = useState<AgentDevice | null>(null);
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
     isOpen: !inShell,
@@ -52,13 +65,19 @@ export function PrinterPageSetupModal({
             {error}
           </div>
         )}
-        <PrinterFleetList
+        <PrinterFleetTabContent
+          studioId={studioId}
           printers={printers}
+          devices={devices}
+          standardSizes={standardSizes}
+          customSizes={customSizes}
           loading={loading}
           updatingId={updatingId}
           onRoleChange={handleRoleChange}
           onPairAgent={() => setShowPairingModal(true)}
           onConfirmDuplex={setPrinterForDuplex}
+          onUnbindDevice={setDeviceToUnbind}
+          onRefreshSizes={loadAll}
         />
         {!loading && printers.length > 0 && studio && (
           <PrinterPageSetupSection studioId={studioId} printers={printers} studio={studio} />
@@ -66,7 +85,7 @@ export function PrinterPageSetupModal({
       </div>
       <PrinterFleetFooter
         loading={loading}
-        onRefresh={loadData}
+        onRefresh={loadAll}
         onClose={inShell ? undefined : onClose}
       />
       {showPairingModal && (
@@ -81,7 +100,15 @@ export function PrinterPageSetupModal({
           studioId={studioId}
           printer={printerForDuplex}
           onClose={() => setPrinterForDuplex(null)}
-          onConfirmed={loadData}
+          onConfirmed={loadAll}
+        />
+      )}
+      {deviceToUnbind && (
+        <UnbindDeviceModal
+          studioId={studioId}
+          device={deviceToUnbind}
+          onClose={() => setDeviceToUnbind(null)}
+          onUnbound={loadAll}
         />
       )}
     </>
@@ -97,7 +124,7 @@ export function PrinterPageSetupModal({
       className="dialog-overlay"
       onClick={handleBackdropClick}
     >
-      <div className="dialog-content max-w-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="dialog-content max-w-3xl flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         {content}
       </div>
