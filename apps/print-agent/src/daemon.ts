@@ -46,13 +46,20 @@ export class AgentDaemon {
     if (
       msg.includes('401') ||
       msg.includes('DEVICE_UNAUTHORIZED') ||
-      msg.includes('DEVICE_REVOKED')
+      msg.includes('DEVICE_REVOKED') ||
+      msg.includes('DEVICE_UNBOUND')
     ) {
       const log = this.options.logger || console.error;
       log(
-        '[CRITICAL] Device authorization revoked by studio owner. Halting operations. Run "enroll" to re-pair.'
+        '[CRITICAL] Workstation unbound or revoked by studio operator. Halting operations. Run "enroll" to re-pair this computer.'
       );
       this.isRevoked = true;
+      this.config.deviceToken = undefined;
+      try {
+        saveAgentConfig(this.config, this.options.configPath);
+      } catch {
+        // Non-fatal
+      }
       this.stop();
       return true;
     }
