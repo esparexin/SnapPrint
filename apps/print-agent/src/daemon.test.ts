@@ -190,4 +190,23 @@ describe('AgentDaemon', () => {
       'Hardware spooler offline'
     );
   });
+
+  it('halts daemon operations and marks revoked when API returns DEVICE_UNBOUND', async () => {
+    const mockClient = {
+      sendHeartbeat: vi
+        .fn()
+        .mockRejectedValue(new Error('401 DEVICE_UNBOUND: Workstation unbound')),
+    } as unknown as AgentClient;
+
+    const daemon = new AgentDaemon(
+      { apiUrl: 'http://127.0.0.1:3001', deviceToken: 'tok_unbound' },
+      mockClient,
+      { getPrinters: vi.fn(), printFile: vi.fn() } as unknown as SpoolerAdapter,
+      { logger: () => {} }
+    );
+
+    await daemon.heartbeatOnce();
+    expect(daemon.revoked).toBe(true);
+    expect(daemon.running).toBe(false);
+  });
 });

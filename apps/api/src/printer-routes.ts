@@ -5,13 +5,14 @@ import { generatePairingCode } from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
 import { registerPrinterAgentRoutes } from './printer-agent-routes.js';
+import { registerPrinterCapabilityRoutes } from './printer-capability-routes.js';
 import { registerPrinterJobRoutes } from './printer-job-routes.js';
 import { requeuePrintJob } from './repositories/print-job-claim.repository.js';
 import {
   createPairingKey,
   getStudioFleetAllowance,
   listStudioDevices,
-  listStudioPrinters,
+  listStudioPrintersWithLiveness,
   revokeAgentDevice,
   updateStudioPrinterRole,
 } from './repositories/printer.repository.js';
@@ -36,7 +37,14 @@ export async function printerRoutes(
       const db = getEffectiveDb();
       const code = generatePairingCode();
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-      const created = await createPairingKey(db, request.params.studioId, code, expiresAt);
+      const boundUserId = request.operator?.user.id;
+      const created = await createPairingKey(
+        db,
+        request.params.studioId,
+        code,
+        expiresAt,
+        boundUserId
+      );
       return reply.status(201).send({
         code: created.code,
         studioId: created.studioId,
@@ -53,7 +61,7 @@ export async function printerRoutes(
     async (request, reply) => {
       const db = getEffectiveDb();
       const [printers, allowance] = await Promise.all([
-        listStudioPrinters(db, request.params.studioId),
+        listStudioPrintersWithLiveness(db, request.params.studioId),
         getStudioFleetAllowance(db, request.params.studioId),
       ]);
       return reply.send({
@@ -71,6 +79,7 @@ export async function printerRoutes(
           capabilityProvenance: p.capabilityProvenance || 'unverified',
           status: p.status,
           isDefaultOsPrinter: p.isDefaultOsPrinter,
+          deviceId: p.deviceId,
           lastSeenAt: p.lastSeenAt.toISOString(),
         })),
       });
@@ -131,6 +140,8 @@ export async function printerRoutes(
           osPlatform: d.osPlatform,
           agentVersion: d.agentVersion,
           status: d.status,
+          boundUserId: d.boundUserId,
+          workstationLabel: d.workstationLabel,
           isOnline: now - new Date(d.lastHeartbeatAt).getTime() < 120_000 && d.status === 'active',
           lastHeartbeatAt: new Date(d.lastHeartbeatAt).toISOString(),
           createdAt: new Date(d.createdAt).toISOString(),
@@ -176,5 +187,6 @@ export async function printerRoutes(
   );
 
   await registerPrinterAgentRoutes(app, opts);
+  await registerPrinterCapabilityRoutes(app, opts);
   await registerPrinterJobRoutes(app, opts);
 }

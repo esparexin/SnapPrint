@@ -34,6 +34,7 @@ export type CapabilityProvenance = z.infer<typeof CapabilityProvenanceSchema>;
 
 export const DiscoveredPrinterSchema = z.object({
   printerId: PrinterIdSchema,
+  deviceId: z.string().trim().min(3).max(64).optional(),
   name: z.string().trim().min(1).max(120),
   driverName: z.string().trim().min(1).max(160),
   connectionType: PrinterConnectionTypeSchema.default('unknown'),
@@ -51,6 +52,8 @@ export type DiscoveredPrinter = z.infer<typeof DiscoveredPrinterSchema>;
 export const AssignedStudioPrinterSchema = z.object({
   id: PrinterIdSchema,
   studioId: StudioIdSchema,
+  deviceId: z.string().trim().min(3).max(64).optional(),
+  boundUserId: z.string().trim().min(3).max(64).optional(),
   name: z.string().trim().min(1).max(120),
   driverName: z.string().trim().min(1).max(160),
   role: PrinterRoleSchema.default('standby'),
@@ -123,6 +126,7 @@ export const PrintJobRecordSchema = z.object({
   assetId: z.string().trim().min(1).max(128),
   targetPrinterId: PrinterIdSchema,
   printerName: z.string().trim().min(1).max(120),
+  deviceId: z.string().optional(),
   colorMode: z.enum(['bw', 'color']),
   paperSize: PaperSizeSchema,
   sides: z.enum(['single', 'double']),
@@ -152,12 +156,25 @@ export type AgentJobStatusUpdateRequest = z.infer<typeof AgentJobStatusUpdateReq
 export const StudioDeviceRecordSchema = z.object({
   deviceId: z.string(),
   studioId: StudioIdSchema,
+  boundUserId: z.string().optional(),
+  workstationLabel: z.string().optional(),
   hostname: z.string(),
   osPlatform: z.enum(['win32', 'darwin', 'linux']),
   agentVersion: z.string(),
-  status: z.enum(['active', 'revoked']),
+  status: z.enum(['active', 'revoked', 'unbound']),
   lastHeartbeatAt: z.string().datetime(),
   isOnline: z.boolean(),
   createdAt: z.string().datetime(),
 });
 export type StudioDeviceRecord = z.infer<typeof StudioDeviceRecordSchema>;
+
+export const ConfirmPrinterCapabilityRequestSchema = z.object({
+  duplexSupport: z.enum(['supported', 'unsupported']),
+  supportedDuplexSizes: z.array(PaperSizeSchema).optional(),
+});
+export type ConfirmPrinterCapabilityRequest = z.infer<typeof ConfirmPrinterCapabilityRequestSchema>;
+
+export const UnbindDeviceRequestSchema = z.object({
+  reason: z.string().trim().max(200).optional(),
+});
+export type UnbindDeviceRequest = z.infer<typeof UnbindDeviceRequestSchema>;

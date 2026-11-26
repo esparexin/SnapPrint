@@ -9,6 +9,7 @@ export interface PrinterRoutingCandidate {
   status: PrinterStatus;
   duplexSupport?: 'supported' | 'unsupported' | 'unknown';
   supportedDuplexSizes?: readonly PaperSize[];
+  deviceId?: string;
 }
 
 export interface ResolvePrinterJobInput {
@@ -147,6 +148,7 @@ export interface GeneratedPrintJobDescriptor {
   assetId: string;
   targetPrinterId: string;
   printerName: string;
+  deviceId?: string;
   colorMode: 'bw' | 'color';
   paperSize: PaperSize;
   sides: 'single' | 'double';
@@ -212,6 +214,7 @@ export function createPrintJobsForOrder(
       assetId: item.assetId,
       targetPrinterId: routeResult.selectedPrinter.id,
       printerName: routeResult.selectedPrinter.name,
+      deviceId: routeResult.selectedPrinter.deviceId,
       colorMode: normalizedColorMode,
       paperSize: item.paperSize,
       sides: normalizedSides,

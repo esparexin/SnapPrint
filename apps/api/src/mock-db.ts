@@ -36,9 +36,7 @@ function matchComparisonOp(actual: unknown, op: string, target: unknown): boolea
   if (Number.isNaN(a) || Number.isNaN(b)) return false;
   if (op === '$gt') return a > b;
   if (op === '$gte') return a >= b;
-  if (op === '$lt') return a < b;
-  if (op === '$lte') return a <= b;
-  return false;
+  return op === '$lt' ? a < b : op === '$lte' ? a <= b : false;
 }
 
 function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>): boolean {
@@ -48,26 +46,37 @@ function matchDoc(item: Record<string, unknown>, filter: Record<string, unknown>
       if (!v.some((sub) => matchDoc(item, sub as Record<string, unknown>))) return false;
       continue;
     }
-    if (typeof v === 'object' && v !== null) {
+    if (typeof v === 'object' && v !== null && !(v instanceof Date)) {
       const obj = v as Record<string, unknown>;
-      if ('$exists' in obj && (item[k] !== undefined) !== Boolean(obj.$exists)) return false;
+      let hasOp = false;
+      if ('$exists' in obj) {
+        hasOp = true;
+        if ((item[k] !== undefined) !== Boolean(obj.$exists)) return false;
+      }
       if ('$in' in obj && Array.isArray(obj.$in)) {
+        hasOp = true;
         if (!obj.$in.includes(item[k])) return false;
-        continue;
+      }
+      if ('$nin' in obj && Array.isArray(obj.$nin)) {
+        hasOp = true;
+        if (obj.$nin.includes(item[k])) return false;
+      }
+      if ('$ne' in obj) {
+        hasOp = true;
+        if (item[k] === obj.$ne) return false;
       }
       if ('$regex' in obj) {
+        hasOp = true;
         const reg = obj.$regex instanceof RegExp ? obj.$regex : new RegExp(String(obj.$regex), 'i');
         if (!reg.test(String(item[k] ?? ''))) return false;
-        continue;
       }
-      let handledOp = false;
       for (const op of ['$gt', '$gte', '$lt', '$lte'] as const) {
         if (op in obj) {
-          handledOp = true;
+          hasOp = true;
           if (!matchComparisonOp(item[k], op, obj[op])) return false;
         }
       }
-      if (handledOp) continue;
+      if (hasOp) continue;
     }
     if (item[k] !== v) return false;
   }
@@ -100,28 +109,19 @@ function applyUpdate(item: Record<string, unknown>, update: Record<string, unkno
 }
 
 export function createMockDb(): { db: Db } & MockCollections {
-  const users: UserDocument[] = [];
-  const sessions: OperatorSessionDocument[] = [];
-  const qrSessions: QrSessionDocument[] = [];
-  const photoAssets: PhotoAssetDocument[] = [];
-  const memberships: UserMembershipDocument[] = [];
-  const studios: StudioDocument[] = [];
-  const orders: OrderDocument[] = [];
-  const payments: PaymentDocument[] = [];
-  const webhookEvents: WebhookEventDocument[] = [];
-  const emailOtps: EmailOtpDocument[] = [];
-
-  const store: Record<string, Record<string, unknown>[]> = {
-    users: users as unknown as Record<string, unknown>[],
-    operator_sessions: sessions as unknown as Record<string, unknown>[],
-    qr_sessions: qrSessions as unknown as Record<string, unknown>[],
-    photo_assets: photoAssets as unknown as Record<string, unknown>[],
-    user_memberships: memberships as unknown as Record<string, unknown>[],
-    studios: studios as unknown as Record<string, unknown>[],
-    orders: orders as unknown as Record<string, unknown>[],
-    payments: payments as unknown as Record<string, unknown>[],
-    webhook_events: webhookEvents as unknown as Record<string, unknown>[],
-    email_otps: emailOtps as unknown as Record<string, unknown>[],
+  const store: Record<string, Record<string, unknown>[]> = {};
+  const getCol = <T>(name: string) => (store[name] || (store[name] = [])) as unknown as T[];
+  const cols = {
+    users: getCol<UserDocument>('users'),
+    sessions: getCol<OperatorSessionDocument>('operator_sessions'),
+    qrSessions: getCol<QrSessionDocument>('qr_sessions'),
+    photoAssets: getCol<PhotoAssetDocument>('photo_assets'),
+    memberships: getCol<UserMembershipDocument>('user_memberships'),
+    studios: getCol<StudioDocument>('studios'),
+    orders: getCol<OrderDocument>('orders'),
+    payments: getCol<PaymentDocument>('payments'),
+    webhookEvents: getCol<WebhookEventDocument>('webhook_events'),
+    emailOtps: getCol<EmailOtpDocument>('email_otps'),
   };
 
   const db = {
@@ -232,17 +232,5 @@ export function createMockDb(): { db: Db } & MockCollections {
     },
   } as unknown as Db;
 
-  return {
-    db,
-    users,
-    sessions,
-    qrSessions,
-    photoAssets,
-    memberships,
-    studios,
-    orders,
-    payments,
-    webhookEvents,
-    emailOtps,
-  };
+  return { db, ...cols };
 }

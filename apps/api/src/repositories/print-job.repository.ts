@@ -2,7 +2,7 @@ import { Db } from 'mongodb';
 import { PaperSize, PrintJobRecord, PrintJobStatus } from '@snapprint/contracts';
 import { createPrintJobsForOrder, GeneratedPrintJobDescriptor } from '@snapprint/domain';
 import { findOrderById, updateOrderStatus } from './order.repository.js';
-import { listStudioPrinters } from './printer.repository.js';
+import { listStudioPrintersWithLiveness } from './printer.repository.js';
 
 export const PRINT_JOBS_COLLECTION = 'print_jobs';
 
@@ -14,6 +14,7 @@ export interface PrintJobDocument {
   assetId: string;
   targetPrinterId: string;
   printerName: string;
+  deviceId?: string;
   colorMode: 'bw' | 'color';
   paperSize: PaperSize;
   sides: 'single' | 'double';
@@ -39,6 +40,7 @@ export function toPrintJobRecord(doc: PrintJobDocument): PrintJobRecord {
     assetId: doc.assetId,
     targetPrinterId: doc.targetPrinterId,
     printerName: doc.printerName,
+    deviceId: doc.deviceId,
     colorMode: doc.colorMode,
     paperSize: doc.paperSize,
     sides: doc.sides,
@@ -81,6 +83,7 @@ export async function createPrintJobs(
       assetId: j.assetId,
       targetPrinterId: j.targetPrinterId,
       printerName: j.printerName,
+      deviceId: j.deviceId,
       colorMode: j.colorMode,
       paperSize: j.paperSize,
       sides: j.sides,
@@ -169,7 +172,7 @@ export async function autoDispatchOrderPrintJobs(
     return [];
   }
 
-  const printers = await listStudioPrinters(db, studioId);
+  const printers = await listStudioPrintersWithLiveness(db, studioId);
   if (printers.length === 0) {
     return [];
   }

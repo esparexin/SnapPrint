@@ -12,6 +12,7 @@ interface PrinterFleetListProps {
   updatingId: string | null;
   onRoleChange: (printerId: string, role: PrinterRole) => void;
   onPairAgent: () => void;
+  onConfirmDuplex?: (printer: StudioPrinter) => void;
 }
 
 export function PrinterFleetList({
@@ -20,6 +21,7 @@ export function PrinterFleetList({
   updatingId,
   onRoleChange,
   onPairAgent,
+  onConfirmDuplex,
 }: PrinterFleetListProps) {
   return (
     <>
@@ -37,6 +39,7 @@ export function PrinterFleetList({
               printer={printer}
               isUpdating={updatingId === printer.id}
               onRoleChange={onRoleChange}
+              onConfirmDuplex={onConfirmDuplex}
             />
           ))}
         </div>

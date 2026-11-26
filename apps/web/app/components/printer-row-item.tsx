@@ -8,6 +8,7 @@ interface PrinterRowItemProps {
   printer: StudioPrinter;
   isUpdating: boolean;
   onRoleChange: (printerId: string, role: PrinterRole) => void;
+  onConfirmDuplex?: (printer: StudioPrinter) => void;
 }
 
 function getDuplexBadge(support?: string) {
@@ -22,90 +23,67 @@ const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   active_color: { bg: '#eff6ff', color: '#1d4ed8' },
 };
 
-export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRowItemProps) {
+export function PrinterRowItem({
+  printer,
+  isUpdating,
+  onRoleChange,
+  onConfirmDuplex,
+}: PrinterRowItemProps) {
   const isOnline = printer.status === 'online';
   const duplexBadge = getDuplexBadge(printer.duplexSupport);
   const roleTheme = ROLE_COLORS[printer.role] || { bg: '#f8fafc', color: '#475569' };
+  const needsDuplexVerify =
+    onConfirmDuplex &&
+    (printer.duplexSupport === 'unknown' || printer.capabilityProvenance === 'unverified');
 
   return (
-    <div
-      style={{
-        padding: '16px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '8px',
-        backgroundColor: '#ffffff',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '12px',
-      }}
-    >
-      <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: isOnline ? '#22c55e' : '#94a3b8',
-              display: 'inline-block',
-            }}
-          />
-          <strong style={{ fontSize: '0.9375rem', color: '#0f172a' }}>{printer.name}</strong>
+    <div className="p-3.5 px-4 border border-slate-200 rounded-lg bg-white flex flex-wrap justify-between items-center gap-3">
+      <div className="flex-1 min-w-[240px]">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-slate-400'}`} />
+          <strong className="text-sm text-slate-900">{printer.name}</strong>
           {printer.isDefaultOsPrinter && (
-            <span
-              style={{
-                fontSize: '0.6875rem',
-                padding: '2px 6px',
-                backgroundColor: '#e0e7ff',
-                color: '#3730a3',
-                borderRadius: '4px',
-                fontWeight: 600,
-              }}
-            >
+            <span className="text-[11px] px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-semibold">
               OS Default
             </span>
           )}
         </div>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', margin: '4px 0 8px' }}>
-          Driver: {printer.driverName}
+        <div className="text-xs text-slate-500 my-1 mb-2">
+          Driver: {printer.driverName} {printer.deviceId && `· Host: ${printer.deviceId}`}
         </div>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <div className="flex gap-1.5 flex-wrap items-center">
           <span
-            style={{
-              fontSize: '0.6875rem',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontWeight: 600,
-              backgroundColor: printer.isColorSupported ? '#fef3c7' : '#f1f5f9',
-              color: printer.isColorSupported ? '#92400e' : '#475569',
-            }}
+            className={`text-[11px] px-2 py-0.5 rounded font-semibold ${
+              printer.isColorSupported
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-slate-100 text-slate-600'
+            }`}
           >
             {printer.isColorSupported ? '🌈 Color' : '⬛ Monochromatic (B&W)'}
           </span>
           <span
-            style={{
-              fontSize: '0.6875rem',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontWeight: 600,
-              backgroundColor: duplexBadge.bg,
-              color: duplexBadge.fg,
-            }}
+            style={{ backgroundColor: duplexBadge.bg, color: duplexBadge.fg }}
+            className="text-[11px] px-2 py-0.5 rounded font-semibold"
           >
             {duplexBadge.label}
           </span>
+          {needsDuplexVerify && (
+            <button
+              type="button"
+              onClick={() => onConfirmDuplex(printer)}
+              className="text-[11px] px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
+            >
+              Confirm Duplex
+            </button>
+          )}
           {printer.supportedPaperSizes.map((size) => (
             <span
               key={size}
-              style={{
-                fontSize: '0.6875rem',
-                padding: '2px 6px',
-                backgroundColor: '#f1f5f9',
-                color: '#475569',
-                borderRadius: '4px',
-              }}
+              className={`text-[11px] px-1.5 py-0.5 rounded ${
+                size.startsWith('cps_')
+                  ? 'bg-sky-100 text-sky-700 font-medium'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
             >
               {size}
             </span>
@@ -113,23 +91,15 @@ export function PrinterRowItem({ printer, isUpdating, onRoleChange }: PrinterRow
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-        <label style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>Role:</label>
+      <div className="flex flex-col items-end gap-1">
+        <label className="text-xs text-slate-500 font-medium">Role:</label>
         <select
           aria-label={`Role for ${printer.name}`}
           value={printer.role}
           disabled={isUpdating}
           onChange={(e) => onRoleChange(printer.id, e.target.value as PrinterRole)}
-          style={{
-            padding: '6px 10px',
-            borderRadius: '6px',
-            border: '1px solid #cbd5e1',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            backgroundColor: roleTheme.bg,
-            color: roleTheme.color,
-            cursor: isUpdating ? 'not-allowed' : 'pointer',
-          }}
+          style={{ backgroundColor: roleTheme.bg, color: roleTheme.color }}
+          className="min-h-[44px] px-2.5 rounded-md border border-slate-300 text-xs font-semibold"
         >
           <option value="active_bw">Active B&amp;W (Primary)</option>
           {printer.isColorSupported ? (

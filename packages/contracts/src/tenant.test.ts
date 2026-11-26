@@ -35,13 +35,13 @@ describe('Tenant Contracts', () => {
     expect(StudioSlugSchema.safeParse('Studio-Caps').success).toBe(false);
   });
 
-  it('validates studio settings with max 2 active printers default', () => {
+  it('validates studio settings with active printers default and custom allowance', () => {
     const settings = StudioSettingsSchema.parse({});
     expect(settings.maxActivePrinters).toBe(2);
     expect(settings.currency).toBe('INR');
 
-    // exceeds max 2 active printers
-    expect(StudioSettingsSchema.safeParse({ maxActivePrinters: 3 }).success).toBe(false);
+    // allows multiple active printers without artificial max 2 lock
+    expect(StudioSettingsSchema.safeParse({ maxActivePrinters: 10 }).success).toBe(true);
   });
 
   it('validates complete studio record', () => {
