@@ -28,7 +28,7 @@ describe('AgentDaemon Runtime Lifecycle & Safety', () => {
       updateJobStatus: vi.fn().mockResolvedValue(undefined),
     } as unknown as AgentClient;
 
-    const daemon = new AgentDaemon(mockConfig, mockClient, mockSpooler, {
+    const daemon = new AgentDaemon({ ...mockConfig }, mockClient, mockSpooler, {
       configPath: tempConfigPath,
       logger: () => {},
     });
@@ -53,7 +53,7 @@ describe('AgentDaemon Runtime Lifecycle & Safety', () => {
       updateJobStatus: vi.fn().mockResolvedValue(undefined),
     } as unknown as AgentClient;
 
-    const daemon = new AgentDaemon(mockConfig, mockClient, mockSpooler, {
+    const daemon = new AgentDaemon({ ...mockConfig }, mockClient, mockSpooler, {
       configPath: tempConfigPath,
       inFlightTracker: tracker,
       logger: () => {},

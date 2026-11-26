@@ -22,20 +22,14 @@ interface DocumentOptionsGridProps {
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
 
-const PAPER_SIZE_LABELS: Record<PaperSize, string> = {
-  A4: 'A4 (Standard)',
-  A3: 'A3 (Large)',
-  A5: 'A5 (Compact)',
-  legal: 'Legal',
-  letter: 'Letter',
+const PAPER_SIZE_LABELS: Record<string, string> = {
+  A4: 'A4 (Standard)', A3: 'A3 (Large)', A5: 'A5 (Compact)', A6: 'A6',
+  legal: 'Legal', letter: 'Letter', '4x6': '4 × 6″ Photo', '5x7': '5 × 7″ Photo',
 };
 
-const COMPACT_SIZE_LABELS: Record<PaperSize, string> = {
-  A4: 'A4',
-  A3: 'A3',
-  A5: 'A5',
-  legal: 'Legal',
-  letter: 'Letter',
+const COMPACT_SIZE_LABELS: Record<string, string> = {
+  A4: 'A4', A3: 'A3', A5: 'A5', A6: 'A6',
+  legal: 'Legal', letter: 'Letter', '4x6': '4×6″', '5x7': '5×7″',
 };
 
 const ORIENTATION_OPTIONS: Array<{

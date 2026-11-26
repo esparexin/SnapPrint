@@ -54,7 +54,7 @@ export class AgentDaemon {
         '[CRITICAL] Workstation unbound or revoked by studio operator. Halting operations. Run "enroll" to re-pair this computer.'
       );
       this.isRevoked = true;
-      this.config.deviceToken = undefined;
+      this.config = { ...this.config, deviceToken: undefined };
       try {
         saveAgentConfig(this.config, this.options.configPath);
       } catch {
