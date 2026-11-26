@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CustomPaperSize, PrinterRole, StandardPaperSizeDefinition, Studio } from '@snapprint/contracts';
+import {
+  CustomPaperSize,
+  PrinterRole,
+  StandardPaperSizeDefinition,
+  Studio,
+} from '@snapprint/contracts';
 import {
   AgentDevice,
   fetchStudioDevices,

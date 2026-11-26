@@ -6,7 +6,6 @@ import {
   DocumentPrintConfig,
   PaperSize,
   PaperSizes,
-  PrintOrientation,
   PrintSides,
   StudioPrintRatesContract,
   StudioPublicCapabilities,
@@ -33,14 +32,10 @@ const SIZES: Record<string, [string, string]> = {
   '5x7': ['5 × 7″ Photo', '5×7″'],
 };
 
-const ORIENTATION_OPTIONS: Array<{
-  value: PrintOrientation;
-  label: string;
-  icon: React.ReactNode;
-}> = [
-  { value: 'portrait', label: 'Portrait', icon: <PortraitIcon size={12} /> },
-  { value: 'landscape', label: 'Landscape', icon: <LandscapeIcon size={12} /> },
-  { value: 'auto', label: 'Auto', icon: <AutoOrientIcon size={12} /> },
+const ORIENTATION_OPTIONS = [
+  { value: 'portrait' as const, label: 'Portrait', icon: <PortraitIcon size={12} /> },
+  { value: 'landscape' as const, label: 'Landscape', icon: <LandscapeIcon size={12} /> },
+  { value: 'auto' as const, label: 'Auto', icon: <AutoOrientIcon size={12} /> },
 ];
 
 export function DocumentOptionsGrid({
@@ -52,20 +47,16 @@ export function DocumentOptionsGrid({
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
 
-  // Primary: printer hardware sizes reported by the backend capabilities object.
-  // Secondary: sizes the operator has configured rates for (printRates keys).
-  // No hardcoded 'A4' fallback — operator controls which sizes are available.
+  // Primary: printer hardware sizes reported by backend capabilities.
+  // Secondary: sizes operator configured rates for.
   const availableSizes = useMemo(() => {
-    const capSizes = (capabilities?.supportedPaperSizes ?? []).filter((k) =>
-      PaperSizes.includes(k as (typeof PaperSizes)[number])
-    ) as PaperSize[];
-    if (capSizes.length > 0) return capSizes;
-    return Object.keys(printRates || {}).filter((k) =>
-      PaperSizes.includes(k as (typeof PaperSizes)[number])
-    ) as PaperSize[];
+    const valid = (s: string[]) =>
+      s.filter((k) => PaperSizes.includes(k as (typeof PaperSizes)[number])) as PaperSize[];
+    const caps = valid(capabilities?.supportedPaperSizes ?? []);
+    return caps.length > 0 ? caps : valid(Object.keys(printRates || {}));
   }, [printRates, capabilities]);
 
-  const effectivePaperSize: PaperSize | undefined = availableSizes.includes(config.paperSize)
+  const effectivePaperSize = availableSizes.includes(config.paperSize)
     ? config.paperSize
     : availableSizes[0];
 
@@ -76,13 +67,6 @@ export function DocumentOptionsGrid({
       paperSize: effectivePaperSize,
       colorMode,
       sides: isSinglePage ? 'single_sided' : sides,
-    });
-  }
-
-  function handlePaperSizeChange(newSize: PaperSize) {
-    onUpdate({
-      ...config,
-      paperSize: newSize,
     });
   }
 
@@ -112,9 +96,14 @@ export function DocumentOptionsGrid({
             const active = effectivePaperSize === size;
             const label = SIZES[size]?.[availableSizes.length === 1 ? 0 : 1] || size;
             return (
-              <button key={size} type="button" role="radio" aria-checked={active}
-                onClick={() => handlePaperSizeChange(size)}
-                className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}>
+              <button
+                key={size}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => onUpdate({ ...config, paperSize: size })}
+                className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
+              >
                 {label}
               </button>
             );
@@ -127,10 +116,15 @@ export function DocumentOptionsGrid({
           {ORIENTATION_OPTIONS.map((opt) => {
             const active = config.orientation === opt.value;
             return (
-              <button key={opt.value} type="button" role="radio" aria-checked={active}
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
                 onClick={() => onUpdate({ ...config, orientation: opt.value })}
                 className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
-                style={{ width: '100%' }}>
+                style={{ width: '100%' }}
+              >
                 {opt.icon}
                 <span>{opt.label}</span>
               </button>

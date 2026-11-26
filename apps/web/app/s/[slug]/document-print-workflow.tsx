@@ -33,17 +33,18 @@ interface DocumentPrintWorkflowProps {
   capabilities?: StudioPublicCapabilities;
 }
 
-export function DocumentPrintWorkflow({
-  slug,
-  studioName,
-  sessionId = '',
-  token = '',
-  isNewSession = false,
-  payment,
-  isAcceptingOrders = true,
-  printRates,
-  capabilities,
-}: DocumentPrintWorkflowProps) {
+export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
+  const {
+    slug,
+    studioName,
+    sessionId = '',
+    token = '',
+    isNewSession = false,
+    payment,
+    isAcceptingOrders = true,
+    printRates,
+    capabilities,
+  } = props;
   const [previewAssetId, setPreviewAssetId] = useState<string | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);
 
@@ -52,12 +53,14 @@ export function DocumentPrintWorkflow({
     if (cached) setSubmittedOrder(cached);
   }, [slug]);
 
-  const {
-    items, docs, activeConfigs, removingKeys, feedback, setFeedback,
-    handleFilesSelected, handleCancelUpload, handleRetryUpload,
-    handleDeleteItem, handleRemoveAsset, handleUpdateConfig, resetDocuments,
-  } = useStorefrontDocuments(slug, sessionId, token, isNewSession, Boolean(submittedOrder));
-
+  const docState = useStorefrontDocuments(
+    slug,
+    sessionId,
+    token,
+    isNewSession,
+    Boolean(submittedOrder)
+  );
+  const { items, docs, activeConfigs, removingKeys, feedback, setFeedback } = docState;
   const previewTarget = resolvePreviewTarget(docs, activeConfigs, previewAssetId);
 
   if (submittedOrder) {
@@ -73,7 +76,7 @@ export function DocumentPrintWorkflow({
           clearStoredCustomerSession(slug);
           setSubmittedOrder(null);
           setPreviewAssetId(null);
-          resetDocuments();
+          docState.resetDocuments();
         }}
       />
     );
@@ -89,16 +92,18 @@ export function DocumentPrintWorkflow({
           items={items}
           feedback={feedback}
           onDismissFeedback={() => setFeedback(null)}
-          onFilesSelected={handleFilesSelected}
-          onRetry={handleRetryUpload}
-          onCancel={handleCancelUpload}
-          onDelete={handleDeleteItem}
+          onFilesSelected={docState.handleFilesSelected}
+          onRetry={docState.handleRetryUpload}
+          onCancel={docState.handleCancelUpload}
+          onDelete={docState.handleDeleteItem}
         />
       </section>
 
       {docs.length > 0 && (
         <section className="sf-section">
-          <h2 className="sf-section-heading">2. Configure Print &amp; Xerox Options ({docs.length})</h2>
+          <h2 className="sf-section-heading">
+            2. Configure Print &amp; Xerox Options ({docs.length})
+          </h2>
           {docs.map((doc, idx) => (
             <DocumentConfigForm
               key={doc.assetId}
@@ -108,9 +113,9 @@ export function DocumentPrintWorkflow({
               printRates={printRates}
               capabilities={capabilities}
               isRemoving={removingKeys.includes(doc.assetId)}
-              onUpdate={(updated) => handleUpdateConfig(doc.assetId, updated)}
+              onUpdate={(updated) => docState.handleUpdateConfig(doc.assetId, updated)}
               onPreview={() => setPreviewAssetId(doc.assetId)}
-              onRemove={() => handleRemoveAsset(doc.assetId)}
+              onRemove={() => docState.handleRemoveAsset(doc.assetId)}
             />
           ))}
         </section>
@@ -119,7 +124,10 @@ export function DocumentPrintWorkflow({
       {hasStickyCta && (
         <section className="sf-section">
           <OrderSummaryCard
-            slug={slug} sessionId={sessionId} token={token} configs={activeConfigs}
+            slug={slug}
+            sessionId={sessionId}
+            token={token}
+            configs={activeConfigs}
             onOrderSubmitted={(order) => {
               storeCustomerActiveOrder(slug, order);
               setSubmittedOrder(order);
@@ -131,7 +139,9 @@ export function DocumentPrintWorkflow({
 
       {previewTarget && (
         <DocumentPreviewModal
-          slug={slug} sessionId={sessionId} token={token}
+          slug={slug}
+          sessionId={sessionId}
+          token={token}
           filename={previewTarget.doc.filename}
           pageCount={previewTarget.doc.pageCount}
           config={previewTarget.config}

@@ -8,8 +8,11 @@ import * as docHelpers from './document-print-workflow-helpers';
 import { UploadItem } from './photo-item-card';
 
 export function useStorefrontDocuments(
-  slug: string, sessionId: string, token: string,
-  isNewSession = false, hasActiveOrder = false
+  slug: string,
+  sessionId: string,
+  token: string,
+  isNewSession = false,
+  hasActiveOrder = false
 ) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
@@ -21,8 +24,8 @@ export function useStorefrontDocuments(
 
   useEffect(() => {
     let mounted = true;
-    const hasCachedOrder = Boolean(getStoredCustomerActiveOrder(slug));
-    if (sessionId && token && !isNewSession && !hasActiveOrder && !hasCachedOrder) {
+    const hasOrder = Boolean(getStoredCustomerActiveOrder(slug));
+    if (sessionId && token && !isNewSession && !hasActiveOrder && !hasOrder) {
       docHelpers.syncSessionPhotos(slug, sessionId, token, (loaded) => mounted && setItems(loaded));
     }
     return () => {
@@ -38,7 +41,8 @@ export function useStorefrontDocuments(
 
   const uploadFile = useCallback(
     async (item: UploadItem, mimeType?: AllowedMimeType) => {
-      const resolvedMime = mimeType ?? docHelpers.inferUploadMimeType(item.file) ?? 'application/pdf';
+      const resolvedMime =
+        mimeType ?? docHelpers.inferUploadMimeType(item.file) ?? 'application/pdf';
       const abort = new AbortController();
       const patch = (p: Partial<UploadItem>) =>
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...p } : i)));
@@ -90,17 +94,12 @@ export function useStorefrontDocuments(
     );
   };
 
-  const handleRetryUpload = (id: string) => {
-    const item = items.find((i) => i.id === id);
-    if (item) uploadFile(item);
-  };
-
   const removeDocument = async (key: string, byAssetId: boolean) => {
     const item = items.find((i) => (byAssetId ? i.assetId === key : i.id === key));
-    if (!item || removingRef.current.has(item.assetId || item.id)) return;
-    const lockKey = item.assetId || item.id;
-    removingRef.current.add(lockKey);
-    setRemovingKeys((prev) => [...prev, lockKey]);
+    const lock = item?.assetId || item?.id;
+    if (!item || !lock || removingRef.current.has(lock)) return;
+    removingRef.current.add(lock);
+    setRemovingKeys((prev) => [...prev, lock]);
     setFeedback(null);
     try {
       await docHelpers.deleteDocumentAsset(slug, sessionId, token, item);
@@ -108,20 +107,17 @@ export function useStorefrontDocuments(
       setItems((prev) => prev.filter((i) => i.id !== item.id));
       if (item.assetId) setConfigs((prev) => prev.filter((c) => c.assetId !== item.assetId));
     } catch (err) {
-      setFeedback({
-        kind: 'error',
-        message: err instanceof Error ? err.message : `Failed to delete "${item.file.name}".`,
-      });
+      setFeedback({ kind: 'error', message: err instanceof Error ? err.message : 'Delete failed' });
     } finally {
-      removingRef.current.delete(lockKey);
-      setRemovingKeys((prev) => prev.filter((k) => k !== lockKey));
+      removingRef.current.delete(lock);
+      setRemovingKeys((prev) => prev.filter((k) => k !== lock));
     }
   };
 
-  const handleUpdateConfig = (assetId: string, updated: DocumentPrintConfig) =>
-    setConfigs((prev) =>
-      docHelpers.reconcileDocumentConfigs(docs, prev).map((c) => (c.assetId === assetId ? updated : c))
-    );
+  const retryUpload = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (item) uploadFile(item);
+  };
 
   const resetDocuments = () => {
     items.forEach((i) => docHelpers.revokePreviewUrlIfBlob(i.previewUrl));
@@ -139,10 +135,15 @@ export function useStorefrontDocuments(
     setFeedback,
     handleFilesSelected,
     handleCancelUpload,
-    handleRetryUpload,
+    handleRetryUpload: retryUpload,
     handleDeleteItem: (id: string) => removeDocument(id, false),
     handleRemoveAsset: (assetId: string) => removeDocument(assetId, true),
-    handleUpdateConfig,
+    handleUpdateConfig: (assetId: string, updated: DocumentPrintConfig) =>
+      setConfigs((prev) =>
+        docHelpers
+          .reconcileDocumentConfigs(docs, prev)
+          .map((c) => (c.assetId === assetId ? updated : c))
+      ),
     resetDocuments,
   };
 }

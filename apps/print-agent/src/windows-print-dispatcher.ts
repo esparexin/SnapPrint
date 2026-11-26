@@ -16,7 +16,9 @@ export function inferIsColorSupported(name: string, driverName: string): boolean
   return COLOR_REGEX.test(`${name} ${driverName}`);
 }
 
-export function inferSupportedPaperSizes(_name: string, _driverName: string): PaperSize[] {
+export function inferSupportedPaperSizes(name: string, driverName: string): PaperSize[] {
+  void name;
+  void driverName;
   // Return the full standard paper catalogue as the initial inferred capability.
   // The operator confirms real hardware constraints from the Printer & Page Setup
   // dashboard — no name-based guessing needed here.

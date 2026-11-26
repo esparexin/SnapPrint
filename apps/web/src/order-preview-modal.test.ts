@@ -2,28 +2,10 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 // @ts-expect-error -- @types/react-dom is not installed in @snapprint/web
 import { renderToStaticMarkup } from 'react-dom/server';
-import { OrderRecord, QuoteItemBreakdown } from '@snapprint/contracts';
 import { OrderPreviewBody } from '../app/components/order-preview-body';
 import { OrderPreviewActions } from '../app/components/order-preview-actions';
 
 describe('Order Preview UI Components', () => {
-  const dummyItem: QuoteItemBreakdown = {
-    assetId: 'asset_preview_1',
-    filename: 'document.pdf',
-    paperSize: 'A4',
-    colorMode: 'black_and_white',
-    sides: 'single_sided',
-    orientation: 'portrait',
-    scaling: 'fit_to_page',
-    pageSelection: 'all',
-    documentPageCount: 1,
-    selectedPagesCount: 1,
-    sheetsCount: 1,
-    copies: 1,
-    unitPriceMinor: 200,
-    subtotalMinor: 200,
-  };
-
   it('renders loading state with aria-live and status role', () => {
     const html = renderToStaticMarkup(
       React.createElement(OrderPreviewBody, {

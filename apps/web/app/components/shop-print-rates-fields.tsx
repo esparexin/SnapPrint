@@ -45,9 +45,7 @@ export function ShopPrintRatesFields({
   );
   // Priority: explicitly passed sizes > configured rate keys.
   // No A4 default fallback — operator must enable sizes manually.
-  const activeSizes: PaperSize[] = supportedPaperSizes?.length
-    ? supportedPaperSizes
-    : configured;
+  const activeSizes: PaperSize[] = supportedPaperSizes?.length ? supportedPaperSizes : configured;
 
   const [selectedSize, setSelectedSize] = useState<PaperSize>(activeSizes[0] ?? 'A4');
   const currentSize: PaperSize = activeSizes.includes(selectedSize)
