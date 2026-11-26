@@ -183,18 +183,21 @@ export async function revokeAgentDevice(
 export type ShopPrinterStatus = 'not_added' | 'connected' | 'offline';
 
 export function computePrinterStatus(
-  printers: readonly { status: string }[],
-  devices: readonly { isOnline: boolean }[]
+  printers: readonly { status: string; deviceId?: string }[],
+  devices: readonly { deviceId?: string; isOnline: boolean }[]
 ): ShopPrinterStatus {
   if (!printers || printers.length === 0) {
     return 'not_added';
   }
-  const hasOnlineAgent = devices.some((d) => d.isOnline);
-  const hasOnlinePrinter = printers.some((p) => p.status === 'online');
-  if (hasOnlineAgent && hasOnlinePrinter) {
-    return 'connected';
-  }
-  return 'offline';
+  const onlineDeviceIds = new Set(
+    devices.filter((d) => d.isOnline).map((d) => d.deviceId).filter(Boolean)
+  );
+  const hasLivePrinter = printers.some((p) => {
+    if (p.status !== 'online') return false;
+    if (p.deviceId) return onlineDeviceIds.has(p.deviceId);
+    return devices.some((d) => d.isOnline);
+  });
+  return hasLivePrinter ? 'connected' : 'offline';
 }
 
 let cachedFleetPromise: {

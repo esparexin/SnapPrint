@@ -12,7 +12,7 @@ import {
   createPairingKey,
   getStudioFleetAllowance,
   listStudioDevices,
-  listStudioPrinters,
+  listStudioPrintersWithLiveness,
   revokeAgentDevice,
   updateStudioPrinterRole,
 } from './repositories/printer.repository.js';
@@ -55,7 +55,7 @@ export async function printerRoutes(
     async (request, reply) => {
       const db = getEffectiveDb();
       const [printers, allowance] = await Promise.all([
-        listStudioPrinters(db, request.params.studioId),
+        listStudioPrintersWithLiveness(db, request.params.studioId),
         getStudioFleetAllowance(db, request.params.studioId),
       ]);
       return reply.send({

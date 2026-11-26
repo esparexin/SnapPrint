@@ -7,6 +7,11 @@ import {
   PrinterRole,
   PrinterStatus,
 } from '@snapprint/contracts';
+import {
+  AGENT_DEVICES_COLLECTION,
+  AgentDeviceDocument,
+  AGENT_HEARTBEAT_TIMEOUT_MS,
+} from './agent-device.repository.js';
 
 export const PRINTERS_COLLECTION = 'studio_printers';
 
@@ -114,6 +119,40 @@ export async function listStudioPrinters(
   return db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).find({ studioId }).toArray();
 }
 
+export async function listStudioPrintersWithLiveness(
+  db: Db,
+  studioId: string
+): Promise<StudioPrinterDocument[]> {
+  const cutoff = new Date(Date.now() - AGENT_HEARTBEAT_TIMEOUT_MS);
+  const [printers, allStudioDevices] = await Promise.all([
+    db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).find({ studioId }).toArray(),
+    db
+      .collection<AgentDeviceDocument>(AGENT_DEVICES_COLLECTION)
+      .find({ studioId, status: 'active' })
+      .toArray(),
+  ]);
+
+  if (allStudioDevices.length === 0) {
+    return printers;
+  }
+
+  const onlineDeviceIds = new Set(
+    allStudioDevices
+      .filter((d) => d.lastHeartbeatAt && new Date(d.lastHeartbeatAt) >= cutoff)
+      .map((d) => d.deviceId)
+  );
+
+  return printers.map((p) => {
+    const isHostOnline = p.deviceId ? onlineDeviceIds.has(p.deviceId) : onlineDeviceIds.size > 0;
+    const effectiveStatus: PrinterStatus =
+      p.status === 'online' && isHostOnline ? 'online' : 'offline';
+    return {
+      ...p,
+      status: effectiveStatus,
+    };
+  });
+}
+
 export async function updateStudioPrinterRole(
   db: Db,
   studioId: string,
@@ -156,12 +195,10 @@ export async function confirmPrinterCapability(
 }
 
 export async function hasActivePrinterAssigned(db: Db, studioId: string): Promise<boolean> {
-  const count = await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).countDocuments({
-    studioId,
-    role: { $in: ['active_bw', 'active_color'] },
-    status: 'online',
-  });
-  return count > 0;
+  const printers = await listStudioPrintersWithLiveness(db, studioId);
+  return printers.some(
+    (p) => (p.role === 'active_bw' || p.role === 'active_color') && p.status === 'online'
+  );
 }
 
 export * from './agent-device.repository.js';

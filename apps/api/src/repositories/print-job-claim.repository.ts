@@ -1,4 +1,5 @@
 import { Db } from 'mongodb';
+import { PRINTERS_COLLECTION, StudioPrinterDocument } from './printer.repository.js';
 import { PRINT_JOBS_COLLECTION, PrintJobDocument } from './print-job.repository.js';
 
 export const JOB_LEASE_DURATION_MS = 600_000; // 10 minutes lease
@@ -29,18 +30,26 @@ export async function atomicClaimNextPendingJobs(
     }
   );
 
+  // Find printers that belong to other workstations in this studio to prevent rogue claiming
+  const otherPrinters = await db
+    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
+    .find({ studioId, deviceId: { $exists: true, $ne: deviceId } })
+    .toArray();
+  const otherPrinterIds = otherPrinters.map((p) => p.id);
+
   const claimed: PrintJobDocument[] = [];
   for (let i = 0; i < limit; i++) {
+    const filter: Record<string, unknown> = {
+      studioId,
+      status: 'pending',
+      $or: [{ deviceId }, { deviceId: { $exists: false } }, { deviceId: '' }],
+    };
+    if (otherPrinterIds.length > 0) {
+      filter.targetPrinterId = { $nin: otherPrinterIds };
+    }
+
     const res = await db.collection<PrintJobDocument>(PRINT_JOBS_COLLECTION).findOneAndUpdate(
-      {
-        studioId,
-        status: 'pending',
-        $or: [
-          { deviceId },
-          { deviceId: { $exists: false } },
-          { deviceId: '' },
-        ],
-      },
+      filter,
       {
         $set: {
           status: 'processing',

@@ -1,7 +1,7 @@
 import { Db } from 'mongodb';
 import { PaperSize, StudioPublicCapabilities } from '@snapprint/contracts';
 import { resolveItemsWithMeta } from './photo-asset.repository.js';
-import { PRINTERS_COLLECTION, StudioPrinterDocument } from './printer.repository.js';
+import { PRINTERS_COLLECTION, StudioPrinterDocument, listStudioPrintersWithLiveness } from './printer.repository.js';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
 
 export interface StudioFleetAllowance {
@@ -93,10 +93,10 @@ export async function getStudioActivePrintersAndCapabilities(
   db: Db,
   studioId: string
 ): Promise<{ activePrinters: StudioPrinterDocument[]; capabilities: StudioPublicCapabilities }> {
-  const activePrinters = await db
-    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
-    .find({ studioId, role: { $in: ['active_bw', 'active_color'] }, status: 'online' })
-    .toArray();
+  const allPrinters = await listStudioPrintersWithLiveness(db, studioId);
+  const activePrinters = allPrinters.filter(
+    (p) => (p.role === 'active_bw' || p.role === 'active_color') && p.status === 'online'
+  );
 
   return {
     activePrinters,
@@ -116,10 +116,10 @@ export async function validateOrderDuplexFeasibility(
   const hasDuplex = items.some((i) => i.sides === 'double_sided' || i.sides === 'double');
   if (!hasDuplex) return { allowed: true };
 
-  const printers = await db
-    .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
-    .find({ studioId, role: { $in: ['active_bw', 'active_color'] }, status: 'online' })
-    .toArray();
+  const allPrinters = await listStudioPrintersWithLiveness(db, studioId);
+  const printers = allPrinters.filter(
+    (p) => (p.role === 'active_bw' || p.role === 'active_color') && p.status === 'online'
+  );
 
   for (const item of items) {
     if (item.sides === 'double_sided' || item.sides === 'double') {
