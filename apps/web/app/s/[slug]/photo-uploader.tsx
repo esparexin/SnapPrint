@@ -41,7 +41,9 @@ export function PhotoUploader({
           aria-live={feedback.kind === 'error' ? 'assertive' : 'polite'}
           style={getFeedbackBannerStyle(feedback.kind)}
         >
-          <span>{feedback.message}</span>
+          <span style={{ minWidth: 0, flex: 1, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+            {feedback.message}
+          </span>
           {onDismissFeedback && (
             <button
               type="button"
@@ -55,6 +57,7 @@ export function PhotoUploader({
                 fontWeight: 700,
                 minWidth: '24px',
                 minHeight: '24px',
+                flexShrink: 0,
               }}
             >
               ✕

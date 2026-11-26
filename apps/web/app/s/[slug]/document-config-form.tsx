@@ -48,6 +48,7 @@ export function DocumentConfigForm({
           }}
         >
           <div
+            title={filename}
             style={{
               fontWeight: 600,
               fontSize: '13px',

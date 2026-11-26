@@ -24,20 +24,45 @@ export function DocumentPreviewHeader({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: '12px',
       }}
     >
-      <div>
+      <div style={{ minWidth: 0, flex: 1 }}>
         <h3
           id="document-preview-title"
-          style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}
+          title={filename}
+          style={{
+            margin: 0,
+            fontSize: '16px',
+            fontWeight: 700,
+            color: '#0f172a',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
         >
           Document Preview: {filename}
         </h3>
-        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+        <div
+          style={{
+            fontSize: '12px',
+            color: '#64748b',
+            marginTop: '2px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {`${config.paperSize.toUpperCase()} · ${config.colorMode === 'color' ? 'Color' : 'B&W'} · ${config.sides === 'double_sided' ? 'Duplex' : 'Single-Sided'} · ${pageCount} Pages`}
         </div>
       </div>
-      <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="dialog-close-btn"
+        style={{ flexShrink: 0 }}
+      >
         ✕
       </button>
     </div>

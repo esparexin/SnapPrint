@@ -22,6 +22,7 @@ async function requestJson<T>(
   try {
     res = await customFetch(`${baseUrl}${endpoint}`, {
       credentials: 'include',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',

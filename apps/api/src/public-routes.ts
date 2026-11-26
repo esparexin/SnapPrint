@@ -96,7 +96,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
     });
 
     return reply
-      .header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
+      .header('Cache-Control', 'public, no-cache, must-revalidate, max-age=0')
       .status(200)
       .send(publicStudio);
   });

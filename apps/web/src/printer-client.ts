@@ -101,6 +101,7 @@ export async function fetchStudioPrinters(
   const res = await fetchImpl(url, {
     method: 'GET',
     credentials: 'include',
+    cache: 'no-store',
   });
 
   const data = await res.json().catch(() => null);
@@ -147,6 +148,7 @@ export async function fetchStudioDevices(
   const res = await fetchImpl(url, {
     method: 'GET',
     credentials: 'include',
+    cache: 'no-store',
   });
 
   const data = await res.json().catch(() => null);

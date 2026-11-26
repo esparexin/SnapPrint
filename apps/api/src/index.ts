@@ -28,6 +28,7 @@ import { platformAdminRoutes } from './platform-admin-routes.js';
 import { platformAdminPlansRoutes } from './platform-admin-plans-routes.js';
 import { subscriptionRoutes } from './subscription-routes.js';
 import { initializeStorageService } from './storage/storage-service.js';
+import { registerSecurityAndCacheHeaders } from './security-headers.js';
 import { webhookRoutes } from './webhook-routes.js';
 import { agentDownloadRoutes } from './agent-download-routes.js';
 
@@ -50,14 +51,7 @@ const app = fastify({
 
 app.setErrorHandler(handleApiError);
 
-app.addHook('onSend', async (_request, reply) => {
-  reply.header('X-Content-Type-Options', 'nosniff');
-  reply.header('X-Frame-Options', 'DENY');
-  reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-  if (config.nodeEnv === 'production') {
-    reply.header('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
-  }
-});
+registerSecurityAndCacheHeaders(app, config.nodeEnv);
 
 app.register(cors, buildCorsOptions(config.corsAllowedOrigins));
 
