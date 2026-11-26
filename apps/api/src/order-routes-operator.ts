@@ -15,6 +15,7 @@ import {
 } from '@snapprint/domain';
 import { getDb } from './db.js';
 import { operatorDocumentRoutes } from './order-document-routes.js';
+import { operatorRetryRoutes } from './order-retry-routes.js';
 import { requireStudioPermission } from './plugins/authorization.js';
 import {
   findOrderById,
@@ -41,6 +42,7 @@ export const operatorOrderRoutes: FastifyPluginAsync<OperatorOrderRouteOptions> 
 
   // Register document access and deletion sub-routes
   await app.register(operatorDocumentRoutes, opts);
+  await app.register(operatorRetryRoutes, opts);
 
   // Operator Operational Queue: List Orders
   app.get<{ Params: { studioId: string }; Querystring: { status?: OrderStatus } }>(

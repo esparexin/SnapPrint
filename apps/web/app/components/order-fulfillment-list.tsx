@@ -17,6 +17,7 @@ interface OrderFulfillmentListProps {
   onRequestHandover: (order: OrderRecord) => void;
   onPreviewItem: (order: OrderRecord, item: QuoteItemBreakdown) => void;
   onDeleteDocument: (orderId: string, assetId: string) => Promise<void>;
+  onRetryPrint?: (order: OrderRecord) => void;
   onDismissError?: () => void;
   onDismissSuccess?: () => void;
 }
@@ -57,6 +58,7 @@ export function OrderFulfillmentList({
   onRequestHandover,
   onPreviewItem,
   onDeleteDocument,
+  onRetryPrint,
   onDismissError,
   onDismissSuccess,
 }: OrderFulfillmentListProps) {
@@ -129,6 +131,7 @@ export function OrderFulfillmentList({
               onRequestHandover={onRequestHandover}
               onPreviewItem={onPreviewItem}
               onDeleteDocument={onDeleteDocument}
+              onRetryPrint={onRetryPrint}
             />
           ))}
         </div>

@@ -19,6 +19,7 @@ interface OrderQueueItemProps {
   onRequestHandover?: (order: OrderRecord) => void;
   onPreviewItem: (order: OrderRecord, item: QuoteItemBreakdown) => void;
   onDeleteDocument?: (orderId: string, assetId: string) => Promise<void>;
+  onRetryPrint?: (order: OrderRecord) => void;
 }
 
 const statusColors: Record<OrderStatus, { bg: string; text: string }> = {
@@ -46,6 +47,7 @@ export function OrderQueueItem({
   onRequestHandover,
   onPreviewItem,
   onDeleteDocument,
+  onRetryPrint,
 }: OrderQueueItemProps) {
   const paymentStatus = order.paymentStatus ?? 'UNPAID';
   const statusBadge = statusColors[order.status] || statusColors.submitted;
@@ -163,6 +165,7 @@ export function OrderQueueItem({
           onCollectPayment={onCollectPayment}
           onRecordPayment={onRecordPayment}
           onRequestHandover={onRequestHandover}
+          onRetryPrint={onRetryPrint}
         />
       </div>
 

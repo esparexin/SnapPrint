@@ -40,6 +40,7 @@ export function OrderFulfillmentModal({
     handleStatusChange,
     handleDeleteDocument,
     handlePaymentSuccess,
+    handleRetryPrint,
     clearFeedback,
   } = useOperatorQueue(studioId, statusFilter);
 
@@ -86,6 +87,7 @@ export function OrderFulfillmentModal({
         onRequestHandover={(ord) => setHandoverOrder(ord)}
         onPreviewItem={(ord, it) => setPreviewTarget({ order: ord, item: it })}
         onDeleteDocument={onDeleteDocument}
+        onRetryPrint={handleRetryPrint}
         onDismissError={clearFeedback}
         onDismissSuccess={clearFeedback}
       />

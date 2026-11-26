@@ -11,6 +11,7 @@ interface OrderQueueActionsProps {
   onCollectPayment?: (order: OrderRecord) => void;
   onRecordPayment?: (order: OrderRecord) => void;
   onRequestHandover?: (order: OrderRecord) => void;
+  onRetryPrint?: (order: OrderRecord) => void;
 }
 
 const actionBtn = {
@@ -33,6 +34,7 @@ export function OrderQueueActions({
   onCollectPayment,
   onRecordPayment,
   onRequestHandover,
+  onRetryPrint,
 }: OrderQueueActionsProps) {
   const handlePayment = onCollectPayment || onRecordPayment;
   const canCollect = isOrderEligibleForPayment(order) && Boolean(handlePayment);
@@ -79,6 +81,23 @@ export function OrderQueueActions({
           }}
         >
           {updating ? '⏳ Updating...' : '📦 Mark Ready'}
+        </button>
+      )}
+
+      {order.status === 'processing' && onRetryPrint && (
+        <button
+          type="button"
+          onClick={() => onRetryPrint(order)}
+          disabled={updating}
+          title="Retry printing"
+          style={{
+            ...actionBtn,
+            backgroundColor: updating ? '#0369a1' : '#0284c7',
+            cursor: updating ? 'not-allowed' : 'pointer',
+            opacity: updating ? 0.75 : 1,
+          }}
+        >
+          🔄 Retry Print
         </button>
       )}
 

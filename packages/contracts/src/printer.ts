@@ -178,3 +178,11 @@ export const UnbindDeviceRequestSchema = z.object({
   reason: z.string().trim().max(200).optional(),
 });
 export type UnbindDeviceRequest = z.infer<typeof UnbindDeviceRequestSchema>;
+
+export const OrderPrintRetryResponseSchema = z.object({
+  success: z.boolean(),
+  orderId: z.string(),
+  resetCount: z.number().int().nonnegative(),
+  message: z.string(),
+});
+export type OrderPrintRetryResponse = z.infer<typeof OrderPrintRetryResponseSchema>;

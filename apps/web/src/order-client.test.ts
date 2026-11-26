@@ -218,4 +218,21 @@ describe('Order & Quotation Client', () => {
       'Preview unavailable — document deleted'
     );
   });
+
+  it('retryOperatorOrderPrint posts to retry-print and parses response', async () => {
+    const { retryOperatorOrderPrint } = await import('./order-client.js');
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, orderId: 'ord_1', resetCount: 1, message: 'Queued' }),
+    });
+
+    const result = await retryOperatorOrderPrint('std_1', 'ord_1');
+    expect(result.success).toBe(true);
+    expect(result.resetCount).toBe(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/studios/std_1/orders/ord_1/retry-print'),
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });
