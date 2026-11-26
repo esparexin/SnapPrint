@@ -105,6 +105,7 @@ export function PrinterFleetTabContent({
       {tab === 'printers' && (
         <PrinterFleetList
           printers={printers}
+          customSizes={customSizes}
           loading={loading}
           updatingId={updatingId}
           onRoleChange={onRoleChange}

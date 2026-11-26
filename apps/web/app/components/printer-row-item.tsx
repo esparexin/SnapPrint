@@ -1,26 +1,17 @@
 'use client';
 
 import React from 'react';
-import { PrinterRole } from '@snapprint/contracts';
+import { CustomPaperSize, PrinterRole } from '@snapprint/contracts';
 import { StudioPrinter } from '../../src/printer-client';
+import { DUPLEX_BADGES, ROLE_COLORS, UNVERIFIED_DUPLEX } from './operator-portal-styles';
 
 interface PrinterRowItemProps {
   printer: StudioPrinter;
+  customSizes?: CustomPaperSize[];
   isUpdating: boolean;
   onRoleChange: (printerId: string, role: PrinterRole) => void;
   onConfirmDuplex?: (printer: StudioPrinter) => void;
 }
-
-const DUPLEX_BADGES: Record<string, { label: string; bg: string; fg: string }> = {
-  supported: { label: '🔄 Duplex supported', bg: '#dcfce7', fg: '#166534' },
-  unsupported: { label: '⇥ Simplex only', bg: '#f1f5f9', fg: '#475569' },
-};
-const UNVERIFIED_DUPLEX = { label: '⚠️ Duplex unverified', bg: '#fef3c7', fg: '#92400e' };
-
-const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
-  active_bw: { bg: '#f0fdf4', color: '#166534' },
-  active_color: { bg: '#eff6ff', color: '#1d4ed8' },
-};
 
 const pill = (bg: string, fg: string, isBtn = false): React.CSSProperties => ({
   fontSize: '11px',
@@ -47,6 +38,7 @@ const cardStyle: React.CSSProperties = {
 
 export function PrinterRowItem({
   printer,
+  customSizes,
   isUpdating,
   onRoleChange,
   onConfirmDuplex,
@@ -98,21 +90,28 @@ export function PrinterRowItem({
               Confirm Duplex
             </button>
           )}
-          {printer.supportedPaperSizes.map((size) => (
-            <span
-              key={size}
-              style={{
-                fontSize: '11px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontWeight: size.startsWith('cps_') ? 600 : 400,
-                backgroundColor: size.startsWith('cps_') ? '#e0f2fe' : '#f1f5f9',
-                color: size.startsWith('cps_') ? '#0369a1' : '#475569',
-              }}
-            >
-              {size}
-            </span>
-          ))}
+          {printer.supportedPaperSizes.map((size) => {
+            const match = size.startsWith('cps_')
+              ? customSizes?.find((c) => c.id === size)
+              : undefined;
+            const name = match ? match.name : size;
+            return (
+              <span
+                key={size}
+                title={match ? `${name} (${size})` : size}
+                style={{
+                  fontSize: '11px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontWeight: match ? 600 : 400,
+                  backgroundColor: match ? '#e0f2fe' : '#f1f5f9',
+                  color: match ? '#0369a1' : '#475569',
+                }}
+              >
+                {name}
+              </span>
+            );
+          })}
         </div>
       </div>
 

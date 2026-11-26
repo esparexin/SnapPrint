@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { PrinterRole } from '@snapprint/contracts';
+import { CustomPaperSize, PrinterRole } from '@snapprint/contracts';
 import { StudioPrinter } from '../../src/printer-client';
 import { EmptyPrinterState } from './empty-printer-state';
 import { PrinterRowItem } from './printer-row-item';
 
 interface PrinterFleetListProps {
   printers: StudioPrinter[];
+  customSizes?: CustomPaperSize[];
   loading: boolean;
   updatingId: string | null;
   onRoleChange: (printerId: string, role: PrinterRole) => void;
@@ -17,6 +18,7 @@ interface PrinterFleetListProps {
 
 export function PrinterFleetList({
   printers,
+  customSizes,
   loading,
   updatingId,
   onRoleChange,
@@ -37,6 +39,7 @@ export function PrinterFleetList({
             <PrinterRowItem
               key={printer.id}
               printer={printer}
+              customSizes={customSizes}
               isUpdating={updatingId === printer.id}
               onRoleChange={onRoleChange}
               onConfirmDuplex={onConfirmDuplex}
