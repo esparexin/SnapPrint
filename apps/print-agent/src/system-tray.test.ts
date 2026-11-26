@@ -38,6 +38,16 @@ describe('System Tray & Silent Background Execution', () => {
     expect(script).toContain('[System.Windows.Forms.Application]::Run()');
   });
 
+  it('buildTrayScript includes Open SnapPrint Desktop and Printer Settings when desktopUrl provided', () => {
+    const script = buildTrayScript('http://127.0.0.1:48900', 'https://app.snapprint.in');
+    expect(script).toContain('Open SnapPrint Desktop');
+    expect(script).toContain('Printer Settings & Queue');
+    expect(script).toContain('https://app.snapprint.in');
+    expect(script).toContain('http://127.0.0.1:48900');
+    expect(script).toContain('--app-id=SnapPrintDesktop');
+    expect(script).toContain('--window-size=1280,820');
+  });
+
   it('spawns PowerShell on Windows and triggers onExit when process terminates', () => {
     const mockProc = new EventEmitter() as unknown as ChildProcess & { kill: () => void };
     mockProc.kill = vi.fn();

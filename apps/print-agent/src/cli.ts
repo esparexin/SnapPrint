@@ -4,42 +4,58 @@ import { hostname } from 'node:os';
 import { createInterface } from 'node:readline/promises';
 import { AGENT_VERSION, handleUpdateCommand } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
-import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
+import { getDefaultWebUrl, loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
-import { launchGuiWindow, startGuiServer } from './gui-server.js';
+import { runDesktopSession } from './desktop-runner.js';
 import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
 import { shutdownGracefully } from './lifecycle.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
-import { hideConsoleWindow, startSystemTray } from './system-tray.js';
 
 export { AGENT_VERSION } from './agent-updater.js';
 
-export function extractApiUrlFlag(argv: string[]): { apiUrl?: string; filteredArgv: string[] } {
+export interface ExtractedUrlFlags {
+  apiUrl?: string;
+  webUrl?: string;
+  filteredArgv: string[];
+}
+
+export function extractUrlFlags(argv: string[]): ExtractedUrlFlags {
   let apiUrl: string | undefined;
+  let webUrl: string | undefined;
   const filtered: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg.startsWith('--api-url=')) {
-      apiUrl = arg.slice(10).trim();
-    } else if (arg === '--api-url' && i + 1 < argv.length) {
+    if (arg.startsWith('--api-url=') || arg.startsWith('--server=')) {
+      apiUrl = arg.slice(arg.indexOf('=') + 1).trim();
+    } else if ((arg === '--api-url' || arg === '--server') && i + 1 < argv.length) {
       apiUrl = argv[++i].trim();
-    } else if (arg.startsWith('--server=')) {
-      apiUrl = arg.slice(9).trim();
-    } else if (arg === '--server' && i + 1 < argv.length) {
-      apiUrl = argv[++i].trim();
+    } else if (arg.startsWith('--web-url=') || arg.startsWith('--app-url=')) {
+      webUrl = arg.slice(arg.indexOf('=') + 1).trim();
+    } else if ((arg === '--web-url' || arg === '--app-url') && i + 1 < argv.length) {
+      webUrl = argv[++i].trim();
     } else {
       filtered.push(arg);
     }
   }
-  return { apiUrl, filteredArgv: filtered };
+  return { apiUrl, webUrl, filteredArgv: filtered };
+}
+
+export function extractApiUrlFlag(argv: string[]): { apiUrl?: string; filteredArgv: string[] } {
+  const { apiUrl, filteredArgv } = extractUrlFlags(argv);
+  return { apiUrl, filteredArgv };
 }
 
 export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise<number> {
-  const { apiUrl, filteredArgv } = extractApiUrlFlag(rawArgv);
+  const { apiUrl, webUrl, filteredArgv } = extractUrlFlags(rawArgv);
   const config = loadAgentConfig();
 
   if (apiUrl) {
     config.apiUrl = apiUrl;
+  }
+  if (webUrl) {
+    config.webUrl = webUrl;
+  }
+  if (apiUrl || webUrl) {
     saveAgentConfig(config);
   }
 
@@ -56,34 +72,23 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
     return handleUpdateCommand(config.apiUrl, AGENT_VERSION);
   }
 
-  if (!command || command === 'gui') {
-    const handle = await startGuiServer(client, spooler);
-    launchGuiWindow(handle.url);
-    console.log(`SnapPrint Agent GUI running at: ${handle.url}`);
-
-    if (process.env.NODE_ENV === 'test' || Boolean(process.env.SNAPPRINT_TEST_MODE)) {
-      await handle.close();
-      return 0;
-    }
-
-    let tray: { stop: () => void } | null = null;
-    const handleExit = () => {
-      shutdownGracefully({ server: handle.server, tray, exitProcess: true });
-    };
-    tray = startSystemTray({ url: handle.url, onExit: handleExit });
-    hideConsoleWindow();
-
-    process.on('SIGINT', handleExit);
-    process.on('SIGTERM', handleExit);
-    return new Promise(() => {});
+  if (!command || command === 'desktop' || command === 'gui') {
+    return runDesktopSession({
+      config,
+      client,
+      spooler,
+      mode: command === 'gui' ? 'gui' : 'desktop',
+    });
   }
 
   if (command === 'config') {
-    if (apiUrl) {
-      console.log(`API URL updated to: ${config.apiUrl}`);
+    if (apiUrl || webUrl) {
+      if (apiUrl) console.log(`API URL updated to: ${config.apiUrl}`);
+      if (webUrl) console.log(`Web URL updated to: ${config.webUrl}`);
       return 0;
     }
     console.log(`Current API URL: ${config.apiUrl}`);
+    console.log(`Current Web URL: ${config.webUrl || getDefaultWebUrl()}`);
     return 0;
   }
 
@@ -202,25 +207,22 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
   }
 
   console.log(
-    'Usage: snapprint-agent [gui | update | pair <code?> [--api-url <url>] | enroll | start | status | printers | sync | unpair | config | version]'
+    'Usage: snapprint-agent [desktop | gui | update | pair <code?> [--api-url <url>] [--web-url <url>] | enroll | start | status | printers | sync | unpair | config | version]'
   );
   return 1;
 }
 
 export function isCliMainModule(targetPath?: string): boolean {
-  const target = targetPath || process.argv[1] || '';
-  const normalized = target.replace(/\\/g, '/').toLowerCase();
+  const target = (targetPath || process.argv[1] || '').replace(/\\/g, '/').toLowerCase();
+  const suffixes = [
+    'cli.ts',
+    'cli.js',
+    'snapprint-agent.bundle.cjs',
+    'snapprint-agent.exe',
+    '/snapprint-agent',
+  ];
   return (
-    normalized.endsWith('/cli.ts') ||
-    normalized.endsWith('/cli.js') ||
-    normalized.endsWith('cli.ts') ||
-    normalized.endsWith('cli.js') ||
-    normalized.endsWith('/snapprint-agent.bundle.cjs') ||
-    normalized.endsWith('snapprint-agent.bundle.cjs') ||
-    normalized.endsWith('/snapprint-agent.exe') ||
-    normalized.endsWith('snapprint-agent.exe') ||
-    normalized.endsWith('/snapprint-agent') ||
-    normalized.endsWith('snapprint-agent') ||
+    suffixes.some((s) => target.endsWith(s) || target === s) ||
     Boolean(process.env.SNAPPRINT_AGENT_STANDALONE)
   );
 }

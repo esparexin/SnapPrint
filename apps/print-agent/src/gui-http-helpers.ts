@@ -1,21 +1,50 @@
 import { spawn } from 'node:child_process';
 import { IncomingMessage, ServerResponse } from 'node:http';
 
-export function launchGuiWindow(url: string, platform = process.platform): void {
+export interface LaunchWindowOptions {
+  width?: number;
+  height?: number;
+  appId?: string;
+  platform?: NodeJS.Platform;
+  spawnImpl?: typeof spawn;
+}
+
+export function launchAppWindow(url: string, options: LaunchWindowOptions = {}): void {
+  const platform = options.platform ?? process.platform;
+  const width = options.width ?? 1280;
+  const height = options.height ?? 820;
+  const appId = options.appId ?? 'SnapPrintDesktop';
+  const spawner = options.spawnImpl ?? spawn;
+
   try {
     if (platform === 'win32') {
-      spawn('cmd.exe', ['/c', 'start', 'msedge', `--app=${url}`, '--window-size=500,700'], {
-        detached: true,
-        stdio: 'ignore',
-      });
+      spawner(
+        'cmd.exe',
+        [
+          '/c',
+          'start',
+          'msedge',
+          `--app=${url}`,
+          `--app-id=${appId}`,
+          `--window-size=${width},${height}`,
+        ],
+        {
+          detached: true,
+          stdio: 'ignore',
+        }
+      );
     } else if (platform === 'darwin') {
-      spawn('open', [url], { detached: true, stdio: 'ignore' });
+      spawner('open', [url], { detached: true, stdio: 'ignore' });
     } else {
-      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' });
+      spawner('xdg-open', [url], { detached: true, stdio: 'ignore' });
     }
   } catch {
     // Non-fatal if launcher cannot spawn
   }
+}
+
+export function launchGuiWindow(url: string, platform = process.platform): void {
+  launchAppWindow(url, { width: 500, height: 700, appId: 'SnapPrintAgentSettings', platform });
 }
 
 export async function parseJsonBody<T>(req: IncomingMessage): Promise<T | null> {

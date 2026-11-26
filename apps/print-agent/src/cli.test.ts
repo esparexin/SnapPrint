@@ -1,6 +1,6 @@
 import { tmpdir } from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AGENT_VERSION, extractApiUrlFlag, runCli } from './cli.js';
+import { AGENT_VERSION, extractApiUrlFlag, extractUrlFlags, runCli } from './cli.js';
 import { loadAgentConfig } from './config.js';
 
 describe('CLI Commands', () => {
@@ -43,6 +43,24 @@ describe('CLI Commands', () => {
       apiUrl: 'https://api.three.com',
       filteredArgv: ['status'],
     });
+
+    expect(
+      extractUrlFlags([
+        'desktop',
+        '--web-url=https://app.snapprint.in',
+        '--api-url=https://api.one.com',
+      ])
+    ).toEqual({
+      apiUrl: 'https://api.one.com',
+      webUrl: 'https://app.snapprint.in',
+      filteredArgv: ['desktop'],
+    });
+
+    expect(extractUrlFlags(['gui', '--app-url', 'https://custom-web.snapprint.in'])).toEqual({
+      apiUrl: undefined,
+      webUrl: 'https://custom-web.snapprint.in',
+      filteredArgv: ['gui'],
+    });
   });
 
   it('config command displays and updates API URL', async () => {
@@ -55,6 +73,19 @@ describe('CLI Commands', () => {
 
     const saved = loadAgentConfig();
     expect(saved.apiUrl).toBe('https://custom-print.example.com');
+    consoleLogSpy.mockRestore();
+  });
+
+  it('config command updates and displays Desktop Web URL', async () => {
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exitCode = await runCli(['config', '--web-url', 'https://custom-app.snapprint.in']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Web URL updated to: https://custom-app.snapprint.in')
+    );
+
+    const saved = loadAgentConfig();
+    expect(saved.webUrl).toBe('https://custom-app.snapprint.in');
     consoleLogSpy.mockRestore();
   });
 
@@ -100,6 +131,20 @@ describe('CLI Commands', () => {
   it('launches GUI server and closes cleanly in test mode', async () => {
     process.env.SNAPPRINT_TEST_MODE = '1';
     const exitCode = await runCli(['gui']);
+    expect(exitCode).toBe(0);
+    delete process.env.SNAPPRINT_TEST_MODE;
+  });
+
+  it('launches unified desktop session and closes cleanly in test mode', async () => {
+    process.env.SNAPPRINT_TEST_MODE = '1';
+    const exitCode = await runCli(['desktop']);
+    expect(exitCode).toBe(0);
+    delete process.env.SNAPPRINT_TEST_MODE;
+  });
+
+  it('defaults to desktop mode when no command is provided in test mode', async () => {
+    process.env.SNAPPRINT_TEST_MODE = '1';
+    const exitCode = await runCli([]);
     expect(exitCode).toBe(0);
     delete process.env.SNAPPRINT_TEST_MODE;
   });

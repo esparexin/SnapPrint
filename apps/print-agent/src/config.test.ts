@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   clearAgentConfig,
+  getDefaultWebUrl,
   loadAgentConfig,
   protectCredential,
   saveAgentConfig,
@@ -70,6 +71,7 @@ describe('Agent Config Store & Credential Protection', () => {
     saveAgentConfig(
       {
         apiUrl: 'http://custom-api:3001',
+        webUrl: 'https://app.snapprint.in',
         deviceToken: 'tok_to_unpair',
         studioId: 'std_unpair',
         deviceId: 'dev_unpair',
@@ -80,9 +82,21 @@ describe('Agent Config Store & Credential Protection', () => {
     unpairAgent(testConfigPath);
     const afterUnpair = loadAgentConfig(testConfigPath);
     expect(afterUnpair.apiUrl).toBe('http://custom-api:3001');
+    expect(afterUnpair.webUrl).toBe('https://app.snapprint.in');
     expect(afterUnpair.deviceToken).toBeUndefined();
     expect(afterUnpair.studioId).toBeUndefined();
     expect(afterUnpair.deviceId).toBeUndefined();
+  });
+
+  it('provides default web URL and loads configured webUrl', () => {
+    expect(getDefaultWebUrl()).toBeDefined();
+
+    saveAgentConfig(
+      { apiUrl: 'http://custom:3000', webUrl: 'https://custom.snapprint.in' },
+      testConfigPath
+    );
+    const loaded = loadAgentConfig(testConfigPath);
+    expect(loaded.webUrl).toBe('https://custom.snapprint.in');
   });
 
   it('clears agent config file', () => {

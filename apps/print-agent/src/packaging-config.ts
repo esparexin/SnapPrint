@@ -17,6 +17,7 @@ export interface PackagingMetadata {
   msiFileName: string;
   installSubdirectory: string;
   startupRegistryName: string;
+  shortcutName?: string;
 }
 
 export interface WixManifestOptions {
@@ -34,6 +35,7 @@ export const DEFAULT_PACKAGING_METADATA: PackagingMetadata = {
   msiFileName: 'SnapPrint-Print-Agent.msi',
   installSubdirectory: 'PrintAgent',
   startupRegistryName: 'SnapPrintAgent',
+  shortcutName: 'SnapPrint Desktop',
 };
 
 export function getPackageVersion(): string {
@@ -97,13 +99,13 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
           <Shortcut
             Id="ApplicationStartMenuShortcut"
             Directory="ApplicationProgramsFolder"
-            Name="${meta.productName}"
+            Name="${meta.shortcutName || meta.productName}"
             WorkingDirectory="INSTALLFOLDER"
             Advertise="yes" />
           <Shortcut
             Id="ApplicationDesktopShortcut"
             Directory="DesktopFolder"
-            Name="${meta.productName}"
+            Name="${meta.shortcutName || meta.productName}"
             WorkingDirectory="INSTALLFOLDER"
             Advertise="yes" />
         </File>
