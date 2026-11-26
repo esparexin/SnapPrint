@@ -211,3 +211,29 @@ export async function autoDispatchOrderPrintJobs(
 
   return created;
 }
+
+export async function resetFailedPrintJobsForOrder(
+  db: Db,
+  studioId: string,
+  orderId: string
+): Promise<{ resetCount: number; jobs: PrintJobDocument[] }> {
+  const now = new Date();
+  const updateResult = await db.collection<PrintJobDocument>(PRINT_JOBS_COLLECTION).updateMany(
+    { studioId, orderId, status: 'failed' },
+    {
+      $set: { status: 'pending', updatedAt: now },
+      $unset: { claimedByDeviceId: '', claimedAt: '', leaseExpiresAt: '', errorMessage: '' },
+    }
+  );
+
+  let resetCount = updateResult.modifiedCount;
+  let jobs = await findPrintJobsByOrderId(db, orderId);
+
+  if (resetCount === 0 && (!jobs.length || jobs.every((j) => j.status === 'failed'))) {
+    const dispatched = await autoDispatchOrderPrintJobs(db, studioId, orderId);
+    resetCount = dispatched.length;
+    jobs = dispatched;
+  }
+
+  return { resetCount, jobs };
+}

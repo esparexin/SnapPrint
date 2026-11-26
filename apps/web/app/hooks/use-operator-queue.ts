@@ -4,6 +4,7 @@ import {
   deleteOperatorOrderDocument,
   fetchOperatorOrderQueue,
   OrderApiError,
+  retryOperatorOrderPrint,
   updateOperatorOrderStatus,
 } from '../../src/order-client';
 import { useAutoDismiss } from './use-auto-dismiss';
@@ -110,6 +111,22 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
     setSuccessMessage(`Payment recorded for order #${updatedOrder.orderNumber}.`);
   }
 
+  async function handleRetryPrint(order: OrderRecord) {
+    setUpdatingId(order.orderId);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const res = await retryOperatorOrderPrint(studioId, order.orderId);
+      setSuccessMessage(
+        `Order #${order.orderNumber}: ${res.resetCount} print job(s) queued for physical printing.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to retry print jobs');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   return {
     orders,
     loading,
@@ -120,6 +137,7 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
     handleStatusChange,
     handleDeleteDocument,
     handlePaymentSuccess,
+    handleRetryPrint,
     clearFeedback: () => {
       setError(null);
       setSuccessMessage(null);

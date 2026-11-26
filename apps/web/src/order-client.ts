@@ -2,6 +2,8 @@ import {
   DocumentPrintConfig,
   OrderListResponse,
   OrderListResponseSchema,
+  OrderPrintRetryResponse,
+  OrderPrintRetryResponseSchema,
   OrderRecord,
   OrderRecordSchema,
   OrderSubmissionRequest,
@@ -216,4 +218,26 @@ export async function deleteOperatorOrderDocument(
   }
 
   return data;
+}
+
+export async function retryOperatorOrderPrint(
+  studioId: string,
+  orderId: string
+): Promise<OrderPrintRetryResponse> {
+  const url = `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders/${encodeURIComponent(orderId)}/retry-print`;
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new OrderApiError(
+      data?.message || `Failed to retry print jobs with status ${res.status}`,
+      res.status,
+      data?.code
+    );
+  }
+
+  return OrderPrintRetryResponseSchema.parse(data);
 }
