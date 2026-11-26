@@ -11,9 +11,7 @@ export default function PortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
-  const [initialMode, setInitialMode] = useState<'password' | 'email_otp' | 'register'>(
-    'email_otp'
-  );
+  const [initialMode, setInitialMode] = useState<'email_otp' | 'register'>('email_otp');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

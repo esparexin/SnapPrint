@@ -8,7 +8,6 @@
   "apps/api/src/printer-routes.ts": 249,
   "apps/web/app/about/page.tsx": 210,
   "apps/web/app/components/error-shell.tsx": 169,
-  "apps/web/app/components/login-form.tsx": 178,
   "apps/web/app/components/operator-portal.tsx": 190,
   "apps/web/app/components/order-queue-item.tsx": 220,
   "apps/web/app/components/owner-login-otp-form.tsx": 213,

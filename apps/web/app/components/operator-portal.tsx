@@ -15,7 +15,7 @@ import { StudioSelector } from './studio-selector';
 import { useStudioNames } from './use-studio-names';
 
 export interface OperatorPortalProps {
-  initialMode?: 'password' | 'email_otp' | 'register';
+  initialMode?: 'email_otp' | 'register';
   onAuthChange?: (auth: AuthResponse | null) => void;
   onClosePortal?: () => void;
   hideHeaderSignOut?: boolean;
