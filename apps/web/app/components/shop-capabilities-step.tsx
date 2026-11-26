@@ -1,22 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShopCapabilitiesConfig } from '@snapprint/contracts';
+import { PaperSize, ShopCapabilitiesConfig } from '@snapprint/contracts';
 import {
   StudioApiError,
   StudioOnboardingProfile,
   updateStudioProfile,
 } from '../../src/studio-client';
-import { getNoticeBoxStyle } from './operator-portal-styles';
-
-type PaperSize = 'A4' | 'A3' | 'A5' | 'legal' | 'letter';
+import { getNoticeBoxStyle, wizardBoxStyle } from './operator-portal-styles';
 
 const SIZES: { id: PaperSize; label: string }[] = [
   { id: 'A4', label: 'A4 (Default)' },
   { id: 'A3', label: 'A3' },
   { id: 'A5', label: 'A5' },
+  { id: 'A6', label: 'A6' },
   { id: 'legal', label: 'Legal' },
   { id: 'letter', label: 'Letter' },
+  { id: '4x6', label: '4×6″' },
+  { id: '5x7', label: '5×7″' },
 ];
 
 interface ShopCapabilitiesStepProps {
@@ -140,14 +141,7 @@ export function ShopCapabilitiesStep({
         </div>
       </div>
 
-      <div
-        style={{
-          background: '#f8fafc',
-          padding: '1rem',
-          borderRadius: '0.5rem',
-          border: '1px solid #e2e8f0',
-        }}
-      >
+      <div style={wizardBoxStyle}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.25rem' }}>
           Direct Auto-Print Page Threshold
         </h3>

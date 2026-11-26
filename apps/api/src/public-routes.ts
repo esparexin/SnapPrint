@@ -73,7 +73,26 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       hasOnlineAgent,
       hasActivePrinter: printerData.activePrinters.length > 0,
     });
-    const capabilities = printerData.capabilities;
+    const capabilities =
+      printerData.activePrinters.length > 0
+        ? {
+            ...printerData.capabilities,
+            supportsColor:
+              doc.capabilities?.supportsColor === false
+                ? false
+                : printerData.capabilities.supportsColor,
+          }
+        : {
+            supportsColor: doc.capabilities?.supportsColor ?? false,
+            supportsDuplex: false,
+            supportedDuplexSizes: [],
+            supportedPaperSizes:
+              doc.capabilities?.supportedPaperSizes &&
+              doc.capabilities.supportedPaperSizes.length > 0
+                ? doc.capabilities.supportedPaperSizes
+                : ['A4'],
+            customPaperSizes: [],
+          };
 
     const publicStudio = PublicStudioSchema.parse({
       id: studio.id,

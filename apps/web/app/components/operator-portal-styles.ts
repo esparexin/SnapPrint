@@ -76,3 +76,10 @@ export const getTabBtnStyle = (isSelected: boolean): CSSProperties => ({
   alignItems: 'center',
   justifyContent: 'center',
 });
+
+export const wizardBoxStyle: CSSProperties = {
+  background: '#f8fafc',
+  padding: '1rem',
+  borderRadius: '0.5rem',
+  border: '1px solid #e2e8f0',
+};

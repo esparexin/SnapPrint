@@ -91,4 +91,39 @@ describe('Studio Active Custom Paper Size Capabilities', () => {
     const { capabilities } = await getStudioActivePrintersAndCapabilities(ctx.db, studioId);
     expect(capabilities.customPaperSizes).toEqual([]);
   });
+
+  it('reconciles public studio capabilities from studio onboarding configuration when no physical printers are online', async () => {
+    const ctx = await createTestApp();
+    ctx.studios.push({
+      id: 'studio_onboarding_caps',
+      slug: 'onboarded-caps-studio',
+      name: 'Onboarded Caps Studio',
+      status: 'active',
+      settings: {
+        currency: 'INR',
+        maxActivePrinters: 2,
+        autoApproveOrders: false,
+      },
+      capabilities: {
+        autoPrintMaxPages: 30,
+        isAutoPrintEnabled: true,
+        supportsColor: true,
+        supportsBlackAndWhite: true,
+        supportedPaperSizes: ['A4', 'A3', 'legal'],
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await ctx.app.inject({
+      method: 'GET',
+      url: '/public/studios/onboarded-caps-studio',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.capabilities.supportedPaperSizes).toEqual(['A4', 'A3', 'legal']);
+    expect(body.capabilities.supportsColor).toBe(true);
+    expect(body.capabilities.customPaperSizes).toEqual([]);
+  });
 });

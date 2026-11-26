@@ -64,6 +64,7 @@ export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
         slug={slug}
         sessionToken={token}
         payment={payment}
+        customPaperSizes={capabilities?.customPaperSizes}
         onNewOrder={handleResetOrder}
       />
     );
@@ -120,6 +121,7 @@ export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
               setSubmittedOrder(order);
             }}
             isAcceptingOrders={isAcceptingOrders}
+            customPaperSizes={capabilities?.customPaperSizes}
           />
         </section>
       )}
@@ -132,6 +134,7 @@ export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
           filename={previewTarget.doc.filename}
           pageCount={previewTarget.doc.pageCount}
           config={previewTarget.config}
+          customPaperSizes={capabilities?.customPaperSizes}
           onClose={() => setPreviewAssetId(null)}
         />
       )}

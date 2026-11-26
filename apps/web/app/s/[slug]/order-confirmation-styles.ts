@@ -1,0 +1,55 @@
+import React from 'react';
+
+export const confirmationStyles = {
+  card: {
+    padding: '32px 20px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #bbf7d0',
+    borderRadius: '16px',
+    textAlign: 'center',
+    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+  } as React.CSSProperties,
+  orderBox: {
+    display: 'inline-block',
+    padding: '16px 32px',
+    backgroundColor: '#f0fdf4',
+    border: '2px dashed #86efac',
+    borderRadius: '12px',
+    marginBottom: '24px',
+  } as React.CSSProperties,
+  manifest: {
+    textAlign: 'left',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    padding: '16px',
+    marginBottom: '24px',
+  } as React.CSSProperties,
+  counterPickup: {
+    padding: '14px',
+    backgroundColor: '#eff6ff',
+    borderRadius: '8px',
+    fontSize: '13px',
+    color: '#1e40af',
+    marginBottom: '24px',
+    lineHeight: 1.5,
+  } as React.CSSProperties,
+  itemRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '8px',
+    fontSize: '13px',
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: '6px',
+  } as React.CSSProperties,
+  btn: {
+    padding: '10px 20px',
+    backgroundColor: '#0f172a',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  } as React.CSSProperties,
+};

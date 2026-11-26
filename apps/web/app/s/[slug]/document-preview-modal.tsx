@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DocumentPrintConfig } from '@snapprint/contracts';
+import { CustomPaperSizeSummary, DocumentPrintConfig } from '@snapprint/contracts';
 import { getPhotoPreviewUrl } from '../../../src/upload-client';
 import { useDialog } from '../../hooks/use-dialog';
 import { DocumentPreviewFooter } from './document-preview-footer';
@@ -14,6 +14,7 @@ interface DocumentPreviewModalProps {
   filename: string;
   pageCount: number;
   config: DocumentPrintConfig;
+  customPaperSizes?: readonly CustomPaperSizeSummary[];
   onClose: () => void;
 }
 
@@ -24,6 +25,7 @@ export function DocumentPreviewModal({
   filename,
   pageCount,
   config,
+  customPaperSizes,
   onClose,
 }: DocumentPreviewModalProps) {
   const previewUrl = getPhotoPreviewUrl(slug, sessionId, config.assetId, token);
@@ -59,6 +61,7 @@ export function DocumentPreviewModal({
           filename={filename}
           config={config}
           pageCount={pageCount}
+          customPaperSizes={customPaperSizes}
           onClose={onClose}
         />
 
