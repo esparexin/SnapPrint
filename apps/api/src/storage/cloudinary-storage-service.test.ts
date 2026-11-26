@@ -129,4 +129,42 @@ describe('CloudinaryStorageService', () => {
     const deleted = await storage.delete('studios/s1/sessions/sess1/asset1/missing.png');
     expect(deleted).toBe(false);
   });
+
+  it('resolves raw PDF asset on cold cache by querying raw upload first', async () => {
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/pdf' }),
+      arrayBuffer: async () => pdfBytes.buffer,
+    });
+
+    const storage = new CloudinaryStorageService(config, mockFetch as unknown as typeof fetch);
+    const key = 'studios/s1/sessions/sess1/asset1/document.pdf';
+    const result = await storage.get(key);
+
+    expect(result).not.toBeNull();
+    expect(result?.mimeType).toBe('application/pdf');
+    expect(result?.data).toEqual(pdfBytes);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://res.cloudinary.com/test_cloud/raw/upload/Snapprint/studios/s1/sessions/sess1/asset1/document.pdf'
+    );
+  });
+
+  it('attempts destroy with stripped public_id when deleting image with extension', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ result: 'ok' }),
+    });
+
+    const storage = new CloudinaryStorageService(config, mockFetch as unknown as typeof fetch);
+    const deleted = await storage.delete('studios/s1/sessions/sess1/asset1/photo.jpg');
+
+    expect(deleted).toBe(true);
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toContain('/image/destroy');
+    const body = init.body as FormData;
+    expect(body.get('public_id')).toBe('Snapprint/studios/s1/sessions/sess1/asset1/photo');
+  });
 });

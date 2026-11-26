@@ -6,7 +6,10 @@ import { canAuthorizePrint, canDeleteOrderDocument } from '@snapprint/domain';
 import { getDb } from './db.js';
 import { requireStudioPermission } from './plugins/authorization.js';
 import { findOrderById, markOrderDocumentDeleted } from './repositories/order.repository.js';
-import { findPhotoAssetById } from './repositories/photo-asset.repository.js';
+import {
+  findPhotoAssetById,
+  findPhotoAssetByStudioAndAssetId,
+} from './repositories/photo-asset.repository.js';
 import { findStudioById } from './repositories/studio.repository.js';
 import { getStorageService, StorageService } from './storage/storage-service.js';
 
@@ -75,7 +78,9 @@ export const operatorDocumentRoutes: FastifyPluginAsync<OperatorDocumentRouteOpt
         });
       }
 
-      const asset = await findPhotoAssetById(db, studioId, order.sessionId, assetId);
+      const asset =
+        (await findPhotoAssetById(db, studioId, order.sessionId, assetId)) ??
+        (await findPhotoAssetByStudioAndAssetId(db, studioId, assetId));
       if (!asset) {
         return reply.status(404).send({
           statusCode: 404,
@@ -138,7 +143,9 @@ export const operatorDocumentRoutes: FastifyPluginAsync<OperatorDocumentRouteOpt
         });
       }
 
-      const asset = await findPhotoAssetById(db, studioId, order.sessionId, assetId);
+      const asset =
+        (await findPhotoAssetById(db, studioId, order.sessionId, assetId)) ??
+        (await findPhotoAssetByStudioAndAssetId(db, studioId, assetId));
       if (asset) {
         await getEffectiveStorage().delete(asset.storageKey);
       }

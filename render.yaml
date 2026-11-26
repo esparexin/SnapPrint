@@ -28,3 +28,15 @@ services:
         sync: false
       - key: COOKIE_SECRET
         sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: snapprint
+      - key: STORAGE_BASE_DIR
+        sync: false

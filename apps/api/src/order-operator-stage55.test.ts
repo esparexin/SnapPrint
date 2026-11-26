@@ -145,6 +145,24 @@ describe('Stage 5.5 Operator Queue, Document Access & State Machine', () => {
     expect(JSON.parse(res.payload).code).toBe('PAYMENT_REQUIRED_BEFORE_PRINT');
   });
 
+  it('allows document download even if order.sessionId differs from asset creation session', async () => {
+    const { ctx, studioId, assetId, loginOperator } = await seedEnv('pay_at_counter');
+    const order = makeOrder('ord_rotated_session_1', 'ORD-109', studioId, 'submitted', 'PAID');
+    order.sessionId = 'sess_rotated_subsequent_999';
+    ctx.orders.push(order);
+
+    const cookie = await loginOperator();
+    const res = await ctx.app.inject({
+      method: 'GET',
+      url: `/studios/${studioId}/orders/ord_rotated_session_1/documents/${assetId}/download`,
+      cookies: { [cookie.name]: cookie.value },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toBe('application/pdf');
+    expect(res.body).toContain('%PDF-1.4');
+  });
+
   it('enforces order lifecycle transitions and records audit events', async () => {
     const { ctx, studioId, loginOperator } = await seedEnv('pay_at_counter');
     ctx.orders.push(

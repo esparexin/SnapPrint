@@ -25,6 +25,34 @@ export const INSECURE_DEV_SESSION_SECRET =
 export const INSECURE_DEV_COOKIE_SECRET =
   'dev-insecure-cookie-secret-must-be-at-least-32-chars-long!';
 
+export function parseCloudinaryUrl(urlStr?: string): {
+  cloudName?: string;
+  apiKey?: string;
+  apiSecret?: string;
+} {
+  if (!urlStr) return {};
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol === 'cloudinary:') {
+      return {
+        apiKey: parsed.username ? decodeURIComponent(parsed.username) : undefined,
+        apiSecret: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+        cloudName: parsed.hostname || parsed.host || undefined,
+      };
+    }
+  } catch {
+    const match = urlStr.match(/^cloudinary:\/\/([^:]+):([^@]+)@([^/?#]+)/);
+    if (match) {
+      return {
+        apiKey: decodeURIComponent(match[1]),
+        apiSecret: decodeURIComponent(match[2]),
+        cloudName: match[3],
+      };
+    }
+  }
+  return {};
+}
+
 const ConfigSchema = z
   .object({
     port: z.coerce.number().int().positive().default(3001),
@@ -32,6 +60,7 @@ const ConfigSchema = z
     nodeEnv: z.enum(['development', 'test', 'production']).default('development'),
     mongoUri: z.string().min(1).optional(),
     mongoDbName: z.string().min(1).default('snapprint'),
+    storageBaseDir: z.string().optional(),
     logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
     sessionSecret: z.string().min(32).default(INSECURE_DEV_SESSION_SECRET),
     cookieSecret: z.string().min(32).default(INSECURE_DEV_COOKIE_SECRET),
@@ -112,12 +141,14 @@ const ConfigSchema = z
 export type AppConfig = z.infer<typeof ConfigSchema>;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  const cloudinaryParsed = parseCloudinaryUrl(env.CLOUDINARY_URL);
   const result = ConfigSchema.safeParse({
     port: env.PORT,
     host: env.HOST,
     nodeEnv: env.NODE_ENV,
     mongoUri: env.MONGODB_URI,
     mongoDbName: env.MONGODB_DB_NAME,
+    storageBaseDir: env.STORAGE_BASE_DIR,
     logLevel: env.LOG_LEVEL,
     sessionSecret: env.SESSION_SECRET,
     cookieSecret: env.COOKIE_SECRET,
@@ -134,9 +165,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     zeptoMailBounceAddress: env.ZEPTOMAIL_BOUNCE_ADDRESS,
     zeptoMailFromEmail: env.ZEPTOMAIL_FROM_EMAIL,
     zeptoMailFromName: env.ZEPTOMAIL_FROM_NAME,
-    cloudinaryCloudName: env.CLOUDINARY_CLOUD_NAME,
-    cloudinaryApiKey: env.CLOUDINARY_API_KEY,
-    cloudinaryApiSecret: env.CLOUDINARY_API_SECRET,
+    cloudinaryCloudName: env.CLOUDINARY_CLOUD_NAME || cloudinaryParsed.cloudName,
+    cloudinaryApiKey: env.CLOUDINARY_API_KEY || cloudinaryParsed.apiKey,
+    cloudinaryApiSecret: env.CLOUDINARY_API_SECRET || cloudinaryParsed.apiSecret,
     cloudinaryUrl: env.CLOUDINARY_URL,
     cloudinaryFolder: env.CLOUDINARY_FOLDER,
     msg91AuthKey: env.MSG91_AUTHKEY,

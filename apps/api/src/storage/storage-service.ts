@@ -88,6 +88,7 @@ export interface StorageConfig {
   cloudinaryCloudName?: string;
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
+  cloudinaryUrl?: string;
   cloudinaryFolder?: string;
 }
 
@@ -95,12 +96,35 @@ export function createStorageService(
   config: StorageConfig = {},
   customFetch: typeof fetch = fetch
 ): StorageService {
-  if (config.cloudinaryCloudName && config.cloudinaryApiKey && config.cloudinaryApiSecret) {
+  let cloudName = config.cloudinaryCloudName;
+  let apiKey = config.cloudinaryApiKey;
+  let apiSecret = config.cloudinaryApiSecret;
+
+  if ((!cloudName || !apiKey || !apiSecret) && config.cloudinaryUrl) {
+    try {
+      const parsed = new URL(config.cloudinaryUrl);
+      if (parsed.protocol === 'cloudinary:') {
+        apiKey = apiKey || (parsed.username ? decodeURIComponent(parsed.username) : undefined);
+        apiSecret =
+          apiSecret || (parsed.password ? decodeURIComponent(parsed.password) : undefined);
+        cloudName = cloudName || parsed.hostname || parsed.host || undefined;
+      }
+    } catch {
+      const match = config.cloudinaryUrl.match(/^cloudinary:\/\/([^:]+):([^@]+)@([^/?#]+)/);
+      if (match) {
+        apiKey = apiKey || decodeURIComponent(match[1]);
+        apiSecret = apiSecret || decodeURIComponent(match[2]);
+        cloudName = cloudName || match[3];
+      }
+    }
+  }
+
+  if (cloudName && apiKey && apiSecret) {
     return new CloudinaryStorageService(
       {
-        cloudName: config.cloudinaryCloudName,
-        apiKey: config.cloudinaryApiKey,
-        apiSecret: config.cloudinaryApiSecret,
+        cloudName,
+        apiKey,
+        apiSecret,
         folder: config.cloudinaryFolder,
       },
       customFetch
