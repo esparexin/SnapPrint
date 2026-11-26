@@ -65,9 +65,7 @@ describe('Public Studio & Customer Session Routes', () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.headers['cache-control']).toBe(
-        'public, no-cache, must-revalidate, max-age=0'
-      );
+      expect(res.headers['cache-control']).toBe('public, no-cache, must-revalidate, max-age=0');
       const body = JSON.parse(res.payload);
       expect(PublicStudioSchema.safeParse(body).success).toBe(true);
       expect(body.id).toBe('studio_active_1');
@@ -92,9 +90,7 @@ describe('Public Studio & Customer Session Routes', () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.headers['cache-control']).toBe(
-        'public, no-cache, must-revalidate, max-age=0'
-      );
+      expect(res.headers['cache-control']).toBe('public, no-cache, must-revalidate, max-age=0');
       const body = JSON.parse(res.payload);
       expect(body.status).toBe('suspended');
       expect(body.maxActivePrinters).toBeUndefined();

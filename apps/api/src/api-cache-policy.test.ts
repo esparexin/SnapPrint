@@ -10,9 +10,21 @@ describe('HTTP Cache Policy Regression Tests (PR-1)', () => {
       .join('; ');
 
     const endpoints = [
-      { method: 'GET' as const, url: `/studios/${studioId}`, headers: { cookie: cookieHeader, 'x-studio-id': studioId } },
-      { method: 'GET' as const, url: `/studios/${studioId}/orders`, headers: { cookie: cookieHeader, 'x-studio-id': studioId } },
-      { method: 'GET' as const, url: `/studios/${studioId}/printers`, headers: { cookie: cookieHeader, 'x-studio-id': studioId } },
+      {
+        method: 'GET' as const,
+        url: `/studios/${studioId}`,
+        headers: { cookie: cookieHeader, 'x-studio-id': studioId },
+      },
+      {
+        method: 'GET' as const,
+        url: `/studios/${studioId}/orders`,
+        headers: { cookie: cookieHeader, 'x-studio-id': studioId },
+      },
+      {
+        method: 'GET' as const,
+        url: `/studios/${studioId}/printers`,
+        headers: { cookie: cookieHeader, 'x-studio-id': studioId },
+      },
       { method: 'GET' as const, url: '/auth/me', headers: { cookie: cookieHeader } },
     ];
 
@@ -41,8 +53,6 @@ describe('HTTP Cache Policy Regression Tests (PR-1)', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.headers['cache-control']).toBe(
-      'public, no-cache, must-revalidate, max-age=0'
-    );
+    expect(res.headers['cache-control']).toBe('public, no-cache, must-revalidate, max-age=0');
   });
 });
