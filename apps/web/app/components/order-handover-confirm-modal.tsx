@@ -40,26 +40,45 @@ export function OrderHandoverConfirmModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="handover-modal-title"
-      className="dialog-overlay max-md:items-end"
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div
-        className="dialog-content pb-safe max-md:rounded-b-none"
-        style={{ maxWidth: '560px', width: '100%', display: 'flex', flexDirection: 'column' }}
+        className="dialog-content pb-safe"
+        style={{
+          maxWidth: '560px',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
 
-        <div style={{ marginBottom: '12px' }}>
-          <h2
-            id="handover-modal-title"
-            style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#0f172a' }}
-          >
-            Customer Handover · Order {order.orderNumber}
-          </h2>
-          <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
-            Verify physical print output matches all job requirements before releasing to customer.
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '12px',
+          }}
+        >
+          <div>
+            <h2
+              id="handover-modal-title"
+              style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#0f172a' }}
+            >
+              Customer Handover · Order {order.orderNumber}
+            </h2>
+            <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
+              Verify physical print output matches all job requirements before releasing to
+              customer.
+            </div>
           </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
+            ✕
+          </button>
         </div>
 
         <OrderHandoverChecklist items={order.items} />

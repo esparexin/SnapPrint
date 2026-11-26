@@ -4,8 +4,9 @@ import React from 'react';
 import { OrderRecord, QuoteItemBreakdown } from '@snapprint/contracts';
 import { getOperatorDocumentDownloadUrl } from '../../src/order-client';
 import { useDialog } from '../hooks/use-dialog';
-import { OrderDocumentDeletedView } from './order-document-deleted-view';
+import { useOrderDocumentPreview } from '../hooks/use-order-document-preview';
 import { OrderPreviewActions } from './order-preview-actions';
+import { OrderPreviewBody } from './order-preview-body';
 
 interface OrderDocumentPreviewModalProps {
   studioId: string;
@@ -30,19 +31,33 @@ export function OrderDocumentPreviewModal({
 
   const isCompleted = order.status === 'completed';
   const isCancelled = order.status === 'cancelled';
+  const isDeleted = Boolean(item.isDeleted);
   const downloadUrl = getOperatorDocumentDownloadUrl(studioId, order.orderId, item.assetId);
+
+  const { blobUrl, mimeType, loading, error, loadPreview } = useOrderDocumentPreview(
+    studioId,
+    order.orderId,
+    item.assetId,
+    isCancelled || isDeleted
+  );
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="preview-modal-title"
-      className="dialog-overlay max-md:items-end"
+      className="dialog-overlay dialog-overlay-nested"
       onClick={handleBackdropClick}
     >
       <div
-        className="dialog-content pb-safe max-md:rounded-b-none"
-        style={{ maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column' }}
+        className="dialog-content pb-safe"
+        style={{
+          maxWidth: '680px',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '20px',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
@@ -85,56 +100,29 @@ export function OrderDocumentPreviewModal({
           </button>
         </div>
 
-        {isCancelled ? (
-          <div
-            role="status"
-            style={{
-              margin: '20px 0',
-              padding: '32px 20px',
-              textAlign: 'center',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              color: '#64748b',
-            }}
-          >
-            <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>🚫</span>
-            <strong
-              style={{ display: 'block', color: '#334155', marginBottom: '4px', fontSize: '15px' }}
-            >
-              Preview Unavailable
-            </strong>
-            <p style={{ margin: 0, fontSize: '13px' }}>
-              Document preview is unavailable because order {order.orderNumber} has been cancelled.
-            </p>
-          </div>
-        ) : item.isDeleted ? (
-          <OrderDocumentDeletedView />
-        ) : (
-          <div
-            style={{
-              margin: '10px 0',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              overflow: 'hidden',
-            }}
-          >
-            <iframe
-              src={downloadUrl}
-              title={item.filename}
-              style={{ width: '100%', height: '360px', border: 'none', backgroundColor: '#fff' }}
-            />
-          </div>
-        )}
+        <OrderPreviewBody
+          isCancelled={isCancelled}
+          isDeleted={isDeleted}
+          loading={loading}
+          error={error}
+          blobUrl={blobUrl}
+          mimeType={mimeType}
+          filename={item.filename}
+          orderNumber={order.orderNumber}
+          onRetry={loadPreview}
+        />
 
         <OrderPreviewActions
           isCompleted={isCompleted}
-          isDeleted={Boolean(item.isDeleted)}
+          isDeleted={isDeleted}
           isCancelled={isCancelled}
           filename={item.filename}
           orderId={order.orderId}
           assetId={item.assetId}
           downloadUrl={downloadUrl}
+          blobUrl={blobUrl}
+          hasError={Boolean(error)}
+          isLoading={loading}
           onClose={onClose}
           onDeleteDocument={onDeleteDocument}
         />

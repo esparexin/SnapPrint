@@ -1,10 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { OrderRecord } from '@snapprint/contracts';
 import {
+  clearStoredCustomerActiveOrder,
   clearStoredCustomerSession,
   ensureCustomerSession,
   fetchPublicStudio,
+  getActiveOrderStorageKey,
   getSessionStorageKey,
+  getStoredCustomerActiveOrder,
   getStoredCustomerSession,
+  storeCustomerActiveOrder,
   storeCustomerSession,
 } from './customer-client.js';
 
@@ -120,5 +125,57 @@ describe('Customer Client Layer', () => {
     // Verify clearStoredCustomerSession clears sessionStorage
     clearStoredCustomerSession('koramangala-prints');
     expect(getStoredCustomerSession('koramangala-prints')).toBeNull();
+  });
+
+  it('stores, retrieves and clears active customer order in sessionStorage', () => {
+    const mockStore: Record<string, string> = {};
+    const fakeSessionStorage = {
+      getItem: (key: string) => mockStore[key] || null,
+      setItem: (key: string, val: string) => {
+        mockStore[key] = val;
+      },
+      removeItem: (key: string) => {
+        delete mockStore[key];
+      },
+    };
+
+    vi.stubGlobal('sessionStorage', fakeSessionStorage);
+    vi.stubGlobal('window', { sessionStorage: fakeSessionStorage });
+
+    expect(getStoredCustomerActiveOrder('koramangala-prints')).toBeNull();
+
+    const mockOrder: OrderRecord = {
+      orderId: 'ord_active_12345678',
+      orderNumber: 'ORD-123456',
+      studioId: 'studio_koramangala',
+      sessionId: 'sess_1234567890abcdef123456',
+      idempotencyKey: 'idem_123',
+      status: 'submitted',
+      paymentStatus: 'UNPAID',
+      currency: 'INR',
+      totalSheets: 5,
+      totalAmountMinor: 1000,
+      paidAmountMinor: 0,
+      items: [],
+      events: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    storeCustomerActiveOrder('koramangala-prints', mockOrder);
+    expect(mockStore[getActiveOrderStorageKey('koramangala-prints')]).toBeDefined();
+
+    const retrieved = getStoredCustomerActiveOrder('koramangala-prints');
+    expect(retrieved?.orderId).toBe('ord_active_12345678');
+    expect(retrieved?.orderNumber).toBe('ORD-123456');
+
+    clearStoredCustomerActiveOrder('koramangala-prints');
+    expect(getStoredCustomerActiveOrder('koramangala-prints')).toBeNull();
+
+    // Verify clearStoredCustomerSession also removes active order
+    storeCustomerActiveOrder('koramangala-prints', mockOrder);
+    expect(getStoredCustomerActiveOrder('koramangala-prints')).not.toBeNull();
+    clearStoredCustomerSession('koramangala-prints');
+    expect(getStoredCustomerActiveOrder('koramangala-prints')).toBeNull();
   });
 });

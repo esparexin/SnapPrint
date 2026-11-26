@@ -9,7 +9,10 @@ interface OrderPreviewActionsProps {
   filename: string;
   orderId: string;
   assetId: string;
-  downloadUrl: string;
+  downloadUrl?: string;
+  blobUrl?: string | null;
+  hasError?: boolean;
+  isLoading?: boolean;
   onClose: () => void;
   onDeleteDocument: (orderId: string, assetId: string) => Promise<void>;
 }
@@ -22,9 +25,14 @@ export function OrderPreviewActions({
   orderId,
   assetId,
   downloadUrl,
+  blobUrl,
+  hasError = false,
+  isLoading = false,
   onClose,
   onDeleteDocument,
 }: OrderPreviewActionsProps) {
+  const isActionDisabled = isDeleted || isCancelled || hasError || isLoading;
+  const activeUrl = blobUrl || downloadUrl;
   return (
     <div
       style={{
@@ -62,9 +70,10 @@ export function OrderPreviewActions({
         )}
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
-        {!isDeleted && !isCancelled && (
+        {!isActionDisabled && activeUrl && (
           <a
-            href={downloadUrl}
+            href={activeUrl}
+            download={filename}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -80,7 +89,7 @@ export function OrderPreviewActions({
               alignItems: 'center',
             }}
           >
-            ⬇️ Open Full Page
+            ⬇️ Download File
           </a>
         )}
         <button

@@ -10,6 +10,25 @@ interface CustomPaperSizeFormProps {
   onSuccess: () => void;
 }
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  minHeight: '44px',
+  padding: '0 8px',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
+  fontSize: '14px',
+  backgroundColor: '#fff',
+  boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '11px',
+  fontWeight: 600,
+  color: '#475569',
+  marginBottom: '2px',
+};
+
 export function CustomPaperSizeForm({ studioId, printers, onSuccess }: CustomPaperSizeFormProps) {
   const [name, setName] = useState('');
   const [width, setWidth] = useState('');
@@ -46,64 +65,60 @@ export function CustomPaperSizeForm({ studioId, printers, onSuccess }: CustomPap
   return (
     <form
       onSubmit={handleAdd}
-      className="flex flex-wrap gap-2 items-end bg-slate-50 p-3 rounded-lg"
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        alignItems: 'flex-end',
+        backgroundColor: '#f8fafc',
+        padding: '12px',
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+      }}
     >
-      {error && <div className="w-full text-red-700 text-xs mb-1">{error}</div>}
-      <div className="flex-1 min-w-[120px]">
-        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Format Name</label>
+      {error && <div style={{ width: '100%', color: '#b91c1c', fontSize: '12px' }}>{error}</div>}
+      <div style={{ flex: '1 1 120px', minWidth: '120px' }}>
+        <label style={labelStyle}>Format Name</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. 12x18 Poster"
-          className="w-full min-h-[44px] px-2 rounded-md border border-slate-300 text-base md:text-sm bg-white"
+          style={inputStyle}
           required
         />
       </div>
-      <div className="w-16">
-        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Width</label>
-        <input
-          type="number"
-          step="0.1"
-          value={width}
-          onChange={(e) => setWidth(e.target.value)}
-          placeholder="12"
-          className="w-full min-h-[44px] px-2 rounded-md border border-slate-300 text-base md:text-sm bg-white"
-          required
-        />
-      </div>
-      <div className="w-16">
-        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Height</label>
-        <input
-          type="number"
-          step="0.1"
-          value={height}
-          onChange={(e) => setHeight(e.target.value)}
-          placeholder="18"
-          className="w-full min-h-[44px] px-2 rounded-md border border-slate-300 text-base md:text-sm bg-white"
-          required
-        />
-      </div>
-      <div className="w-20">
-        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Unit</label>
+      {[
+        { l: 'Width', v: width, s: setWidth, p: '12' },
+        { l: 'Height', v: height, s: setHeight, p: '18' },
+      ].map((f) => (
+        <div key={f.l} style={{ width: '64px' }}>
+          <label style={labelStyle}>{f.l}</label>
+          <input
+            type="number"
+            step="0.1"
+            value={f.v}
+            onChange={(e) => f.s(e.target.value)}
+            placeholder={f.p}
+            style={inputStyle}
+            required
+          />
+        </div>
+      ))}
+      <div style={{ width: '76px' }}>
+        <label style={labelStyle}>Unit</label>
         <select
           value={unit}
           onChange={(e) => setUnit(e.target.value as 'in' | 'mm')}
-          className="w-full min-h-[44px] px-1 rounded-md border border-slate-300 text-base md:text-sm bg-white"
+          style={inputStyle}
         >
           <option value="in">in</option>
           <option value="mm">mm</option>
         </select>
       </div>
-      <div className="flex-1 min-w-[120px]">
-        <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-          Physical Printer
-        </label>
-        <select
-          value={printerId}
-          onChange={(e) => setPrinterId(e.target.value)}
-          className="w-full min-h-[44px] px-2 rounded-md border border-slate-300 text-base md:text-sm bg-white"
-        >
+      <div style={{ flex: '1 1 120px', minWidth: '120px' }}>
+        <label style={labelStyle}>Physical Printer</label>
+        <select value={printerId} onChange={(e) => setPrinterId(e.target.value)} style={inputStyle}>
           {printers.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -114,7 +129,17 @@ export function CustomPaperSizeForm({ studioId, printers, onSuccess }: CustomPap
       <button
         type="submit"
         disabled={submitting || printers.length === 0}
-        className="min-h-[44px] px-4 rounded-md bg-sky-600 text-white font-semibold text-xs hover:bg-sky-700"
+        style={{
+          minHeight: '44px',
+          padding: '0 16px',
+          borderRadius: '6px',
+          backgroundColor: '#0284c7',
+          color: '#fff',
+          fontWeight: 600,
+          fontSize: '12px',
+          border: 'none',
+          cursor: submitting || printers.length === 0 ? 'not-allowed' : 'pointer',
+        }}
       >
         {submitting ? 'Adding...' : '+ Add Size'}
       </button>

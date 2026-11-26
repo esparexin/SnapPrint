@@ -203,6 +203,16 @@ describe('Studio Onboarding & Lifecycle API (apps/api)', () => {
     expect(verifyRes.statusCode).toBe(200);
     const body = JSON.parse(verifyRes.body);
     expect(body.isConfirmed).toBe(true);
+
+    const getRes = await app.inject({
+      method: 'GET',
+      url: `/studios/${studio.id}`,
+      headers: { cookie: `${cookie.name}=${cookie.value}` },
+    });
+    expect(getRes.statusCode).toBe(200);
+    const fetched = JSON.parse(getRes.body);
+    expect(fetched.studio.payment?.isRazorpayConfirmed).toBe(true);
+    expect(fetched.studio.payment?.razorpayKeyId).toBe('rzp_test_validkey');
   });
 
   it('POST /studios/:studioId/activate transitions shop to active when ready', async () => {

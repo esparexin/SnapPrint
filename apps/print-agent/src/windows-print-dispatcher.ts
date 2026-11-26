@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
-import { PaperSize } from '@snapprint/contracts';
+import { PaperSize, StandardPaperSizes } from '@snapprint/contracts';
 
 const COLOR_REGEX =
   /color|colour|cmyk|photo|l3150|l3250|l3110|l805|ecotank|inktank|deskjet|pixma|surecolor|envy/i;
@@ -17,9 +17,12 @@ export function inferIsColorSupported(name: string, driverName: string): boolean
 }
 
 export function inferSupportedPaperSizes(name: string, driverName: string): PaperSize[] {
-  return /mfp|laserjet|legal|office|copier/i.test(`${name} ${driverName}`)
-    ? ['A4', 'legal']
-    : ['A4'];
+  void name;
+  void driverName;
+  // Return the full standard paper catalogue as the initial inferred capability.
+  // The operator confirms real hardware constraints from the Printer & Page Setup
+  // dashboard — no name-based guessing needed here.
+  return [...StandardPaperSizes];
 }
 
 export const SUPPORTED_PRINT_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg'] as const;

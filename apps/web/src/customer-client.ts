@@ -1,6 +1,7 @@
 import {
   CustomerSessionResponse,
   CustomerSessionResponseSchema,
+  OrderRecord,
   PublicStudio,
   PublicStudioSchema,
 } from '@snapprint/contracts';
@@ -20,6 +21,10 @@ export class CustomerApiError extends Error {
 
 export function getSessionStorageKey(slug: string): string {
   return `snapprint_customer_session_${slug.trim().toLowerCase()}`;
+}
+
+export function getActiveOrderStorageKey(slug: string): string {
+  return `snapprint_active_order_${slug.trim().toLowerCase()}`;
 }
 
 /**
@@ -130,6 +135,45 @@ export function clearStoredCustomerSession(slug: string): void {
 
   try {
     window.sessionStorage.removeItem(getSessionStorageKey(slug));
+    window.sessionStorage.removeItem(getActiveOrderStorageKey(slug));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Persists actively placed order in sessionStorage.
+ */
+export function storeCustomerActiveOrder(slug: string, order: OrderRecord): void {
+  if (typeof window === 'undefined' || !window.sessionStorage) return;
+  try {
+    window.sessionStorage.setItem(getActiveOrderStorageKey(slug), JSON.stringify(order));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+/**
+ * Retrieves the currently active submitted order from sessionStorage.
+ */
+export function getStoredCustomerActiveOrder(slug: string): OrderRecord | null {
+  if (typeof window === 'undefined' || !window.sessionStorage) return null;
+  try {
+    const raw = window.sessionStorage.getItem(getActiveOrderStorageKey(slug));
+    if (!raw) return null;
+    return JSON.parse(raw) as OrderRecord;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clears cached active order from sessionStorage.
+ */
+export function clearStoredCustomerActiveOrder(slug: string): void {
+  if (typeof window === 'undefined' || !window.sessionStorage) return;
+  try {
+    window.sessionStorage.removeItem(getActiveOrderStorageKey(slug));
   } catch {
     /* ignore */
   }

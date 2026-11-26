@@ -152,17 +152,4 @@ export async function updateStudioSettings(
   );
 }
 
-export async function verifyStudioRazorpay(
-  studioId: string,
-  payload: { keyId: string; keySecret: string },
-  customFetch?: typeof fetch
-): Promise<{ isConfirmed: boolean; message: string }> {
-  return requestJson<{ isConfirmed: boolean; message: string }>(
-    `/studios/${encodeURIComponent(studioId)}/verify-razorpay`,
-    {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    },
-    customFetch
-  );
-}
+export { verifyStudioRazorpay } from './studio-client.js';

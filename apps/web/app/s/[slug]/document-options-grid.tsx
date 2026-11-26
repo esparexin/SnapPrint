@@ -6,7 +6,6 @@ import {
   DocumentPrintConfig,
   PaperSize,
   PaperSizes,
-  PrintOrientation,
   PrintSides,
   StudioPrintRatesContract,
   StudioPublicCapabilities,
@@ -33,14 +32,10 @@ const SIZES: Record<string, [string, string]> = {
   '5x7': ['5 × 7″ Photo', '5×7″'],
 };
 
-const ORIENTATION_OPTIONS: Array<{
-  value: PrintOrientation;
-  label: string;
-  icon: React.ReactNode;
-}> = [
-  { value: 'portrait', label: 'Portrait', icon: <PortraitIcon size={12} /> },
-  { value: 'landscape', label: 'Landscape', icon: <LandscapeIcon size={12} /> },
-  { value: 'auto', label: 'Auto', icon: <AutoOrientIcon size={12} /> },
+const ORIENTATION_OPTIONS = [
+  { value: 'portrait' as const, label: 'Portrait', icon: <PortraitIcon size={12} /> },
+  { value: 'landscape' as const, label: 'Landscape', icon: <LandscapeIcon size={12} /> },
+  { value: 'auto' as const, label: 'Auto', icon: <AutoOrientIcon size={12} /> },
 ];
 
 export function DocumentOptionsGrid({
@@ -52,19 +47,21 @@ export function DocumentOptionsGrid({
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
 
-  // Filter available paper sizes strictly to those configured in studio.printRates
+  // Primary: printer hardware sizes reported by backend capabilities.
+  // Secondary: sizes operator configured rates for.
   const availableSizes = useMemo(() => {
-    const configured = Object.keys(printRates || {}).filter((k) =>
-      PaperSizes.includes(k as (typeof PaperSizes)[number])
-    ) as PaperSize[];
-    return configured.length > 0 ? configured : (['A4'] as PaperSize[]);
-  }, [printRates]);
+    const valid = (s: string[]) =>
+      s.filter((k) => PaperSizes.includes(k as (typeof PaperSizes)[number])) as PaperSize[];
+    const caps = valid(capabilities?.supportedPaperSizes ?? []);
+    return caps.length > 0 ? caps : valid(Object.keys(printRates || {}));
+  }, [printRates, capabilities]);
 
   const effectivePaperSize = availableSizes.includes(config.paperSize)
     ? config.paperSize
     : availableSizes[0];
 
   function handleRateSelect(colorMode: ColorMode, sides: PrintSides) {
+    if (!effectivePaperSize) return;
     onUpdate({
       ...config,
       paperSize: effectivePaperSize,
@@ -73,11 +70,12 @@ export function DocumentOptionsGrid({
     });
   }
 
-  function handlePaperSizeChange(newSize: PaperSize) {
-    onUpdate({
-      ...config,
-      paperSize: newSize,
-    });
+  if (availableSizes.length === 0) {
+    return (
+      <div className="sf-field-label" style={{ color: '#94a3b8', padding: '8px 0' }}>
+        No print sizes configured. Contact the shop for assistance.
+      </div>
+    );
   }
 
   return (
@@ -85,13 +83,12 @@ export function DocumentOptionsGrid({
       <DocumentRateSelector
         colorMode={config.colorMode}
         sides={config.sides}
-        paperSize={effectivePaperSize}
+        paperSize={effectivePaperSize!}
         printRates={printRates}
         capabilities={capabilities}
         isSinglePage={isSinglePage}
         onSelect={handleRateSelect}
       />
-
       <div style={{ marginBottom: '10px' }}>
         <div className="sf-field-label">Paper Size</div>
         <div role="radiogroup" aria-label="Paper Size" className="sf-segmented-group">
@@ -104,7 +101,7 @@ export function DocumentOptionsGrid({
                 type="button"
                 role="radio"
                 aria-checked={active}
-                onClick={() => handlePaperSizeChange(size)}
+                onClick={() => onUpdate({ ...config, paperSize: size })}
                 className={active ? 'sf-seg-btn sf-seg-btn--active' : 'sf-seg-btn'}
               >
                 {label}
@@ -113,7 +110,6 @@ export function DocumentOptionsGrid({
           })}
         </div>
       </div>
-
       <div style={{ marginBottom: '10px' }}>
         <div className="sf-field-label">Orientation</div>
         <div role="radiogroup" aria-label="Orientation" className="sf-orientation-group">

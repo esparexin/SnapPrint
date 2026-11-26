@@ -58,6 +58,18 @@ describe('Storefront Markup, Accessibility & Helper Logic', () => {
         config: createDefaultConfig('asset_1234567890abcdef'),
         filename: 'report.pdf',
         pageCount: 4,
+        printRates: {
+          A4: {
+            black_and_white: { singleSidedMinor: 200, doubleSidedMinor: 300 },
+            color: { singleSidedMinor: 1000, doubleSidedMinor: 1800 },
+          },
+        },
+        capabilities: {
+          supportedPaperSizes: ['A4'],
+          supportsDuplex: false,
+          supportedDuplexSizes: [],
+          supportsColor: false,
+        },
         isRemoving: false,
         onUpdate: vi.fn(),
         onPreview: vi.fn(),

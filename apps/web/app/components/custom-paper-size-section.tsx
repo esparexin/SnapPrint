@@ -31,30 +31,59 @@ export function CustomPaperSizeSection({
   };
 
   return (
-    <div className="mt-5 border-t border-slate-200 pt-4">
-      <h3 className="text-base font-semibold text-slate-900 mb-1">Paper Sizes & Custom Formats</h3>
-      <p className="text-xs text-slate-500 mb-3">
+    <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#0f172a', margin: '0 0 4px' }}>
+        Paper Sizes &amp; Custom Formats
+      </h3>
+      <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 12px' }}>
         Standard print sizes are auto-supported. Add specialized roll or poster dimensions
         on-demand.
       </p>
 
-      <div className="flex flex-wrap gap-1.5 mb-4">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
         {standardSizes.map((s) => (
-          <span key={s.id} className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+          <span
+            key={s.id}
+            style={{
+              fontSize: '12px',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              backgroundColor: '#f1f5f9',
+              color: '#334155',
+            }}
+          >
             {s.name} ({s.widthMm}×{s.heightMm}mm)
           </span>
         ))}
         {customSizes.map((c) => (
           <span
             key={c.id}
-            className="text-xs px-2 py-0.5 rounded bg-sky-100 text-sky-800 flex items-center gap-1"
+            style={{
+              fontSize: '12px',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              backgroundColor: '#e0f2fe',
+              color: '#0369a1',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
           >
             ★ {c.name} ({c.width}×{c.height}
             {c.unit})
             <button
               type="button"
               onClick={() => handleDelete(c.id)}
-              className="text-sky-700 font-bold hover:text-red-600"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#0369a1',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '0 2px',
+                fontSize: '14px',
+              }}
+              aria-label={`Delete custom size ${c.name}`}
             >
               ×
             </button>

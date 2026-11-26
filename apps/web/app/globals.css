@@ -148,7 +148,38 @@ button {
   color: #0f172a;
 }
 
-@media (max-width: 640px) {
+/* Mobile Safe-Area and Responsive Utilities */
+.pb-safe {
+  padding-bottom: max(1.25rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
+}
+
+.duplex-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.duplex-card-selected {
+  border: 2px solid #0284c7;
+  background-color: #f0f9ff;
+}
+
+@media (max-width: 768px) {
+  .max-md\:items-end {
+    align-items: flex-end;
+  }
+  .max-md\:rounded-b-none {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
   .dialog-overlay {
     align-items: flex-end;
     padding: 0;

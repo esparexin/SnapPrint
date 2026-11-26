@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   OrderRecord,
   PublicPaymentSettings,
   StudioPrintRatesContract,
   StudioPublicCapabilities,
 } from '@snapprint/contracts';
-import { clearStoredCustomerSession } from '../../../src/customer-client';
+import {
+  clearStoredCustomerActiveOrder,
+  clearStoredCustomerSession,
+  getStoredCustomerActiveOrder,
+  storeCustomerActiveOrder,
+} from '../../../src/customer-client';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { createDefaultConfig, resolvePreviewTarget } from './document-print-workflow-helpers';
@@ -28,35 +33,34 @@ interface DocumentPrintWorkflowProps {
   capabilities?: StudioPublicCapabilities;
 }
 
-export function DocumentPrintWorkflow({
-  slug,
-  studioName,
-  sessionId = '',
-  token = '',
-  isNewSession = false,
-  payment,
-  isAcceptingOrders = true,
-  printRates,
-  capabilities,
-}: DocumentPrintWorkflowProps) {
+export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
   const {
-    items,
-    docs,
-    activeConfigs,
-    removingKeys,
-    feedback,
-    setFeedback,
-    handleFilesSelected,
-    handleCancelUpload,
-    handleRetryUpload,
-    handleDeleteItem,
-    handleRemoveAsset,
-    handleUpdateConfig,
-    resetDocuments,
-  } = useStorefrontDocuments(slug, sessionId, token, isNewSession);
-
+    slug,
+    studioName,
+    sessionId = '',
+    token = '',
+    isNewSession = false,
+    payment,
+    isAcceptingOrders = true,
+    printRates,
+    capabilities,
+  } = props;
   const [previewAssetId, setPreviewAssetId] = useState<string | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);
+
+  useEffect(() => {
+    const cached = getStoredCustomerActiveOrder(slug);
+    if (cached) setSubmittedOrder(cached);
+  }, [slug]);
+
+  const docState = useStorefrontDocuments(
+    slug,
+    sessionId,
+    token,
+    isNewSession,
+    Boolean(submittedOrder)
+  );
+  const { items, docs, activeConfigs, removingKeys, feedback, setFeedback } = docState;
   const previewTarget = resolvePreviewTarget(docs, activeConfigs, previewAssetId);
 
   if (submittedOrder) {
@@ -68,10 +72,11 @@ export function DocumentPrintWorkflow({
         sessionToken={token}
         payment={payment}
         onNewOrder={() => {
+          clearStoredCustomerActiveOrder(slug);
           clearStoredCustomerSession(slug);
           setSubmittedOrder(null);
           setPreviewAssetId(null);
-          resetDocuments();
+          docState.resetDocuments();
         }}
       />
     );
@@ -87,10 +92,10 @@ export function DocumentPrintWorkflow({
           items={items}
           feedback={feedback}
           onDismissFeedback={() => setFeedback(null)}
-          onFilesSelected={handleFilesSelected}
-          onRetry={handleRetryUpload}
-          onCancel={handleCancelUpload}
-          onDelete={handleDeleteItem}
+          onFilesSelected={docState.handleFilesSelected}
+          onRetry={docState.handleRetryUpload}
+          onCancel={docState.handleCancelUpload}
+          onDelete={docState.handleDeleteItem}
         />
       </section>
 
@@ -108,9 +113,9 @@ export function DocumentPrintWorkflow({
               printRates={printRates}
               capabilities={capabilities}
               isRemoving={removingKeys.includes(doc.assetId)}
-              onUpdate={(updated) => handleUpdateConfig(doc.assetId, updated)}
+              onUpdate={(updated) => docState.handleUpdateConfig(doc.assetId, updated)}
               onPreview={() => setPreviewAssetId(doc.assetId)}
-              onRemove={() => handleRemoveAsset(doc.assetId)}
+              onRemove={() => docState.handleRemoveAsset(doc.assetId)}
             />
           ))}
         </section>
@@ -123,7 +128,10 @@ export function DocumentPrintWorkflow({
             sessionId={sessionId}
             token={token}
             configs={activeConfigs}
-            onOrderSubmitted={(order) => setSubmittedOrder(order)}
+            onOrderSubmitted={(order) => {
+              storeCustomerActiveOrder(slug, order);
+              setSubmittedOrder(order);
+            }}
             isAcceptingOrders={isAcceptingOrders}
           />
         </section>

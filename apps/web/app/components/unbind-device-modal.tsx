@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { AgentDevice } from '../../src/printer-client';
 import { unbindAgentDevice } from '../../src/printer-capability-client';
-import { useDialog } from '../hooks/use-dialog';
+import { ModalSheetShell } from './modal-sheet-shell';
 
 interface UnbindDeviceModalProps {
   studioId: string;
@@ -22,8 +22,6 @@ export function UnbindDeviceModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { handleBackdropClick } = useDialog({ isOpen: true, onClose, enableSwipeDown: true });
-
   const handleUnbind = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -40,62 +38,107 @@ export function UnbindDeviceModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="unbind-modal-title"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
+    <ModalSheetShell
+      isOpen
+      isNested
+      onClose={onClose}
+      titleId="unbind-modal-title"
+      title={<span style={{ color: '#b91c1c' }}>Unbind Workstation Computer</span>}
+      maxWidth="480px"
+      contentStyle={{ padding: '20px' }}
     >
-      <div className="dialog-content max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 id="unbind-modal-title" className="text-lg font-bold text-red-700 mb-2">
-          Unbind Workstation Computer
-        </h2>
-        <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-          Are you sure you want to disconnect <strong>{device.hostname}</strong> (
-          {device.osPlatform})? Any physical printers attached solely to this PC will go offline.
-          You can pair a new computer anytime.
-        </p>
+      <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 0 14px', lineHeight: 1.5 }}>
+        Are you sure you want to disconnect <strong>{device.hostname}</strong> ({device.osPlatform}
+        )? Any physical printers attached solely to this PC will go offline. You can pair a new
+        computer anytime.
+      </p>
 
-        {error && (
-          <div role="alert" className="p-2.5 bg-red-50 text-red-700 rounded-md text-sm mb-4">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div
+          role="alert"
+          style={{
+            padding: '8px 12px',
+            backgroundColor: '#fef2f2',
+            color: '#b91c1c',
+            borderRadius: '6px',
+            fontSize: '0.8125rem',
+            marginBottom: '14px',
+          }}
+        >
+          {error}
+        </div>
+      )}
 
-        <form onSubmit={handleUnbind} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-              Reason for Unbinding (Optional)
-            </label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Purchased new laptop"
-              className="w-full min-h-[44px] px-3 rounded-md border border-slate-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
+      <form
+        onSubmit={handleUnbind}
+        style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+      >
+        <div>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#475569',
+              marginBottom: '4px',
+            }}
+          >
+            Reason for Unbinding (Optional)
+          </label>
+          <input
+            type="text"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. Purchased new laptop"
+            style={{
+              width: '100%',
+              minHeight: '44px',
+              padding: '0 12px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              fontSize: '14px',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
 
-          <div className="flex justify-end gap-2.5 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="min-h-[44px] px-4 rounded-md border border-slate-300 bg-white text-sm font-semibold hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="min-h-[44px] px-5 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
-            >
-              {submitting ? 'Unbinding...' : 'Confirm Unbind'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            style={{
+              minHeight: '44px',
+              padding: '0 16px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: '#ffffff',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{
+              minHeight: '44px',
+              padding: '0 20px',
+              borderRadius: '6px',
+              backgroundColor: '#dc2626',
+              color: '#ffffff',
+              border: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {submitting ? 'Unbinding...' : 'Confirm Unbind'}
+          </button>
+        </div>
+      </form>
+    </ModalSheetShell>
   );
 }

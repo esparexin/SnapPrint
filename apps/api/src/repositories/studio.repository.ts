@@ -32,6 +32,7 @@ export interface StudioDocument {
   workingHours?: ShopWorkingHours;
   capabilities?: ShopCapabilitiesConfig;
   payment?: ShopPaymentSettings;
+  razorpayKeySecret?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,7 @@ export function toStudioContract(doc: StudioDocument): Studio {
     name: doc.name,
     status: doc.status,
     settings: doc.settings,
+    payment: doc.payment,
     createdAt:
       doc.createdAt instanceof Date
         ? doc.createdAt.toISOString()

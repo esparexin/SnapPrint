@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CustomPaperSize, PrinterRole, StandardPaperSizeDefinition } from '@snapprint/contracts';
+import {
+  CustomPaperSize,
+  PrinterRole,
+  StandardPaperSizeDefinition,
+  Studio,
+} from '@snapprint/contracts';
 import {
   AgentDevice,
   fetchStudioDevices,
@@ -11,6 +16,7 @@ import {
   updatePrinterRole,
 } from '../../src/printer-client';
 import { fetchStudioPaperSizes } from '../../src/printer-capability-client';
+import { fetchStudio } from '../../src/workspace-client';
 
 export function usePrinterFleetData(studioId: string) {
   const [printers, setPrinters] = useState<StudioPrinter[]>([]);
@@ -18,6 +24,7 @@ export function usePrinterFleetData(studioId: string) {
   const [standardSizes, setStandardSizes] = useState<StandardPaperSizeDefinition[]>([]);
   const [customSizes, setCustomSizes] = useState<CustomPaperSize[]>([]);
   const [allowance, setAllowance] = useState<StudioFleetAllowance | null>(null);
+  const [studio, setStudio] = useState<Studio | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -26,16 +33,18 @@ export function usePrinterFleetData(studioId: string) {
     setLoading(true);
     setError(null);
     try {
-      const [pData, dData, sData] = await Promise.all([
+      const [pData, dData, sData, studioData] = await Promise.all([
         fetchStudioPrinters(studioId),
         fetchStudioDevices(studioId),
         fetchStudioPaperSizes(studioId).catch(() => ({ standard: [], custom: [] })),
+        fetchStudio(studioId).catch(() => null),
       ]);
       setPrinters(pData.printers);
       setAllowance(pData.allowance ?? null);
       setDevices(dData.devices);
       setStandardSizes(sData.standard || []);
       setCustomSizes(sData.custom || []);
+      setStudio(studioData?.studio ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load printers');
     } finally {
@@ -66,6 +75,7 @@ export function usePrinterFleetData(studioId: string) {
     standardSizes,
     customSizes,
     allowance,
+    studio,
     loading,
     error,
     updatingId,
