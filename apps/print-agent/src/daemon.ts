@@ -41,6 +41,10 @@ export class AgentDaemon {
     return this.isRevoked;
   }
 
+  public getJobTracker(): InFlightJobTracker {
+    return this.jobTracker;
+  }
+
   private handleAuthError(err: unknown): boolean {
     const msg = err instanceof Error ? err.message : String(err);
     if (
@@ -50,15 +54,13 @@ export class AgentDaemon {
       msg.includes('DEVICE_UNBOUND')
     ) {
       const log = this.options.logger || console.error;
-      log(
-        '[CRITICAL] Workstation unbound or revoked by studio operator. Halting operations. Run "enroll" to re-pair this computer.'
-      );
+      log('[CRITICAL] Workstation unbound or revoked by studio operator. Halting operations.');
       this.isRevoked = true;
       this.config = { ...this.config, deviceToken: undefined };
       try {
         saveAgentConfig(this.config, this.options.configPath);
       } catch {
-        // Non-fatal
+        // non-fatal
       }
       this.stop();
       return true;
@@ -78,7 +80,7 @@ export class AgentDaemon {
       try {
         saveAgentConfig(this.config, this.options.configPath);
       } catch {
-        // Non-fatal
+        // non-fatal
       }
       return result.count;
     } catch (err) {
@@ -110,19 +112,16 @@ export class AgentDaemon {
 
     const log = this.options.logger || console.warn;
     for (const job of interrupted) {
-      log(
-        `[Job ${job.jobId}] Found interrupted print job from prior run. Marking failed (uncertain dispatch).`
-      );
+      log(`[Job ${job.jobId}] Found interrupted print job from prior run. Marking failed.`);
+      const errMsg = 'UNCERTAIN_PHYSICAL_DISPATCH: Agent restarted while print job was in flight.';
       try {
-        await this.client.updateJobStatus(
-          token,
-          job.jobId,
-          'failed',
-          'UNCERTAIN_PHYSICAL_DISPATCH: Agent restarted while print job was in flight.'
-        );
+        await this.client.updateJobStatus(token, job.jobId, 'failed', errMsg);
       } catch {
-        // Best effort
+        // best effort
       }
+      this.jobTracker.recordRecentJob(job.jobId, job.printerName, job.filename, 'failed', {
+        errorMessage: errMsg,
+      });
       this.jobTracker.clearInFlight(job.jobId);
     }
   }
@@ -151,6 +150,9 @@ export class AgentDaemon {
       const tempFilePath = join(tmpdir(), `snapprint_${job.jobId}_${safeBase}${cleanExt}`);
 
       try {
+        this.jobTracker.recordRecentJob(job.jobId, job.printerName, job.filename, 'processing', {
+          copies: job.copies,
+        });
         await this.client.updateJobStatus(token, job.jobId, 'processing');
         await this.client.downloadJobDocument(token, job.jobId, tempFilePath);
 
@@ -162,25 +164,30 @@ export class AgentDaemon {
         });
         this.jobTracker.clearInFlight(job.jobId);
 
-        log(
-          `[Job ${job.jobId}] Spooler accepted document for ${job.printerName}. Spooler submission confirmed (physical output handled by hardware print engine).`
-        );
+        log(`[Job ${job.jobId}] Spooler accepted document for ${job.printerName}.`);
         await this.client.updateJobStatus(token, job.jobId, 'completed');
+        this.jobTracker.recordRecentJob(job.jobId, job.printerName, job.filename, 'completed', {
+          copies: job.copies,
+        });
         executedCount++;
       } catch (err) {
         this.jobTracker.clearInFlight(job.jobId);
         const errMsg = err instanceof Error ? err.message : String(err);
         log(`[Job ${job.jobId}] Spooler submission failed: ${errMsg}`);
+        this.jobTracker.recordRecentJob(job.jobId, job.printerName, job.filename, 'failed', {
+          errorMessage: errMsg,
+          copies: job.copies,
+        });
         try {
           await this.client.updateJobStatus(token, job.jobId, 'failed', errMsg);
         } catch {
-          // Ignore failure to report failure
+          // ignore
         }
       } finally {
         try {
           if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
         } catch {
-          // Cleanup
+          // cleanup
         }
       }
     }
@@ -203,38 +210,27 @@ export class AgentDaemon {
 
     if (this.isRevoked) return;
 
-    const heartbeatMs = this.options.heartbeatIntervalMs ?? 30_000;
-    const syncMs = this.options.syncIntervalMs ?? 30_000;
-    const pollMs = this.options.jobPollIntervalMs ?? 3_000;
-
-    this.heartbeatTimer = setInterval(() => {
-      this.heartbeatOnce().catch(() => {});
-    }, heartbeatMs);
-
-    this.syncTimer = setInterval(() => {
-      this.syncOnce().catch(() => {});
-    }, syncMs);
-
-    this.jobPollTimer = setInterval(() => {
-      this.pollAndExecuteJobsOnce().catch(() => {});
-    }, pollMs);
+    this.heartbeatTimer = setInterval(
+      () => this.heartbeatOnce().catch(() => {}),
+      this.options.heartbeatIntervalMs ?? 30_000
+    );
+    this.syncTimer = setInterval(
+      () => this.syncOnce().catch(() => {}),
+      this.options.syncIntervalMs ?? 30_000
+    );
+    this.jobPollTimer = setInterval(
+      () => this.pollAndExecuteJobsOnce().catch(() => {}),
+      this.options.jobPollIntervalMs ?? 3_000
+    );
   }
 
   stop(): void {
-    if (!this.isRunning) return;
     this.isRunning = false;
-
-    if (this.jobPollTimer) {
-      clearInterval(this.jobPollTimer);
-      this.jobPollTimer = null;
-    }
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
-    if (this.syncTimer) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = null;
-    }
+    if (this.syncTimer) clearInterval(this.syncTimer);
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    if (this.jobPollTimer) clearInterval(this.jobPollTimer);
+    this.syncTimer = null;
+    this.heartbeatTimer = null;
+    this.jobPollTimer = null;
   }
 }

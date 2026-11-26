@@ -4,8 +4,10 @@ import { AGENT_VERSION, applyAgentUpdate, checkForUpdate } from './agent-updater
 import { AgentClient } from './agent-client.js';
 import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
-import { FAVICON_BASE64, getGuiHtml } from './gui-html.js';
+import { FAVICON_BASE64 } from './gui-assets.js';
+import { getGuiHtml } from './gui-html.js';
 import { parseJsonBody, sendJson } from './gui-http-helpers.js';
+import { InFlightJobTracker } from './job-tracker.js';
 import { shutdownGracefully } from './lifecycle.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
@@ -22,12 +24,16 @@ export interface GuiServerHandle {
 export function createGuiServer(
   client: AgentClient,
   spooler: SpoolerAdapter,
-  configPath?: string
+  configPath?: string,
+  inFlightTracker?: InFlightJobTracker
 ): Server {
+  const localTracker = inFlightTracker || new InFlightJobTracker();
   let activeDaemon: AgentDaemon | null = null;
   const initialConfig = loadAgentConfig(configPath);
   if (initialConfig.deviceToken) {
-    activeDaemon = new AgentDaemon(initialConfig, client, spooler);
+    activeDaemon = new AgentDaemon(initialConfig, client, spooler, {
+      inFlightTracker: localTracker,
+    });
     activeDaemon.start().catch(() => {});
   }
 
@@ -67,6 +73,11 @@ export function createGuiServer(
       return sendJson(res, 200, { printers });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/jobs') {
+      const tracker = activeDaemon?.getJobTracker() || localTracker;
+      return sendJson(res, 200, { jobs: tracker.getRecentJobs() });
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/config') {
       const body = await parseJsonBody<{ apiUrl?: string }>(req);
       const newUrl = body?.apiUrl?.trim().replace(/\/+$/, '');
@@ -82,9 +93,7 @@ export function createGuiServer(
     if (req.method === 'POST' && url.pathname === '/api/pair') {
       const body = await parseJsonBody<{ pairingCode?: string }>(req);
       const code = body?.pairingCode?.trim().toUpperCase();
-      if (!code) {
-        return sendJson(res, 400, { message: 'Pairing code is required.' });
-      }
+      if (!code) return sendJson(res, 400, { message: 'Pairing code is required.' });
 
       const config = loadAgentConfig(configPath);
       const host = hostname();
@@ -108,7 +117,7 @@ export function createGuiServer(
         saveAgentConfig(config, configPath);
 
         if (activeDaemon) activeDaemon.stop();
-        activeDaemon = new AgentDaemon(config, client, spooler);
+        activeDaemon = new AgentDaemon(config, client, spooler, { inFlightTracker: localTracker });
         activeDaemon.start().catch(() => {});
 
         return sendJson(res, 200, {
@@ -136,7 +145,9 @@ export function createGuiServer(
       const config = loadAgentConfig(configPath);
       if (config.deviceToken) {
         if (!activeDaemon) {
-          activeDaemon = new AgentDaemon(config, client, spooler);
+          activeDaemon = new AgentDaemon(config, client, spooler, {
+            inFlightTracker: localTracker,
+          });
           activeDaemon.start().catch(() => {});
         } else {
           await activeDaemon.syncOnce().catch(() => {});
@@ -180,9 +191,10 @@ export async function startGuiServer(
   client: AgentClient,
   spooler: SpoolerAdapter,
   preferredPort = 48900,
-  configPath?: string
+  configPath?: string,
+  inFlightTracker?: InFlightJobTracker
 ): Promise<GuiServerHandle> {
-  const server = createGuiServer(client, spooler, configPath);
+  const server = createGuiServer(client, spooler, configPath, inFlightTracker);
 
   return new Promise((resolve, reject) => {
     server.once('error', (err: NodeJS.ErrnoException) => {

@@ -67,6 +67,19 @@ describe('GUI Local Server & Endpoints', () => {
       const html = await res.text();
       expect(html).toContain('SnapPrint Print Agent');
       expect(html).toContain('Studio Connection');
+      expect(html).toContain('Live Print Queue');
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('GET /api/jobs returns list of recent print jobs', async () => {
+    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
+    try {
+      const res = await fetch(`${handle.url}/api/jobs`);
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as { jobs: unknown[] };
+      expect(Array.isArray(data.jobs)).toBe(true);
     } finally {
       await handle.close();
     }
