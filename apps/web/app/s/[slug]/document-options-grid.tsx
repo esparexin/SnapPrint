@@ -60,7 +60,7 @@ export function DocumentOptionsGrid({
   // Filter available paper sizes strictly to those configured in studio.printRates
   const availableSizes = useMemo(() => {
     const configured = Object.keys(printRates || {}).filter((k) =>
-      PaperSizes.includes(k as PaperSize)
+      PaperSizes.includes(k as (typeof PaperSizes)[number])
     ) as PaperSize[];
     return configured.length > 0 ? configured : (['A4'] as PaperSize[]);
   }, [printRates]);

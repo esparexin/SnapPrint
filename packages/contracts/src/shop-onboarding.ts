@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { StudioNameSchema, StudioSlugSchema, StudioStatusSchema } from './tenant.js';
+import { PaperSizeSchema } from './document-print.js';
 
 export const ReservedSlugs = [
   'admin',
@@ -101,7 +102,7 @@ export const ShopCapabilitiesConfigSchema = z.object({
   supportsColor: z.boolean().default(true),
   supportsBlackAndWhite: z.boolean().default(true),
   supportedPaperSizes: z
-    .array(z.enum(['A4', 'A3', 'A5', 'legal', 'letter']))
+    .array(PaperSizeSchema)
     .min(1)
     .default(['A4']),
 });
