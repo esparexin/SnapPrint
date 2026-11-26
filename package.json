@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api dev",
-    "build": "pnpm -r run build",
+    "clean": "tsx scripts/clean.ts",
+    "build": "tsx scripts/clean.ts && pnpm -r run build",
     "start": "pnpm --filter api start",
     "start:api": "pnpm --filter api start",
     "start:web": "pnpm --filter web start",

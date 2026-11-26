@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/cli.ts",
     "start": "tsx src/cli.ts",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "bundle": "tsx scripts/bundle-agent.ts",
     "build": "tsc && tsx scripts/bundle-agent.ts",
     "build:wix": "tsx scripts/build-windows-package.ts",

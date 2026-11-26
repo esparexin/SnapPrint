@@ -183,6 +183,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Purge build artifacts
+        run: pnpm clean
+
       - name: Run production builds
         run: pnpm build
 

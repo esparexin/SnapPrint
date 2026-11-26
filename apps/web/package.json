@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
+    "clean": "node -e \"fs.rmSync('.next',{recursive:true,force:true})\"",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"
