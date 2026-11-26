@@ -7,6 +7,7 @@ import {
   listStudioPrintersWithLiveness,
 } from './printer.repository.js';
 import { STUDIOS_COLLECTION, StudioDocument } from './studio.repository.js';
+import { listCustomPaperSizes } from './custom-paper-size.repository.js';
 
 export interface StudioFleetAllowance {
   registeredCount: number;
@@ -76,6 +77,7 @@ export function deriveCapabilitiesFromPrinters(
     supportsDuplex,
     supportedDuplexSizes,
     supportedPaperSizes: supportedPaperSizes.length > 0 ? supportedPaperSizes : ['A4'],
+    customPaperSizes: [],
   };
 }
 
@@ -97,14 +99,31 @@ export async function getStudioActivePrintersAndCapabilities(
   db: Db,
   studioId: string
 ): Promise<{ activePrinters: StudioPrinterDocument[]; capabilities: StudioPublicCapabilities }> {
-  const allPrinters = await listStudioPrintersWithLiveness(db, studioId);
+  const [allPrinters, allCustomSizes] = await Promise.all([
+    listStudioPrintersWithLiveness(db, studioId),
+    listCustomPaperSizes(db, studioId),
+  ]);
   const activePrinters = allPrinters.filter(
     (p) => (p.role === 'active_bw' || p.role === 'active_color') && p.status === 'online'
   );
 
+  const baseCaps = deriveCapabilitiesFromPrinters(activePrinters);
+  const customPaperSizes = allCustomSizes
+    .filter((c) => c.isEnabled && baseCaps.supportedPaperSizes.includes(c.id))
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      width: c.width,
+      height: c.height,
+      unit: c.unit,
+    }));
+
   return {
     activePrinters,
-    capabilities: deriveCapabilitiesFromPrinters(activePrinters),
+    capabilities: {
+      ...baseCaps,
+      customPaperSizes,
+    },
   };
 }
 
