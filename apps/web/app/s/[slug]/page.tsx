@@ -10,8 +10,9 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-// Enable edge revalidation every 60 seconds (ISR)
-export const revalidate = 60;
+// Enforce dynamic server rendering for real-time shop availability and pricing
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface StudioLandingPageProps {
   params: Promise<{ slug: string }>;

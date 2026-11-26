@@ -9,6 +9,7 @@ import {
   getSessionStorageKey,
   getStoredCustomerActiveOrder,
   getStoredCustomerSession,
+  getValidStoredCustomerActiveOrder,
   storeCustomerActiveOrder,
   storeCustomerSession,
 } from './customer-client.js';
@@ -44,7 +45,7 @@ describe('Customer Client Layer', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/public/studios/koramangala-prints'),
       expect.objectContaining({
-        next: { revalidate: 60, tags: ['studio-koramangala-prints'] },
+        cache: 'no-store',
       })
     );
   });
@@ -177,5 +178,63 @@ describe('Customer Client Layer', () => {
     expect(getStoredCustomerActiveOrder('koramangala-prints')).not.toBeNull();
     clearStoredCustomerSession('koramangala-prints');
     expect(getStoredCustomerActiveOrder('koramangala-prints')).toBeNull();
+  });
+
+  describe('getValidStoredCustomerActiveOrder', () => {
+    const mockOrder: OrderRecord = {
+      orderId: 'ord_active_12345678',
+      orderNumber: 'ORD-123456',
+      studioId: 'studio_koramangala',
+      sessionId: 'sess_123',
+      idempotencyKey: 'idem_123',
+      status: 'submitted',
+      paymentStatus: 'UNPAID',
+      currency: 'INR',
+      totalSheets: 5,
+      totalAmountMinor: 1000,
+      paidAmountMinor: 0,
+      items: [],
+      events: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it('purges and returns null for completed or cancelled cached orders', async () => {
+      storeCustomerActiveOrder('koramangala-prints', { ...mockOrder, status: 'completed' });
+      const res = await getValidStoredCustomerActiveOrder('koramangala-prints', 'sess_123', 'tok');
+      expect(res).toBeNull();
+      expect(getStoredCustomerActiveOrder('koramangala-prints')).toBeNull();
+    });
+
+    it('purges and returns null when server returns 404 for cached order', async () => {
+      storeCustomerActiveOrder('koramangala-prints', mockOrder);
+      const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+      const res = await getValidStoredCustomerActiveOrder(
+        'koramangala-prints',
+        'sess_123',
+        'tok',
+        mockFetch as unknown as typeof fetch
+      );
+      expect(res).toBeNull();
+      expect(getStoredCustomerActiveOrder('koramangala-prints')).toBeNull();
+    });
+
+    it('updates storage and returns fresh order when still active on server', async () => {
+      storeCustomerActiveOrder('koramangala-prints', mockOrder);
+      const freshOrder = { ...mockOrder, paymentStatus: 'PAID' as const };
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => freshOrder,
+      });
+      const res = await getValidStoredCustomerActiveOrder(
+        'koramangala-prints',
+        'sess_123',
+        'tok',
+        mockFetch as unknown as typeof fetch
+      );
+      expect(res?.paymentStatus).toBe('PAID');
+      expect(getStoredCustomerActiveOrder('koramangala-prints')?.paymentStatus).toBe('PAID');
+    });
   });
 });

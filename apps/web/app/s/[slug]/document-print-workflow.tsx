@@ -1,57 +1,42 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  OrderRecord,
-  PublicPaymentSettings,
-  StudioPrintRatesContract,
-  StudioPublicCapabilities,
-} from '@snapprint/contracts';
+import type { OrderRecord } from '@snapprint/contracts';
 import {
   clearStoredCustomerActiveOrder,
   clearStoredCustomerSession,
   getStoredCustomerActiveOrder,
+  getValidStoredCustomerActiveOrder,
   storeCustomerActiveOrder,
 } from '../../../src/customer-client';
 import { DocumentConfigForm } from './document-config-form';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { createDefaultConfig, resolvePreviewTarget } from './document-print-workflow-helpers';
+import { DocumentPrintWorkflowProps } from './document-print-workflow-types';
 import { OrderConfirmationView } from './order-confirmation-view';
 import { OrderSummaryCard } from './order-summary-card';
 import { PhotoUploader } from './photo-uploader';
 import { useStorefrontDocuments } from './use-storefront-documents';
 
-interface DocumentPrintWorkflowProps {
-  slug: string;
-  studioName: string;
-  sessionId?: string;
-  token?: string;
-  isNewSession?: boolean;
-  payment?: PublicPaymentSettings;
-  isAcceptingOrders?: boolean;
-  printRates?: StudioPrintRatesContract;
-  capabilities?: StudioPublicCapabilities;
-}
-
 export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
-  const {
-    slug,
-    studioName,
-    sessionId = '',
-    token = '',
-    isNewSession = false,
-    payment,
-    isAcceptingOrders = true,
-    printRates,
-    capabilities,
-  } = props;
+  const { slug, studioName, sessionId = '', token = '', isNewSession = false } = props;
+  const { payment, isAcceptingOrders = true } = props;
+  const { printRates, capabilities } = props;
   const [previewAssetId, setPreviewAssetId] = useState<string | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<OrderRecord | null>(null);
 
   useEffect(() => {
+    if (isNewSession) {
+      clearStoredCustomerActiveOrder(slug);
+      setSubmittedOrder(null);
+      return;
+    }
     const cached = getStoredCustomerActiveOrder(slug);
-    if (cached) setSubmittedOrder(cached);
-  }, [slug]);
+    if (cached && cached.status !== 'completed' && cached.status !== 'cancelled') {
+      setSubmittedOrder(cached);
+    }
+    getValidStoredCustomerActiveOrder(slug, sessionId, token).then(setSubmittedOrder);
+  }, [slug, sessionId, token, isNewSession]);
 
   const docState = useStorefrontDocuments(
     slug,
@@ -63,6 +48,14 @@ export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
   const { items, docs, activeConfigs, removingKeys, feedback, setFeedback } = docState;
   const previewTarget = resolvePreviewTarget(docs, activeConfigs, previewAssetId);
 
+  const handleResetOrder = () => {
+    clearStoredCustomerActiveOrder(slug);
+    clearStoredCustomerSession(slug);
+    setSubmittedOrder(null);
+    setPreviewAssetId(null);
+    docState.resetDocuments();
+  };
+
   if (submittedOrder) {
     return (
       <OrderConfirmationView
@@ -71,13 +64,7 @@ export function DocumentPrintWorkflow(props: DocumentPrintWorkflowProps) {
         slug={slug}
         sessionToken={token}
         payment={payment}
-        onNewOrder={() => {
-          clearStoredCustomerActiveOrder(slug);
-          clearStoredCustomerSession(slug);
-          setSubmittedOrder(null);
-          setPreviewAssetId(null);
-          docState.resetDocuments();
-        }}
+        onNewOrder={handleResetOrder}
       />
     );
   }

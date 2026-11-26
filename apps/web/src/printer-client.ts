@@ -90,6 +90,7 @@ export async function generateAgentPairingKey(
       data?.code
     );
   }
+  clearFleetStatusCache();
   return data;
 }
 
@@ -137,6 +138,7 @@ export async function updatePrinterRole(
       data?.code
     );
   }
+  clearFleetStatusCache();
   return data;
 }
 
@@ -179,6 +181,7 @@ export async function revokeAgentDevice(
   if (!res.ok) {
     throw new PrinterApiError(data?.message || 'Failed to revoke device', res.status, data?.code);
   }
+  clearFleetStatusCache();
   return data;
 }
 
@@ -188,9 +191,7 @@ export function computePrinterStatus(
   printers: readonly { status: string; deviceId?: string }[],
   devices: readonly { deviceId?: string; isOnline: boolean }[]
 ): ShopPrinterStatus {
-  if (!printers || printers.length === 0) {
-    return 'not_added';
-  }
+  if (!printers || printers.length === 0) return 'not_added';
   const onlineDeviceIds = new Set(
     devices
       .filter((d) => d.isOnline)
@@ -211,9 +212,10 @@ let cachedFleetPromise: {
   promise: Promise<{ printers: StudioPrinter[]; devices: AgentDevice[] }>;
 } | null = null;
 
-export function resetFleetStatusCacheForTests(): void {
+export function clearFleetStatusCache(): void {
   cachedFleetPromise = null;
 }
+export const resetFleetStatusCacheForTests = clearFleetStatusCache;
 
 export async function fetchStudioFleetStatus(
   studioId: string,
