@@ -41,8 +41,8 @@ export async function fetchPublicStudio(
     res = await customFetch(`${baseUrl}/public/studios/${encodeURIComponent(slug)}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      next: { revalidate: 60, tags: [`studio-${slug}`] },
-    } as RequestInit);
+      cache: 'no-store',
+    });
   } catch {
     throw new CustomerApiError('Unable to connect to studio server', 0, 'NETWORK_ERROR');
   }
@@ -176,6 +176,50 @@ export function clearStoredCustomerActiveOrder(slug: string): void {
     window.sessionStorage.removeItem(getActiveOrderStorageKey(slug));
   } catch {
     /* ignore */
+  }
+}
+
+/**
+ * Validates the cached active order against the server and cleans up terminal/invalid orders.
+ */
+export async function getValidStoredCustomerActiveOrder(
+  slug: string,
+  sessionId?: string,
+  token?: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<OrderRecord | null> {
+  const cached = getStoredCustomerActiveOrder(slug);
+  if (!cached) return null;
+
+  if (cached.status === 'completed' || cached.status === 'cancelled') {
+    clearStoredCustomerActiveOrder(slug);
+    return null;
+  }
+
+  if (!sessionId || !token || !cached.orderId) {
+    return cached;
+  }
+
+  try {
+    const url = `${getApiBaseUrl()}/public/studios/${encodeURIComponent(slug)}/sessions/${encodeURIComponent(sessionId)}/orders/${encodeURIComponent(cached.orderId)}`;
+    const res = await fetchImpl(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      clearStoredCustomerActiveOrder(slug);
+      return null;
+    }
+    const fresh = (await res.json()) as OrderRecord;
+    if (fresh.status === 'completed' || fresh.status === 'cancelled') {
+      clearStoredCustomerActiveOrder(slug);
+      return null;
+    }
+    storeCustomerActiveOrder(slug, fresh);
+    return fresh;
+  } catch {
+    return cached;
   }
 }
 
