@@ -95,6 +95,7 @@ export async function fetchOrderDetails(
   const res = await fetch(url, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
   });
 
   const data = await res.json().catch(() => null);
@@ -118,6 +119,7 @@ export async function fetchOperatorOrderQueue(
   const res = await fetch(url, {
     method: 'GET',
     credentials: 'include',
+    cache: 'no-store',
   });
 
   const data = await res.json().catch(() => null);

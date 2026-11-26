@@ -66,7 +66,7 @@ describe('Public Studio & Customer Session Routes', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['cache-control']).toBe(
-        'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
+        'public, no-cache, must-revalidate, max-age=0'
       );
       const body = JSON.parse(res.payload);
       expect(PublicStudioSchema.safeParse(body).success).toBe(true);
@@ -93,7 +93,7 @@ describe('Public Studio & Customer Session Routes', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['cache-control']).toBe(
-        'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
+        'public, no-cache, must-revalidate, max-age=0'
       );
       const body = JSON.parse(res.payload);
       expect(body.status).toBe('suspended');

@@ -83,6 +83,7 @@ export async function fetchCurrentUser(
     const res = await customFetch(`${baseUrl}/auth/me`, {
       method: 'GET',
       credentials: 'include',
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
 

@@ -97,7 +97,7 @@ export async function fetchCustomerPaymentHistory(
   const headers: Record<string, string> = {};
   if (token) headers['x-session-token'] = token;
 
-  const res = await fetch(url, { method: 'GET', headers });
+  const res = await fetch(url, { method: 'GET', headers, cache: 'no-store' });
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     throw new PaymentApiError(

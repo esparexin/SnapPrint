@@ -26,6 +26,7 @@ import { subscriptionRoutes } from './subscription-routes.js';
 import { webhookRoutes } from './webhook-routes.js';
 import { agentDownloadRoutes } from './agent-download-routes.js';
 import { MemoryStorageService, StorageService } from './storage/storage-service.js';
+import { registerSecurityAndCacheHeaders } from './security-headers.js';
 
 export interface TestAuthContext extends MockCollections {
   app: FastifyInstance;
@@ -65,6 +66,7 @@ export async function createTestApp(
   };
 
   const app = fastify();
+  registerSecurityAndCacheHeaders(app, testConfig.nodeEnv);
   await app.register(fastifyCookie, { secret: testConfig.cookieSecret });
   await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
   await app.register(authRoutes, { db: mock.db, config: testConfig });
