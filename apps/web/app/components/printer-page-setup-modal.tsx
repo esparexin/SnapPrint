@@ -12,6 +12,7 @@ import { fetchStudio } from '../../src/workspace-client';
 import { useDialog } from '../hooks/use-dialog';
 import { portalStyles } from './operator-portal-styles';
 import { AgentPairingModal } from './agent-pairing-modal';
+import { DuplexConfirmModal } from './duplex-confirm-modal';
 import { PrinterFleetFooter } from './printer-fleet-footer';
 import { PrinterFleetHeader } from './printer-fleet-header';
 import { PrinterFleetList } from './printer-fleet-list';
@@ -24,12 +25,7 @@ interface PrinterPageSetupModalProps {
   inShell?: boolean;
 }
 
-export function PrinterPageSetupModal({
-  studioId,
-  studioName,
-  onClose,
-  inShell = false,
-}: PrinterPageSetupModalProps) {
+export function PrinterPageSetupModal({ studioId, studioName, onClose, inShell = false }: PrinterPageSetupModalProps) {
   const [printers, setPrinters] = useState<StudioPrinter[]>([]);
   const [allowance, setAllowance] = useState<StudioFleetAllowance | null>(null);
   const [studio, setStudio] = useState<Studio | null>(null);
@@ -37,15 +33,13 @@ export function PrinterPageSetupModal({
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showPairingModal, setShowPairingModal] = useState(false);
+  const [printerForDuplex, setPrinterForDuplex] = useState<StudioPrinter | null>(null);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [fleet, studioData] = await Promise.all([
-        fetchStudioPrinters(studioId),
-        fetchStudio(studioId),
-      ]);
+      const [fleet, studioData] = await Promise.all([fetchStudioPrinters(studioId), fetchStudio(studioId)]);
       setPrinters(fleet.printers);
       if (fleet.allowance) setAllowance(fleet.allowance);
       if (studioData?.studio) setStudio(studioData.studio);
@@ -56,9 +50,7 @@ export function PrinterPageSetupModal({
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [studioId]);
+  useEffect(() => { loadData(); }, [studioId]);
 
   const handleRoleChange = async (printerId: string, role: PrinterRole) => {
     setUpdatingId(printerId);
@@ -73,11 +65,7 @@ export function PrinterPageSetupModal({
     }
   };
 
-  const { handleBackdropClick, swipeHandlers } = useDialog({
-    isOpen: !inShell,
-    onClose,
-    enableSwipeDown: true,
-  });
+  const { handleBackdropClick, swipeHandlers } = useDialog({ isOpen: !inShell, onClose, enableSwipeDown: true });
 
   const content = (
     <>
@@ -89,58 +77,30 @@ export function PrinterPageSetupModal({
         onClose={inShell ? undefined : onClose}
       />
       <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-        {error && (
-          <div role="alert" style={portalStyles.alert}>
-            {error}
-          </div>
-        )}
+        {error && <div role="alert" style={portalStyles.alert}>{error}</div>}
         <PrinterFleetList
           printers={printers}
           loading={loading}
           updatingId={updatingId}
           onRoleChange={handleRoleChange}
           onPairAgent={() => setShowPairingModal(true)}
+          onConfirmDuplex={(p) => setPrinterForDuplex(p)}
         />
         {!loading && printers.length > 0 && studio && (
           <PrinterPageSetupSection studioId={studioId} printers={printers} studio={studio} />
         )}
       </div>
-      <PrinterFleetFooter
-        loading={loading}
-        onRefresh={loadData}
-        onClose={inShell ? undefined : onClose}
-      />
-      {showPairingModal && (
-        <AgentPairingModal
-          studioId={studioId}
-          studioName={studioName}
-          onClose={() => setShowPairingModal(false)}
-        />
-      )}
+      <PrinterFleetFooter loading={loading} onRefresh={loadData} onClose={inShell ? undefined : onClose} />
+      {showPairingModal && <AgentPairingModal studioId={studioId} studioName={studioName} onClose={() => setShowPairingModal(false)} />}
+      {printerForDuplex && <DuplexConfirmModal studioId={studioId} printer={printerForDuplex} onClose={() => setPrinterForDuplex(null)} onConfirmed={loadData} />}
     </>
   );
 
-  if (inShell) {
-    return (
-      <div className="portal-section-card" style={{ display: 'flex', flexDirection: 'column' }}>
-        {content}
-      </div>
-    );
-  }
+  if (inShell) return <div className="portal-section-card" style={{ display: 'flex', flexDirection: 'column' }}>{content}</div>;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="printer-management-title"
-      className="dialog-overlay"
-      onClick={handleBackdropClick}
-    >
-      <div
-        className="dialog-content"
-        style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column' }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div role="dialog" aria-modal="true" aria-labelledby="printer-management-title" className="dialog-overlay" onClick={handleBackdropClick}>
+      <div className="dialog-content" style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
         <div {...swipeHandlers} className="dialog-drag-handle" aria-hidden="true" />
         {content}
       </div>

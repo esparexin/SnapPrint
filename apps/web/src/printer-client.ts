@@ -27,6 +27,7 @@ export interface StudioPrinter {
   capabilityProvenance?: CapabilityProvenance;
   status: PrinterStatus;
   isDefaultOsPrinter?: boolean;
+  deviceId?: string;
   lastSeenAt: string;
 }
 
