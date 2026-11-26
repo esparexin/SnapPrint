@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Studio } from '@snapprint/contracts';
 import { updateStudioProfile as updateProfileApi } from '../../src/studio-client';
 import { updateStudioSettings } from '../../src/workspace-client';
+import { useAutoDismiss } from '../hooks/use-auto-dismiss';
 import { ModalSheetShell } from './modal-sheet-shell';
 import { getNoticeBoxStyle } from './operator-portal-styles';
 import { ShopPaymentModalFooter } from './shop-payment-modal-footer';
@@ -31,6 +32,8 @@ export function ShopPaymentModal({
   const [isConfirmed, setIsConfirmed] = useState(p?.isRazorpayConfirmed ?? false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'error' | 'saved'; text: string } | null>(null);
+
+  useAutoDismiss(notice?.kind === 'saved' ? notice : null, () => setNotice(null));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

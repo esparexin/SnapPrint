@@ -10,6 +10,7 @@ import {
   verifySubscriptionPayment,
 } from '../../src/subscription-client';
 import { formatPlanLabel } from '../admin/admin-subscription-helpers';
+import { useAutoDismiss } from '../hooks/use-auto-dismiss';
 
 export interface UseStudioSubscriptionReturn {
   sub: StudioSubscriptionRecord | null;
@@ -27,6 +28,8 @@ export function useStudioSubscription(studioId: string): UseStudioSubscriptionRe
   const [loadingPlan, setLoadingPlan] = useState<SubscriptionPlanId | null>(null);
   const [activatingTrial, setActivatingTrial] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+
+  useAutoDismiss(notice?.kind === 'success' ? notice : null, () => setNotice(null));
 
   useEffect(() => {
     let mounted = true;

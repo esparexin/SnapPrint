@@ -6,6 +6,7 @@ import {
   OrderApiError,
   updateOperatorOrderStatus,
 } from '../../src/order-client';
+import { useAutoDismiss } from './use-auto-dismiss';
 
 export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | 'all') {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -13,6 +14,8 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useAutoDismiss(successMessage, () => setSuccessMessage(null));
 
   async function loadOrders() {
     setLoading(true);

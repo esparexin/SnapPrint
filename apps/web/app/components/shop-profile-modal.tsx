@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Studio } from '@snapprint/contracts';
 import { validateOptionalIndianMobile } from '../../src/mobile-validator';
 import { updateStudioProfile } from '../../src/workspace-client';
+import { useAutoDismiss } from '../hooks/use-auto-dismiss';
 import { ModalSheetShell } from './modal-sheet-shell';
 import { ShopProfileFields } from './shop-profile-fields';
 import { ShopProfileModalFooter } from './shop-profile-modal-footer';
@@ -33,6 +34,8 @@ export function ShopProfileModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
+
+  useAutoDismiss(savedNotice, () => setSavedNotice(false));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

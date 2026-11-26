@@ -5,6 +5,7 @@ import { PaperSize, Studio, StudioPrintRatesContract } from '@snapprint/contract
 import { DEFAULT_DOCUMENT_PRINT_RATES } from '@snapprint/domain';
 import { StudioPrinter } from '../../src/printer-client';
 import { WorkspaceApiError, updateStudioSettings } from '../../src/workspace-client';
+import { useAutoDismiss } from '../hooks/use-auto-dismiss';
 import { getNoticeBoxStyle } from './operator-portal-styles';
 import { ShopPrintRatesFields } from './shop-print-rates-fields';
 
@@ -44,6 +45,8 @@ export function PrinterPageSetupSection({
   const [printRates, setPrintRates] = useState<StudioPrintRatesContract>(initialRates);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'error' | 'saved'; text: string } | null>(null);
+
+  useAutoDismiss(notice?.kind === 'saved' ? notice : null, () => setNotice(null));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

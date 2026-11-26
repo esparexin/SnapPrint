@@ -3,21 +3,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AllowedMimeType, DocumentPrintConfig } from '@snapprint/contracts';
 import { ensureCustomerSession, getStoredCustomerActiveOrder } from '../../../src/customer-client';
+import { useAutoDismiss } from '../../hooks/use-auto-dismiss';
 import * as docHelpers from './document-print-workflow-helpers';
 import { UploadItem } from './photo-item-card';
 
 export function useStorefrontDocuments(
-  slug: string,
-  sessionId: string,
-  token: string,
-  isNewSession = false,
-  hasActiveOrder = false
+  slug: string, sessionId: string, token: string,
+  isNewSession = false, hasActiveOrder = false
 ) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [configs, setConfigs] = useState<DocumentPrintConfig[]>([]);
   const [removingKeys, setRemovingKeys] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<docHelpers.WorkflowFeedback | null>(null);
   const removingRef = useRef<Set<string>>(new Set());
+
+  useAutoDismiss(feedback?.kind === 'success' ? feedback : null, () => setFeedback(null));
 
   useEffect(() => {
     let mounted = true;
