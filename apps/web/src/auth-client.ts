@@ -106,6 +106,11 @@ export async function fetchCurrentUser(
   }
 }
 
+/**
+ * ARCHITECTURAL RULE: Password-based authentication is disabled for interactive user flows.
+ * SnapPrint exclusively uses passwordless Email OTP authentication for operators and owners.
+ * Do not use loginOperator with email + password in production UI. Use requestOwnerLoginOtp/verifyOwnerLoginOtp instead.
+ */
 export async function loginOperator(
   credentials: LoginRequest,
   customFetch: typeof fetch = fetch

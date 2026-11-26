@@ -37,7 +37,12 @@ export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (app, opts
   const getEffectiveDb = (): Db => opts?.db ?? getDb();
   const getEffectiveConfig = (): AppConfig => opts?.config ?? loadConfig();
 
-  // POST /auth/login - Operator login with scrypt verification, rate-limiting & session cookie
+  /**
+   * ARCHITECTURAL RULE: Password-based interactive sign-in is disabled.
+   * SnapPrint exclusively uses passwordless Email OTP authentication (/auth/login/otp/*).
+   * Do not use email + password for user sign-in in production UI flows.
+   * Preserved for automated backend test suite backwards-compatibility.
+   */
   app.post(
     '/auth/login',
     { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },

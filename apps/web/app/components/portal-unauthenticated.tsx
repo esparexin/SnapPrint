@@ -2,14 +2,20 @@
 
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
-import { LoginForm } from './login-form';
 import { OwnerLoginOtpForm } from './owner-login-otp-form';
 import { OwnerRegisterForm } from './owner-register-form';
+
+/**
+ * ARCHITECTURAL RULE & SSOT:
+ * SnapPrint exclusively uses passwordless Email OTP authentication for operators and owners.
+ * Interactive password authentication is disabled across all user-facing flows.
+ * DO NOT use or re-enable email + password authentication anywhere in user flows.
+ */
 
 interface PortalUnauthenticatedProps {
   errorBanner: string | null;
   onSuccess: (auth: AuthResponse) => void;
-  initialMode?: 'password' | 'email_otp' | 'register';
+  initialMode?: 'email_otp' | 'register';
 }
 
 const cardStyle: CSSProperties = {
@@ -24,27 +30,12 @@ const cardStyle: CSSProperties = {
   boxSizing: 'border-box',
 };
 
-const switchRowStyle: CSSProperties = {
-  maxWidth: '400px',
-  margin: '0.5rem auto',
-  textAlign: 'center',
-  fontSize: '0.8125rem',
-};
-
-const switchLinkBtnStyle: CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#2563eb',
-  cursor: 'pointer',
-  padding: 0,
-};
-
 export function PortalUnauthenticated({
   errorBanner,
   onSuccess,
   initialMode = 'email_otp',
 }: PortalUnauthenticatedProps) {
-  const [authMode, setAuthMode] = useState<'password' | 'email_otp' | 'register'>(initialMode);
+  const [authMode, setAuthMode] = useState<'email_otp' | 'register'>(initialMode);
   const [prefilledEmail, setPrefilledEmail] = useState('');
 
   useEffect(() => {
@@ -76,31 +67,9 @@ export function PortalUnauthenticated({
           onSuccess={onSuccess}
           onSwitchToLogin={() => setAuthMode('email_otp')}
         />
-      ) : authMode === 'password' ? (
-        <div>
-          <LoginForm onSuccess={onSuccess} />
-          <div style={switchRowStyle}>
-            <button
-              type="button"
-              onClick={() => setAuthMode('email_otp')}
-              style={switchLinkBtnStyle}
-            >
-              Owner Email OTP Sign In
-            </button>
-            {' · '}
-            <button
-              type="button"
-              onClick={() => setAuthMode('register')}
-              style={switchLinkBtnStyle}
-            >
-              Register
-            </button>
-          </div>
-        </div>
       ) : (
         <OwnerLoginOtpForm
           onSuccess={onSuccess}
-          onSwitchToPasswordLogin={() => setAuthMode('password')}
           onSwitchToRegister={(email) => {
             if (email) setPrefilledEmail(email);
             setAuthMode('register');
