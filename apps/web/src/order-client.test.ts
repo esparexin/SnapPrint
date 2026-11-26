@@ -189,4 +189,33 @@ describe('Order & Quotation Client', () => {
       expect((err as OrderApiError).code).toBe('AGENT_OFFLINE');
     }
   });
+
+  it('fetchOperatorDocumentBlob fetches document blob and maps headers or throws on error', async () => {
+    const { fetchOperatorDocumentBlob } = await import('./order-client.js');
+    const mockBlob = new Blob(['%PDF-1.4 sample content'], { type: 'application/pdf' });
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/pdf' }),
+      blob: async () => mockBlob,
+    });
+
+    const result = await fetchOperatorDocumentBlob('std_1', 'ord_1', 'asset_1');
+    expect(result.mimeType).toBe('application/pdf');
+    expect(result.blob).toBe(mockBlob);
+
+    // Error case
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 410,
+      json: async () => ({
+        code: 'DOCUMENT_DELETED',
+        message: 'Preview unavailable — document deleted',
+      }),
+    });
+
+    await expect(fetchOperatorDocumentBlob('std_1', 'ord_1', 'asset_1')).rejects.toThrow(
+      'Preview unavailable — document deleted'
+    );
+  });
 });

@@ -140,6 +140,32 @@ export function getOperatorDocumentDownloadUrl(
   return `${API_BASE}/studios/${encodeURIComponent(studioId)}/orders/${encodeURIComponent(orderId)}/documents/${encodeURIComponent(assetId)}/download`;
 }
 
+export async function fetchOperatorDocumentBlob(
+  studioId: string,
+  orderId: string,
+  assetId: string,
+  customFetch: typeof fetch = fetch
+): Promise<{ blob: Blob; mimeType: string }> {
+  const url = getOperatorDocumentDownloadUrl(studioId, orderId, assetId);
+  const res = await customFetch(url, {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new OrderApiError(
+      data?.message || `Failed to fetch document preview (HTTP ${res.status})`,
+      res.status,
+      data?.code
+    );
+  }
+
+  const mimeType = res.headers.get('content-type') || 'application/pdf';
+  const blob = await res.blob();
+  return { blob, mimeType };
+}
+
 export async function updateOperatorOrderStatus(
   studioId: string,
   orderId: string,
