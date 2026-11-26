@@ -1,5 +1,6 @@
-import { Db, MongoClient } from 'mongodb';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Db } from 'mongodb';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createMockDb } from './mock-db.js';
 import { processOrderCancellationRefund } from './order-refund-helper.js';
 import { MockPaymentGatewayService } from './payment/gateway-service.js';
 import { createOrderRecord, findOrderById } from './repositories/order.repository.js';
@@ -7,24 +8,12 @@ import { createPaymentRecord, findPaymentById } from './repositories/payment.rep
 import { createStudio } from './repositories/studio.repository.js';
 
 describe('Order Cancellation Automated Refund Helper', () => {
-  let client: MongoClient;
   let db: Db;
   const studioId = 'studio-refund-test';
 
-  beforeAll(async () => {
-    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snapprint_test');
-    await client.connect();
-    db = client.db();
-  });
-
-  afterAll(async () => {
-    await client.close();
-  });
-
   beforeEach(async () => {
-    await db.collection('studios').deleteMany({ id: studioId });
-    await db.collection('orders').deleteMany({ studioId });
-    await db.collection('payments').deleteMany({ studioId });
+    const mock = createMockDb();
+    db = mock.db;
 
     await createStudio(db, {
       id: studioId,
