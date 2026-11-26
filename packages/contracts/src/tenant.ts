@@ -92,11 +92,21 @@ export const StudioSchema = z.object({
 
 export type Studio = z.infer<typeof StudioSchema>;
 
+export const CustomPaperSizeSummarySchema = z.object({
+  id: z.string().min(3).max(64),
+  name: z.string().trim().min(1).max(64),
+  width: z.number().positive().max(2000),
+  height: z.number().positive().max(2000),
+  unit: z.enum(['mm', 'in']),
+});
+export type CustomPaperSizeSummary = z.infer<typeof CustomPaperSizeSummarySchema>;
+
 export const StudioPublicCapabilitiesSchema = z.object({
   supportsDuplex: z.boolean().default(false),
   supportedDuplexSizes: z.array(z.string()).default([]),
   supportsColor: z.boolean().default(false),
   supportedPaperSizes: z.array(z.string()).default(['A4']),
+  customPaperSizes: z.array(CustomPaperSizeSummarySchema).optional(),
 });
 export type StudioPublicCapabilities = z.infer<typeof StudioPublicCapabilitiesSchema>;
 

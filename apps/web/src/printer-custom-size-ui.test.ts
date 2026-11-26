@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CustomPaperSize, PaperSize } from '@snapprint/contracts';
+import { CustomPaperSize, PaperSize, PaperSizeSchema } from '@snapprint/contracts';
 
 describe('Operator Dashboard Custom Paper Size UI Resolution', () => {
   const mockCustomSizes: CustomPaperSize[] = [
@@ -76,5 +76,34 @@ describe('Operator Dashboard Custom Paper Size UI Resolution', () => {
     expect(formatSizeDimensions('cps_poster_12x18', mockCustomSizes)).toBe('12×18in');
     expect(formatSizeDimensions('cps_badge_id', mockCustomSizes)).toBe('85×54mm');
     expect(formatSizeDimensions('A4', mockCustomSizes)).toBeUndefined();
+  });
+
+  it('validates PaperSizeSchema accepts custom sizes with cps_ prefix without dropping them', () => {
+    expect(PaperSizeSchema.safeParse('A4').success).toBe(true);
+    expect(PaperSizeSchema.safeParse('cps_poster_12x18').success).toBe(true);
+    expect(PaperSizeSchema.safeParse('cps_custom-size_1').success).toBe(true);
+    expect(PaperSizeSchema.safeParse('invalid_format').success).toBe(false);
+  });
+
+  it('resolves custom size label in storefront options grid mapping', () => {
+    const capabilities = {
+      supportsDuplex: false,
+      supportedDuplexSizes: [],
+      supportsColor: true,
+      supportedPaperSizes: ['A4', 'cps_poster_12x18'],
+      customPaperSizes: [
+        {
+          id: 'cps_poster_12x18',
+          name: '12x18 Poster',
+          width: 12,
+          height: 18,
+          unit: 'in' as const,
+        },
+      ],
+    };
+
+    const customMap = new Map(capabilities.customPaperSizes.map((c) => [c.id, c.name]));
+    expect(customMap.get('cps_poster_12x18')).toBe('12x18 Poster');
+    expect(customMap.get('A4')).toBeUndefined();
   });
 });

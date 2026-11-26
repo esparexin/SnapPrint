@@ -5,7 +5,7 @@ import {
   ColorMode,
   DocumentPrintConfig,
   PaperSize,
-  PaperSizes,
+  PaperSizeSchema,
   PrintSides,
   StudioPrintRatesContract,
   StudioPublicCapabilities,
@@ -51,10 +51,15 @@ export function DocumentOptionsGrid({
   // Secondary: sizes operator configured rates for.
   const availableSizes = useMemo(() => {
     const valid = (s: string[]) =>
-      s.filter((k) => PaperSizes.includes(k as (typeof PaperSizes)[number])) as PaperSize[];
+      s.filter((k) => PaperSizeSchema.safeParse(k).success) as PaperSize[];
     const caps = valid(capabilities?.supportedPaperSizes ?? []);
     return caps.length > 0 ? caps : valid(Object.keys(printRates || {}));
   }, [printRates, capabilities]);
+
+  const customMap = useMemo(
+    () => new Map(capabilities?.customPaperSizes?.map((c) => [c.id, c.name])),
+    [capabilities?.customPaperSizes]
+  );
 
   const effectivePaperSize = availableSizes.includes(config.paperSize)
     ? config.paperSize
@@ -94,7 +99,8 @@ export function DocumentOptionsGrid({
         <div role="radiogroup" aria-label="Paper Size" className="sf-segmented-group">
           {availableSizes.map((size) => {
             const active = effectivePaperSize === size;
-            const label = SIZES[size]?.[availableSizes.length === 1 ? 0 : 1] || size;
+            const label =
+              customMap.get(size) || SIZES[size]?.[availableSizes.length === 1 ? 0 : 1] || size;
             return (
               <button
                 key={size}
