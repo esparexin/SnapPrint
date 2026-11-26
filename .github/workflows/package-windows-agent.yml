@@ -134,6 +134,25 @@ jobs:
           }
           Write-Host "Installed agent executable verified successfully."
 
+      - name: Test in-place upgrade verification
+        shell: pwsh
+        run: |
+          $installedExe = "C:\Program Files\SnapPrint\PrintAgent\snapprint-agent.exe"
+          Write-Host "Verifying running agent status..."
+          & $installedExe status
+
+          Write-Host "Testing in-place upgrade re-run with MajorUpgrade scheduling..."
+          $msiPath = (Resolve-Path "apps/print-agent/dist/SnapPrint-Print-Agent.msi").Path
+          $upgradeLog = (Join-Path $env:RUNNER_TEMP "upgrade.log")
+          $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /qn /norestart /log `"$upgradeLog`"" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $upgradeLog) {
+              Get-Content $upgradeLog -Tail 50
+            }
+            throw "MSI in-place upgrade failed with exit code $($process.ExitCode)"
+          }
+          Write-Host "In-place upgrade verification succeeded without manual uninstallation."
+
       - name: Test Windows silent uninstallation
         shell: pwsh
         run: |
