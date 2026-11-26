@@ -56,6 +56,11 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(xml).toContain('Version="0.2.5"');
   });
 
+  it('supports unified desktop shortcuts branding in WiX manifest', () => {
+    const xml = generateWixManifest();
+    expect(xml).toContain('Name="SnapPrint Desktop"');
+  });
+
   it('isolates mutable agent credentials outside the Program Files installation directory', () => {
     const configPath = getDefaultConfigPath();
     expect(configPath.startsWith(homedir())).toBe(true);

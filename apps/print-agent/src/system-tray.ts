@@ -2,6 +2,7 @@ import { ChildProcess, spawn, spawnSync } from 'node:child_process';
 
 export interface SystemTrayOptions {
   url: string;
+  desktopUrl?: string;
   onExit?: () => void;
   platform?: NodeJS.Platform;
   spawnImpl?: typeof spawn;
@@ -34,8 +35,8 @@ export function hideConsoleWindow(
   }
 }
 
-export function buildTrayScript(url: string): string {
-  return [
+export function buildTrayScript(url: string, desktopUrl?: string): string {
+  const items: string[] = [
     'Add-Type -AssemblyName System.Windows.Forms',
     'Add-Type -AssemblyName System.Drawing',
     '$notify = New-Object System.Windows.Forms.NotifyIcon',
@@ -43,16 +44,37 @@ export function buildTrayScript(url: string): string {
     '$notify.Text = "SnapPrint Desktop Print Agent"',
     '$notify.Visible = $true',
     '$menu = New-Object System.Windows.Forms.ContextMenuStrip',
-    '$openItem = $menu.Items.Add("Open SnapPrint")',
-    `$openItem.add_Click({ Start-Process "msedge" "--app=${url} --window-size=500,700" })`,
+  ];
+
+  if (desktopUrl) {
+    items.push(
+      '$desktopItem = $menu.Items.Add("Open SnapPrint Desktop")',
+      `$desktopItem.add_Click({ Start-Process "msedge" "--app=${desktopUrl} --app-id=SnapPrintDesktop --window-size=1280,820" })`,
+      '$settingsItem = $menu.Items.Add("Printer Settings & Queue")',
+      `$settingsItem.add_Click({ Start-Process "msedge" "--app=${url} --app-id=SnapPrintAgentSettings --window-size=500,700" })`
+    );
+  } else {
+    items.push(
+      '$openItem = $menu.Items.Add("Open SnapPrint")',
+      `$openItem.add_Click({ Start-Process "msedge" "--app=${url} --window-size=500,700" })`
+    );
+  }
+
+  const primaryArgs = desktopUrl
+    ? `--app=${desktopUrl} --app-id=SnapPrintDesktop --window-size=1280,820`
+    : `--app=${url} --window-size=500,700`;
+
+  items.push(
     '$sep = New-Object System.Windows.Forms.ToolStripSeparator',
     '$menu.Items.Add($sep) | Out-Null',
     '$exitItem = $menu.Items.Add("Exit")',
     '$exitItem.add_Click({ $notify.Visible = $false; [System.Windows.Forms.Application]::Exit() })',
     '$notify.ContextMenuStrip = $menu',
-    `$notify.add_DoubleClick({ Start-Process "msedge" "--app=${url} --window-size=500,700" })`,
-    '[System.Windows.Forms.Application]::Run()',
-  ].join('\n');
+    `$notify.add_DoubleClick({ Start-Process "msedge" "${primaryArgs}" })`,
+    '[System.Windows.Forms.Application]::Run()'
+  );
+
+  return items.join('\n');
 }
 
 export function startSystemTray(options: SystemTrayOptions): SystemTrayHandle {
@@ -62,7 +84,7 @@ export function startSystemTray(options: SystemTrayOptions): SystemTrayHandle {
   }
 
   const spawner = options.spawnImpl ?? spawn;
-  const script = buildTrayScript(options.url);
+  const script = buildTrayScript(options.url, options.desktopUrl);
 
   let proc: ChildProcess | null = null;
   try {

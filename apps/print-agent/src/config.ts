@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 
 export interface AgentConfig {
   apiUrl: string;
+  webUrl?: string;
   deviceToken?: string;
   studioId?: string;
   deviceId?: string;
@@ -22,6 +23,10 @@ export function getDefaultConfigPath(): string {
 
 export function getDefaultApiUrl(): string {
   return process.env.SNAPPRINT_API_URL || 'https://snapprint.onrender.com';
+}
+
+export function getDefaultWebUrl(): string {
+  return process.env.SNAPPRINT_WEB_URL || 'https://snap.palnadu.dev';
 }
 
 export function protectCredential(plainText: string, platform = process.platform): string {
@@ -89,8 +94,14 @@ export function loadAgentConfig(customPath?: string): AgentConfig {
       apiUrl = getDefaultApiUrl();
     }
 
+    const webUrl =
+      typeof parsed.webUrl === 'string' && parsed.webUrl.trim()
+        ? parsed.webUrl.trim()
+        : getDefaultWebUrl();
+
     return {
       apiUrl,
+      webUrl,
       deviceToken,
       studioId: typeof parsed.studioId === 'string' ? parsed.studioId : undefined,
       deviceId: typeof parsed.deviceId === 'string' ? parsed.deviceId : undefined,
@@ -121,7 +132,7 @@ export function saveAgentConfig(config: AgentConfig, customPath?: string): void 
 
 export function unpairAgent(customPath?: string): void {
   const current = loadAgentConfig(customPath);
-  saveAgentConfig({ apiUrl: current.apiUrl }, customPath);
+  saveAgentConfig({ apiUrl: current.apiUrl, webUrl: current.webUrl }, customPath);
 }
 
 export function clearAgentConfig(customPath?: string): void {
