@@ -26,6 +26,7 @@ const VALID_PAYMENT_STATUSES: Set<OrderPaymentStatus> = new Set([
   'PARTIALLY_PAID',
   'PAID',
   'PAYMENT_FAILED',
+  'REFUNDED',
 ]);
 
 function toIsoString(val: unknown): string {

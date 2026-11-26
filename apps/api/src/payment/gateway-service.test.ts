@@ -37,4 +37,28 @@ describe('Payment Gateway Service Factory & Implementation', () => {
       'Razorpay configuration missing in production: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be configured.'
     );
   });
+
+  it('MockPaymentGatewayService generates mock refunds cleanly', async () => {
+    const mock = new MockPaymentGatewayService();
+    const refund = await mock.refundPayment({
+      paymentId: 'pay_test_123',
+      amountMinor: 4000,
+      notes: { orderId: 'ord_123', reason: 'order_cancelled' },
+    });
+    expect(refund.refundId).toContain('rfnd_mock_');
+    expect(refund.paymentId).toBe('pay_test_123');
+    expect(refund.amountMinor).toBe(4000);
+    expect(refund.status).toBe('processed');
+  });
+
+  it('RazorpayGatewayService executes refund in test mode with mock fallback', async () => {
+    const rzp = new RazorpayGatewayService('rzp_test_sample', 'sample_secret');
+    const refund = await rzp.refundPayment({
+      paymentId: 'pay_test_456',
+      amountMinor: 2500,
+      notes: { orderId: 'ord_456' },
+    });
+    expect(refund.refundId).toBeDefined();
+    expect(refund.amountMinor).toBe(2500);
+  });
 });

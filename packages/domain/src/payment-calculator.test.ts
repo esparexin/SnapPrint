@@ -42,6 +42,12 @@ describe('Payment Calculator', () => {
       expect(summary.paidAmountMinor).toBe(600);
       expect(summary.paymentStatus).toBe('PAID');
     });
+
+    it('returns REFUNDED when payments have been refunded and no succeeded payments remain', () => {
+      const summary = deriveOrderPaymentStatus(4000, [{ status: 'REFUNDED', amountMinor: 4000 }]);
+      expect(summary.paidAmountMinor).toBe(0);
+      expect(summary.paymentStatus).toBe('REFUNDED');
+    });
   });
 
   describe('isOrderEligibleForPayment', () => {

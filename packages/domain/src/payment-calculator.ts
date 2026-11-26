@@ -20,6 +20,11 @@ export function deriveOrderPaymentStatus(
     return { paidAmountMinor, paymentStatus: 'PARTIALLY_PAID' };
   }
 
+  const hasRefundedPayment = payments.some((p) => p.status === 'REFUNDED');
+  if (hasRefundedPayment) {
+    return { paidAmountMinor: 0, paymentStatus: 'REFUNDED' };
+  }
+
   const hasFailedPayment = payments.some((p) => p.status === 'FAILED');
   if (hasFailedPayment) {
     return { paidAmountMinor: 0, paymentStatus: 'PAYMENT_FAILED' };
@@ -43,7 +48,7 @@ export function isOrderEligibleForPayment(order: {
   if (order.status === 'cancelled') {
     return false;
   }
-  if (order.paymentStatus === 'PAID') {
+  if (order.paymentStatus === 'PAID' || order.paymentStatus === 'REFUNDED') {
     return false;
   }
   if (

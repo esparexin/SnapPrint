@@ -34,6 +34,7 @@ const paymentColors: Record<OrderPaymentStatus, { bg: string; text: string }> = 
   PARTIALLY_PAID: { bg: '#e0f2fe', text: '#0369a1' },
   UNPAID: { bg: '#fee2e2', text: '#991b1b' },
   PAYMENT_FAILED: { bg: '#fef2f2', text: '#b91c1c' },
+  REFUNDED: { bg: '#ede9fe', text: '#5b21b6' },
 };
 
 export function OrderQueueItem({

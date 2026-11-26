@@ -23,11 +23,14 @@ import {
 } from './repositories/order.repository.js';
 import { autoDispatchOrderPrintJobs } from './repositories/printer.repository.js';
 import { findStudioById } from './repositories/studio.repository.js';
+import { processOrderCancellationRefund } from './order-refund-helper.js';
+import { PaymentGatewayService } from './payment/gateway-service.js';
 import { StorageService } from './storage/storage-service.js';
 
 export interface OperatorOrderRouteOptions {
   db?: Db;
   storage?: StorageService;
+  gateway?: PaymentGatewayService;
 }
 
 export const operatorOrderRoutes: FastifyPluginAsync<OperatorOrderRouteOptions> = async (
@@ -131,6 +134,22 @@ export const operatorOrderRoutes: FastifyPluginAsync<OperatorOrderRouteOptions> 
         reason: bodyResult.data.notes,
         action: bodyResult.data.status === 'completed' ? 'handover_confirmed' : undefined,
       };
+
+      if (bodyResult.data.status === 'cancelled') {
+        const refundRes = await processOrderCancellationRefund(
+          db,
+          request.studioId!,
+          request.params.orderId,
+          bodyResult.data.notes,
+          opts?.gateway
+        );
+        if (refundRes.refunded) {
+          event.action = 'payment_refunded';
+          event.reason = bodyResult.data.notes
+            ? `${bodyResult.data.notes} | ${refundRes.reason}`
+            : refundRes.reason;
+        }
+      }
 
       const updated = await updateOrderStatus(
         db,

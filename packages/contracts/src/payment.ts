@@ -14,11 +14,18 @@ export const PaymentStatuses = [
   'FAILED',
   'CANCELLED',
   'EXPIRED',
+  'REFUNDED',
 ] as const;
 export const PaymentStatusSchema = z.enum(PaymentStatuses);
 export type PaymentStatus = z.infer<typeof PaymentStatusSchema>;
 
-export const OrderPaymentStatuses = ['UNPAID', 'PARTIALLY_PAID', 'PAID', 'PAYMENT_FAILED'] as const;
+export const OrderPaymentStatuses = [
+  'UNPAID',
+  'PARTIALLY_PAID',
+  'PAID',
+  'PAYMENT_FAILED',
+  'REFUNDED',
+] as const;
 export const OrderPaymentStatusSchema = z.enum(OrderPaymentStatuses);
 export type OrderPaymentStatus = z.infer<typeof OrderPaymentStatusSchema>;
 
@@ -35,6 +42,8 @@ export const PaymentRecordSchema = z.object({
   gatewayPaymentId: z.string().optional(),
   gatewaySignature: z.string().optional(),
   gatewayCapturedAt: z.string().datetime().optional(),
+  refundId: z.string().optional(),
+  refundedAt: z.string().datetime().optional(),
   recordedByUserId: UserIdSchema.optional(),
   notes: z.string().max(500).optional(),
   createdAt: z.string().datetime(),
