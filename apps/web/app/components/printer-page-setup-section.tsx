@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PaperSize, Studio, StudioPrintRatesContract } from '@snapprint/contracts';
+import { CustomPaperSize, PaperSize, Studio, StudioPrintRatesContract } from '@snapprint/contracts';
 import { DEFAULT_DOCUMENT_PRINT_RATES } from '@snapprint/domain';
 import { StudioPrinter } from '../../src/printer-client';
 import { WorkspaceApiError, updateStudioSettings } from '../../src/workspace-client';
@@ -13,6 +13,7 @@ interface PrinterPageSetupSectionProps {
   studioId: string;
   printers: StudioPrinter[];
   studio: Studio;
+  customSizes?: CustomPaperSize[];
 }
 
 function deriveSupportedSizes(printers: StudioPrinter[]): PaperSize[] {
@@ -37,6 +38,7 @@ export function PrinterPageSetupSection({
   studioId,
   printers,
   studio,
+  customSizes,
 }: PrinterPageSetupSectionProps) {
   const supportedSizes = deriveSupportedSizes(printers);
   const { supportsColor, supportsBlackAndWhite } = deriveCapabilities(printers);
@@ -85,6 +87,7 @@ export function PrinterPageSetupSection({
         <ShopPrintRatesFields
           printRates={printRates}
           supportedPaperSizes={supportedSizes}
+          customSizes={customSizes}
           supportsColor={supportsColor}
           supportsBlackAndWhite={supportsBlackAndWhite}
           onChange={setPrintRates}

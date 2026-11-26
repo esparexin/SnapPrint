@@ -50,3 +50,29 @@ export const portalStyles: Record<string, CSSProperties> = {
   },
   sectionHeading: { fontSize: '1.25rem', fontWeight: 600, margin: '0 0 1rem' },
 };
+
+export const DUPLEX_BADGES: Record<string, { label: string; bg: string; fg: string }> = {
+  supported: { label: '🔄 Duplex supported', bg: '#dcfce7', fg: '#166534' },
+  unsupported: { label: '⇥ Simplex only', bg: '#f1f5f9', fg: '#475569' },
+};
+export const UNVERIFIED_DUPLEX = { label: '⚠️ Duplex unverified', bg: '#fef3c7', fg: '#92400e' };
+export const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
+  active_bw: { bg: '#f0fdf4', color: '#166534' },
+  active_color: { bg: '#eff6ff', color: '#1d4ed8' },
+};
+
+export const getTabBtnStyle = (isSelected: boolean): CSSProperties => ({
+  minHeight: '44px',
+  padding: '6px 12px',
+  borderRadius: '6px',
+  border: isSelected ? '2px solid #0284c7' : '1px solid #cbd5e1',
+  backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
+  color: isSelected ? '#0369a1' : '#334155',
+  fontWeight: isSelected ? 700 : 500,
+  fontSize: '13px',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+});

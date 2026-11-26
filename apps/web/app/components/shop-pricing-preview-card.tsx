@@ -6,6 +6,7 @@ import { calculatePrintCostPerCopyMinor, SheetPricingRate } from '@snapprint/dom
 
 interface ShopPricingPreviewCardProps {
   paperSize: PaperSize;
+  sizeLabel?: string;
   bwRates?: SheetPricingRate;
   colorRates?: SheetPricingRate;
   supportsColor?: boolean;
@@ -19,6 +20,7 @@ const formatRs = (minor: number) => {
 
 export function ShopPricingPreviewCard({
   paperSize,
+  sizeLabel,
   bwRates,
   colorRates,
   supportsColor = true,
@@ -54,7 +56,7 @@ export function ShopPricingPreviewCard({
         }}
       >
         <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
-          👁️ Customer Quote Preview ({paperSize.toUpperCase()})
+          👁️ Customer Quote Preview ({sizeLabel || paperSize.toUpperCase()})
         </span>
         <span
           style={{

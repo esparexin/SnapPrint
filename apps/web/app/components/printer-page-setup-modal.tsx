@@ -80,7 +80,12 @@ export function PrinterPageSetupModal({
           onRefreshSizes={loadAll}
         />
         {!loading && printers.length > 0 && studio && (
-          <PrinterPageSetupSection studioId={studioId} printers={printers} studio={studio} />
+          <PrinterPageSetupSection
+            studioId={studioId}
+            printers={printers}
+            studio={studio}
+            customSizes={customSizes}
+          />
         )}
       </div>
       <PrinterFleetFooter
