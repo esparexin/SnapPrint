@@ -7,12 +7,15 @@ export interface PhysicalDimensions {
   heightInches: number;
 }
 
-export const PAPER_DIMENSIONS: Record<PaperSize, PhysicalDimensions> = {
+export const PAPER_DIMENSIONS: Record<string, PhysicalDimensions> = {
   A4: { widthMm: 210, heightMm: 297, widthInches: 8.27, heightInches: 11.69 },
   A3: { widthMm: 297, heightMm: 420, widthInches: 11.69, heightInches: 16.54 },
   A5: { widthMm: 148, heightMm: 210, widthInches: 5.83, heightInches: 8.27 },
+  A6: { widthMm: 105, heightMm: 148, widthInches: 4.13, heightInches: 5.83 },
   legal: { widthMm: 215.9, heightMm: 355.6, widthInches: 8.5, heightInches: 14.0 },
   letter: { widthMm: 215.9, heightMm: 279.4, widthInches: 8.5, heightInches: 11.0 },
+  '4x6': { widthMm: 101.6, heightMm: 152.4, widthInches: 4.0, heightInches: 6.0 },
+  '5x7': { widthMm: 127.0, heightMm: 177.8, widthInches: 5.0, heightInches: 7.0 },
 };
 
 export interface FitGeometryResult {
@@ -32,9 +35,10 @@ export function calculateFitGeometry(
   sourceWidthPx: number,
   sourceHeightPx: number,
   paperSize: PaperSize = 'A4',
-  desiredOrientation: PrintOrientation = 'portrait'
+  desiredOrientation: PrintOrientation = 'portrait',
+  customDimensions?: PhysicalDimensions
 ): FitGeometryResult {
-  const paper = PAPER_DIMENSIONS[paperSize] || PAPER_DIMENSIONS.A4;
+  const paper = customDimensions || PAPER_DIMENSIONS[paperSize] || PAPER_DIMENSIONS.A4;
   let targetWidth = paper.widthMm;
   let targetHeight = paper.heightMm;
 
