@@ -34,8 +34,7 @@ export function CustomPaperSizeSection({
     <div className="mt-5 border-t border-slate-200 pt-4">
       <h3 className="text-base font-semibold text-slate-900 mb-1">Paper Sizes & Custom Formats</h3>
       <p className="text-xs text-slate-500 mb-3">
-        Standard print sizes are auto-supported. Add specialized roll or poster dimensions
-        on-demand.
+        Standard print sizes are auto-supported. Add specialized roll or poster dimensions on-demand.
       </p>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
@@ -62,7 +61,7 @@ export function CustomPaperSizeSection({
         ))}
       </div>
 
-      <CustomPaperSizeForm studioId={studioId} printers={printers} onAdded={onRefreshSizes} />
+      <CustomPaperSizeForm studioId={studioId} printers={printers} onSuccess={onRefreshSizes} />
     </div>
   );
 }
