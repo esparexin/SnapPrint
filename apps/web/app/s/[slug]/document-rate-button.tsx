@@ -41,6 +41,33 @@ export function getBoxStyle(
   };
 }
 
+export function ModeHeader({ label, bg }: { label: string; bg: string }) {
+  return (
+    <div
+      style={{
+        fontSize: '11px',
+        fontWeight: 600,
+        color: '#334155',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '999px',
+          background: bg,
+          display: 'inline-block',
+        }}
+      />
+      {label}
+    </div>
+  );
+}
+
 export function DocumentRateOptionButton({
   label,
   sublabel,

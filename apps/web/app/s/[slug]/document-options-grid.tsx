@@ -11,6 +11,7 @@ import {
   StudioPublicCapabilities,
 } from '@snapprint/contracts';
 import { DocumentRateSelector } from './document-rate-selector';
+import { getPaperSizeButtonLabel } from './format-size-label';
 import { AutoOrientIcon, LandscapeIcon, PortraitIcon } from './storefront-icons';
 
 interface DocumentOptionsGridProps {
@@ -20,17 +21,6 @@ interface DocumentOptionsGridProps {
   capabilities?: StudioPublicCapabilities;
   onUpdate: (updated: DocumentPrintConfig) => void;
 }
-
-const SIZES: Record<string, [string, string]> = {
-  A4: ['A4 (Standard)', 'A4'],
-  A3: ['A3 (Large)', 'A3'],
-  A5: ['A5 (Compact)', 'A5'],
-  A6: ['A6', 'A6'],
-  legal: ['Legal', 'Legal'],
-  letter: ['Letter', 'Letter'],
-  '4x6': ['4 × 6″ Photo', '4×6″'],
-  '5x7': ['5 × 7″ Photo', '5×7″'],
-};
 
 const ORIENTATION_OPTIONS = [
   { value: 'portrait' as const, label: 'Portrait', icon: <PortraitIcon size={12} /> },
@@ -47,8 +37,6 @@ export function DocumentOptionsGrid({
 }: DocumentOptionsGridProps) {
   const isSinglePage = pageCount === 1;
 
-  // Primary: printer hardware sizes reported by backend capabilities.
-  // Secondary: sizes operator configured rates for.
   const availableSizes = useMemo(() => {
     const valid = (s: string[]) =>
       s.filter((k) => PaperSizeSchema.safeParse(k).success) as PaperSize[];
@@ -64,6 +52,17 @@ export function DocumentOptionsGrid({
   const effectivePaperSize = availableSizes.includes(config.paperSize)
     ? config.paperSize
     : availableSizes[0];
+
+  const hasColorRate = Boolean(printRates?.[effectivePaperSize]?.color || printRates?.A4?.color);
+  const isColorSupported = Boolean(
+    capabilities ? capabilities.supportsColor && (hasColorRate || !printRates) : hasColorRate
+  );
+
+  React.useEffect(() => {
+    if (!isColorSupported && config.colorMode === 'color') {
+      onUpdate({ ...config, colorMode: 'black_and_white' });
+    }
+  }, [isColorSupported, config.colorMode]);
 
   function handleRateSelect(colorMode: ColorMode, sides: PrintSides) {
     if (!effectivePaperSize) return;
@@ -99,8 +98,7 @@ export function DocumentOptionsGrid({
         <div role="radiogroup" aria-label="Paper Size" className="sf-segmented-group">
           {availableSizes.map((size) => {
             const active = effectivePaperSize === size;
-            const label =
-              customMap.get(size) || SIZES[size]?.[availableSizes.length === 1 ? 0 : 1] || size;
+            const label = getPaperSizeButtonLabel(size, availableSizes.length === 1, customMap);
             return (
               <button
                 key={size}

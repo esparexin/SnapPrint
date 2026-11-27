@@ -80,4 +80,69 @@ describe('Fleet Hub Allowance & Storefront Duplex UI Gating', () => {
     expect(isDuplexAvailable(a4DuplexCaps, 'A4')).toBe(true);
     expect(isDuplexAvailable(a4DuplexCaps, 'A3')).toBe(false); // A3 duplex not supported
   });
+
+  it('evaluates storefront color availability strictly according to capabilities and configured rates', () => {
+    function isColorAvailable(
+      capabilities: StudioPublicCapabilities | undefined,
+      printRates: Record<string, Record<string, unknown>> | undefined,
+      paperSize: string
+    ): boolean {
+      const hasColorRate = Boolean(printRates?.[paperSize]?.color || printRates?.A4?.color);
+      return Boolean(
+        capabilities ? capabilities.supportsColor && (hasColorRate || !printRates) : hasColorRate
+      );
+    }
+
+    // 1. Color disabled in capabilities -> false even if rates exist
+    expect(
+      isColorAvailable(
+        {
+          supportsDuplex: false,
+          supportedDuplexSizes: [],
+          supportsColor: false,
+          supportedPaperSizes: ['A4'],
+        },
+        { A4: { color: { singleSidedMinor: 1000 } } },
+        'A4'
+      )
+    ).toBe(false);
+
+    // 2. Color supported in capabilities, but operator only configured B&W rates -> false
+    expect(
+      isColorAvailable(
+        {
+          supportsDuplex: false,
+          supportedDuplexSizes: [],
+          supportsColor: true,
+          supportedPaperSizes: ['A4'],
+        },
+        { A4: { black_and_white: { singleSidedMinor: 200 } } },
+        'A4'
+      )
+    ).toBe(false);
+
+    // 3. Color supported in capabilities and operator configured color rates -> true
+    expect(
+      isColorAvailable(
+        {
+          supportsDuplex: false,
+          supportedDuplexSizes: [],
+          supportsColor: true,
+          supportedPaperSizes: ['A4'],
+        },
+        { A4: { color: { singleSidedMinor: 1000 } } },
+        'A4'
+      )
+    ).toBe(true);
+
+    // 4. Undefined capabilities but color rates present -> true
+    expect(isColorAvailable(undefined, { A4: { color: { singleSidedMinor: 1000 } } }, 'A4')).toBe(
+      true
+    );
+
+    // 5. Undefined capabilities and no color rates -> false
+    expect(
+      isColorAvailable(undefined, { A4: { black_and_white: { singleSidedMinor: 200 } } }, 'A4')
+    ).toBe(false);
+  });
 });
