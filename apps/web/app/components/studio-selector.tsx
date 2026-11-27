@@ -13,15 +13,17 @@ interface StudioSelectorProps {
 
 export function formatStudioOptionLabel(
   membership: { studioId?: string | null },
-  studioNames: Record<string, string> = {}
+  studioNames: Record<string, string> = {},
+  options?: { includeId?: boolean }
 ): string {
   if (!membership.studioId || membership.studioId === 'platform_scope') {
     return 'Platform Administration';
   }
   const friendlyName = studioNames[membership.studioId];
-  return friendlyName
-    ? `${friendlyName} (${membership.studioId})`
-    : `Studio: ${membership.studioId}`;
+  if (!friendlyName) {
+    return `Studio: ${membership.studioId}`;
+  }
+  return options?.includeId ? `${friendlyName} (${membership.studioId})` : friendlyName;
 }
 
 export function StudioSelector({

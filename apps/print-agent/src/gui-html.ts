@@ -25,7 +25,7 @@ export function getGuiHtml(): string {
         <div class="logo">${PRINTER_SVG}</div>
         <div style="min-width:0;">
           <div class="title">SnapPrint Print Agent</div>
-          <div class="subtitle" id="serverLabel">https://snapprint.onrender.com</div>
+          <div class="subtitle" id="serverLabel">Backend Service</div>
         </div>
       </div>
       <div class="header-actions">
@@ -69,12 +69,10 @@ export function getGuiHtml(): string {
             <div class="meta-box">
               <div class="meta-key">Connected Studio</div>
               <div class="meta-val" id="studioNameVal">—</div>
-              <div id="studioIdSub" style="font-size:0.72rem;color:var(--muted);font-family:monospace;margin-top:2px;"></div>
             </div>
             <div class="meta-box">
               <div class="meta-key">This Computer</div>
               <div class="meta-val" id="computerNameVal">—</div>
-              <div id="deviceIdSub" style="font-size:0.72rem;color:var(--muted);font-family:monospace;margin-top:2px;"></div>
             </div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">

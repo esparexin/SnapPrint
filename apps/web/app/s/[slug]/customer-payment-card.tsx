@@ -36,6 +36,7 @@ interface CustomerPaymentCardProps {
   slug: string;
   sessionToken?: string;
   payment?: PublicPaymentSettings;
+  studioName?: string;
   onPaymentSuccess: () => void;
 }
 
@@ -44,6 +45,7 @@ export function CustomerPaymentCard({
   slug,
   sessionToken,
   payment,
+  studioName,
   onPaymentSuccess,
 }: CustomerPaymentCardProps) {
   const [loading, setLoading] = useState(false);
@@ -72,7 +74,7 @@ export function CustomerPaymentCard({
           key: init.keyId,
           amount: init.amountMinor,
           currency: init.currency,
-          name: 'SnapPrint Xerox & Print',
+          name: studioName || 'SnapPrint Xerox & Print',
           description: `Order ${order.orderNumber}`,
           order_id: init.gatewayOrderId,
           prefill: { name: init.customerName || '', contact: init.customerPhone || '' },
