@@ -35,7 +35,7 @@ describe('Desktop Runner & Session Lifecycle', () => {
 
     expect(exitCode).toBe(0);
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      expect.stringContaining('SnapPrint Desktop App window launched: https://app.snapprint.in')
+      expect.stringContaining('SnapPrint Desktop Agent active in background and system tray.')
     );
     expect(consoleLogSpy).toHaveBeenCalledWith(
       expect.stringContaining('SnapPrint Agent GUI running at: http://127.0.0.1:')
