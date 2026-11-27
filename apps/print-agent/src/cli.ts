@@ -235,7 +235,8 @@ export function isCliMainModule(targetPath?: string): boolean {
 
 if (isCliMainModule()) {
   runCli().then((code) => {
-    if (code !== 0 && process.argv[2] !== 'start') {
+    const isDaemon = ['start', 'desktop', 'gui'].includes(process.argv[2]);
+    if (!isDaemon || code !== 0) {
       process.exit(code);
     }
   });

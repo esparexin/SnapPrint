@@ -25,6 +25,7 @@ jobs:
   package-and-verify-windows:
     name: Build, Package & Verify Windows Agent (MSI + SEA)
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -108,7 +109,12 @@ jobs:
           $msiPath = (Resolve-Path "apps/print-agent/dist/SnapPrint-Print-Agent.msi").Path
           $logPath = (Join-Path $env:RUNNER_TEMP "install.log")
           Write-Host "Installing MSI: $msiPath..."
-          $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /qn /norestart /log `"$logPath`"" -Wait -PassThru
+          $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /qn /norestart /log `"$logPath`"" -PassThru
+          if (-not $process.WaitForExit(90000)) {
+            $process.Kill()
+            if (Test-Path $logPath) { Get-Content $logPath -Tail 50 }
+            throw "MSI installation timed out after 90 seconds"
+          }
           if ($process.ExitCode -ne 0) {
             if (Test-Path $logPath) {
               Get-Content $logPath -Tail 50
@@ -146,7 +152,12 @@ jobs:
           Write-Host "Testing in-place upgrade re-run with MajorUpgrade scheduling..."
           $msiPath = (Resolve-Path "apps/print-agent/dist/SnapPrint-Print-Agent.msi").Path
           $upgradeLog = (Join-Path $env:RUNNER_TEMP "upgrade.log")
-          $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /qn /norestart /log `"$upgradeLog`"" -Wait -PassThru
+          $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /qn /norestart /log `"$upgradeLog`"" -PassThru
+          if (-not $process.WaitForExit(90000)) {
+            $process.Kill()
+            if (Test-Path $upgradeLog) { Get-Content $upgradeLog -Tail 50 }
+            throw "MSI in-place upgrade timed out after 90 seconds"
+          }
           if ($process.ExitCode -ne 0) {
             if (Test-Path $upgradeLog) {
               Get-Content $upgradeLog -Tail 50
@@ -158,10 +169,18 @@ jobs:
       - name: Test Windows silent uninstallation
         shell: pwsh
         run: |
+          Stop-Process -Name "snapprint-agent" -Force -ErrorAction SilentlyContinue
+          Get-Process msiexec -ErrorAction SilentlyContinue | Stop-Process -Force
+          Start-Sleep -Seconds 2
           $msiPath = (Resolve-Path "apps/print-agent/dist/SnapPrint-Print-Agent.msi").Path
           $logPath = (Join-Path $env:RUNNER_TEMP "uninstall.log")
           Write-Host "Uninstalling MSI: $msiPath..."
-          $process = Start-Process msiexec.exe -ArgumentList "/x `"$msiPath`" /qn /norestart /log `"$logPath`"" -Wait -PassThru
+          $process = Start-Process msiexec.exe -ArgumentList "/x `"$msiPath`" /qn /norestart /log `"$logPath`"" -PassThru
+          if (-not $process.WaitForExit(90000)) {
+            $process.Kill()
+            if (Test-Path $logPath) { Get-Content $logPath -Tail 50 }
+            throw "MSI uninstallation timed out after 90 seconds"
+          }
           if ($process.ExitCode -ne 0) {
             if (Test-Path $logPath) {
               Get-Content $logPath -Tail 50
