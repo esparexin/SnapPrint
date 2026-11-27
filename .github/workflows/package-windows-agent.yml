@@ -199,7 +199,9 @@ jobs:
         shell: pwsh
         run: |
           cd apps/print-agent/dist
-          Get-FileHash -Algorithm SHA256 SnapPrint-Print-Agent.msi, snapprint-agent.exe | Out-File -FilePath checksums.txt
+          $ver = (Get-Content "../package.json" | ConvertFrom-Json).version
+          Copy-Item SnapPrint-Print-Agent.msi "SnapPrint-Print-Agent-v$ver.msi"
+          Get-FileHash -Algorithm SHA256 SnapPrint-Print-Agent.msi, "SnapPrint-Print-Agent-v$ver.msi", snapprint-agent.exe | Out-File -FilePath checksums.txt
           Get-Content checksums.txt
 
       - name: Upload Windows Packaging Artifacts
@@ -208,6 +210,7 @@ jobs:
           name: snapprint-windows-agent-installer
           path: |
             apps/print-agent/dist/SnapPrint-Print-Agent.msi
+            apps/print-agent/dist/SnapPrint-Print-Agent-*.msi
             apps/print-agent/dist/snapprint-agent.exe
             apps/print-agent/dist/checksums.txt
           if-no-files-found: error
@@ -218,6 +221,7 @@ jobs:
         with:
           files: |
             apps/print-agent/dist/SnapPrint-Print-Agent.msi
+            apps/print-agent/dist/SnapPrint-Print-Agent-*.msi
             apps/print-agent/dist/snapprint-agent.exe
             apps/print-agent/dist/checksums.txt
         env:

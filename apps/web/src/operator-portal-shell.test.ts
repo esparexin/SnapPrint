@@ -9,6 +9,7 @@ import { OperatorStudioHub, SHOP_MENU_TABS } from '../app/components/operator-st
 import { PortalModals } from '../app/components/portal-modals.js';
 import PortalPage from '../app/portal/page.js';
 import { signOutToHome } from './auth-client.js';
+import { DEFAULT_AGENT_INSTALLER_NAME } from './printer-client.js';
 
 const renderToStaticMarkup = untypedRenderToStaticMarkup as (element: React.ReactElement) => string;
 
@@ -43,7 +44,7 @@ describe('Shop Portal Shell, Menu Persistence, Agent Actions & Sign-Out', () => 
     );
     expect(modalHeaderHtml).toContain('Sign Out');
     expect(modalHeaderHtml).toContain('/downloads/windows-agent/latest.msi');
-    expect(modalHeaderHtml).toContain('download="SnapPrint-Print-Agent.msi"');
+    expect(modalHeaderHtml).toContain(`download="${DEFAULT_AGENT_INSTALLER_NAME}"`);
     expect(modalHeaderHtml).toContain('📥');
     expect(modalHeaderHtml).toContain('Download');
   });

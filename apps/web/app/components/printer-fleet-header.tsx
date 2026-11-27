@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { getAgentDownloadUrl, StudioFleetAllowance } from '../../src/printer-client';
+import {
+  DEFAULT_AGENT_INSTALLER_NAME,
+  getAgentDownloadUrl,
+  StudioFleetAllowance,
+} from '../../src/printer-client';
 import { PrinterStatusBadge } from './printer-status-badge';
 
 interface PrinterFleetHeaderProps {
@@ -75,7 +79,7 @@ export function PrinterFleetHeader({
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         <a
           href={downloadUrl}
-          download="SnapPrint-Print-Agent.msi"
+          download={DEFAULT_AGENT_INSTALLER_NAME}
           target="_blank"
           rel="noopener noreferrer"
           style={{

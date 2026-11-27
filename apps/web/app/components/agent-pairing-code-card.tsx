@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { getAgentDownloadUrl } from '../../src/printer-client';
+import { DEFAULT_AGENT_INSTALLER_NAME, getAgentDownloadUrl } from '../../src/printer-client';
 
 interface AgentPairingCodeCardProps {
   code: string;
@@ -75,7 +75,7 @@ export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeC
 
       <a
         href={downloadUrl}
-        download="SnapPrint-Print-Agent.msi"
+        download={DEFAULT_AGENT_INSTALLER_NAME}
         target="_blank"
         rel="noopener noreferrer"
         style={{
@@ -122,7 +122,7 @@ export function AgentPairingCodeCard({ code, copied, onCopy }: AgentPairingCodeC
             gap: '4px',
           }}
         >
-          <li>Click the button above to download and install SnapPrint-Print-Agent.msi.</li>
+          <li>Click the button above to download and install {DEFAULT_AGENT_INSTALLER_NAME}.</li>
           <li>Launch the agent from your desktop and enter this 15-minute Pairing Code.</li>
           <li>The agent runs in the background and connects your local printers automatically.</li>
         </ol>
