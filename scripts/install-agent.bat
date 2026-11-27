@@ -8,7 +8,7 @@ taskkill /F /IM msiexec.exe /T >nul 2>&1
 taskkill /F /IM snapprint-agent.exe /T >nul 2>&1
 timeout /t 1 /nobreak >nul
 
-set "TARGET_MSI=%~dp0SnapPrint-Print-Agent-v0.1.2.msi"
+set "TARGET_MSI=%~dp0SnapPrint-Print-Agent-v0.1.3.msi"
 if not exist "%TARGET_MSI%" set "TARGET_MSI=%~dp0SnapPrint-Print-Agent.msi"
 if not exist "%TARGET_MSI%" (
   for %%f in ("%~dp0..\..\*.msi" "%USERPROFILE%\Desktop\*.msi" "%USERPROFILE%\Downloads\SnapPrint*.msi") do (

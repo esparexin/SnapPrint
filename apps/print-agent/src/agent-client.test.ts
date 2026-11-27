@@ -28,7 +28,7 @@ describe('AgentClient', () => {
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body)).toEqual({
       pairingCode: 'SNAP-7X9K-2M4P',
-      agentVersion: '0.1.2',
+      agentVersion: '0.1.3',
       hostname: 'Shop-PC',
       osPlatform: expect.any(String),
     });
