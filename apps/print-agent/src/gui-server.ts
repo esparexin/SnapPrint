@@ -191,14 +191,14 @@ export function createGuiServer(
     }
 
     if (req.method === 'POST' && url.pathname === '/api/update/apply') {
-      const config = loadAgentConfig(configPath);
-      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, { relaunchArgs: 'gui' });
-      if (result.success)
-        setTimeout(
-          () => shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true }),
-          500
-        );
-      return sendJson(res, result.success ? 200 : 400, result);
+      try {
+        const config = loadAgentConfig(configPath);
+        const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, { relaunchArgs: 'gui' });
+        if (result.success) setTimeout(() => shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true }), 500);
+        return sendJson(res, result.success ? 200 : 400, result);
+      } catch (err) {
+        return sendJson(res, 400, { success: false, message: err instanceof Error ? err.message : 'Update failed' });
+      }
     }
 
     res.writeHead(404).end('Not Found');
