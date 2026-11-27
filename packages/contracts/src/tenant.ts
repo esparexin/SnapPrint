@@ -37,7 +37,7 @@ export const StudioSettingsSchema = z.object({
   currency: z.string().length(3).default('INR'),
   contactPhone: z.string().min(5).max(20).optional(),
   contactEmail: z.string().email().optional(),
-  maxActivePrinters: z.number().int().min(1).default(2),
+  maxActivePrinters: z.number().int().min(1).optional(),
   autoApproveOrders: z.boolean().default(false),
   paymentPolicy: z
     .enum(['payment_required', 'pay_at_counter'])

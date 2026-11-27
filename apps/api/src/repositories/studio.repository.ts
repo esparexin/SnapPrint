@@ -44,7 +44,6 @@ export const CreateStudioInputSchema = z.object({
   status: StudioStatusSchema.optional().default('active'),
   settings: StudioSettingsSchema.optional().default({
     currency: 'INR',
-    maxActivePrinters: 2,
     autoApproveOrders: false,
   }),
 });

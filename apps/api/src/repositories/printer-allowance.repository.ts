@@ -12,8 +12,8 @@ import { listCustomPaperSizes } from './custom-paper-size.repository.js';
 export interface StudioFleetAllowance {
   registeredCount: number;
   activeCount: number;
-  maxActivePrinters: number;
-  remainingActiveCapacity: number;
+  maxActivePrinters?: number;
+  remainingActiveCapacity?: number;
   activeBwPrinterId?: string;
   activeColorPrinterId?: string;
   isLimitReached: boolean;
@@ -21,14 +21,14 @@ export interface StudioFleetAllowance {
 
 /**
  * Calculates current studio printer fleet allowance and capacity.
- * Follows #11/#24: unlimited registered inventory, max 2 active production printers for MVP.
+ * Supports unlimited active production printers without arbitrary hardcoded limits.
  */
 export async function getStudioFleetAllowance(
   db: Db,
   studioId: string
 ): Promise<StudioFleetAllowance> {
   const studio = await db.collection<StudioDocument>(STUDIOS_COLLECTION).findOne({ id: studioId });
-  const maxActivePrinters = studio?.settings?.maxActivePrinters ?? 20;
+  const maxActivePrinters = studio?.settings?.maxActivePrinters;
 
   const printers = await db
     .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
@@ -40,7 +40,10 @@ export async function getStudioFleetAllowance(
     (p) => p.role === 'active_bw' || p.role === 'active_color'
   );
   const activeCount = activePrinters.length;
-  const remainingActiveCapacity = Math.max(0, maxActivePrinters - activeCount);
+  const remainingActiveCapacity =
+    typeof maxActivePrinters === 'number'
+      ? Math.max(0, maxActivePrinters - activeCount)
+      : undefined;
 
   return {
     registeredCount,
@@ -49,7 +52,7 @@ export async function getStudioFleetAllowance(
     remainingActiveCapacity,
     activeBwPrinterId: printers.find((p) => p.role === 'active_bw')?.id,
     activeColorPrinterId: printers.find((p) => p.role === 'active_color')?.id,
-    isLimitReached: remainingActiveCapacity === 0,
+    isLimitReached: typeof maxActivePrinters === 'number' ? remainingActiveCapacity === 0 : false,
   };
 }
 
@@ -109,7 +112,10 @@ export async function getStudioActivePrintersAndCapabilities(
 
   const baseCaps = deriveCapabilitiesFromPrinters(activePrinters);
   const customPaperSizes = allCustomSizes
-    .filter((c) => c.isEnabled && baseCaps.supportedPaperSizes.includes(c.id))
+    .filter(
+      (c) =>
+        c.isEnabled && (baseCaps.supportedPaperSizes.includes(c.id) || activePrinters.length === 0)
+    )
     .map((c) => ({
       id: c.id,
       name: c.name,
