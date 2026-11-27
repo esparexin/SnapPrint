@@ -5,6 +5,8 @@ import {
   PrinterRole,
   PrinterStatus,
 } from '@snapprint/contracts';
+import { getApiBaseUrl } from './auth-client.js';
+export { getApiBaseUrl };
 
 export interface StudioFleetAllowance {
   registeredCount: number;
@@ -50,12 +52,14 @@ export interface AgentDevice {
   createdAt: string;
 }
 
-import { getApiBaseUrl } from './auth-client.js';
-
-export { getApiBaseUrl };
+export const DEFAULT_AGENT_RELEASE_URL =
+  'https://github.com/esparexin/SnapPrint/releases/download/v0.1.1/SnapPrint-Print-Agent.msi';
 
 export function getAgentDownloadUrl(): string {
-  return `${getApiBaseUrl()}/downloads/windows-agent/latest.msi`;
+  const b = getApiBaseUrl();
+  return b.includes('onrender.com')
+    ? DEFAULT_AGENT_RELEASE_URL
+    : `${b}/downloads/windows-agent/latest.msi`;
 }
 
 export class PrinterApiError extends Error {
@@ -193,10 +197,7 @@ export function computePrinterStatus(
 ): ShopPrinterStatus {
   if (!printers || printers.length === 0) return 'not_added';
   const onlineDeviceIds = new Set(
-    devices
-      .filter((d) => d.isOnline)
-      .map((d) => d.deviceId)
-      .filter(Boolean)
+    devices.filter((d) => d.isOnline && d.deviceId).map((d) => d.deviceId)
   );
   const hasLivePrinter = printers.some((p) => {
     if (p.status !== 'online') return false;

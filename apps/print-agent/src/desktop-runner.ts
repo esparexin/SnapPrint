@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { AgentClient } from './agent-client.js';
 import { AgentConfig, getDefaultWebUrl } from './config.js';
 import { AgentDaemon } from './daemon.js';
-import { launchAppWindow, launchGuiWindow } from './gui-http-helpers.js';
+import { launchGuiWindow } from './gui-http-helpers.js';
 import { startGuiServer } from './gui-server.js';
 import {
   acquireInstanceLock,
@@ -68,12 +68,7 @@ export async function runDesktopSession(options: DesktopRunnerOptions): Promise<
   if (mode === 'desktop' && !isTestMode) {
     const runningPid = getRunningInstancePid(options.lockPath);
     if (runningPid !== null) {
-      launchAppWindow(portalUrl, {
-        width: 1280,
-        height: 820,
-        appId: 'SnapPrintDesktop',
-      });
-      console.log(`SnapPrint Agent is already running (PID: ${runningPid}). Focused app window.`);
+      console.log(`SnapPrint Agent is already running (PID: ${runningPid}) in the system tray.`);
       return 0;
     }
   }
@@ -97,13 +92,8 @@ export async function runDesktopSession(options: DesktopRunnerOptions): Promise<
     const lock = acquireInstanceLock(options.lockPath);
     lockAcquired = lock.acquired;
     if (!lockAcquired && !isTestMode) {
-      launchAppWindow(portalUrl, {
-        width: 1280,
-        height: 820,
-        appId: 'SnapPrintDesktop',
-      });
       console.log(
-        `SnapPrint Agent is already running (PID: ${lock.pid ?? 'active'}). Focused app window.`
+        `SnapPrint Agent is already running (PID: ${lock.pid ?? 'active'}) in the system tray.`
       );
       return 0;
     }
@@ -121,8 +111,7 @@ export async function runDesktopSession(options: DesktopRunnerOptions): Promise<
 
   if (!minimized) {
     if (mode === 'desktop') {
-      launchAppWindow(portalUrl, { width: 1280, height: 820, appId: 'SnapPrintDesktop' });
-      console.log(`SnapPrint Desktop App window launched: ${webUrl}`);
+      console.log(`SnapPrint Desktop Agent active in background and system tray.`);
     } else {
       launchGuiWindow(handle.url);
     }
