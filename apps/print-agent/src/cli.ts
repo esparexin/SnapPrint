@@ -60,7 +60,7 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
   }
 
   const client = new AgentClient(config.apiUrl);
-  const spooler = createSystemSpoolerAdapter();
+  const spooler = createSystemSpoolerAdapter({ allowVirtualPrinters: config.allowVirtualPrinters });
   const session = extractSessionFlags(filteredArgv);
   const noGui =
     session.filteredArgv.includes('--no-gui') || session.filteredArgv.includes('--headless');

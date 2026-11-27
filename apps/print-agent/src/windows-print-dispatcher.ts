@@ -8,7 +8,14 @@ const COLOR_REGEX =
 const VIRTUAL_REGEX =
   /print to pdf|onenote|anydesk|xps document|fax|cutepdf|adobe pdf|foxit|pdf creator|pdf24|bullzip|virtual print|root print queue|cups-pdf/i;
 
-export function isVirtualOrSoftwarePrinter(name: string, driverName = ''): boolean {
+export function isVirtualOrSoftwarePrinter(
+  name: string,
+  driverName = '',
+  allowVirtual = false
+): boolean {
+  if (allowVirtual || process.env.SNAPPRINT_ALLOW_VIRTUAL_PRINTERS === '1') {
+    return /onenote|anydesk|fax|root print queue/i.test(`${name} ${driverName}`);
+  }
   return VIRTUAL_REGEX.test(`${name} ${driverName}`);
 }
 

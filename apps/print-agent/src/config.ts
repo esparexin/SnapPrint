@@ -12,6 +12,7 @@ export interface AgentConfig {
   deviceId?: string;
   deviceFriendlyName?: string;
   lastSyncAt?: string;
+  allowVirtualPrinters?: boolean;
 }
 
 export function getDefaultConfigPath(): string {
@@ -127,6 +128,10 @@ export function loadAgentConfig(customPath?: string): AgentConfig {
       deviceFriendlyName:
         typeof parsed.deviceFriendlyName === 'string' ? parsed.deviceFriendlyName : undefined,
       lastSyncAt: typeof parsed.lastSyncAt === 'string' ? parsed.lastSyncAt : undefined,
+      allowVirtualPrinters:
+        typeof parsed.allowVirtualPrinters === 'boolean'
+          ? parsed.allowVirtualPrinters
+          : process.env.SNAPPRINT_ALLOW_VIRTUAL_PRINTERS === '1',
     };
   } catch {
     return fallback;

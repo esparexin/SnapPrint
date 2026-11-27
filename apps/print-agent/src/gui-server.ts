@@ -13,6 +13,8 @@ import { AgentDaemon } from './daemon.js';
 import { FAVICON_BASE64 } from './gui-assets.js';
 import { getGuiHtml } from './gui-html.js';
 import {
+  GuiServerHandle,
+  GuiServerOptions,
   launchGuiWindow,
   parseJsonBody,
   sendFavicon,
@@ -24,19 +26,7 @@ import { shutdownGracefully } from './lifecycle.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
 export { launchGuiWindow };
-
-export interface GuiServerHandle {
-  server: Server;
-  port: number;
-  url: string;
-  close: () => Promise<void>;
-  shutdown: (delayMs?: number) => Promise<void>;
-}
-
-export interface GuiServerOptions {
-  daemon?: AgentDaemon | null;
-  skipAutoDaemon?: boolean;
-}
+export type { GuiServerHandle, GuiServerOptions };
 
 export function createGuiServer(
   client: AgentClient,
@@ -191,14 +181,23 @@ export function createGuiServer(
     }
 
     if (req.method === 'POST' && url.pathname === '/api/update/apply') {
-      const config = loadAgentConfig(configPath);
-      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, { relaunchArgs: 'gui' });
-      if (result.success)
-        setTimeout(
-          () => shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true }),
-          500
-        );
-      return sendJson(res, result.success ? 200 : 400, result);
+      try {
+        const config = loadAgentConfig(configPath);
+        const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, {
+          relaunchArgs: 'gui',
+        });
+        if (result.success)
+          setTimeout(
+            () => shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true }),
+            500
+          );
+        return sendJson(res, result.success ? 200 : 400, result);
+      } catch (err) {
+        return sendJson(res, 400, {
+          success: false,
+          message: err instanceof Error ? err.message : 'Update failed',
+        });
+      }
     }
 
     res.writeHead(404).end('Not Found');

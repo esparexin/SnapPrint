@@ -156,7 +156,10 @@ function toDiscovered(
   };
 }
 
-export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
+export function parseWindowsPrintersJson(
+  stdout: string,
+  allowVirtual = false
+): DiscoveredPrinter[] {
   if (!stdout.trim()) return [];
   try {
     const parsed = JSON.parse(stdout);
@@ -167,7 +170,7 @@ export function parseWindowsPrintersJson(stdout: string): DiscoveredPrinter[] {
       if (!item || typeof item.Name !== 'string') continue;
       const name = String(item.Name).trim();
       const driverName = String(item.DriverName || item.Name).trim();
-      if (isVirtualOrSoftwarePrinter(name, driverName)) continue;
+      if (isVirtualOrSoftwarePrinter(name, driverName, allowVirtual)) continue;
       const mode = String(item.DuplexMode || item.DuplexingMode || item.Duplex || '');
       const boolDuplex = typeof item.Duplex === 'boolean' ? item.Duplex : undefined;
       const portName = typeof item.PortName === 'string' ? item.PortName.trim() : undefined;

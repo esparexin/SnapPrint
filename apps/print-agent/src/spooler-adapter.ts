@@ -47,15 +47,20 @@ export interface SpoolerAdapter {
   printFile(printerName: string, filePath: string, options?: PrintFileOptions): Promise<void>;
 }
 
-export function createSystemSpoolerAdapter(options?: {
+export interface SpoolerAdapterOptions {
   platform?: NodeJS.Platform;
+  allowVirtualPrinters?: boolean;
   execAsync?: (
     cmd: string,
     opts?: { timeout?: number }
   ) => Promise<{ stdout: string; stderr: string }>;
   pingNetworkPrinter?: (host: string) => Promise<boolean>;
-}): SpoolerAdapter {
+}
+
+export function createSystemSpoolerAdapter(options?: SpoolerAdapterOptions): SpoolerAdapter {
   const platform = options?.platform || process.platform;
+  const allowVirtual =
+    options?.allowVirtualPrinters ?? process.env.SNAPPRINT_ALLOW_VIRTUAL_PRINTERS === '1';
   const pingNet = options?.pingNetworkPrinter || checkNetworkPrinterReachable;
   const runner =
     options?.execAsync ||
@@ -83,15 +88,17 @@ export function createSystemSpoolerAdapter(options?: {
     async getPrinters(): Promise<DiscoveredPrinter[]> {
       if (platform === 'win32') {
         try {
-          const ps =
-            "$ErrorActionPreference='SilentlyContinue'; Get-Printer | Where-Object { $_.Name -notmatch 'Print to PDF|OneNote|AnyDesk|XPS|Fax' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json";
+          const filterPattern = allowVirtual
+            ? 'OneNote|AnyDesk|Fax'
+            : 'Print to PDF|OneNote|AnyDesk|XPS|Fax';
+          const ps = `$ErrorActionPreference='SilentlyContinue'; Get-Printer | Where-Object { $_.Name -notmatch '${filterPattern}' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json`;
           const { stdout } = await runner(
             `powershell -NoProfile -NonInteractive -Command "${ps}"`,
             {
               timeout: 5000,
             }
           );
-          const printers = parseWindowsPrintersJson(String(stdout));
+          const printers = parseWindowsPrintersJson(String(stdout), allowVirtual);
           await Promise.all(
             printers.map(async (p) => {
               if (p.connectionType === 'network' && p.portName) {
