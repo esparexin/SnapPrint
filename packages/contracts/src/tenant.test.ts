@@ -37,7 +37,7 @@ describe('Tenant Contracts', () => {
 
   it('validates studio settings with active printers default and custom allowance', () => {
     const settings = StudioSettingsSchema.parse({});
-    expect(settings.maxActivePrinters).toBe(2);
+    expect(settings.maxActivePrinters).toBeUndefined();
     expect(settings.currency).toBe('INR');
 
     // allows multiple active printers without artificial max 2 lock

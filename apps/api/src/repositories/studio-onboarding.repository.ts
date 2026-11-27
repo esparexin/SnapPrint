@@ -26,7 +26,6 @@ export async function createStudioWithOnboarding(
     payment: input.payment,
     settings: {
       currency: 'INR',
-      maxActivePrinters: 2,
       autoApproveOrders: false,
     },
     createdAt: now,

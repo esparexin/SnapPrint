@@ -64,7 +64,7 @@ describe('Studio Persistence Repository', () => {
     expect(created.slug).toBe('studio-alpha');
     expect(created.status).toBe('active');
     expect(created.settings.currency).toBe('INR');
-    expect(created.settings.maxActivePrinters).toBe(2);
+    expect(created.settings.maxActivePrinters).toBeUndefined();
     expect(store[0].createdAt).toBeInstanceOf(Date);
     expect(getQueryCount()).toBe(1);
   });

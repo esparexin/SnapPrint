@@ -112,6 +112,24 @@ describe('Printer Status Badge & Troubleshooting Help', () => {
     expect(html).toContain('portal-printer-help-btn');
   });
 
+  it('PrinterFleetHeader renders active printer count cleanly without hardcoded active limit or warning badge', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PrinterFleetHeader, {
+        studioId: 'std_vikram',
+        studioName: 'Vikram Mobiles',
+        allowance: {
+          registeredCount: 5,
+          activeCount: 3,
+          isLimitReached: true,
+        },
+      })
+    );
+    expect(html).not.toContain('Active Limit (2/2)');
+    expect(html).not.toContain('Active Limit');
+    expect(html).toContain('Active: <strong>3</strong>');
+    expect(html).toContain('Standby: 2');
+  });
+
   it('AdminTenantFleetSection renders online status with green pill', () => {
     const html = renderToStaticMarkup(
       React.createElement(AdminTenantFleetSection, {
