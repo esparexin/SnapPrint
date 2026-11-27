@@ -105,7 +105,7 @@ function walk(dir: string, relative = '') {
       const content = readFileSync(full, 'utf8');
       const lines = content.split('\n').length;
       const { budget, category } = getCategoryBudget(rel);
-      files.push({ rel, lines, budget, category });
+      files.push({ rel: rel.replace(/\\/g, '/'), lines, budget, category });
     }
   }
 }
