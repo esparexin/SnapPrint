@@ -20,6 +20,29 @@ import {
   updateStudioPrinterRole,
 } from './printer.repository.js';
 
+function mockPrinter(
+  printerId: string,
+  name: string,
+  driverName: string,
+  extra?: Partial<DiscoveredPrinter>
+): DiscoveredPrinter {
+  return {
+    printerId,
+    name,
+    driverName,
+    connectionType: 'usb',
+    isColorSupported: false,
+    supportedPaperSizes: ['A4'],
+    duplexSupport: 'unknown',
+    supportedDuplexSizes: [],
+    capabilityProvenance: 'unverified',
+    status: 'online',
+    isDefaultOsPrinter: true,
+    lastSeenAt: new Date().toISOString(),
+    ...extra,
+  };
+}
+
 describe('Printer Capability & Workstation Repositories', () => {
   let ctx: TestAuthContext;
   const studioId = 'std_test_capability';
@@ -30,20 +53,9 @@ describe('Printer Capability & Workstation Repositories', () => {
 
   it('syncs discovered printers with deviceId and preserves manual duplex verification', async () => {
     const discovered: DiscoveredPrinter[] = [
-      {
-        printerId: 'prn_laser_a4',
-        name: 'HP LaserJet M126nw',
-        driverName: 'HP LaserJet Pro',
-        connectionType: 'usb',
-        isColorSupported: false,
+      mockPrinter('prn_laser_a4', 'HP LaserJet M126nw', 'HP LaserJet Pro', {
         supportedPaperSizes: ['A4', 'legal'],
-        duplexSupport: 'unknown',
-        supportedDuplexSizes: [],
-        capabilityProvenance: 'unverified',
-        status: 'online',
-        isDefaultOsPrinter: true,
-        lastSeenAt: new Date().toISOString(),
-      },
+      }),
     ];
 
     await syncDiscoveredPrinters(ctx.db, studioId, discovered, 'dev_pc_1');
@@ -65,34 +77,14 @@ describe('Printer Capability & Workstation Repositories', () => {
 
   it('allows multiple active printers without demoting each other', async () => {
     const discovered: DiscoveredPrinter[] = [
-      {
-        printerId: 'prn_1',
-        name: 'A4 Laser',
-        driverName: 'Laser Driver',
+      mockPrinter('prn_1', 'A4 Laser', 'Laser Driver', { connectionType: 'network' }),
+      mockPrinter('prn_2', 'A3 Commercial', 'Commercial Driver', {
         connectionType: 'network',
-        isColorSupported: false,
-        supportedPaperSizes: ['A4'],
-        duplexSupport: 'unsupported',
-        supportedDuplexSizes: [],
-        capabilityProvenance: 'unverified',
-        status: 'online',
-        isDefaultOsPrinter: true,
-        lastSeenAt: new Date().toISOString(),
-      },
-      {
-        printerId: 'prn_2',
-        name: 'A3 Commercial',
-        driverName: 'Commercial Driver',
-        connectionType: 'network',
-        isColorSupported: false,
         supportedPaperSizes: ['A3'],
         duplexSupport: 'supported',
         supportedDuplexSizes: ['A3'],
-        capabilityProvenance: 'unverified',
-        status: 'online',
         isDefaultOsPrinter: false,
-        lastSeenAt: new Date().toISOString(),
-      },
+      }),
     ];
 
     await syncDiscoveredPrinters(ctx.db, studioId, discovered, 'dev_pc_1');
@@ -170,22 +162,7 @@ describe('Printer Capability & Workstation Repositories', () => {
     await syncDiscoveredPrinters(
       ctx.db,
       studioId,
-      [
-        {
-          printerId: 'prn_attached',
-          name: 'Deskjet USB',
-          driverName: 'Deskjet Driver',
-          connectionType: 'usb',
-          isColorSupported: true,
-          supportedPaperSizes: ['A4'],
-          duplexSupport: 'unsupported',
-          supportedDuplexSizes: [],
-          capabilityProvenance: 'unverified',
-          status: 'online',
-          isDefaultOsPrinter: true,
-          lastSeenAt: new Date().toISOString(),
-        },
-      ],
+      [mockPrinter('prn_attached', 'Deskjet USB', 'Deskjet Driver', { isColorSupported: true })],
       'dev_old_laptop'
     );
 
@@ -205,5 +182,32 @@ describe('Printer Capability & Workstation Repositories', () => {
     authCheck = await findActiveOrUnboundDevice(ctx.db, token);
     expect(authCheck.device).toBeUndefined();
     expect(authCheck.isUnbound).toBe(true);
+  });
+
+  it('allows Microsoft Print to PDF when no physical hardware exists and purges it once physical arrives', async () => {
+    const virtualOnly: DiscoveredPrinter[] = [
+      mockPrinter('prn_pdf_only', 'Microsoft Print to PDF', 'Print to PDF', {
+        connectionType: 'virtual',
+      }),
+    ];
+
+    await syncDiscoveredPrinters(ctx.db, studioId, virtualOnly, 'dev_pc_1');
+    let printers = await listStudioPrinters(ctx.db, studioId);
+    expect(printers).toHaveLength(1);
+    expect(printers[0].name).toBe('Microsoft Print to PDF');
+    expect(printers[0].role).toBe('active_bw');
+
+    const physicalArrived: DiscoveredPrinter[] = [
+      ...virtualOnly,
+      mockPrinter('prn_epson_real', 'Epson L3150 Series', 'Epson L3150', {
+        isColorSupported: true,
+        supportedPaperSizes: ['A4', '4x6'],
+      }),
+    ];
+
+    await syncDiscoveredPrinters(ctx.db, studioId, physicalArrived, 'dev_pc_1');
+    printers = await listStudioPrinters(ctx.db, studioId);
+    expect(printers).toHaveLength(1);
+    expect(printers[0].name).toBe('Epson L3150 Series');
   });
 });

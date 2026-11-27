@@ -153,7 +153,7 @@ export const PlatformStudioDetailsResponseSchema = z.object({
     tagline: z.string().optional(),
     location: ShopLocationSchema.optional(),
     currency: z.string().default('INR'),
-    maxActivePrinters: z.number().int().default(2),
+    maxActivePrinters: z.number().int().optional(),
     autoApproveOrders: z.boolean().default(false),
     payment: ShopPaymentSettingsSchema.optional(),
   }),

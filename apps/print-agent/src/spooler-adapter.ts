@@ -88,17 +88,22 @@ export function createSystemSpoolerAdapter(options?: SpoolerAdapterOptions): Spo
     async getPrinters(): Promise<DiscoveredPrinter[]> {
       if (platform === 'win32') {
         try {
-          const filterPattern = allowVirtual
-            ? 'OneNote|AnyDesk|Fax'
-            : 'Print to PDF|OneNote|AnyDesk|XPS|Fax';
-          const ps = `$ErrorActionPreference='SilentlyContinue'; Get-Printer | Where-Object { $_.Name -notmatch '${filterPattern}' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json`;
+          const ps = `$ErrorActionPreference='SilentlyContinue'; Get-Printer | Where-Object { $_.Name -notmatch 'OneNote|AnyDesk|Fax' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json`;
           const { stdout } = await runner(
             `powershell -NoProfile -NonInteractive -Command "${ps}"`,
             {
               timeout: 5000,
             }
           );
-          const printers = parseWindowsPrintersJson(String(stdout), allowVirtual);
+          const allPrinters = parseWindowsPrintersJson(String(stdout), true);
+          const physicalPrinters = allPrinters.filter(
+            (p) =>
+              !/print to pdf|xps document|cutepdf|adobe pdf|virtual print/i.test(
+                `${p.name} ${p.driverName || ''}`
+              )
+          );
+          const printers =
+            physicalPrinters.length > 0 && !allowVirtual ? physicalPrinters : allPrinters;
           await Promise.all(
             printers.map(async (p) => {
               if (p.connectionType === 'network' && p.portName) {

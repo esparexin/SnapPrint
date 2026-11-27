@@ -130,6 +130,25 @@ describe('Printer Status Badge & Troubleshooting Help', () => {
     expect(html).toContain('Standby: 2');
   });
 
+  it('PrinterFleetHeader does not render /2 or limit denominator when legacy maxActivePrinters is present', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PrinterFleetHeader, {
+        studioId: 'std_vikram',
+        studioName: 'Vikram Mobiles',
+        allowance: {
+          registeredCount: 2,
+          activeCount: 0,
+          maxActivePrinters: 2,
+          isLimitReached: false,
+        },
+      })
+    );
+    expect(html).not.toContain('0/2');
+    expect(html).not.toContain('/2');
+    expect(html).toContain('Active: <strong>0</strong>');
+    expect(html).toContain('Standby: 2');
+  });
+
   it('AdminTenantFleetSection renders online status with green pill', () => {
     const html = renderToStaticMarkup(
       React.createElement(AdminTenantFleetSection, {
