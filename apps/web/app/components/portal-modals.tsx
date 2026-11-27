@@ -22,7 +22,6 @@ const fallbackStudio = (id: string, slug?: string, name?: string): Studio => ({
   status: 'active',
   settings: {
     currency: 'INR',
-    maxActivePrinters: 2,
     autoApproveOrders: false,
     isAcceptingOrders: true,
   },

@@ -45,20 +45,6 @@ export function PrinterFleetHeader({
             Hardware &amp; Printers Fleet
           </h2>
           <PrinterStatusBadge studioId={studioId} />
-          {allowance?.isLimitReached && (
-            <span
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-                padding: '2px 8px',
-                backgroundColor: '#fef3c7',
-                color: '#92400e',
-                borderRadius: '4px',
-              }}
-            >
-              Active Limit (2/2)
-            </span>
-          )}
         </div>
         <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
           {studioName || `Studio ${studioId}`}
@@ -67,7 +53,9 @@ export function PrinterFleetHeader({
               {' '}
               · Active:{' '}
               <strong>
-                {allowance.activeCount}/{allowance.maxActivePrinters}
+                {typeof allowance.maxActivePrinters === 'number'
+                  ? `${allowance.activeCount}/${allowance.maxActivePrinters}`
+                  : allowance.activeCount}
               </strong>{' '}
               · Standby: {allowance.registeredCount - allowance.activeCount}
             </span>

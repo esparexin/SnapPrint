@@ -11,8 +11,8 @@ export { getApiBaseUrl };
 export interface StudioFleetAllowance {
   registeredCount: number;
   activeCount: number;
-  maxActivePrinters: number;
-  remainingActiveCapacity: number;
+  maxActivePrinters?: number;
+  remainingActiveCapacity?: number;
   isLimitReached: boolean;
 }
 
