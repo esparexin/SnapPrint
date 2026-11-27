@@ -98,7 +98,7 @@ export async function getPlatformStudioDetails(
       tagline: doc.tagline,
       location: doc.location,
       currency: doc.settings?.currency || 'INR',
-      maxActivePrinters: doc.settings?.maxActivePrinters ?? 2,
+      maxActivePrinters: doc.settings?.maxActivePrinters,
       autoApproveOrders: doc.settings?.autoApproveOrders ?? false,
       payment: doc.payment,
     },

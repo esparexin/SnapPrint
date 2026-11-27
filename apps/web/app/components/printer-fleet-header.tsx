@@ -51,13 +51,8 @@ export function PrinterFleetHeader({
           {allowance ? (
             <span>
               {' '}
-              · Active:{' '}
-              <strong>
-                {typeof allowance.maxActivePrinters === 'number'
-                  ? `${allowance.activeCount}/${allowance.maxActivePrinters}`
-                  : allowance.activeCount}
-              </strong>{' '}
-              · Standby: {allowance.registeredCount - allowance.activeCount}
+              · Active: <strong>{allowance.activeCount}</strong> · Standby:{' '}
+              {Math.max(0, allowance.registeredCount - allowance.activeCount)}
             </span>
           ) : (
             ' · Capability Routing & Discovery'

@@ -41,14 +41,36 @@ export async function syncDiscoveredPrinters(
   deviceId?: string
 ): Promise<void> {
   const now = new Date();
-  const vRegex = /anydesk|print to pdf|onenote|xps document|fax|cutepdf|adobe pdf|virtual print/i;
+  const allowVirtual =
+    process.env.SNAPPRINT_ALLOW_VIRTUAL_PRINTERS === '1' ||
+    process.env.SNAPPRINT_ALLOW_VIRTUAL_PRINTERS === 'true';
+
+  const spamRegex = /anydesk|onenote|xps document|fax|cutepdf|adobe pdf|virtual print/i;
+  const pdfRegex = /print to pdf/i;
+
+  const nonSpamPrinters = printers.filter(
+    (p) => !spamRegex.test(`${p.name} ${p.driverName || ''}`)
+  );
+  const physicalOnly = nonSpamPrinters.filter(
+    (p) => !pdfRegex.test(`${p.name} ${p.driverName || ''}`)
+  );
+
+  // If physical printers exist and virtual is not forced, prefer physical only.
+  // Otherwise, allow "Microsoft Print to PDF" so operators without physical hardware
+  // can test and onboard their studio without being blocked.
+  const eligiblePrinters =
+    physicalOnly.length > 0 && !allowVirtual ? physicalOnly : nonSpamPrinters;
+  const deleteRegex =
+    physicalOnly.length > 0 && !allowVirtual
+      ? /anydesk|print to pdf|onenote|xps document|fax|cutepdf|adobe pdf|virtual print/i
+      : spamRegex;
+
   await db.collection<StudioPrinterDocument>(PRINTERS_COLLECTION).deleteMany({
     studioId,
-    $or: [{ name: { $regex: vRegex } }, { driverName: { $regex: vRegex } }],
+    $or: [{ name: { $regex: deleteRegex } }, { driverName: { $regex: deleteRegex } }],
   });
 
-  const physicalPrinters = printers.filter((p) => !vRegex.test(`${p.name} ${p.driverName || ''}`));
-  for (const p of physicalPrinters) {
+  for (const p of eligiblePrinters) {
     const existing = await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)
       .findOne({ studioId, id: p.printerId });
@@ -101,8 +123,8 @@ export async function syncDiscoveredPrinters(
       studioId,
       role: { $in: ['active_bw', 'active_color'] },
     });
-  if (activeCount === 0 && physicalPrinters.length > 0) {
-    const target = physicalPrinters.find((p) => p.isDefaultOsPrinter) || physicalPrinters[0];
+  if (activeCount === 0 && eligiblePrinters.length > 0) {
+    const target = eligiblePrinters.find((p) => p.isDefaultOsPrinter) || eligiblePrinters[0];
     const targetRole: PrinterRole = target.isColorSupported ? 'active_color' : 'active_bw';
     await db
       .collection<StudioPrinterDocument>(PRINTERS_COLLECTION)

@@ -159,6 +159,32 @@ describe('platform-admin contracts', () => {
     expect(PlatformStudioDetailsResponseSchema.parse(details)).toEqual(details);
   });
 
+  it('validates PlatformStudioDetailsResponseSchema with optional maxActivePrinters omitted', () => {
+    const details = {
+      studio: {
+        id: 'studio-alpha',
+        slug: 'studio-alpha',
+        name: 'Studio Alpha',
+        status: 'active',
+        currency: 'INR',
+        autoApproveOrders: false,
+        createdAt: '2026-11-20T10:00:00.000Z',
+        updatedAt: '2026-11-23T10:00:00.000Z',
+      },
+      owner: null,
+      printers: [],
+      devices: [],
+      subscription: null,
+      printStats: {
+        totalCompletedPrints: 0,
+        colorPrints: 0,
+        bwPrints: 0,
+      },
+    };
+    const parsed = PlatformStudioDetailsResponseSchema.parse(details);
+    expect(parsed.studio.maxActivePrinters).toBeUndefined();
+  });
+
   it('validates AdminOverrideSubscriptionRequestSchema and ResponseSchema', () => {
     const validReq = {
       plan: 'quarterly',
