@@ -6,7 +6,7 @@ import { AGENT_VERSION, handleUpdateCommand } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
 import { getDefaultWebUrl, loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
-import { runDesktopSession } from './desktop-runner.js';
+import { extractSessionFlags, runDesktopSession } from './desktop-runner.js';
 import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
 import { shutdownGracefully } from './lifecycle.js';
 import { createSystemSpoolerAdapter } from './spooler-adapter.js';
@@ -61,7 +61,13 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
 
   const client = new AgentClient(config.apiUrl);
   const spooler = createSystemSpoolerAdapter();
-  const command = filteredArgv[0];
+  const session = extractSessionFlags(filteredArgv);
+  const noGui =
+    session.filteredArgv.includes('--no-gui') || session.filteredArgv.includes('--headless');
+  const commandArgs = session.filteredArgv.filter(
+    (a) => a !== '--no-gui' && a !== '--headless' && a !== '--gui'
+  );
+  const command = commandArgs[0];
 
   if (command === 'version' || command === '--version' || command === '-v') {
     console.log(AGENT_VERSION);
@@ -73,12 +79,8 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
   }
 
   if (!command || command === 'desktop' || command === 'gui') {
-    return runDesktopSession({
-      config,
-      client,
-      spooler,
-      mode: command === 'gui' ? 'gui' : 'desktop',
-    });
+    const mode = command === 'gui' ? 'gui' : 'desktop';
+    return runDesktopSession({ config, client, spooler, mode, ...session });
   }
 
   if (command === 'config') {
@@ -93,8 +95,8 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
   }
 
   if (command === 'enroll' || command === 'pair') {
-    let pairingCode = filteredArgv[1];
-    if (!pairingCode) {
+    let pairingCode = commandArgs[1];
+    if (commandArgs.length < 2) {
       const rl = createInterface({ input: process.stdin, output: process.stdout });
       pairingCode = await rl.question('Enter 16-char Pairing Code (e.g. SNAP-XXXX-YYYY): ');
       rl.close();
@@ -113,7 +115,7 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
         rawPlat === 'win32' || rawPlat === 'darwin' || rawPlat === 'linux' ? rawPlat : 'linux';
       const enrollResult = await client.enroll(pairingCode, host, {
         hostname: host,
-        agentVersion: '0.1.0',
+        agentVersion: AGENT_VERSION,
         osPlatform,
       });
       config.deviceToken = enrollResult.deviceToken;
@@ -128,8 +130,12 @@ export async function runCli(rawArgv: string[] = process.argv.slice(2)): Promise
       console.log('\nRunning initial printer discovery and sync...');
       const daemon = new AgentDaemon(config, client, spooler);
       await daemon.syncOnce();
-      console.log('Enrollment & initial printer sync complete! Run "start" to run daemon.');
-      return 0;
+      console.log('Enrollment & initial printer sync complete!');
+      if (noGui) {
+        console.log('Run "start" or "gui" to run daemon.');
+        return 0;
+      }
+      return runDesktopSession({ config, client, spooler, mode: 'gui' });
     } catch (err) {
       console.error(`Enrollment failed: ${err instanceof Error ? err.message : String(err)}`);
       return 1;

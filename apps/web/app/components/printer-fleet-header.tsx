@@ -8,7 +8,7 @@ interface PrinterFleetHeaderProps {
   studioId: string;
   studioName?: string;
   allowance?: StudioFleetAllowance | null;
-  onOpenPairing: () => void;
+  onOpenPairing?: () => void;
   onClose?: () => void;
 }
 
@@ -16,7 +16,6 @@ export function PrinterFleetHeader({
   studioId,
   studioName,
   allowance,
-  onOpenPairing,
   onClose,
 }: PrinterFleetHeaderProps) {
   const downloadUrl = getAgentDownloadUrl();
@@ -98,26 +97,6 @@ export function PrinterFleetHeader({
         >
           📥 Download Agent (.msi)
         </a>
-        <button
-          type="button"
-          onClick={onOpenPairing}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '6px 12px',
-            minHeight: '44px',
-            backgroundColor: '#0284c7',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxSizing: 'border-box',
-          }}
-        >
-          + Pair PC Agent
-        </button>
         {onClose && (
           <button type="button" onClick={onClose} aria-label="Close" className="dialog-close-btn">
             ✕

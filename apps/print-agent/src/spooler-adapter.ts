@@ -60,8 +60,23 @@ export function createSystemSpoolerAdapter(options?: {
   const runner =
     options?.execAsync ||
     (async (cmd: string, opts?: { timeout?: number }) => {
-      const res = await execPromise(cmd, { encoding: 'utf-8', ...opts });
-      return { stdout: String(res.stdout), stderr: String(res.stderr) };
+      const timeoutMs = opts?.timeout ?? 30_000;
+      const execTask = execPromise(cmd, { encoding: 'utf-8', windowsHide: true, ...opts }).then(
+        (res) => ({ stdout: String(res.stdout), stderr: String(res.stderr) })
+      );
+      let timer: NodeJS.Timeout | undefined;
+      const timeoutTask = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`Command timed out after ${timeoutMs}ms`)),
+          timeoutMs
+        );
+        timer.unref?.();
+      });
+      try {
+        return await Promise.race([execTask, timeoutTask]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     });
 
   return {
@@ -69,10 +84,13 @@ export function createSystemSpoolerAdapter(options?: {
       if (platform === 'win32') {
         try {
           const ps =
-            "Get-Printer | ForEach-Object { $p = $_; $cfg = Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json";
-          const { stdout } = await runner(`powershell -NoProfile -Command "${ps}"`, {
-            timeout: 5000,
-          });
+            "$ErrorActionPreference='SilentlyContinue'; Get-Printer | Where-Object { $_.Name -notmatch 'Print to PDF|OneNote|AnyDesk|XPS|Fax' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json";
+          const { stdout } = await runner(
+            `powershell -NoProfile -NonInteractive -Command "${ps}"`,
+            {
+              timeout: 5000,
+            }
+          );
           const printers = parseWindowsPrintersJson(String(stdout));
           await Promise.all(
             printers.map(async (p) => {
@@ -115,25 +133,25 @@ export function createSystemSpoolerAdapter(options?: {
 
       if (platform === 'win32') {
         const vScript = buildWindowsPrinterValidationScript(printerName);
-        await runner(`powershell -NoProfile -Command "${vScript}"`, { timeout: 10000 }).catch(
-          (err) => {
-            throw toSpoolerError('SPOOLER_SUBMISSION_FAILED: Validation failed', printerName, err);
-          }
-        );
+        await runner(`powershell -NoProfile -NonInteractive -Command "${vScript}"`, {
+          timeout: 10000,
+        }).catch((err) => {
+          throw toSpoolerError('SPOOLER_SUBMISSION_FAILED: Validation failed', printerName, err);
+        });
 
         const printCmd = ['.png', '.jpg', '.jpeg'].includes(validation.ext)
           ? buildWindowsImagePrintScript(printerName, filePath, copies, isDuplex)
           : buildWindowsPdfPrintScript(printerName, filePath, copies, isDuplex);
 
-        await runner(`powershell -NoProfile -Command "${printCmd}"`, { timeout: 30000 }).catch(
-          (err) => {
-            throw toSpoolerError(
-              'SPOOLER_SUBMISSION_FAILED: Spooler dispatch failed',
-              printerName,
-              err
-            );
-          }
-        );
+        await runner(`powershell -NoProfile -NonInteractive -Command "${printCmd}"`, {
+          timeout: 30000,
+        }).catch((err) => {
+          throw toSpoolerError(
+            'SPOOLER_SUBMISSION_FAILED: Spooler dispatch failed',
+            printerName,
+            err
+          );
+        });
         return;
       }
 

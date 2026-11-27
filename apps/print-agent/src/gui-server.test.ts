@@ -12,12 +12,10 @@ interface StateResponse {
   printers?: DiscoveredPrinter[];
   studioId?: string;
 }
-
 interface PairResponse {
   success: boolean;
   studioId?: string;
 }
-
 interface UnpairResponse {
   success: boolean;
 }
@@ -30,7 +28,6 @@ describe('GUI Local Server & Endpoints', () => {
 
   beforeEach(() => {
     saveAgentConfig({ apiUrl: 'https://snapprint.onrender.com' }, testConfigPath);
-
     mockPrinters = [
       {
         name: 'Epson L3150 Series',
@@ -40,12 +37,10 @@ describe('GUI Local Server & Endpoints', () => {
         isDefault: true,
       },
     ];
-
     mockSpooler = {
       getPrinters: vi.fn().mockResolvedValue(mockPrinters),
       printFile: vi.fn().mockResolvedValue(undefined),
     };
-
     mockClient = {
       enroll: vi.fn().mockResolvedValue({
         deviceToken: 'tok_test123',
@@ -68,26 +63,22 @@ describe('GUI Local Server & Endpoints', () => {
       expect(html).toContain('SnapPrint Print Agent');
       expect(html).toContain('Studio Connection');
       expect(html).toContain('Live Print Queue');
+      expect(html).toContain('id="updateBtn"');
+      expect(html).toContain('.btn-update');
+      expect(html).toContain('Check Update');
+      expect(html).not.toContain('style="display:none;" onclick="performUpdate()"');
     } finally {
       await handle.close();
     }
   });
 
-  it('GET /api/jobs returns list of recent print jobs', async () => {
+  it('GET /api/jobs, /api/state, /api/printers, and /favicon.ico return agent telemetry', async () => {
     const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
     try {
-      const res = await fetch(`${handle.url}/api/jobs`);
-      expect(res.status).toBe(200);
-      const data = (await res.json()) as { jobs: unknown[] };
-      expect(Array.isArray(data.jobs)).toBe(true);
-    } finally {
-      await handle.close();
-    }
-  });
+      const jobsRes = await fetch(`${handle.url}/api/jobs`);
+      expect(jobsRes.status).toBe(200);
+      expect(Array.isArray(((await jobsRes.json()) as { jobs: unknown[] }).jobs)).toBe(true);
 
-  it('GET /api/state returns current agent telemetry and /api/printers returns printers', async () => {
-    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
-    try {
       const res = await fetch(`${handle.url}/api/state`);
       expect(res.status).toBe(200);
       const data = (await res.json()) as StateResponse;
@@ -99,17 +90,10 @@ describe('GUI Local Server & Endpoints', () => {
       const printerData = (await printerRes.json()) as { printers: DiscoveredPrinter[] };
       expect(printerData.printers).toHaveLength(1);
       expect(printerData.printers[0].name).toBe('Epson L3150 Series');
-    } finally {
-      await handle.close();
-    }
-  });
 
-  it('GET /favicon.ico returns branded image', async () => {
-    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
-    try {
-      const res = await fetch(`${handle.url}/favicon.ico`);
-      expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toBe('image/png');
+      const favRes = await fetch(`${handle.url}/favicon.ico`);
+      expect(favRes.status).toBe(200);
+      expect(favRes.headers.get('content-type')).toBe('image/png');
     } finally {
       await handle.close();
     }
@@ -132,56 +116,38 @@ describe('GUI Local Server & Endpoints', () => {
     }
   });
 
-  it('POST /api/pair connects device to studio and updates configuration', async () => {
+  it('POST /api/pair and /api/unpair manage studio enrollment', async () => {
     const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
     try {
+      const badRes = await fetch(`${handle.url}/api/pair`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pairingCode: '' }),
+      });
+      expect(badRes.status).toBe(400);
+
       const res = await fetch(`${handle.url}/api/pair`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pairingCode: 'SNAP-ABCD-1234' }),
       });
-
       expect(res.status).toBe(200);
       const data = (await res.json()) as PairResponse;
       expect(data.success).toBe(true);
       expect(data.studioId).toBe('std_test456');
 
-      const stateRes = await fetch(`${handle.url}/api/state`);
-      const stateData = (await stateRes.json()) as StateResponse;
+      const stateData = (await (await fetch(`${handle.url}/api/state`)).json()) as StateResponse;
       expect(stateData.isEnrolled).toBe(true);
       expect(stateData.studioId).toBe('std_test456');
       expect(mockClient.syncPrinters).toHaveBeenCalled();
+
+      const unpairRes = await fetch(`${handle.url}/api/unpair`, { method: 'POST' });
+      expect(unpairRes.status).toBe(200);
+      expect(((await unpairRes.json()) as UnpairResponse).success).toBe(true);
     } finally {
       await handle.close();
     }
-  });
-
-  it('POST /api/pair rejects empty pairing code with 400', async () => {
-    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
-    try {
-      const res = await fetch(`${handle.url}/api/pair`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pairingCode: '' }),
-      });
-
-      expect(res.status).toBe(400);
-    } finally {
-      await handle.close();
-    }
-  });
-
-  it('POST /api/unpair resets enrolled credentials', async () => {
-    const handle = await startGuiServer(mockClient, mockSpooler, 0, testConfigPath);
-    try {
-      const res = await fetch(`${handle.url}/api/unpair`, { method: 'POST' });
-      expect(res.status).toBe(200);
-      const data = (await res.json()) as UnpairResponse;
-      expect(data.success).toBe(true);
-    } finally {
-      await handle.close();
-    }
-  });
+  }, 15000);
 
   it('GET /api/update/check returns update check status', async () => {
     const originalFetch = globalThis.fetch;
@@ -190,7 +156,7 @@ describe('GUI Local Server & Endpoints', () => {
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              version: '0.1.0',
+              version: '0.1.1',
               installerName: 'SnapPrint-Print-Agent.msi',
               downloadUrl: 'https://snapprint.onrender.com/downloads/latest.msi',
               sha256: 'a'.repeat(64),
@@ -210,7 +176,7 @@ describe('GUI Local Server & Endpoints', () => {
       expect(res.status).toBe(200);
       const data = (await res.json()) as { updateAvailable: boolean; currentVersion: string };
       expect(typeof data.updateAvailable).toBe('boolean');
-      expect(data.currentVersion).toBe('0.1.0');
+      expect(data.currentVersion).toBe('0.1.1');
     } finally {
       await handle.close();
       fetchSpy.mockRestore();

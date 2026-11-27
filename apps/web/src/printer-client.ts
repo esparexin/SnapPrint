@@ -44,7 +44,7 @@ export interface AgentDevice {
   hostname: string;
   osPlatform: string;
   agentVersion: string;
-  status: 'active' | 'revoked';
+  status: 'active' | 'revoked' | 'unbound';
   isOnline: boolean;
   lastHeartbeatAt: string;
   createdAt: string;

@@ -15,6 +15,7 @@ interface PrinterFleetTabContentProps {
   customSizes: CustomPaperSize[];
   loading: boolean;
   updatingId: string | null;
+  initialTab?: 'printers' | 'workstations' | 'sizes';
   onRoleChange: (printerId: string, role: PrinterRole) => void;
   onPairAgent: () => void;
   onConfirmDuplex: (printer: StudioPrinter) => void;
@@ -30,13 +31,18 @@ export function PrinterFleetTabContent({
   customSizes,
   loading,
   updatingId,
+  initialTab = 'printers',
   onRoleChange,
   onPairAgent,
   onConfirmDuplex,
   onUnbindDevice,
   onRefreshSizes,
 }: PrinterFleetTabContentProps) {
-  const [tab, setTab] = useState<'printers' | 'workstations' | 'sizes'>('printers');
+  const [tab, setTab] = useState<'printers' | 'workstations' | 'sizes'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   return (
     <div>
@@ -111,6 +117,7 @@ export function PrinterFleetTabContent({
           onRoleChange={onRoleChange}
           onPairAgent={onPairAgent}
           onConfirmDuplex={onConfirmDuplex}
+          isBound={devices.some((d) => d.status === 'active')}
         />
       )}
 

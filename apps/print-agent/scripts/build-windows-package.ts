@@ -41,11 +41,9 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
     mkdirSync(distDir, { recursive: true });
   }
 
-  // 1. Ensure runtime bundle exists
+  // 1. Always refresh runtime bundle so stale builds are never packaged
   const bundlePath = join(distDir, 'snapprint-agent.bundle.cjs');
-  if (!existsSync(bundlePath)) {
-    await bundleAgentRuntime();
-  }
+  await bundleAgentRuntime();
 
   const exePath = join(distDir, DEFAULT_PACKAGING_METADATA.binaryName);
   const msiPath = join(distDir, DEFAULT_PACKAGING_METADATA.msiFileName);
@@ -74,53 +72,51 @@ export async function buildWindowsPackage(options?: { allowSkipOnNonWindows?: bo
   const wixDir = join(packageRoot, 'installer', 'wix');
   const primaryWxsPath = emitWixPackageManifest(wixDir);
 
-  // 4. Standalone Windows Executable preparation
+  // 4. Standalone Windows Executable preparation (always regenerate fresh binary)
   if (process.platform === 'win32') {
-    if (!existsSync(exePath)) {
-      const seaConfigPath = join(packageRoot, 'sea-config.json');
-      const seaBlobPath = join(distDir, 'sea-prep.blob');
+    const seaConfigPath = join(packageRoot, 'sea-config.json');
+    const seaBlobPath = join(distDir, 'sea-prep.blob');
 
-      // 4a. Generate SEA preparation blob from runtime bundle
-      let seaResult = spawnSync(process.execPath, ['--experimental-sea-config', seaConfigPath], {
+    // 4a. Generate SEA preparation blob from runtime bundle
+    let seaResult = spawnSync(process.execPath, ['--experimental-sea-config', seaConfigPath], {
+      cwd: packageRoot,
+      encoding: 'utf-8',
+    });
+    if (seaResult.status !== 0) {
+      seaResult = spawnSync(process.execPath, ['--build-sea', seaConfigPath], {
         cwd: packageRoot,
         encoding: 'utf-8',
       });
-      if (seaResult.status !== 0) {
-        seaResult = spawnSync(process.execPath, ['--build-sea', seaConfigPath], {
-          cwd: packageRoot,
-          encoding: 'utf-8',
-        });
-      }
-      if (seaResult.status !== 0 || !existsSync(seaBlobPath)) {
-        throw new Error(
-          `Failed to generate SEA preparation blob: ${seaResult.stderr || seaResult.stdout || 'unknown error'}`
-        );
-      }
-
-      // 4b. Copy host node binary
-      copyFileSync(process.execPath, exePath);
-
-      // 4c. Remove default binary signature if signtool is present
-      spawnSync('signtool', ['remove', '/s', exePath]);
-
-      // 4d. Inject SEA preparation blob into executable via postject
-      const postject = spawnSync(
-        'npx',
-        [
-          'postject',
-          exePath,
-          'NODE_SEA_BLOB',
-          seaBlobPath,
-          '--sentinel-fuse',
-          'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
-        ],
-        { encoding: 'utf-8', shell: true }
+    }
+    if (seaResult.status !== 0 || !existsSync(seaBlobPath)) {
+      throw new Error(
+        `Failed to generate SEA preparation blob: ${seaResult.stderr || seaResult.stdout || 'unknown error'}`
       );
-      if (postject.status !== 0) {
-        throw new Error(
-          `postject failed to inject SEA blob into executable: ${postject.stderr || postject.stdout}`
-        );
-      }
+    }
+
+    // 4b. Copy host node binary
+    copyFileSync(process.execPath, exePath);
+
+    // 4c. Remove default binary signature if signtool is present
+    spawnSync('signtool', ['remove', '/s', exePath]);
+
+    // 4d. Inject SEA preparation blob into executable via postject
+    const postject = spawnSync(
+      'npx',
+      [
+        'postject',
+        exePath,
+        'NODE_SEA_BLOB',
+        seaBlobPath,
+        '--sentinel-fuse',
+        'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+      ],
+      { encoding: 'utf-8', shell: true }
+    );
+    if (postject.status !== 0) {
+      throw new Error(
+        `postject failed to inject SEA blob into executable: ${postject.stderr || postject.stdout}`
+      );
     }
   }
 

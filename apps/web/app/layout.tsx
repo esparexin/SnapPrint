@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: 'SnapPrint — Digital Xerox & Print Cloud',
   description:
     'Multi-tenant photo printing and digital document Xerox SaaS platform. Zero-login QR mobile ordering and direct desktop printer spooling.',
+  manifest: '/site.webmanifest',
   icons: {
     icon: [
       { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
@@ -56,6 +57,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body>{children}</body>
     </html>

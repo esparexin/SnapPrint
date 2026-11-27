@@ -8,6 +8,9 @@ export type AuthorizationUiState =
   | 'ready'
   | 'access_denied';
 
+export const isActivePlatformAdmin = (user: AuthResponse | null): boolean =>
+  Boolean(user?.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active'));
+
 export interface StudioAuthorizationState {
   uiState: AuthorizationUiState;
   activeMemberships: UserMembership[];

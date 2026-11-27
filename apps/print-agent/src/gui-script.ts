@@ -1,0 +1,246 @@
+import { AGENT_VERSION } from './agent-updater.js';
+
+export function getGuiScript(): string {
+  return `
+    let currentWebUrl = 'https://snap.palnadu.dev';
+    let toastTimer = null;
+    let pendingUpdateVersion = null;
+    const $ = (id) => document.getElementById(id);
+
+    function openWebPortal() { window.open(currentWebUrl.replace(/\\/+$/, '') + '/portal', '_blank'); }
+
+    function toggleServerEdit() {
+      const box = $('serverEditBox'), isOpen = box.style.display === 'block';
+      box.style.display = isOpen ? 'none' : 'block';
+      $('settingsBtn').className = 'icon-btn' + (isOpen ? '' : ' active');
+      if (!isOpen) $('serverInput').value = $('serverLabel').textContent;
+    }
+
+    async function saveServer() {
+      const url = $('serverInput').value.trim();
+      const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apiUrl: url }) });
+      if (res.ok) { toggleServerEdit(); await loadState(); checkUpdates(false); showAlert('Server endpoint updated.', 'success'); }
+      else showAlert('Enter a valid http:// or https:// URL.', 'error');
+    }
+
+    async function resetServer() { $('serverInput').value = 'https://snapprint.onrender.com'; await saveServer(); }
+
+    async function loadState() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        document.getElementById('serverLabel').textContent = data.apiUrl;
+        if (data.webUrl) currentWebUrl = data.webUrl;
+        const enrolled = Boolean(data.isEnrolled);
+        document.getElementById('unpairedView').style.display = enrolled ? 'none' : 'block';
+        document.getElementById('pairedView').style.display = enrolled ? 'block' : 'none';
+        document.getElementById('statusBadge').className = 'status-badge ' + (enrolled ? 'online' : 'offline');
+        document.getElementById('statusText').textContent = enrolled ? 'Connected' : 'Not Connected';
+        if (enrolled) {
+          document.getElementById('studioNameVal').textContent = data.studioName || data.studioId || 'Connected Studio';
+          document.getElementById('studioIdSub').textContent = data.studioId ? 'ID: ' + data.studioId : '';
+          document.getElementById('computerNameVal').textContent = data.computerName || 'This Computer';
+          document.getElementById('deviceIdSub').textContent = data.deviceId ? 'ID: ' + data.deviceId : '';
+          cancelUnpairConfirm();
+        }
+      } catch {
+        showAlert('Unable to reach local agent service.', 'error');
+      }
+    }
+
+    async function loadPrinters() {
+      const btn = document.getElementById('scanBtn');
+      const icon = btn.querySelector('svg');
+      btn.disabled = true;
+      if (icon) icon.classList.add('spin');
+      try {
+        const res = await fetch('/api/printers');
+        const data = await res.json();
+        renderPrinters(data.printers || []);
+      } catch {
+        document.getElementById('printersList').innerHTML =
+          '<div class="empty"><div class="empty-title">Could not scan printers</div><div>Check your OS print spooler service and retry.</div></div>';
+      } finally {
+        btn.disabled = false;
+        if (icon) icon.classList.remove('spin');
+      }
+    }
+
+    function renderPrinters(printers) {
+      const list = document.getElementById('printersList');
+      document.getElementById('printersCount').textContent = String(printers ? printers.length : 0);
+      if (!printers || !printers.length) {
+        list.innerHTML =
+          '<div class="empty"><div class="empty-title">No printers detected</div><div>Connect or power on a printer, then click Scan.</div></div>';
+        return;
+      }
+      list.innerHTML = printers.map((p) => {
+        const colorTag = p.isColorSupported ? '<span class="tag tag-color">Color</span>' : '<span class="tag tag-bw">B&amp;W</span>';
+        const defaultTag = p.isDefault ? '<span class="tag tag-default">Default</span>' : '';
+        const statusTag = p.status === 'error'
+          ? '<span class="tag tag-danger">Error</span>'
+          : p.status === 'offline' ? '<span class="tag tag-danger">Offline</span>' : '<span class="tag tag-success">Ready</span>';
+        const driver = p.driverName ? '<div class="row-sub">' + escapeHtml(p.driverName) + '</div>' : '';
+        return '<div class="row"><div class="row-main"><div class="row-icon">' + printerIconSvg() + '</div><div style="min-width:0;"><div class="row-title">' + escapeHtml(p.name) + '</div>' + driver + '</div></div><div class="tags">' + statusTag + colorTag + defaultTag + '</div></div>';
+      }).join('');
+    }
+
+    async function loadJobs() {
+      try {
+        const res = await fetch('/api/jobs');
+        const data = await res.json();
+        renderJobs(data.jobs || []);
+      } catch {}
+    }
+
+    function renderJobs(jobs) {
+      const list = document.getElementById('jobsList');
+      document.getElementById('jobsCount').textContent = String(jobs ? jobs.length : 0);
+      if (!jobs || !jobs.length) {
+        list.innerHTML =
+          '<div class="empty"><div class="empty-title">No print jobs yet</div><div>Orders queued from your studio will appear here live.</div></div>';
+        return;
+      }
+      list.innerHTML = jobs.map((j) => {
+        const cls = j.status === 'completed' ? 'tag-success' : j.status === 'failed' ? 'tag-danger' : j.status === 'processing' ? 'tag-warning' : 'tag-bw';
+        const lbl = j.status === 'completed' ? 'Printed' : j.status === 'failed' ? 'Failed' : j.status === 'processing' ? 'Printing' : j.status;
+        const title = j.errorMessage ? ' title="' + escapeHtml(j.errorMessage) + '"' : '';
+        const copies = j.copies && j.copies > 1 ? ' (' + j.copies + 'c)' : '';
+        return '<div class="row"><div class="row-main"><div class="row-icon">' + docIconSvg() + '</div><div style="min-width:0;"><div class="row-title">' + escapeHtml(j.filename) + copies + '</div><div class="row-sub">' + escapeHtml(j.printerName) + ' &middot; ' + escapeHtml(j.jobId) + '</div></div></div><div class="tags"><span class="tag ' + cls + '"' + title + '>' + escapeHtml(lbl) + '</span></div></div>';
+      }).join('');
+    }
+
+    async function pasteAndConnect() {
+      const input = document.getElementById('pairingInput');
+      if (!input.value.trim()) {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+          input.focus();
+          return showAlert('Paste your pairing code into the box, then click Paste & Connect.', 'error');
+        }
+        try {
+          const clip = (await navigator.clipboard.readText() || '').trim().toUpperCase();
+          if (!clip) {
+            input.focus();
+            return showAlert('Clipboard is empty. Copy a pairing code first.', 'error');
+          }
+          input.value = clip.slice(0, 19);
+        } catch {
+          input.focus();
+          return showAlert('Clipboard access blocked. Press Ctrl+V to paste.', 'error');
+        }
+      }
+      return pairDevice();
+    }
+
+    async function pairDevice() {
+      const input = document.getElementById('pairingInput');
+      const code = input.value.trim().toUpperCase();
+      if (!code) return showAlert('Please enter your pairing code.', 'error');
+      const btn = document.getElementById('pairBtn');
+      btn.disabled = true;
+      btn.textContent = 'Connecting...';
+      try {
+        const res = await fetch('/api/pair', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pairingCode: code }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Pairing failed');
+        showAlert('Connected to Studio!', 'success');
+        input.value = '';
+        await loadState();
+      } catch (err) {
+        showAlert(err.message || 'Pairing failed.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Paste & Connect';
+      }
+    }
+
+    function requestUnpairConfirm() { document.getElementById('unpairConfirmBox').classList.add('show'); }
+    function cancelUnpairConfirm() { document.getElementById('unpairConfirmBox').classList.remove('show'); }
+
+    async function unpairDevice() {
+      const res = await fetch('/api/unpair', { method: 'POST' });
+      if (res.ok) {
+        cancelUnpairConfirm();
+        showAlert('Computer unpaired.', 'success');
+        await loadState();
+      }
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById('toast');
+      box.textContent = msg;
+      box.className = 'toast show ' + (type === 'error' ? 'error' : 'success');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { box.className = 'toast'; }, 3600);
+    }
+
+    function escapeHtml(s) {
+      return (s || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    function printerIconSvg() {
+      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+    }
+
+    function docIconSvg() {
+      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    }
+
+    function handleUpdateClick() { if (pendingUpdateVersion) performUpdate(); else checkUpdates(true); }
+
+    async function checkUpdates(manual) {
+      const btn = document.getElementById('updateBtn');
+      if (manual) { btn.disabled = true; btn.textContent = 'Checking...'; }
+      try {
+        const res = await fetch('/api/update/check');
+        const data = await res.json();
+        if (data && data.updateAvailable && data.latestVersion) {
+          pendingUpdateVersion = data.latestVersion;
+          btn.className = 'btn-update ready';
+          btn.textContent = '⚡ Update to v' + data.latestVersion;
+          btn.disabled = false;
+          if (manual) showAlert('Update v' + data.latestVersion + ' is available!', 'success');
+        } else {
+          pendingUpdateVersion = null;
+          btn.className = 'btn-update';
+          btn.textContent = '↻ Check Update';
+          btn.disabled = false;
+          if (manual) showAlert(data && data.error ? 'Update check failed: ' + data.error : 'Already up to date (v${AGENT_VERSION}).', data && data.error ? 'error' : 'success');
+        }
+      } catch {
+        pendingUpdateVersion = null;
+        btn.className = 'btn-update';
+        btn.textContent = '↻ Check Update';
+        btn.disabled = false;
+        if (manual) showAlert('Unable to check for updates right now.', 'error');
+      }
+    }
+
+    async function performUpdate() {
+      const btn = document.getElementById('updateBtn');
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+      showAlert('Downloading agent update...', 'success');
+      try {
+        const res = await fetch('/api/update/apply', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Update failed');
+        btn.textContent = 'Restarting...';
+        const interval = setInterval(async () => {
+          try { if ((await fetch('/api/state')).ok) { clearInterval(interval); showAlert('Agent updated!', 'success'); loadState(); checkUpdates(false); } } catch {}
+        }, 2000);
+      } catch (err) {
+        showAlert(err.message || 'Update failed.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Retry Update';
+      }
+    }
+
+    loadState(); loadPrinters(); loadJobs(); checkUpdates(false);
+    setInterval(loadState, 15000); setInterval(loadJobs, 5000); setInterval(() => checkUpdates(false), 60000);
+  `;
+}

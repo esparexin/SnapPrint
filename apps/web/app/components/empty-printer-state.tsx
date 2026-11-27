@@ -4,9 +4,10 @@ import React from 'react';
 
 interface EmptyPrinterStateProps {
   onPairAgent: () => void;
+  isBound?: boolean;
 }
 
-export function EmptyPrinterState({ onPairAgent }: EmptyPrinterStateProps) {
+export function EmptyPrinterState({ onPairAgent, isBound = false }: EmptyPrinterStateProps) {
   return (
     <div
       style={{
@@ -80,7 +81,7 @@ export function EmptyPrinterState({ onPairAgent }: EmptyPrinterStateProps) {
           cursor: 'pointer',
         }}
       >
-        Generate Pairing Key
+        {isBound ? 'View Paired PC' : 'Generate Pairing Key'}
       </button>
     </div>
   );

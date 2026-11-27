@@ -2,8 +2,8 @@ import { existsSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, extname, join } from 'node:path';
 import { PrintJobRecord } from '@snapprint/contracts';
-import { AgentClient } from './agent-client.js';
-import { AgentConfig, saveAgentConfig } from './config.js';
+import { AgentClient, AgentClientError } from './agent-client.js';
+import { AgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { InFlightJobTracker } from './job-tracker.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
@@ -19,6 +19,9 @@ export interface DaemonOptions {
 export class AgentDaemon {
   private isRunning = false;
   private isRevoked = false;
+  private isSyncing = false;
+  private isHeartbeating = false;
+  private isPollingJobs = false;
   private syncTimer: NodeJS.Timeout | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private jobPollTimer: NodeJS.Timeout | null = null;
@@ -36,7 +39,6 @@ export class AgentDaemon {
   public get running(): boolean {
     return this.isRunning;
   }
-
   public get revoked(): boolean {
     return this.isRevoked;
   }
@@ -47,18 +49,25 @@ export class AgentDaemon {
 
   private handleAuthError(err: unknown): boolean {
     const msg = err instanceof Error ? err.message : String(err);
-    if (
-      msg.includes('401') ||
-      msg.includes('DEVICE_UNAUTHORIZED') ||
-      msg.includes('DEVICE_REVOKED') ||
-      msg.includes('DEVICE_UNBOUND')
-    ) {
+    const isAuth =
+      err instanceof AgentClientError
+        ? err.statusCode === 401 ||
+          err.code === 'DEVICE_UNBOUND' ||
+          err.code === 'DEVICE_UNAUTHORIZED' ||
+          err.code === 'DEVICE_REVOKED'
+        : msg.includes('401') ||
+          msg.includes('DEVICE_UNAUTHORIZED') ||
+          msg.includes('DEVICE_REVOKED') ||
+          msg.includes('DEVICE_UNBOUND') ||
+          msg.includes('unbound by the operator');
+
+    if (isAuth) {
       const log = this.options.logger || console.error;
       log('[CRITICAL] Workstation unbound or revoked by studio operator. Halting operations.');
       this.isRevoked = true;
       this.config = { ...this.config, deviceToken: undefined };
       try {
-        saveAgentConfig(this.config, this.options.configPath);
+        unpairAgent(this.options.configPath);
       } catch {
         // non-fatal
       }
@@ -72,7 +81,8 @@ export class AgentDaemon {
     if (this.isRevoked) return 0;
     const token = this.config.deviceToken;
     if (!token) throw new Error('Agent is not enrolled.');
-
+    if (this.isSyncing) return 0;
+    this.isSyncing = true;
     try {
       const discovered = await this.spooler.getPrinters();
       const result = await this.client.syncPrinters(token, discovered);
@@ -86,20 +96,24 @@ export class AgentDaemon {
     } catch (err) {
       if (this.handleAuthError(err)) return 0;
       throw err;
+    } finally {
+      this.isSyncing = false;
     }
   }
 
   async heartbeatOnce(): Promise<void> {
-    if (this.isRevoked) return;
+    if (this.isRevoked || this.isHeartbeating) return;
     const token = this.config.deviceToken;
     if (!token) return;
-
+    this.isHeartbeating = true;
     try {
       await this.client.sendHeartbeat(token);
     } catch (err) {
       if (this.handleAuthError(err)) return;
       const log = this.options.logger || console.warn;
       log(`Heartbeat failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      this.isHeartbeating = false;
     }
   }
 
@@ -127,10 +141,18 @@ export class AgentDaemon {
   }
 
   async pollAndExecuteJobsOnce(): Promise<number> {
-    if (this.isRevoked) return 0;
+    if (this.isRevoked || this.isPollingJobs) return 0;
     const token = this.config.deviceToken;
     if (!token) return 0;
+    this.isPollingJobs = true;
+    try {
+      return await this.runJobPollCycle(token);
+    } finally {
+      this.isPollingJobs = false;
+    }
+  }
 
+  private async runJobPollCycle(token: string): Promise<number> {
     let jobs: PrintJobRecord[] = [];
     try {
       jobs = await this.client.fetchPendingJobs(token);
@@ -181,13 +203,13 @@ export class AgentDaemon {
         try {
           await this.client.updateJobStatus(token, job.jobId, 'failed', errMsg);
         } catch {
-          // ignore
+          /* ignore */
         }
       } finally {
         try {
           if (existsSync(tempFilePath)) unlinkSync(tempFilePath);
         } catch {
-          // cleanup
+          /* ignore file cleanup errors */
         }
       }
     }
@@ -202,26 +224,18 @@ export class AgentDaemon {
 
     const log = this.options.logger || console.log;
     log('Starting SnapPrint Desktop Print Agent Daemon...');
-
     await this.recoverUncertainJobs();
     await this.syncOnce().catch(() => {});
     await this.heartbeatOnce();
     await this.pollAndExecuteJobsOnce().catch(() => {});
-
     if (this.isRevoked) return;
 
-    this.heartbeatTimer = setInterval(
-      () => this.heartbeatOnce().catch(() => {}),
-      this.options.heartbeatIntervalMs ?? 30_000
-    );
-    this.syncTimer = setInterval(
-      () => this.syncOnce().catch(() => {}),
-      this.options.syncIntervalMs ?? 30_000
-    );
-    this.jobPollTimer = setInterval(
-      () => this.pollAndExecuteJobsOnce().catch(() => {}),
-      this.options.jobPollIntervalMs ?? 3_000
-    );
+    const opt = this.options;
+    const tick = (fn: () => Promise<unknown>, t: number) =>
+      setInterval(() => fn().catch(() => {}), t);
+    this.heartbeatTimer = tick(() => this.heartbeatOnce(), opt.heartbeatIntervalMs ?? 30_000);
+    this.syncTimer = tick(() => this.syncOnce(), opt.syncIntervalMs ?? 30_000);
+    this.jobPollTimer = tick(() => this.pollAndExecuteJobsOnce(), opt.jobPollIntervalMs ?? 3_000);
   }
 
   stop(): void {
@@ -229,8 +243,6 @@ export class AgentDaemon {
     if (this.syncTimer) clearInterval(this.syncTimer);
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     if (this.jobPollTimer) clearInterval(this.jobPollTimer);
-    this.syncTimer = null;
-    this.heartbeatTimer = null;
-    this.jobPollTimer = null;
+    this.syncTimer = this.heartbeatTimer = this.jobPollTimer = null;
   }
 }

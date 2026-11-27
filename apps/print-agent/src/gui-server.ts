@@ -2,11 +2,11 @@ import { createServer, Server } from 'node:http';
 import { hostname } from 'node:os';
 import { AGENT_VERSION, applyAgentUpdate, checkForUpdate } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
-import { loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
+import { getDefaultWebUrl, loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { FAVICON_BASE64 } from './gui-assets.js';
 import { getGuiHtml } from './gui-html.js';
-import { parseJsonBody, sendJson } from './gui-http-helpers.js';
+import { parseJsonBody, sendFavicon, sendHtml, sendJson } from './gui-http-helpers.js';
 import { InFlightJobTracker } from './job-tracker.js';
 import { shutdownGracefully } from './lifecycle.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
@@ -21,18 +21,37 @@ export interface GuiServerHandle {
   shutdown: (delayMs?: number) => Promise<void>;
 }
 
+export interface GuiServerOptions {
+  daemon?: AgentDaemon | null;
+  skipAutoDaemon?: boolean;
+}
+
 export function createGuiServer(
   client: AgentClient,
   spooler: SpoolerAdapter,
   configPath?: string,
-  inFlightTracker?: InFlightJobTracker
+  inFlightTracker?: InFlightJobTracker,
+  options?: GuiServerOptions
 ): Server {
   const localTracker = inFlightTracker || new InFlightJobTracker();
-  let activeDaemon: AgentDaemon | null = null;
+  let activeDaemon: AgentDaemon | null = options?.daemon ?? null;
+  let pendingPrinterScan: Promise<Awaited<ReturnType<SpoolerAdapter['getPrinters']>>> | null = null;
+  const getPrintersCoalesced = () => {
+    if (!pendingPrinterScan) {
+      pendingPrinterScan = spooler
+        .getPrinters()
+        .catch(() => [])
+        .finally(() => {
+          pendingPrinterScan = null;
+        });
+    }
+    return pendingPrinterScan;
+  };
   const initialConfig = loadAgentConfig(configPath);
-  if (initialConfig.deviceToken) {
+  if (!activeDaemon && !options?.skipAutoDaemon && initialConfig.deviceToken) {
     activeDaemon = new AgentDaemon(initialConfig, client, spooler, {
       inFlightTracker: localTracker,
+      configPath,
     });
     activeDaemon.start().catch(() => {});
   }
@@ -41,35 +60,32 @@ export function createGuiServer(
     const url = new URL(req.url || '/', 'http://127.0.0.1');
 
     if (req.method === 'GET' && url.pathname === '/') {
-      res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-store',
-      });
-      return res.end(getGuiHtml());
+      return sendHtml(res, getGuiHtml());
     }
 
     if (req.method === 'GET' && url.pathname === '/favicon.ico') {
-      const buf = Buffer.from(FAVICON_BASE64, 'base64');
-      res.writeHead(200, {
-        'Content-Type': 'image/png',
-        'Content-Length': buf.length,
-        'Cache-Control': 'public, max-age=86400',
-      });
-      return res.end(buf);
+      return sendFavicon(res, FAVICON_BASE64);
     }
 
     if (req.method === 'GET' && url.pathname === '/api/state') {
+      if (activeDaemon?.revoked) {
+        unpairAgent(configPath);
+        activeDaemon = null;
+      }
       const config = loadAgentConfig(configPath);
       return sendJson(res, 200, {
         isEnrolled: Boolean(config.deviceToken),
         studioId: config.studioId,
+        studioName: config.studioName || (config.studioId ? 'Connected Studio' : undefined),
         deviceId: config.deviceId,
+        computerName: config.deviceFriendlyName || hostname(),
         apiUrl: config.apiUrl,
+        webUrl: config.webUrl || getDefaultWebUrl(),
       });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/printers') {
-      const printers = await spooler.getPrinters().catch(() => []);
+      const printers = await getPrintersCoalesced();
       return sendJson(res, 200, { printers });
     }
 
@@ -104,27 +120,24 @@ export function createGuiServer(
       try {
         const enrollResult = await client.enroll(code, host, {
           hostname: host,
-          agentVersion: '0.1.0',
+          agentVersion: AGENT_VERSION,
           osPlatform,
         });
-
         Object.assign(config, {
           deviceToken: enrollResult.deviceToken,
           studioId: enrollResult.studioId,
+          studioName: enrollResult.studioName,
           deviceId: enrollResult.deviceId,
           deviceFriendlyName: host,
         });
         saveAgentConfig(config, configPath);
-
         if (activeDaemon) activeDaemon.stop();
-        activeDaemon = new AgentDaemon(config, client, spooler, { inFlightTracker: localTracker });
-        activeDaemon.start().catch(() => {});
-
-        return sendJson(res, 200, {
-          success: true,
-          studioId: enrollResult.studioId,
-          deviceId: enrollResult.deviceId,
+        activeDaemon = new AgentDaemon(config, client, spooler, {
+          inFlightTracker: localTracker,
+          configPath,
         });
+        activeDaemon.start().catch(() => {});
+        return sendJson(res, 200, { success: true, ...enrollResult });
       } catch (err) {
         return sendJson(res, 400, {
           message: err instanceof Error ? err.message : 'Enrollment failed',
@@ -147,32 +160,38 @@ export function createGuiServer(
         if (!activeDaemon) {
           activeDaemon = new AgentDaemon(config, client, spooler, {
             inFlightTracker: localTracker,
+            configPath,
           });
           activeDaemon.start().catch(() => {});
         } else {
-          await activeDaemon.syncOnce().catch(() => {});
+          await activeDaemon.syncOnce().catch(() => {
+            if (activeDaemon?.revoked) {
+              unpairAgent(configPath);
+              activeDaemon = null;
+            }
+          });
         }
       }
-      const printers = await spooler.getPrinters().catch(() => []);
+      const printers = await getPrintersCoalesced();
       return sendJson(res, 200, { printers });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/update/check') {
-      const config = loadAgentConfig(configPath);
-      const update = await checkForUpdate(config.apiUrl, AGENT_VERSION);
-      return sendJson(res, 200, update);
+      return sendJson(
+        res,
+        200,
+        await checkForUpdate(loadAgentConfig(configPath).apiUrl, AGENT_VERSION)
+      );
     }
 
     if (req.method === 'POST' && url.pathname === '/api/update/apply') {
       const config = loadAgentConfig(configPath);
-      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, {
-        relaunchArgs: 'gui',
-      });
-      if (result.success) {
-        setTimeout(() => {
-          shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true });
-        }, 500);
-      }
+      const result = await applyAgentUpdate(config.apiUrl, AGENT_VERSION, { relaunchArgs: 'gui' });
+      if (result.success)
+        setTimeout(
+          () => shutdownGracefully({ server, daemon: activeDaemon, exitProcess: true }),
+          500
+        );
       return sendJson(res, result.success ? 200 : 400, result);
     }
 
@@ -192,37 +211,32 @@ export async function startGuiServer(
   spooler: SpoolerAdapter,
   preferredPort = 48900,
   configPath?: string,
-  inFlightTracker?: InFlightJobTracker
+  inFlightTracker?: InFlightJobTracker,
+  options?: GuiServerOptions
 ): Promise<GuiServerHandle> {
-  const server = createGuiServer(client, spooler, configPath, inFlightTracker);
+  const server = createGuiServer(client, spooler, configPath, inFlightTracker, options);
 
   return new Promise((resolve, reject) => {
     server.once('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE') {
-        server.listen(0, '127.0.0.1');
-      } else {
-        reject(err);
-      }
+      if (err.code === 'EADDRINUSE') server.listen(0, '127.0.0.1');
+      else reject(err);
     });
 
     server.listen(preferredPort, '127.0.0.1', () => {
       const addr = server.address();
       const port = typeof addr === 'object' && addr ? addr.port : preferredPort;
-      const url = `http://127.0.0.1:${port}`;
       resolve({
         server,
         port,
-        url,
+        url: `http://127.0.0.1:${port}`,
         close: () =>
           new Promise((done) => {
             (server as unknown as { stopDaemon?: () => void }).stopDaemon?.();
+            server.closeIdleConnections?.();
+            server.closeAllConnections?.();
             server.close(() => done());
           }),
-        shutdown: (delayMs?: number) =>
-          shutdownGracefully({
-            server,
-            delayMs,
-          }),
+        shutdown: (delayMs?: number) => shutdownGracefully({ server, delayMs }),
       });
     });
   });

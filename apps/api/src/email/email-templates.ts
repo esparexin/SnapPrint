@@ -7,11 +7,15 @@ export interface RenderedEmail {
 export function renderRegistrationOtpEmail(code: string, expiryMinutes = 15): RenderedEmail {
   const subject = `SnapPrint Verification Code: ${code}`;
   const text = `Welcome to SnapPrint!\n\nYour studio owner registration verification code is:\n\n${code}\n\nThis single-use code will expire in ${expiryMinutes} minutes.\nIf you did not request this registration code, please disregard this email.`;
+  const logoUrl = 'https://snap.palnadu.dev/brand/snapprint-email-logo-320px.png';
   const html = `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>${subject}</title></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${subject}</title></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #111827; background-color: #f9fafb;">
   <div style="max-width: 520px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
+    <div style="margin-bottom: 24px; text-align: left;">
+      <img src="${logoUrl}" alt="SnapPrint" width="160" height="36" style="display: block; width: 160px; height: auto; border: 0; outline: none; text-decoration: none;" />
+    </div>
     <h2 style="margin-top: 0; color: #111827; font-size: 20px;">Welcome to SnapPrint</h2>
     <p style="color: #4b5563; font-size: 15px; line-height: 1.5;">Use the verification code below to complete your studio owner registration:</p>
     <div style="text-align: center; margin: 28px 0; padding: 18px; background: #f3f4f6; border-radius: 6px;">
@@ -30,11 +34,15 @@ export function renderRegistrationOtpEmail(code: string, expiryMinutes = 15): Re
 export function renderLoginOtpEmail(code: string, expiryMinutes = 15): RenderedEmail {
   const subject = `SnapPrint Login Code: ${code}`;
   const text = `Hello from SnapPrint!\n\nYour studio owner login verification code is:\n\n${code}\n\nThis single-use code will expire in ${expiryMinutes} minutes.\nIf you did not attempt to sign in, your account remains secure. Do not share this code.`;
+  const logoUrl = 'https://snap.palnadu.dev/brand/snapprint-email-logo-320px.png';
   const html = `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>${subject}</title></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${subject}</title></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #111827; background-color: #f9fafb;">
   <div style="max-width: 520px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e5e7eb;">
+    <div style="margin-bottom: 24px; text-align: left;">
+      <img src="${logoUrl}" alt="SnapPrint" width="160" height="36" style="display: block; width: 160px; height: auto; border: 0; outline: none; text-decoration: none;" />
+    </div>
     <h2 style="margin-top: 0; color: #111827; font-size: 20px;">Studio Owner Sign In</h2>
     <p style="color: #4b5563; font-size: 15px; line-height: 1.5;">Enter the verification code below to sign in to your SnapPrint studio portal:</p>
     <div style="text-align: center; margin: 28px 0; padding: 18px; background: #f3f4f6; border-radius: 6px;">

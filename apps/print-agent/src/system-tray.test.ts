@@ -1,7 +1,13 @@
 import { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { describe, expect, it, vi } from 'vitest';
-import { buildTrayScript, hideConsoleWindow, startSystemTray } from './system-tray.js';
+import {
+  buildTrayScript,
+  hideConsoleWindow,
+  isStandaloneExecutable,
+  launchDetachedTrayWorker,
+  startSystemTray,
+} from './system-tray.js';
 
 describe('System Tray & Silent Background Execution', () => {
   it('returns supported=false on non-Windows platforms', () => {
@@ -19,14 +25,71 @@ describe('System Tray & Silent Background Execution', () => {
     expect(mockSpawnSync).not.toHaveBeenCalled();
   });
 
-  it('hideConsoleWindow invokes PowerShell with hidden window style on Windows', () => {
+  it('hideConsoleWindow attaches to parent console and invokes PowerShell hidden on Windows', () => {
     const mockSpawnSync = vi.fn();
-    hideConsoleWindow('win32', mockSpawnSync as never);
+    hideConsoleWindow('win32', mockSpawnSync as never, 4242);
     expect(mockSpawnSync).toHaveBeenCalledWith(
       'powershell.exe',
-      expect.arrayContaining(['-WindowStyle', 'Hidden']),
+      expect.arrayContaining([
+        '-WindowStyle',
+        'Hidden',
+        expect.stringContaining('AttachConsole(4242)'),
+      ]),
       expect.objectContaining({ windowsHide: true })
     );
+  });
+
+  it('detects standalone executables vs node/tsx script invocations', () => {
+    expect(
+      isStandaloneExecutable('C:\\Program Files\\SnapPrint\\snapprint-agent.exe', '', {})
+    ).toBe(true);
+    expect(
+      isStandaloneExecutable(
+        'C:\\Program Files\\nodejs\\node.exe',
+        'C:\\Program Files\\SnapPrint\\snapprint-agent.exe',
+        {}
+      )
+    ).toBe(true);
+    expect(
+      isStandaloneExecutable('C:\\Program Files\\nodejs\\node.exe', 'C:\\app\\dist\\cli.js', {})
+    ).toBe(false);
+  });
+
+  it('launchDetachedTrayWorker spawns a detached windowless background process on Windows', () => {
+    const mockChild = { on: vi.fn(), unref: vi.fn() };
+    const mockSpawn = vi.fn().mockReturnValue(mockChild);
+
+    const launched = launchDetachedTrayWorker({
+      mode: 'desktop',
+      minimized: true,
+      platform: 'win32',
+      execPath: 'C:\\Program Files\\SnapPrint\\snapprint-agent.exe',
+      argv: ['C:\\Program Files\\SnapPrint\\snapprint-agent.exe'],
+      execArgv: [],
+      env: {},
+      spawnImpl: mockSpawn as never,
+    });
+
+    expect(launched).toBe(true);
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'C:\\Program Files\\SnapPrint\\snapprint-agent.exe',
+      ['desktop', '--tray-worker', '--minimized'],
+      expect.objectContaining({
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+        env: expect.objectContaining({ SNAPPRINT_TRAY_WORKER: '1' }),
+      })
+    );
+    expect(mockChild.unref).toHaveBeenCalled();
+
+    expect(
+      launchDetachedTrayWorker({
+        mode: 'desktop',
+        platform: 'linux',
+        spawnImpl: mockSpawn as never,
+      })
+    ).toBe(false);
   });
 
   it('buildTrayScript generates valid PowerShell script with URL and menu items', () => {

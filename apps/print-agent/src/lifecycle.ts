@@ -39,10 +39,25 @@ export async function shutdownGracefully(options: ShutdownOptions = {}): Promise
 
   if (options.server) {
     await new Promise<void>((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
+      };
+      const timer = setTimeout(done, 1500);
+      timer.unref?.();
       try {
-        options.server?.close(() => resolve());
+        options.server?.closeIdleConnections?.();
+        options.server?.closeAllConnections?.();
+        options.server?.close(() => {
+          clearTimeout(timer);
+          done();
+        });
       } catch {
-        resolve();
+        clearTimeout(timer);
+        done();
       }
     });
   }

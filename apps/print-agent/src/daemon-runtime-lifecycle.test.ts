@@ -114,4 +114,48 @@ describe('AgentDaemon Runtime Lifecycle & Safety', () => {
     await coordinator.shutdown({ lockPath: testLock2, exitProcess: false });
     expect(existsSync(testLock2)).toBe(false);
   });
+
+  it('prevents shutdown hang when HTTP keep-alive connections keep server.close pending', async () => {
+    const { shutdownGracefully } = await import('./lifecycle.js');
+    const closeIdleConnections = vi.fn();
+    const closeAllConnections = vi.fn();
+    const stalledServer = {
+      closeIdleConnections,
+      closeAllConnections,
+      close: vi.fn(), // never invokes callback
+    } as unknown as import('node:http').Server;
+
+    const start = Date.now();
+    await shutdownGracefully({ server: stalledServer, exitProcess: false });
+    expect(closeIdleConnections).toHaveBeenCalled();
+    expect(closeAllConnections).toHaveBeenCalled();
+    expect(Date.now() - start).toBeLessThan(2500);
+  });
+
+  it('prevents overlapping job poll ticks while a print job is executing', async () => {
+    let resolveFetch!: (val: unknown[]) => void;
+    const mockClient = {
+      fetchPendingJobs: vi.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveFetch = resolve;
+          })
+      ),
+    } as unknown as AgentClient;
+
+    const daemon = new AgentDaemon(
+      { ...mockConfig },
+      mockClient,
+      { getPrinters: vi.fn(), printFile: vi.fn() } as unknown as SpoolerAdapter,
+      { configPath: tempConfigPath, logger: () => {} }
+    );
+
+    const firstPoll = daemon.pollAndExecuteJobsOnce();
+    const overlappingPoll = await daemon.pollAndExecuteJobsOnce();
+    expect(overlappingPoll).toBe(0);
+    expect(mockClient.fetchPendingJobs).toHaveBeenCalledTimes(1);
+
+    resolveFetch([]);
+    expect(await firstPoll).toBe(0);
+  });
 });

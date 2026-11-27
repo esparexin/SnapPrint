@@ -1,8 +1,9 @@
+import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentClient } from './agent-client.js';
 import { AgentConfig } from './config.js';
-import { runDesktopSession } from './desktop-runner.js';
+import { extractSessionFlags, runDesktopSession } from './desktop-runner.js';
 import { launchAppWindow, launchGuiWindow } from './gui-http-helpers.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
@@ -138,5 +139,50 @@ describe('Desktop Runner & Session Lifecycle', () => {
 
     // launchGuiWindow fallback
     expect(() => launchGuiWindow('http://127.0.0.1:42124')).not.toThrow();
+  });
+
+  it('extractSessionFlags parses tray worker, foreground, and minimized flags', () => {
+    expect(extractSessionFlags(['desktop', '--minimized', '--foreground'], {})).toEqual({
+      isDetachedWorker: false,
+      foreground: true,
+      minimized: true,
+      filteredArgv: ['desktop'],
+    });
+    expect(extractSessionFlags(['gui', '--tray'], { SNAPPRINT_TRAY_WORKER: '1' })).toEqual({
+      isDetachedWorker: true,
+      foreground: false,
+      minimized: true,
+      filteredArgv: ['gui'],
+    });
+  });
+
+  it('auto-detaches desktop session into silent tray worker on Windows', async () => {
+    const config: AgentConfig = { apiUrl: 'http://127.0.0.1:48999' };
+    const client = new AgentClient(config.apiUrl);
+    const mockChild = { on: vi.fn(), unref: vi.fn() };
+    const mockSpawn = vi.fn().mockReturnValue(mockChild);
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const exitCode = await runDesktopSession({
+      config,
+      client,
+      spooler: dummySpooler,
+      mode: 'desktop',
+      platform: 'win32',
+      testMode: false,
+      isDetachedWorker: false,
+      foreground: false,
+      lockPath: join(tmpdir(), `nonexistent-snapprint-lock-${Date.now()}.lock`),
+      spawnImpl: mockSpawn as never,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(mockSpawn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining(['desktop', '--tray-worker']),
+      expect.objectContaining({ detached: true, windowsHide: true, stdio: 'ignore' })
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith('SnapPrint Desktop Agent minimized to system tray.');
+    consoleLogSpy.mockRestore();
   });
 });

@@ -3,15 +3,27 @@
   <Package
     Name="SnapPrint Desktop Print Agent"
     Manufacturer="SnapPrint Technologies"
-    Version="0.1.0"
+    Version="0.1.1"
     UpgradeCode="E3A7B95C-8F42-4F1A-B871-3C5E9025DF7A"
     Scope="perMachine"
     Language="1033">
 
     <MajorUpgrade
       Schedule="afterInstallValidate"
+      AllowSameVersionUpgrades="yes"
       DowngradeErrorMessage="A newer version of SnapPrint Desktop Print Agent is already installed." />
     <MediaTemplate EmbedCab="yes" />
+
+    <CustomAction
+      Id="StopRunningAgent"
+      Directory="System64Folder"
+      ExeCommand="taskkill.exe /F /IM snapprint-agent.exe /T"
+      Execute="immediate"
+      Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="StopRunningAgent" Before="InstallValidate" />
+    </InstallExecuteSequence>
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="SnapPrintVendorFolder" Name="SnapPrint">
@@ -34,20 +46,20 @@
           <Shortcut
             Id="ApplicationStartMenuShortcut"
             Directory="ApplicationProgramsFolder"
-            Name="SnapPrint Desktop Print Agent"
+            Name="SnapPrint Desktop"
             WorkingDirectory="INSTALLFOLDER"
-            Advertise="yes" />
+            Advertise="no" />
           <Shortcut
             Id="ApplicationDesktopShortcut"
             Directory="DesktopFolder"
-            Name="SnapPrint Desktop Print Agent"
+            Name="SnapPrint Desktop"
             WorkingDirectory="INSTALLFOLDER"
-            Advertise="yes" />
+            Advertise="no" />
         </File>
       </Component>
       <Component Id="AgentStartupRegistryComponent" Guid="C6F4A8E1-3D5B-4C9A-8E2F-7A1B3C5D7E9F" Directory="INSTALLFOLDER">
         <RegistryValue
-          Root="HKCU"
+          Root="HKLM"
           Key="Software\Microsoft\Windows\CurrentVersion\Run"
           Name="SnapPrintAgent"
           Value="&quot;[INSTALLFOLDER]snapprint-agent.exe&quot; start"
@@ -63,7 +75,7 @@
           Arguments="/x [ProductCode]" />
         <RemoveFolder Id="CleanUpApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
         <RegistryValue
-          Root="HKCU"
+          Root="HKLM"
           Key="Software\SnapPrint\SnapPrintAgent"
           Name="installed"
           Type="integer"

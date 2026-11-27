@@ -63,24 +63,42 @@ if ($ParentPid -gt 0) {
     Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 1
   }
+  Log "Ensuring no lingering SnapPrint Agent processes hold file locks..."
+  Get-Process -Name "snapprint-agent" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 $bakFile = "$TargetExe.bak"
-if (Test-Path $TargetExe) {
+$hasBackup = $false
+$isMsi = $InstallerPath.ToLower().EndsWith('.msi')
+if ((Test-Path $TargetExe) -and -not $isMsi) {
   Log "Backing up existing binary to $bakFile..."
-  Copy-Item -Path $TargetExe -Destination $bakFile -Force
+  try {
+    Copy-Item -Path $TargetExe -Destination $bakFile -Force -ErrorAction Stop
+    $hasBackup = $true
+  } catch {
+    Log "Backup skipped: $_"
+  }
 }
 
-$isMsi = $InstallerPath.ToLower().EndsWith('.msi')
 $updateSucceeded = $false
 
 if ($isMsi) {
   Log "Executing MSI installer..."
-  $msiProc = Start-Process msiexec.exe -ArgumentList "/i \`"$InstallerPath\`" /passive /norestart" -Wait -PassThru
-  $code = $msiProc.ExitCode
-  Log "MSI exit code: $code"
-  if ($code -eq 0 -or $code -eq 3010) {
-    $updateSucceeded = $true
+  try {
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $msiArgs = "/i \`"$InstallerPath\`" /passive /norestart"
+    if ($isAdmin) {
+      $msiProc = Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -PassThru -ErrorAction Stop
+    } else {
+      $msiProc = Start-Process msiexec.exe -ArgumentList $msiArgs -Verb RunAs -Wait -PassThru -ErrorAction Stop
+    }
+    $code = $msiProc.ExitCode
+    Log "MSI exit code: $code"
+    if ($code -eq 0 -or $code -eq 3010) {
+      $updateSucceeded = $true
+    }
+  } catch {
+    Log "MSI execution failed: $_"
   }
 } else {
   Log "Replacing executable binary..."
@@ -93,18 +111,22 @@ if ($updateSucceeded -and (Test-Path $TargetExe)) {
   try {
     $verOut = & $TargetExe --version
     Log "Verified updated agent version: $verOut"
-    if (Test-Path $bakFile) { Remove-Item -Path $bakFile -Force -ErrorAction SilentlyContinue }
+    if ($hasBackup -and (Test-Path $bakFile)) { Remove-Item -Path $bakFile -Force -ErrorAction SilentlyContinue }
   } catch {
     Log "Smoke test failed. Rolling back..."
     $updateSucceeded = $false
   }
 }
 
-if (-not $updateSucceeded) {
+if (-not $updateSucceeded -and $hasBackup) {
   Log "[ROLLBACK] Restoring previous working binary..."
   if (Test-Path $bakFile) {
-    Copy-Item -Path $bakFile -Destination $TargetExe -Force
-    Log "Restored backup successfully."
+    try {
+      Copy-Item -Path $bakFile -Destination $TargetExe -Force -ErrorAction Stop
+      Log "Restored backup successfully."
+    } catch {
+      Log "Rollback failed: $_"
+    }
   }
 }
 

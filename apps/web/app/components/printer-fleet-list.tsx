@@ -14,6 +14,7 @@ interface PrinterFleetListProps {
   onRoleChange: (printerId: string, role: PrinterRole) => void;
   onPairAgent: () => void;
   onConfirmDuplex?: (printer: StudioPrinter) => void;
+  isBound?: boolean;
 }
 
 export function PrinterFleetList({
@@ -24,6 +25,7 @@ export function PrinterFleetList({
   onRoleChange,
   onPairAgent,
   onConfirmDuplex,
+  isBound = false,
 }: PrinterFleetListProps) {
   return (
     <>
@@ -32,7 +34,7 @@ export function PrinterFleetList({
           Loading connected printers...
         </div>
       ) : printers.length === 0 ? (
-        <EmptyPrinterState onPairAgent={onPairAgent} />
+        <EmptyPrinterState onPairAgent={onPairAgent} isBound={isBound} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {printers.map((printer) => (

@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { AgentClient } from './agent-client.js';
+import { AgentClient, AgentClientError } from './agent-client.js';
 import { AgentConfig } from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { InFlightJobTracker } from './job-tracker.js';
@@ -195,7 +195,13 @@ describe('AgentDaemon', () => {
     const mockClient = {
       sendHeartbeat: vi
         .fn()
-        .mockRejectedValue(new Error('401 DEVICE_UNBOUND: Workstation unbound')),
+        .mockRejectedValue(
+          new AgentClientError(
+            'This workstation was unbound by the operator.',
+            401,
+            'DEVICE_UNBOUND'
+          )
+        ),
     } as unknown as AgentClient;
 
     const daemon = new AgentDaemon(
