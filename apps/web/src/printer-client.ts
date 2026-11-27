@@ -53,7 +53,7 @@ export interface AgentDevice {
 }
 
 export const DEFAULT_AGENT_RELEASE_URL =
-  'https://github.com/esparexin/SnapPrint/releases/download/v0.1.1/SnapPrint-Print-Agent.msi';
+  'https://github.com/esparexin/SnapPrint/releases/download/v0.1.2/SnapPrint-Print-Agent.msi';
 
 export function getAgentDownloadUrl(): string {
   const b = getApiBaseUrl();
