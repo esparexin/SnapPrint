@@ -79,6 +79,10 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
       DowngradeErrorMessage="A newer version of ${meta.productName} is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
+    <Property Id="MSIFASTINSTALL" Value="7" />
+    <Property Id="MsiLogging" Value="voicewarmup" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
     <CustomAction
       Id="StopRunningAgent"
       Directory="System64Folder"
