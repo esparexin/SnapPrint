@@ -35,6 +35,17 @@ export async function printerRoutes(
     { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
     async (request, reply) => {
       const db = getEffectiveDb();
+      const activeDev = await db
+        .collection('agent_devices')
+        .findOne({ studioId: request.params.studioId, status: 'active' });
+      if (activeDev) {
+        return reply.status(409).send({
+          statusCode: 409,
+          code: 'ACTIVE_DEVICE_ALREADY_BOUND',
+          message:
+            'An active PC Agent is already bound to this studio. Unbind it before generating a new pairing code.',
+        });
+      }
       const code = generatePairingCode();
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
       const boundUserId = request.operator?.user.id;

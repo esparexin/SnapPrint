@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hashPassword } from '@snapprint/domain';
 import { createTestApp } from './auth-test-helper.js';
+import { registerAgentDevice } from './repositories/agent-device.repository.js';
 import { createPrintJobs } from './repositories/print-job.repository.js';
 import { upsertStudioSubscription } from './repositories/subscription.repository.js';
 
@@ -83,22 +84,15 @@ describe('Atomic Print-Job Claiming & Lease Concurrency (apps/api)', () => {
     });
     const dev1 = dev1Res.json();
 
-    const p2Res = await ctx.app.inject({
-      method: 'POST',
-      url: `/studios/${studioId}/agent/pairing-keys`,
-      cookies,
+    const dev2 = await registerAgentDevice(ctx.db, {
+      deviceId: 'dev_claim_02',
+      studioId,
+      hostname: 'AGENT-02',
+      osPlatform: 'win32',
+      agentVersion: '1.0.0',
+      deviceToken: 'dvt_claim_02',
+      status: 'active',
     });
-    const dev2Res = await ctx.app.inject({
-      method: 'POST',
-      url: '/agent/enroll',
-      payload: {
-        pairingCode: p2Res.json().code,
-        hostname: 'AGENT-02',
-        osPlatform: 'win32',
-        agentVersion: '1.0.0',
-      },
-    });
-    const dev2 = dev2Res.json();
 
     return { ctx, studioId, cookies, dev1, dev2 };
   }

@@ -12,6 +12,7 @@ import {
   syncDiscoveredPrinters,
   updateDeviceHeartbeat,
 } from './repositories/printer.repository.js';
+import { findStudioById } from './repositories/studio.repository.js';
 
 export interface PrinterAgentRoutesOptions {
   db?: Db;
@@ -97,10 +98,12 @@ export async function registerPrinterAgentRoutes(
       workstationLabel: body.data.hostname,
     });
 
+    const studio = await findStudioById(db, key.studioId);
     return reply.status(201).send({
       success: true,
       deviceId,
       studioId: key.studioId,
+      studioName: studio?.name || 'My Studio',
       deviceToken,
     });
   });

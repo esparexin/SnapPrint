@@ -9,7 +9,7 @@ export interface AgentDownloadRoutesOptions {
   allowRemoteRelease?: boolean;
 }
 
-export const DEFAULT_AGENT_VERSION = '0.1.0';
+export const DEFAULT_AGENT_VERSION = '0.1.1';
 export const DEFAULT_INSTALLER_NAME = 'SnapPrint-Print-Agent.msi' as const;
 
 export const DEFAULT_VERIFIED_RELEASE = {
@@ -18,8 +18,8 @@ export const DEFAULT_VERIFIED_RELEASE = {
   sha256: '110bd67edbf08cb9faed318adb678dd4618ddf4888bbe095c99ff780ca1a2913',
   sizeBytes: 28766208,
   releaseUrl:
-    'https://github.com/esparexin/SnapPrint/releases/download/v0.1.0/SnapPrint-Print-Agent.msi',
-  releaseDate: '2026-11-25T05:16:08.000Z',
+    'https://github.com/esparexin/SnapPrint/releases/download/v0.1.1/SnapPrint-Print-Agent.msi',
+  releaseDate: '2026-11-26T18:15:00.000Z',
 } as const;
 
 export async function agentDownloadRoutes(
