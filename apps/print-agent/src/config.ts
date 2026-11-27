@@ -8,6 +8,7 @@ export interface AgentConfig {
   webUrl?: string;
   deviceToken?: string;
   studioId?: string;
+  studioName?: string;
   deviceId?: string;
   deviceFriendlyName?: string;
   lastSyncAt?: string;
@@ -29,9 +30,14 @@ export function getDefaultWebUrl(): string {
   return process.env.SNAPPRINT_WEB_URL || 'https://snap.palnadu.dev';
 }
 
+const dpapiProtectCache = new Map<string, string>();
+const dpapiUnprotectCache = new Map<string, string>();
+
 export function protectCredential(plainText: string, platform = process.platform): string {
   if (!plainText) return '';
   if (platform === 'win32') {
+    const cached = dpapiProtectCache.get(plainText);
+    if (cached) return cached;
     try {
       const psCommand = `
         Add-Type -AssemblyName System.Security;
@@ -42,10 +48,15 @@ export function protectCredential(plainText: string, platform = process.platform
       const result = execSync(`powershell -NoProfile -Command "${psCommand}"`, {
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'ignore'],
+        windowsHide: true,
+        timeout: 4000,
       });
-      return `dpapi:${result.trim()}`;
+      const encrypted = `dpapi:${result.trim()}`;
+      dpapiProtectCache.set(plainText, encrypted);
+      dpapiUnprotectCache.set(encrypted, plainText);
+      return encrypted;
     } catch {
-      // Fallback if PowerShell invocation is unavailable
+      // Fallback if PowerShell invocation is unavailable or times out
       return plainText;
     }
   }
@@ -55,6 +66,8 @@ export function protectCredential(plainText: string, platform = process.platform
 export function unprotectCredential(cipherText: string, platform = process.platform): string {
   if (!cipherText) return '';
   if (cipherText.startsWith('dpapi:') && platform === 'win32') {
+    const cached = dpapiUnprotectCache.get(cipherText);
+    if (cached) return cached;
     const rawBase64 = cipherText.slice(6);
     try {
       const psCommand = `
@@ -66,8 +79,13 @@ export function unprotectCredential(cipherText: string, platform = process.platf
       const result = execSync(`powershell -NoProfile -Command "${psCommand}"`, {
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'ignore'],
+        windowsHide: true,
+        timeout: 4000,
       });
-      return result.trim();
+      const decrypted = result.trim();
+      dpapiUnprotectCache.set(cipherText, decrypted);
+      dpapiProtectCache.set(decrypted, cipherText);
+      return decrypted;
     } catch {
       return cipherText;
     }
@@ -104,6 +122,7 @@ export function loadAgentConfig(customPath?: string): AgentConfig {
       webUrl,
       deviceToken,
       studioId: typeof parsed.studioId === 'string' ? parsed.studioId : undefined,
+      studioName: typeof parsed.studioName === 'string' ? parsed.studioName : undefined,
       deviceId: typeof parsed.deviceId === 'string' ? parsed.deviceId : undefined,
       deviceFriendlyName:
         typeof parsed.deviceFriendlyName === 'string' ? parsed.deviceFriendlyName : undefined,

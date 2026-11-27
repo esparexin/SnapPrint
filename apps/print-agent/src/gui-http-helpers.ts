@@ -17,8 +17,9 @@ export function launchAppWindow(url: string, options: LaunchWindowOptions = {}):
   const spawner = options.spawnImpl ?? spawn;
 
   try {
+    let child;
     if (platform === 'win32') {
-      spawner(
+      child = spawner(
         'cmd.exe',
         [
           '/c',
@@ -31,13 +32,27 @@ export function launchAppWindow(url: string, options: LaunchWindowOptions = {}):
         {
           detached: true,
           stdio: 'ignore',
+          windowsHide: true,
         }
       );
+      child?.on?.('exit', (code: number | null) => {
+        if (code && code !== 0) {
+          const fb = spawner('cmd.exe', ['/c', 'start', '', url], {
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: true,
+          });
+          fb?.on?.('error', () => {});
+          fb?.unref?.();
+        }
+      });
     } else if (platform === 'darwin') {
-      spawner('open', [url], { detached: true, stdio: 'ignore' });
+      child = spawner('open', [url], { detached: true, stdio: 'ignore' });
     } else {
-      spawner('xdg-open', [url], { detached: true, stdio: 'ignore' });
+      child = spawner('xdg-open', [url], { detached: true, stdio: 'ignore' });
     }
+    child?.on?.('error', () => {});
+    child?.unref?.();
   } catch {
     // Non-fatal if launcher cannot spawn
   }
@@ -71,4 +86,22 @@ export function sendJson(res: ServerResponse, status: number, data: unknown): vo
     'Cache-Control': 'no-store',
   });
   res.end(JSON.stringify(data));
+}
+
+export function sendHtml(res: ServerResponse, html: string): void {
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
+  res.end(html);
+}
+
+export function sendFavicon(res: ServerResponse, base64: string): void {
+  const buf = Buffer.from(base64, 'base64');
+  res.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Content-Length': buf.length,
+    'Cache-Control': 'public, max-age=86400',
+  });
+  res.end(buf);
 }

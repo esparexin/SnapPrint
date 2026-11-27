@@ -32,6 +32,7 @@ describe('Update Trampoline & Rollback Engine', () => {
     expect(script).toContain('Stop-Process -Id $ParentPid -Force');
     expect(script).toContain('Copy-Item -Path $TargetExe -Destination $bakFile');
     expect(script).toContain('Start-Process msiexec.exe');
+    expect(script).toContain('-Verb RunAs');
     expect(script).toContain('& $TargetExe --version');
     expect(script).toContain('[ROLLBACK] Restoring previous working binary');
     expect(script).toContain('Copy-Item -Path $bakFile -Destination $TargetExe -Force');

@@ -2,7 +2,11 @@ import { existsSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { acquireInstanceLock, releaseInstanceLock } from './instance-lock.js';
+import {
+  acquireInstanceLock,
+  getRunningInstancePid,
+  releaseInstanceLock,
+} from './instance-lock.js';
 
 describe('Agent Instance Lock', () => {
   const lockPath = join(tmpdir(), `snapprint-test-lock-${Date.now()}.lock`);
@@ -20,9 +24,11 @@ describe('Agent Instance Lock', () => {
   });
 
   it('successfully acquires lock when no lock exists', () => {
+    expect(getRunningInstancePid(lockPath)).toBeNull();
     const result = acquireInstanceLock(lockPath);
     expect(result.acquired).toBe(true);
     expect(result.pid).toBe(process.pid);
+    expect(getRunningInstancePid(lockPath)).toBe(process.pid);
     expect(existsSync(lockPath)).toBe(true);
   });
 

@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 export function getDefaultLockPath(): string {
   const baseDir = process.env.SNAPPRINT_CONFIG_DIR || join(homedir(), '.snapprint');
@@ -23,21 +23,34 @@ export interface InstanceLockResult {
   pid?: number;
 }
 
-export function acquireInstanceLock(lockPath = getDefaultLockPath()): InstanceLockResult {
-  if (existsSync(lockPath)) {
-    try {
-      const content = readFileSync(lockPath, 'utf-8').trim();
-      const existingPid = parseInt(content, 10);
-      if (!Number.isNaN(existingPid) && isPidAlive(existingPid)) {
-        return { acquired: false, pid: existingPid };
-      }
-    } catch {
-      // Corrupt lock file, overwrite
+export function getRunningInstancePid(lockPath = getDefaultLockPath()): number | null {
+  if (!existsSync(lockPath)) {
+    return null;
+  }
+  try {
+    const content = readFileSync(lockPath, 'utf-8').trim();
+    const existingPid = parseInt(content, 10);
+    if (!Number.isNaN(existingPid) && isPidAlive(existingPid)) {
+      return existingPid;
     }
+  } catch {
+    // Corrupt lock file
+  }
+  return null;
+}
+
+export function acquireInstanceLock(lockPath = getDefaultLockPath()): InstanceLockResult {
+  const runningPid = getRunningInstancePid(lockPath);
+  if (runningPid !== null) {
+    return { acquired: false, pid: runningPid };
   }
 
   const currentPid = process.pid;
   try {
+    const dir = dirname(lockPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
     writeFileSync(lockPath, String(currentPid), 'utf-8');
     return { acquired: true, pid: currentPid };
   } catch {

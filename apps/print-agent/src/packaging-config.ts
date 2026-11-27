@@ -28,7 +28,7 @@ export interface WixManifestOptions {
 export const DEFAULT_PACKAGING_METADATA: PackagingMetadata = {
   productName: 'SnapPrint Desktop Print Agent',
   manufacturer: 'SnapPrint Technologies',
-  version: '0.1.0',
+  version: '0.1.1',
   upgradeCode: 'E3A7B95C-8F42-4F1A-B871-3C5E9025DF7A',
   componentGuid: 'A4D2E5C8-1B3A-4F7E-9C2D-5E8A1B3C5E7A',
   binaryName: 'snapprint-agent.exe',
@@ -75,8 +75,20 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
 
     <MajorUpgrade
       Schedule="afterInstallValidate"
+      AllowSameVersionUpgrades="yes"
       DowngradeErrorMessage="A newer version of ${meta.productName} is already installed." />
     <MediaTemplate EmbedCab="yes" />
+
+    <CustomAction
+      Id="StopRunningAgent"
+      Directory="System64Folder"
+      ExeCommand="taskkill.exe /F /IM ${meta.binaryName} /T"
+      Execute="immediate"
+      Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="StopRunningAgent" Before="InstallValidate" />
+    </InstallExecuteSequence>
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="SnapPrintVendorFolder" Name="SnapPrint">
@@ -101,18 +113,18 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
             Directory="ApplicationProgramsFolder"
             Name="${meta.shortcutName || meta.productName}"
             WorkingDirectory="INSTALLFOLDER"
-            Advertise="yes" />
+            Advertise="no" />
           <Shortcut
             Id="ApplicationDesktopShortcut"
             Directory="DesktopFolder"
             Name="${meta.shortcutName || meta.productName}"
             WorkingDirectory="INSTALLFOLDER"
-            Advertise="yes" />
+            Advertise="no" />
         </File>
       </Component>
       <Component Id="AgentStartupRegistryComponent" Guid="C6F4A8E1-3D5B-4C9A-8E2F-7A1B3C5D7E9F" Directory="INSTALLFOLDER">
         <RegistryValue
-          Root="HKCU"
+          Root="HKLM"
           Key="Software\\Microsoft\\Windows\\CurrentVersion\\Run"
           Name="${meta.startupRegistryName}"
           Value="&quot;[INSTALLFOLDER]${meta.binaryName}&quot; start"
@@ -128,7 +140,7 @@ export function generateWixManifest(options: WixManifestOptions = {}): string {
           Arguments="/x [ProductCode]" />
         <RemoveFolder Id="CleanUpApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
         <RegistryValue
-          Root="HKCU"
+          Root="HKLM"
           Key="Software\\SnapPrint\\${meta.startupRegistryName}"
           Name="installed"
           Type="integer"

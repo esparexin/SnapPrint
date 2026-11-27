@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
 import { launchTrampolineUpdater } from './update-trampoline.js';
 
-export const AGENT_VERSION = '0.1.0';
+export const AGENT_VERSION = '0.1.1';
 
 export interface UpdateCheckResult {
   updateAvailable: boolean;
@@ -43,6 +43,22 @@ export function compareVersions(v1: string, v2: string): number {
   return 0;
 }
 
+async function fetchWithTimeout(
+  fetchImpl: typeof fetch,
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  timer.unref?.();
+  try {
+    return await fetchImpl(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function checkForUpdate(
   apiUrl: string,
   currentVersion = AGENT_VERSION,
@@ -50,10 +66,15 @@ export async function checkForUpdate(
 ): Promise<UpdateCheckResult> {
   const endpoint = `${apiUrl.replace(/\/+$/, '')}/downloads/windows-agent/metadata`;
   try {
-    const res = await fetchImpl(endpoint, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-    });
+    const res = await fetchWithTimeout(
+      fetchImpl,
+      endpoint,
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      },
+      15_000
+    );
     if (!res.ok) {
       return {
         updateAvailable: false,
@@ -96,7 +117,7 @@ export async function downloadUpdate(
     mkdirSync(downloadDir, { recursive: true });
   }
   const targetPath = join(downloadDir, metadata.installerName);
-  const res = await fetchImpl(metadata.downloadUrl, { method: 'GET' });
+  const res = await fetchWithTimeout(fetchImpl, metadata.downloadUrl, { method: 'GET' }, 120_000);
   if (!res.ok) {
     throw new Error(
       `Failed to download installer from ${metadata.downloadUrl} (HTTP ${res.status})`

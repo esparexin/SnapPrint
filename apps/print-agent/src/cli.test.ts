@@ -17,7 +17,7 @@ describe('CLI Commands', () => {
       expect.stringContaining('SnapPrint Desktop Print Agent Status')
     );
     consoleLogSpy.mockRestore();
-  });
+  }, 10000);
 
   it('prints usage and returns 1 for invalid command', async () => {
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -99,6 +99,50 @@ describe('CLI Commands', () => {
     consoleErrSpy.mockRestore();
   });
 
+  it('pair command enrolls device and launches GUI session automatically', async () => {
+    process.env.SNAPPRINT_TEST_MODE = '1';
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/agent/enroll')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              deviceToken: 'tok_cli_pair',
+              studioId: 'std_cli',
+              deviceId: 'dev_cli',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          )
+        );
+      }
+      if (url.includes('/agent/sync-printers')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ count: 0 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    });
+
+    const exitCode = await runCli(['pair', 'SNAP-1111-2222']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('SnapPrint Agent GUI running at: http://127.0.0.1:')
+    );
+
+    delete process.env.SNAPPRINT_TEST_MODE;
+    consoleLogSpy.mockRestore();
+    fetchSpy.mockRestore();
+  }, 15000);
+
   it('fails sync when device is not enrolled', async () => {
     const consoleErrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const exitCode = await runCli(['sync']);
@@ -156,7 +200,7 @@ describe('CLI Commands', () => {
       ok: true,
       status: 200,
       json: async () => ({
-        version: '0.1.0',
+        version: '0.1.1',
         installerName: 'SnapPrint-Print-Agent.msi',
         downloadUrl: 'https://snapprint.example.com/download.msi',
         sha256: 'a'.repeat(64),

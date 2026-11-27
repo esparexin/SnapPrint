@@ -1,11 +1,13 @@
 import { writeFileSync } from 'node:fs';
 import { PrintJobRecord, PrintJobStatus } from '@snapprint/contracts';
+import { AGENT_VERSION } from './agent-updater.js';
 import { DiscoveredPrinter } from './spooler-adapter.js';
 
 export interface EnrollResult {
   deviceToken: string;
   studioId: string;
   deviceId: string;
+  studioName?: string;
 }
 
 export interface SyncPrintersResult {
@@ -33,11 +35,46 @@ export interface EnrollOptions {
   osPlatform?: 'win32' | 'darwin' | 'linux';
 }
 
+function mapDiscoveredPrinter(p: DiscoveredPrinter, lastSeenAt: string) {
+  const rawId = p.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+  const printerId = (rawId.length >= 3 ? rawId : `printer_${rawId}`).slice(0, 60);
+  return {
+    printerId,
+    name: p.name.slice(0, 120),
+    driverName: (p.driverName || p.name).slice(0, 160),
+    connectionType: 'unknown',
+    isColorSupported: Boolean(p.isColorSupported),
+    supportedPaperSizes:
+      p.supportedPaperSizes && p.supportedPaperSizes.length > 0 ? p.supportedPaperSizes : ['A4'],
+    duplexSupport: p.duplexSupport || 'unknown',
+    supportedDuplexSizes: p.supportedDuplexSizes || [],
+    capabilityProvenance: p.capabilityProvenance || 'unverified',
+    status: p.status || 'online',
+    isDefaultOsPrinter: Boolean(p.isDefault),
+    lastSeenAt,
+  };
+}
+
 export class AgentClient {
   constructor(
     private readonly apiUrl: string,
     private readonly fetchImpl: typeof fetch = fetch
   ) {}
+
+  private async fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+    timeoutMs = 15_000
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    timer.unref?.();
+    try {
+      return await this.fetchImpl(url, { ...init, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   async enroll(
     pairingCode: string,
@@ -49,9 +86,9 @@ export class AgentClient {
     const osPlatform: 'win32' | 'darwin' | 'linux' =
       rawPlat === 'win32' || rawPlat === 'darwin' || rawPlat === 'linux' ? rawPlat : 'linux';
     const host = (options?.hostname || friendlyName || 'shop-pc').trim().slice(0, 128);
-    const agentVersion = (options?.agentVersion || '0.1.0').trim().slice(0, 32);
+    const agentVersion = (options?.agentVersion || AGENT_VERSION).trim().slice(0, 32);
 
-    const res = await this.fetchImpl(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -68,6 +105,7 @@ export class AgentClient {
       deviceToken?: string;
       studioId?: string;
       deviceId?: string;
+      studioName?: string;
     } | null;
 
     if (!res.ok || !data?.deviceToken || !data?.studioId || !data?.deviceId) {
@@ -82,6 +120,7 @@ export class AgentClient {
       deviceToken: data.deviceToken,
       studioId: data.studioId,
       deviceId: data.deviceId,
+      studioName: data.studioName,
     };
   }
 
@@ -91,36 +130,12 @@ export class AgentClient {
   ): Promise<SyncPrintersResult> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/sync-printers`;
     const now = new Date().toISOString();
-    const res = await this.fetchImpl(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-device-token': deviceToken,
-      },
+      headers: { 'Content-Type': 'application/json', 'x-device-token': deviceToken },
       body: JSON.stringify({
         timestamp: now,
-        printers: printers.map((p) => {
-          const rawId = p.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-          const cleanId = rawId.length >= 3 ? rawId : `printer_${rawId}`;
-          const printerId = cleanId.slice(0, 60);
-          return {
-            printerId,
-            name: p.name.slice(0, 120),
-            driverName: (p.driverName || p.name).slice(0, 160),
-            connectionType: 'unknown',
-            isColorSupported: Boolean(p.isColorSupported),
-            supportedPaperSizes:
-              p.supportedPaperSizes && p.supportedPaperSizes.length > 0
-                ? p.supportedPaperSizes
-                : ['A4'],
-            duplexSupport: p.duplexSupport || 'unknown',
-            supportedDuplexSizes: p.supportedDuplexSizes || [],
-            capabilityProvenance: p.capabilityProvenance || 'unverified',
-            status: p.status || 'online',
-            isDefaultOsPrinter: Boolean(p.isDefault),
-            lastSeenAt: now,
-          };
-        }),
+        printers: printers.map((p) => mapDiscoveredPrinter(p, now)),
       }),
     });
 
@@ -139,13 +154,10 @@ export class AgentClient {
 
   async sendHeartbeat(deviceToken: string): Promise<HeartbeatResult> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/heartbeat`;
-    const res = await this.fetchImpl(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-device-token': deviceToken,
-      },
-      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'x-device-token': deviceToken },
+      body: '{}',
     });
 
     const data = (await res.json().catch(() => null)) as {
@@ -163,11 +175,9 @@ export class AgentClient {
 
   async fetchPendingJobs(deviceToken: string): Promise<PrintJobRecord[]> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/pending`;
-    const res = await this.fetchImpl(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: 'GET',
-      headers: {
-        'x-device-token': deviceToken,
-      },
+      headers: { 'x-device-token': deviceToken },
     });
 
     const data = (await res.json().catch(() => null)) as {
@@ -189,12 +199,11 @@ export class AgentClient {
 
   async downloadJobDocument(deviceToken: string, jobId: string, targetPath: string): Promise<void> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/${encodeURIComponent(jobId)}/document`;
-    const res = await this.fetchImpl(url, {
-      method: 'GET',
-      headers: {
-        'x-device-token': deviceToken,
-      },
-    });
+    const res = await this.fetchWithTimeout(
+      url,
+      { method: 'GET', headers: { 'x-device-token': deviceToken } },
+      60_000
+    );
 
     if (!res.ok) {
       const data = (await res.json().catch(() => null)) as {
@@ -208,8 +217,7 @@ export class AgentClient {
       );
     }
 
-    const arrayBuffer = await res.arrayBuffer();
-    writeFileSync(targetPath, Buffer.from(arrayBuffer));
+    writeFileSync(targetPath, Buffer.from(await res.arrayBuffer()));
   }
 
   async updateJobStatus(
@@ -219,16 +227,10 @@ export class AgentClient {
     errorMessage?: string
   ): Promise<void> {
     const url = `${this.apiUrl.replace(/\/+$/, '')}/agent/jobs/${encodeURIComponent(jobId)}/status`;
-    const res = await this.fetchImpl(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-device-token': deviceToken,
-      },
-      body: JSON.stringify({
-        status,
-        errorMessage,
-      }),
+      headers: { 'Content-Type': 'application/json', 'x-device-token': deviceToken },
+      body: JSON.stringify({ status, errorMessage }),
     });
 
     if (!res.ok) {

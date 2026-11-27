@@ -71,10 +71,11 @@ jobs:
           }
           Write-Host "PE structural verification passed: $($bytes.Length) bytes."
 
+          $expectedVer = (Get-Content "apps/print-agent/package.json" | ConvertFrom-Json).version
           $versionOutput = & $exePath --version
           Write-Host "Output of snapprint-agent.exe --version: $versionOutput"
-          if ($versionOutput.Trim() -ne "0.1.0") {
-            throw "Expected version 0.1.0, got: $versionOutput"
+          if ($versionOutput.Trim() -ne $expectedVer) {
+            throw "Expected version $expectedVer, got: $versionOutput"
           }
 
           $statusOutput = & $exePath status
@@ -127,10 +128,11 @@ jobs:
             throw "Installed executable not found at $installedExe"
           }
 
+          $expectedVer = (Get-Content "apps/print-agent/package.json" | ConvertFrom-Json).version
           $installedVer = & $installedExe --version
           Write-Host "Installed agent version: $installedVer"
-          if ($installedVer.Trim() -ne "0.1.0") {
-            throw "Installed agent version mismatch: $installedVer"
+          if ($installedVer.Trim() -ne $expectedVer) {
+            throw "Installed agent version mismatch: $installedVer (expected $expectedVer)"
           }
           Write-Host "Installed agent executable verified successfully."
 
