@@ -2,12 +2,16 @@ import { AGENT_VERSION } from './agent-updater.js';
 
 export function getGuiScript(): string {
   return `
-    let currentWebUrl = 'https://snap.palnadu.dev';
+    let currentWebUrl = '';
+    let defaultApiEndpoint = '';
     let toastTimer = null;
     let pendingUpdateVersion = null;
     const $ = (id) => document.getElementById(id);
 
-    function openWebPortal() { window.open(currentWebUrl.replace(/\\/+$/, '') + '/portal', '_blank'); }
+    function openWebPortal() {
+      const url = currentWebUrl || 'https://snap.palnadu.dev';
+      window.open(url.replace(/[/]+$/, '') + '/portal', '_blank');
+    }
 
     function toggleServerEdit() {
       const box = $('serverEditBox'), isOpen = box.style.display === 'block';
@@ -23,13 +27,19 @@ export function getGuiScript(): string {
       else showAlert('Enter a valid http:// or https:// URL.', 'error');
     }
 
-    async function resetServer() { $('serverInput').value = 'https://snapprint.onrender.com'; await saveServer(); }
+    async function resetServer() {
+      if (defaultApiEndpoint) {
+        $('serverInput').value = defaultApiEndpoint;
+        await saveServer();
+      }
+    }
 
     async function loadState() {
       try {
         const res = await fetch('/api/state');
         const data = await res.json();
-        document.getElementById('serverLabel').textContent = data.apiUrl;
+        if (data.apiUrl) document.getElementById('serverLabel').textContent = data.apiUrl;
+        if (data.defaultApiUrl) defaultApiEndpoint = data.defaultApiUrl;
         if (data.webUrl) currentWebUrl = data.webUrl;
         const enrolled = Boolean(data.isEnrolled);
         document.getElementById('unpairedView').style.display = enrolled ? 'none' : 'block';
@@ -37,10 +47,12 @@ export function getGuiScript(): string {
         document.getElementById('statusBadge').className = 'status-badge ' + (enrolled ? 'online' : 'offline');
         document.getElementById('statusText').textContent = enrolled ? 'Connected' : 'Not Connected';
         if (enrolled) {
-          document.getElementById('studioNameVal').textContent = data.studioName || data.studioId || 'Connected Studio';
-          document.getElementById('studioIdSub').textContent = data.studioId ? 'ID: ' + data.studioId : '';
-          document.getElementById('computerNameVal').textContent = data.computerName || 'This Computer';
-          document.getElementById('deviceIdSub').textContent = data.deviceId ? 'ID: ' + data.deviceId : '';
+          const sVal = document.getElementById('studioNameVal');
+          sVal.textContent = data.studioName || 'Connected Studio';
+          if (data.studioId) sVal.title = 'Studio ID: ' + data.studioId;
+          const cVal = document.getElementById('computerNameVal');
+          cVal.textContent = data.computerName || 'This Computer';
+          if (data.deviceId) cVal.title = 'Device ID: ' + data.deviceId;
           cancelUnpairConfirm();
         }
       } catch {

@@ -91,7 +91,7 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
               doc.capabilities.supportedPaperSizes.length > 0
                 ? doc.capabilities.supportedPaperSizes
                 : ['A4'],
-            customPaperSizes: [],
+            customPaperSizes: printerData.capabilities.customPaperSizes || [],
           };
 
     const publicStudio = PublicStudioSchema.parse({

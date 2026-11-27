@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { QuoteItemBreakdown } from '@snapprint/contracts';
+import { resolveFormatLabel } from '../s/[slug]/format-size-label';
 
 interface OrderHandoverChecklistProps {
   items: QuoteItemBreakdown[];
@@ -45,7 +46,7 @@ export function OrderHandoverChecklist({ items }: OrderHandoverChecklistProps) {
         >
           <span style={{ fontWeight: 600, color: '#1e293b' }}>{it.filename}</span>
           <span style={{ color: '#475569' }}>
-            {it.paperSize.toUpperCase()} · {it.colorMode === 'color' ? 'Color' : 'B&W'} ·{' '}
+            {resolveFormatLabel(it.paperSize)} · {it.colorMode === 'color' ? 'Color' : 'B&W'} ·{' '}
             {it.sheetsCount} sheets × {it.copies}
           </span>
         </div>

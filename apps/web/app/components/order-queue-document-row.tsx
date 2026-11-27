@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { OrderRecord, QuoteItemBreakdown } from '@snapprint/contracts';
+import { resolveFormatLabel } from '../s/[slug]/format-size-label';
 
 interface OrderQueueDocumentRowProps {
   order: OrderRecord;
@@ -54,7 +55,7 @@ export function OrderQueueDocumentRow({
           <strong>{item.filename}</strong>
         </span>
         <span style={{ color: '#475569' }}>
-          — {item.paperSize.toUpperCase()}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
+          — {resolveFormatLabel(item.paperSize)}, {item.colorMode === 'color' ? 'Color' : 'B&W'},{' '}
           {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'}, {item.sheetsCount} sh ×{' '}
           {item.copies}
         </span>

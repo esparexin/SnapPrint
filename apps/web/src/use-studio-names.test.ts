@@ -43,6 +43,13 @@ describe('Studio Names & Context Formatting', () => {
     expect(formatStudioOptionLabel({ studioId: 'studio_123' }, {})).toBe('Studio: studio_123');
     expect(
       formatStudioOptionLabel({ studioId: 'studio_123' }, { studio_123: 'Vikram Mobiles' })
+    ).toBe('Vikram Mobiles');
+    expect(
+      formatStudioOptionLabel(
+        { studioId: 'studio_123' },
+        { studio_123: 'Vikram Mobiles' },
+        { includeId: true }
+      )
     ).toBe('Vikram Mobiles (studio_123)');
   });
 

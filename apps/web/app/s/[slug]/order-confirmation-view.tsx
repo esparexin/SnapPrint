@@ -67,6 +67,7 @@ export function OrderConfirmationView({
           slug={slug}
           sessionToken={sessionToken}
           payment={payment}
+          studioName={studioName}
           onPaymentSuccess={() => {
             setOrder((prev) => ({
               ...prev,

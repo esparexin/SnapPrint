@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { OrderRecord, QuoteItemBreakdown } from '@snapprint/contracts';
+import { resolveFormatLabel } from '../s/[slug]/format-size-label';
 import { getOperatorDocumentDownloadUrl } from '../../src/order-client';
 import { useDialog } from '../hooks/use-dialog';
 import { useOrderDocumentPreview } from '../hooks/use-order-document-preview';
@@ -77,7 +78,7 @@ export function OrderDocumentPreviewModal({
               Preview · Order {order.orderNumber}
             </h2>
             <div style={{ fontSize: '13px', color: '#475569', marginTop: '2px' }}>
-              {item.filename} ({item.paperSize.toUpperCase()} ·{' '}
+              {item.filename} ({resolveFormatLabel(item.paperSize)} ·{' '}
               {item.colorMode === 'color' ? 'Color' : 'B&W'} ·{' '}
               {item.sides === 'double_sided' ? 'Duplex' : '1-Sided'})
             </div>

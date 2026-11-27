@@ -12,7 +12,9 @@ export function resolveFormatLabel(
   if (size.startsWith('cps_')) {
     const match = customSizes?.find((c) => c.id === size);
     if (match) return match.name;
-    return size;
+    const raw = size.slice(4).trim();
+    if (!raw || /^[0-9a-f]{8,}$/i.test(raw)) return 'Custom Size';
+    return raw.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   }
   return size.toUpperCase();
 }

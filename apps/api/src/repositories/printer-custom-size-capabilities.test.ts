@@ -126,4 +126,48 @@ describe('Studio Active Custom Paper Size Capabilities', () => {
     expect(body.capabilities.supportsColor).toBe(true);
     expect(body.capabilities.customPaperSizes).toEqual([]);
   });
+
+  it('preserves enabled custom paper sizes in public capabilities when printers are offline', async () => {
+    const ctx = await createTestApp();
+    const studioId = 'studio_offline_custom';
+    ctx.studios.push({
+      id: studioId,
+      slug: 'offline-custom-studio',
+      name: 'Offline Custom Studio',
+      status: 'active',
+      settings: {
+        currency: 'INR',
+        maxActivePrinters: 2,
+        autoApproveOrders: false,
+      },
+      capabilities: {
+        autoPrintMaxPages: 30,
+        isAutoPrintEnabled: true,
+        supportsColor: true,
+        supportsBlackAndWhite: true,
+        supportedPaperSizes: ['A4'],
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await createCustomPaperSize(ctx.db, studioId, {
+      printerId: 'prn_offline',
+      name: '12x18 Poster',
+      width: 12,
+      height: 18,
+      unit: 'in',
+      isEnabled: true,
+    });
+
+    const res = await ctx.app.inject({
+      method: 'GET',
+      url: '/public/studios/offline-custom-studio',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.capabilities.customPaperSizes).toHaveLength(1);
+    expect(body.capabilities.customPaperSizes[0].name).toBe('12x18 Poster');
+  });
 });

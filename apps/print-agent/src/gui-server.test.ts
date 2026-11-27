@@ -8,6 +8,7 @@ import { DiscoveredPrinter, SpoolerAdapter } from './spooler-adapter.js';
 
 interface StateResponse {
   apiUrl: string;
+  defaultApiUrl?: string;
   isEnrolled: boolean;
   printers?: DiscoveredPrinter[];
   studioId?: string;
@@ -63,6 +64,9 @@ describe('GUI Local Server & Endpoints', () => {
       expect(html).toContain('SnapPrint Print Agent');
       expect(html).toContain('Studio Connection');
       expect(html).toContain('Local Printers');
+      expect(html).not.toContain('studioIdSub');
+      expect(html).not.toContain('deviceIdSub');
+      expect(html).not.toContain('https://snapprint.onrender.com');
       expect(html).not.toContain('Live Print Queue');
       expect(html).toContain('id="updateBtn"');
       expect(html).toContain('.btn-update');
@@ -84,6 +88,7 @@ describe('GUI Local Server & Endpoints', () => {
       expect(res.status).toBe(200);
       const data = (await res.json()) as StateResponse;
       expect(data.apiUrl).toBe('https://snapprint.onrender.com');
+      expect(data.defaultApiUrl).toBeDefined();
       expect(data.isEnrolled).toBe(false);
 
       const printerRes = await fetch(`${handle.url}/api/printers`);

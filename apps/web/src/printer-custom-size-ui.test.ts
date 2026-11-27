@@ -122,7 +122,9 @@ describe('Operator Dashboard Custom Paper Size UI Resolution', () => {
     expect(resolveFormatLabel('A4', customSummaries)).toBe('A4');
     expect(resolveFormatLabel('legal', customSummaries)).toBe('LEGAL');
     expect(resolveFormatLabel('cps_poster_12x18', customSummaries)).toBe('12x18 Poster');
-    expect(resolveFormatLabel('cps_unknown', customSummaries)).toBe('cps_unknown');
+    expect(resolveFormatLabel('cps_unknown', customSummaries)).toBe('Unknown');
+    expect(resolveFormatLabel('cps_poster_12x18', undefined)).toBe('Poster 12x18');
+    expect(resolveFormatLabel('cps_1234567890abcdef', undefined)).toBe('Custom Size');
     expect(resolveFormatLabel('A4', undefined)).toBe('A4');
   });
 });

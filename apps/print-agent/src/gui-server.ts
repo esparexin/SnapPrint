@@ -2,16 +2,28 @@ import { createServer, Server } from 'node:http';
 import { hostname } from 'node:os';
 import { AGENT_VERSION, applyAgentUpdate, checkForUpdate } from './agent-updater.js';
 import { AgentClient } from './agent-client.js';
-import { getDefaultWebUrl, loadAgentConfig, saveAgentConfig, unpairAgent } from './config.js';
+import {
+  getDefaultApiUrl,
+  getDefaultWebUrl,
+  loadAgentConfig,
+  saveAgentConfig,
+  unpairAgent,
+} from './config.js';
 import { AgentDaemon } from './daemon.js';
 import { FAVICON_BASE64 } from './gui-assets.js';
 import { getGuiHtml } from './gui-html.js';
-import { parseJsonBody, sendFavicon, sendHtml, sendJson } from './gui-http-helpers.js';
+import {
+  launchGuiWindow,
+  parseJsonBody,
+  sendFavicon,
+  sendHtml,
+  sendJson,
+} from './gui-http-helpers.js';
 import { InFlightJobTracker } from './job-tracker.js';
 import { shutdownGracefully } from './lifecycle.js';
 import { SpoolerAdapter } from './spooler-adapter.js';
 
-export { launchGuiWindow } from './gui-http-helpers.js';
+export { launchGuiWindow };
 
 export interface GuiServerHandle {
   server: Server;
@@ -59,10 +71,7 @@ export function createGuiServer(
   const server = createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://127.0.0.1');
 
-    if (req.method === 'GET' && url.pathname === '/') {
-      return sendHtml(res, getGuiHtml());
-    }
-
+    if (req.method === 'GET' && url.pathname === '/') return sendHtml(res, getGuiHtml());
     if (req.method === 'GET' && url.pathname === '/favicon.ico') {
       return sendFavicon(res, FAVICON_BASE64);
     }
@@ -80,13 +89,13 @@ export function createGuiServer(
         deviceId: config.deviceId,
         computerName: config.deviceFriendlyName || hostname(),
         apiUrl: config.apiUrl,
+        defaultApiUrl: getDefaultApiUrl(),
         webUrl: config.webUrl || getDefaultWebUrl(),
       });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/printers') {
-      const printers = await getPrintersCoalesced();
-      return sendJson(res, 200, { printers });
+      return sendJson(res, 200, { printers: await getPrintersCoalesced() });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/jobs') {
@@ -146,10 +155,8 @@ export function createGuiServer(
     }
 
     if (req.method === 'POST' && url.pathname === '/api/unpair') {
-      if (activeDaemon) {
-        activeDaemon.stop();
-        activeDaemon = null;
-      }
+      activeDaemon?.stop();
+      activeDaemon = null;
       unpairAgent(configPath);
       return sendJson(res, 200, { success: true });
     }
@@ -172,8 +179,7 @@ export function createGuiServer(
           });
         }
       }
-      const printers = await getPrintersCoalesced();
-      return sendJson(res, 200, { printers });
+      return sendJson(res, 200, { printers: await getPrintersCoalesced() });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/update/check') {
