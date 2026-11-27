@@ -60,7 +60,7 @@ export function getGuiScript(): string {
       }
     }
 
-    async function loadPrinters() {
+    async function loadPrinters(manual = false) {
       const btn = document.getElementById('scanBtn');
       const icon = btn.querySelector('svg');
       btn.disabled = true;
@@ -68,10 +68,16 @@ export function getGuiScript(): string {
       try {
         const res = await fetch('/api/printers');
         const data = await res.json();
-        renderPrinters(data.printers || []);
+        const list = data.printers || [];
+        renderPrinters(list);
+        if (manual) {
+          if (!list.length) showAlert('No physical printer detected. Please power ON printer and check cable.', 'error');
+          else showAlert('Found ' + list.length + ' printer' + (list.length === 1 ? '' : 's') + '.', 'success');
+        }
       } catch {
         document.getElementById('printersList').innerHTML =
           '<div class="empty"><div class="empty-title">Could not scan printers</div><div>Check your OS print spooler service and retry.</div></div>';
+        if (manual) showAlert('Could not scan printers. Spooler service error.', 'error');
       } finally {
         btn.disabled = false;
         if (icon) icon.classList.remove('spin');
@@ -83,7 +89,14 @@ export function getGuiScript(): string {
       document.getElementById('printersCount').textContent = String(printers ? printers.length : 0);
       if (!printers || !printers.length) {
         list.innerHTML =
-          '<div class="empty"><div class="empty-title">No printers detected</div><div>Connect or power on a printer, then click Scan.</div></div>';
+          '<div style="background:var(--warning-bg);border:1px solid #fde68a;border-radius:var(--radius-md);padding:12px;font-size:0.78rem;line-height:1.45;color:#92400e;">' +
+            '<div style="font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:0.82rem;">⚠️ No Physical Printers Detected</div>' +
+            '<div style="margin-bottom:8px;">Virtual printers (PDF, OneNote, AnyDesk) are filtered out automatically.</div>' +
+            '<div style="font-weight:600;color:#78350f;">Troubleshooting checklist:</div>' +
+            '<div>1. Is your physical printer turned <b>ON</b>?</div>' +
+            '<div>2. Is the USB cable connected or Wi-Fi on the same network?</div>' +
+            '<div>3. Does it show in Windows <i>Settings &rarr; Printers &amp; Scanners</i>?</div>' +
+          '</div>';
         return;
       }
       list.innerHTML = printers.map((p) => {

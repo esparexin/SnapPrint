@@ -92,7 +92,7 @@ export function getGuiHtml(): string {
       <section class="card">
         <div class="card-head">
           <div class="card-title">Local Printers <span class="count-pill" id="printersCount">0</span></div>
-          <button id="scanBtn" class="btn btn-outline btn-sm" onclick="loadPrinters()">${REFRESH_SVG} Scan</button>
+          <button id="scanBtn" class="btn btn-outline btn-sm" onclick="loadPrinters(true)">${REFRESH_SVG} Scan</button>
         </div>
         <div class="list" id="printersList">
           <div class="empty"><div class="empty-title">Scanning printers...</div></div>
