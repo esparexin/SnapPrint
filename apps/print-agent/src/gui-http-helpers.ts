@@ -1,5 +1,19 @@
 import { spawn } from 'node:child_process';
-import { IncomingMessage, ServerResponse } from 'node:http';
+import { IncomingMessage, Server, ServerResponse } from 'node:http';
+import type { AgentDaemon } from './daemon.js';
+
+export interface GuiServerHandle {
+  server: Server;
+  port: number;
+  url: string;
+  close: () => Promise<void>;
+  shutdown: (delayMs?: number) => Promise<void>;
+}
+
+export interface GuiServerOptions {
+  daemon?: AgentDaemon | null;
+  skipAutoDaemon?: boolean;
+}
 
 export interface LaunchWindowOptions {
   width?: number;
