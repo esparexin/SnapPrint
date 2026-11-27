@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { getAgentDownloadUrl } from '../../src/printer-client';
+import { DEFAULT_AGENT_INSTALLER_NAME, getAgentDownloadUrl } from '../../src/printer-client';
 
 interface PortalTopbarActionsProps {
   canPair?: boolean;
@@ -24,7 +24,7 @@ export function PortalTopbarActions({
     <>
       <a
         href={getAgentDownloadUrl()}
-        download="SnapPrint-Print-Agent.msi"
+        download={DEFAULT_AGENT_INSTALLER_NAME}
         target="_blank"
         rel="noopener noreferrer"
         className="portal-download-btn"

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { getAgentDownloadUrl } from '../../src/printer-client';
+import { DEFAULT_AGENT_INSTALLER_NAME, getAgentDownloadUrl } from '../../src/printer-client';
 
 interface PrinterTroubleshootingPopoverProps {
   id?: string;
@@ -54,7 +54,7 @@ export function PrinterTroubleshootingPopover({
       <div style={{ margin: '8px 0 10px' }}>
         <a
           href={downloadUrl}
-          download="SnapPrint-Print-Agent.msi"
+          download={DEFAULT_AGENT_INSTALLER_NAME}
           target="_blank"
           rel="noopener noreferrer"
           className="portal-troubleshoot-download-btn"

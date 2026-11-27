@@ -7,7 +7,7 @@ import { PrinterFleetHeader } from '../app/components/printer-fleet-header.js';
 import { PrinterStatusBadge } from '../app/components/printer-status-badge.js';
 import { PrinterTroubleshootingPopover } from '../app/components/printer-troubleshooting-popover.js';
 import { AdminTenantFleetSection } from '../app/admin/admin-tenant-fleet-section.js';
-import { computePrinterStatus } from './printer-client.js';
+import { computePrinterStatus, DEFAULT_AGENT_INSTALLER_NAME } from './printer-client.js';
 
 const renderToStaticMarkup = untypedRenderToStaticMarkup as (element: React.ReactElement) => string;
 
@@ -75,7 +75,7 @@ describe('Printer Status Badge & Troubleshooting Help', () => {
 
     // Download Agent .msi
     expect(html).toContain('Download Agent (.msi)');
-    expect(html).toContain('download="SnapPrint-Print-Agent.msi"');
+    expect(html).toContain(`download="${DEFAULT_AGENT_INSTALLER_NAME}"`);
     expect(html).toContain('/downloads/windows-agent/latest.msi');
 
     // Support phone
