@@ -133,7 +133,6 @@ RECOMMENDED NEXT STEPS
 ----------------------------------------------------------
 1. Any stuck msiexec locks have been cleared. You can now delete or run any installer.
 2. To install cleanly without Volume Shadow Copy restore point hangs, run:
-   msiexec /i "SnapPrint-Print-Agent-v0.1.2.msi" MSIFASTINSTALL=7 /l*v "%TEMP%\SnapPrint-Install.log"
 ==========================================================
 "@
 

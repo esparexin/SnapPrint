@@ -29,7 +29,7 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
 
   it('resolves package version dynamically from package.json', () => {
     const version = getPackageVersion();
-    expect(version).toBe('0.1.2');
+    expect(version).toBe('0.1.3');
   });
 
   it('generates valid WiX v4 manifest with upgrade scheduling and component separation', () => {
@@ -37,7 +37,7 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(xml).toContain('<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">');
     expect(xml).toContain('Name="SnapPrint Desktop Print Agent"');
     expect(xml).toContain('Manufacturer="SnapPrint Technologies"');
-    expect(xml).toContain('Version="0.1.2"');
+    expect(xml).toContain('Version="0.1.3"');
     expect(xml).toContain('Scope="perMachine"');
     expect(xml).toContain('Schedule="afterInstallValidate"');
     expect(xml).toContain('AllowSameVersionUpgrades="yes"');
