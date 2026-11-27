@@ -156,7 +156,7 @@ describe('GUI Local Server & Endpoints', () => {
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              version: '0.1.1',
+              version: '0.1.2',
               installerName: 'SnapPrint-Print-Agent.msi',
               downloadUrl: 'https://snapprint.onrender.com/downloads/latest.msi',
               sha256: 'a'.repeat(64),
@@ -176,7 +176,7 @@ describe('GUI Local Server & Endpoints', () => {
       expect(res.status).toBe(200);
       const data = (await res.json()) as { updateAvailable: boolean; currentVersion: string };
       expect(typeof data.updateAvailable).toBe('boolean');
-      expect(data.currentVersion).toBe('0.1.1');
+      expect(data.currentVersion).toBe('0.1.2');
     } finally {
       await handle.close();
       fetchSpy.mockRestore();

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
 import { launchTrampolineUpdater } from './update-trampoline.js';
 
-export const AGENT_VERSION = '0.1.1';
+export const AGENT_VERSION = '0.1.2';
 
 export interface UpdateCheckResult {
   updateAvailable: boolean;
