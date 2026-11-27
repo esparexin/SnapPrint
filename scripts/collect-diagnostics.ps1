@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   SnapPrint Desktop Print Agent — System & Installer Diagnostics Collector.
   Unfreezes stuck installer locks and gathers comprehensive installation and runtime logs.
