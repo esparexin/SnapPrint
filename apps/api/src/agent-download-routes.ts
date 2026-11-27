@@ -15,11 +15,11 @@ export const DEFAULT_INSTALLER_NAME = 'SnapPrint-Print-Agent.msi' as const;
 export const DEFAULT_VERIFIED_RELEASE = {
   version: DEFAULT_AGENT_VERSION,
   installerName: DEFAULT_INSTALLER_NAME,
-  sha256: '110bd67edbf08cb9faed318adb678dd4618ddf4888bbe095c99ff780ca1a2913',
-  sizeBytes: 28766208,
+  sha256: '090032f9f495cf198715667d0704e258713b5faa81e2b9cbebbc961d92ea58dc',
+  sizeBytes: 29216768,
   releaseUrl:
     'https://github.com/esparexin/SnapPrint/releases/download/v0.1.1/SnapPrint-Print-Agent.msi',
-  releaseDate: '2026-11-26T18:15:00.000Z',
+  releaseDate: '2026-11-27T02:48:28.000Z',
 } as const;
 
 export async function agentDownloadRoutes(
