@@ -100,16 +100,6 @@ export function getGuiHtml(): string {
           <div class="empty"><div class="empty-title">Scanning printers...</div></div>
         </div>
       </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-title">Live Print Queue <span class="count-pill" id="jobsCount">0</span></div>
-          <button id="refreshJobsBtn" class="btn btn-outline btn-sm" onclick="loadJobs()">${REFRESH_SVG} Refresh</button>
-        </div>
-        <div class="list" id="jobsList">
-          <div class="empty"><div class="empty-title">No print jobs yet</div><div>Orders queued from your studio will appear here live.</div></div>
-        </div>
-      </section>
     </div>
 
     <footer class="footer">Runs silently in the system tray. Closing this window won&rsquo;t stop active print jobs.</footer>
