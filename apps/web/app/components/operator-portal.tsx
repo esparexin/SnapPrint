@@ -3,30 +3,30 @@
 import React, { useEffect, useState } from 'react';
 import { AuthResponse } from '@snapprint/contracts';
 import { AuthApiError, fetchCurrentUser, signOutToHome } from '../../src/auth-client';
-import { resolveStudioAuthorization } from '../../src/studio-authorization';
+import { isActivePlatformAdmin, resolveStudioAuthorization } from '../../src/studio-authorization';
+import { usePcAgentStatus } from '../hooks/use-pc-agent-status';
 import { OperatorPortalHeader, OperatorView } from './operator-portal-header';
 import { portalStyles } from './operator-portal-styles';
 import { OperatorStudioHub } from './operator-studio-hub';
-import { PlatformScopeHub } from './platform-scope-hub';
-import { PortalMembershipStatus } from './portal-membership-status';
 import { PortalModals } from './portal-modals';
+import { PortalScopeContainer } from './portal-scope-container';
 import { PortalUnauthenticated } from './portal-unauthenticated';
-import { StudioSelector } from './studio-selector';
 import { useStudioNames } from './use-studio-names';
 
 export interface OperatorPortalProps {
   initialMode?: 'email_otp' | 'register';
   onAuthChange?: (auth: AuthResponse | null) => void;
+  onStudioReadyChange?: (ready: boolean, isBound?: boolean) => void;
+  openPairingSignal?: number;
   onClosePortal?: () => void;
   hideHeaderSignOut?: boolean;
 }
 
-const isActivePlatformAdmin = (user: AuthResponse | null) =>
-  Boolean(user?.memberships.some((m) => m.role === 'platform_admin' && m.status === 'active'));
-
 export function OperatorPortal({
   initialMode = 'email_otp',
   onAuthChange,
+  onStudioReadyChange,
+  openPairingSignal,
   onClosePortal,
   hideHeaderSignOut = false,
 }: OperatorPortalProps = {}) {
@@ -37,44 +37,77 @@ export function OperatorPortal({
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<OperatorView>('orders');
   const [showPairingModal, setShowPairingModal] = useState(false);
+  const [printerSetupTab, setPrinterSetupTab] = useState<'printers' | 'workstations' | 'sizes'>(
+    'printers'
+  );
   const studioNames = useStudioNames(auth?.memberships);
+
+  const authState = auth ? resolveStudioAuthorization(auth, selectedStudioId) : null;
+  const isPlatformScope = authState?.selectedStudioId === 'platform_scope';
+  const activeStudioId = !isPlatformScope ? authState?.selectedStudioId || undefined : undefined;
+  const activeStudioName = activeStudioId ? studioNames[activeStudioId] : undefined;
+  const showStudioWorkspace = Boolean(
+    authState && authState.uiState === 'ready' && !isPlatformScope && activeStudioId
+  );
+  const isPcBound = usePcAgentStatus(activeStudioId);
+
+  const handleAuthSuccess = (user: AuthResponse) => {
+    if (isActivePlatformAdmin(user) && typeof window !== 'undefined') {
+      setLoading(true);
+      window.location.replace('/admin');
+      return;
+    }
+    setAuth(user);
+    setErrorBanner(null);
+    onAuthChange?.(user);
+  };
 
   useEffect(() => {
     let mounted = true;
-    let redirecting = false;
     fetchCurrentUser()
       .then((user) => {
-        if (!mounted) return;
-        if (isActivePlatformAdmin(user) && typeof window !== 'undefined') {
-          redirecting = true;
-          window.location.replace('/admin');
-          return;
+        if (mounted && user) {
+          handleAuthSuccess(user);
+          onAuthChange?.(user);
         }
-        setAuth(user);
-        onAuthChange?.(user);
       })
       .catch(
         (err) =>
           mounted &&
           setErrorBanner(err instanceof AuthApiError ? err.message : 'Session verification failed.')
       )
-      .finally(() => mounted && !redirecting && setLoading(false));
+      .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
   }, []);
 
+  const handleOpenPairingOrDetails = () => {
+    if (isPcBound) {
+      setActiveView('printer_setup');
+      setPrinterSetupTab('workstations');
+    } else {
+      setShowPairingModal(true);
+    }
+  };
+
+  useEffect(() => {
+    if (openPairingSignal && openPairingSignal > 0) handleOpenPairingOrDetails();
+  }, [openPairingSignal]);
+
+  useEffect(() => {
+    onStudioReadyChange?.(showStudioWorkspace, isPcBound);
+  }, [showStudioWorkspace, isPcBound, onStudioReadyChange]);
+
   const handleLogout = async () => {
     if (logoutLoading) return;
     setLogoutLoading(true);
     setErrorBanner(null);
-    try {
-      await signOutToHome();
-    } catch (err) {
-      setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.');
-    } finally {
-      setLogoutLoading(false);
-    }
+    signOutToHome()
+      .catch((err) =>
+        setErrorBanner(err instanceof AuthApiError ? err.message : 'Logout encountered an error.')
+      )
+      .finally(() => setLogoutLoading(false));
   };
 
   if (loading) {
@@ -90,33 +123,12 @@ export function OperatorPortal({
       <PortalUnauthenticated
         initialMode={initialMode}
         errorBanner={errorBanner}
-        onSuccess={(newAuth) => {
-          if (isActivePlatformAdmin(newAuth) && typeof window !== 'undefined') {
-            setLoading(true);
-            window.location.replace('/admin');
-            return;
-          }
-          setAuth(newAuth);
-          setErrorBanner(null);
-          onAuthChange?.(newAuth);
-        }}
+        onSuccess={handleAuthSuccess}
       />
     );
   }
 
-  const authState = resolveStudioAuthorization(auth, selectedStudioId);
-  const isPlatformScope = authState.selectedStudioId === 'platform_scope';
-  const activeStudioId = !isPlatformScope ? authState.selectedStudioId || undefined : undefined;
-  const activeStudioName = activeStudioId ? studioNames[activeStudioId] : undefined;
-  const showStudioWorkspace =
-    authState.uiState === 'ready' && !isPlatformScope && Boolean(activeStudioId);
-
-  const handleSetupComplete = async (saved: { id?: string } | null) => {
-    setActiveView('orders');
-    const fresh = await fetchCurrentUser().catch(() => null);
-    if (fresh) setAuth(fresh);
-    if (saved?.id) setSelectedStudioId(saved.id);
-  };
+  if (!authState) return null;
 
   return (
     <div style={portalStyles.wrapper}>
@@ -130,45 +142,29 @@ export function OperatorPortal({
         onClosePortal={onClosePortal}
         studioName={activeStudioName}
         studioId={activeStudioId}
+        isBound={isPcBound}
+        onOpenPairing={handleOpenPairingOrDetails}
       />
-
       {errorBanner && (
         <div role="alert" style={portalStyles.alert}>
           {errorBanner}
         </div>
       )}
-
-      {(authState.uiState === 'no_memberships' || authState.uiState === 'access_denied') && (
-        <PortalMembershipStatus
-          uiState={authState.uiState}
-          selectedStudioId={selectedStudioId}
-          onResetStudio={() => setSelectedStudioId(null)}
-          onOpenWizard={() => setActiveView('setup')}
+      <PortalScopeContainer
+        authState={authState}
+        selectedStudioId={selectedStudioId}
+        studioNames={studioNames}
+        onResetStudio={() => setSelectedStudioId(null)}
+        onOpenWizard={() => setActiveView('setup')}
+        onSelectStudio={setSelectedStudioId}
+      >
+        <OperatorStudioHub
+          studioId={activeStudioId}
+          activeView={activeView}
+          can={authState.can}
+          onNavigate={setActiveView}
         />
-      )}
-
-      {authState.uiState === 'ready' && (
-        <div>
-          <StudioSelector
-            activeMemberships={authState.activeMemberships}
-            selectedStudioId={authState.selectedStudioId}
-            onSelectStudio={setSelectedStudioId}
-            effectiveRole={authState.effectiveRole}
-            studioNames={studioNames}
-          />
-          {isPlatformScope ? (
-            <PlatformScopeHub onOpenWizard={() => setActiveView('setup')} />
-          ) : (
-            <OperatorStudioHub
-              studioId={activeStudioId}
-              activeView={activeView}
-              can={authState.can}
-              onNavigate={setActiveView}
-            />
-          )}
-        </div>
-      )}
-
+      </PortalScopeContainer>
       {(showStudioWorkspace || activeView === 'setup') && (
         <PortalModals
           studioId={activeStudioId}
@@ -176,9 +172,15 @@ export function OperatorPortal({
           activeView={activeView}
           inShell={showStudioWorkspace}
           showPairingModal={showPairingModal}
+          initialPrinterTab={printerSetupTab}
           onClosePairing={() => setShowPairingModal(false)}
           onBackToHub={() => setActiveView('orders')}
-          onSetupComplete={handleSetupComplete}
+          onSetupComplete={async (saved) => {
+            setActiveView('orders');
+            const fresh = await fetchCurrentUser().catch(() => null);
+            if (fresh) setAuth(fresh);
+            if (saved?.id) setSelectedStudioId(saved.id);
+          }}
         />
       )}
     </div>

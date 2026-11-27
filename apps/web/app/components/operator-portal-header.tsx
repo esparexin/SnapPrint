@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { getAgentDownloadUrl } from '../../src/printer-client';
 import { OperatorView } from './operator-portal-styles';
+import { PortalTopbarActions } from './portal-topbar-actions';
 import { PrinterStatusBadge } from './printer-status-badge';
 
 export type { OperatorView };
@@ -17,6 +17,8 @@ interface OperatorPortalHeaderProps {
   onClosePortal?: () => void;
   studioName?: string;
   studioId?: string;
+  isBound?: boolean;
+  onOpenPairing?: () => void;
 }
 
 export function OperatorPortalHeader({
@@ -29,6 +31,8 @@ export function OperatorPortalHeader({
   onClosePortal,
   studioName,
   studioId,
+  isBound = false,
+  onOpenPairing,
 }: OperatorPortalHeaderProps) {
   const headingTitle = studioName || 'SnapPrint Operator Portal';
   const showActions = isPlatformAdmin || !hideSignOut || Boolean(onClosePortal);
@@ -91,26 +95,14 @@ export function OperatorPortalHeader({
               Admin Workspace →
             </a>
           )}
-          <a
-            href={getAgentDownloadUrl()}
-            download="SnapPrint-Print-Agent.msi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="portal-download-btn"
-          >
-            <span aria-hidden="true">📥</span>
-            <span>Download</span>
-          </a>
-          {!hideSignOut && (
-            <button
-              type="button"
-              onClick={onLogout}
-              disabled={logoutLoading}
-              className="portal-signout-btn"
-            >
-              {logoutLoading ? 'Signing out...' : 'Sign Out'}
-            </button>
-          )}
+          <PortalTopbarActions
+            canPair={!hideSignOut && Boolean(studioId)}
+            isBound={isBound}
+            onPairClick={onOpenPairing}
+            onSignOut={onLogout}
+            signingOut={logoutLoading}
+            hideSignOut={hideSignOut}
+          />
           {onClosePortal && (
             <button
               type="button"

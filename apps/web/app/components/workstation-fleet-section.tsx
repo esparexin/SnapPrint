@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AgentDevice } from '../../src/printer-client';
+import { S } from './workstation-fleet-styles';
 
 interface WorkstationFleetSectionProps {
   devices: AgentDevice[];
@@ -10,62 +11,14 @@ interface WorkstationFleetSectionProps {
   onPairAgent: () => void;
 }
 
-const S = {
-  cardStyle: (unbound: boolean) => ({
-    padding: '12px 16px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap' as const,
-    gap: '8px',
-    backgroundColor: unbound ? '#f8fafc' : '#ffffff',
-  }),
-  dot: (online: boolean) => ({
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    backgroundColor: online ? '#22c55e' : '#94a3b8',
-    display: 'inline-block',
-  }),
-  pill: (bg: string, fg: string) => ({
-    fontSize: '11px',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    backgroundColor: bg,
-    color: fg,
-  }),
-  pairBtn: {
-    minHeight: '44px',
-    padding: '0 14px',
-    borderRadius: '6px',
-    border: '1px solid #0284c7',
-    backgroundColor: '#f0f9ff',
-    color: '#0284c7',
-    fontSize: '12px',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  unbindBtn: {
-    minHeight: '44px',
-    padding: '0 12px',
-    borderRadius: '6px',
-    border: '1px solid #fecaca',
-    backgroundColor: '#fef2f2',
-    color: '#b91c1c',
-    fontSize: '12px',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-};
-
 export function WorkstationFleetSection({
   devices,
   loading,
   onUnbindDevice,
   onPairAgent,
 }: WorkstationFleetSectionProps) {
+  const hasActiveDevice = devices.some((d) => d.status === 'active');
+
   return (
     <div style={{ marginTop: '16px' }}>
       <div
@@ -86,9 +39,11 @@ export function WorkstationFleetSection({
             Workstations hosting physical printers. Unbind old PCs when migrating.
           </p>
         </div>
-        <button type="button" onClick={onPairAgent} style={S.pairBtn}>
-          + Pair Workstation
-        </button>
+        {!hasActiveDevice && (
+          <button type="button" onClick={onPairAgent} style={S.pairBtn}>
+            + Pair Workstation
+          </button>
+        )}
       </div>
 
       {loading && (
@@ -115,7 +70,7 @@ export function WorkstationFleetSection({
       {!loading && devices.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {devices.map((device) => {
-            const isUnbound = device.status === ('unbound' as string);
+            const isUnbound = device.status === 'unbound';
             return (
               <div key={device.deviceId} style={S.cardStyle(isUnbound)}>
                 <div>

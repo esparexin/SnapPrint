@@ -15,16 +15,35 @@ describe('Operator Dashboard Frontend & CSS Audit Verification', () => {
     expect(css).toContain('.dialog-content');
   });
 
-  it('guarantees zero uncompiled Tailwind utility classes across all components', () => {
-    const files = fs.readdirSync(componentsDir).filter((f) => f.endsWith('.tsx'));
-    const twPattern =
-      /\b(flex-col|flex-wrap|bg-slate-50|border-slate-200|rounded-lg|p-3\.5|max-w-3xl|max-w-md|bg-sky-600|hover:bg-sky-700)\b/;
+  it('guarantees zero uncompiled Tailwind or undefined CSS classes across all web app routes and components', () => {
+    const appDir = path.resolve(__dirname, '../app');
+    const css = fs.readFileSync(globalsCssPath, 'utf-8');
+    const globalClasses = new Set(
+      [...css.matchAll(/\.([a-zA-Z0-9_\\:-]+)/g)].map((m) => m[1].replace(/\\/g, ''))
+    );
+
+    const walkTsx = (dir: string): string[] => {
+      const results: string[] = [];
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) results.push(...walkTsx(full));
+        else if (entry.name.endsWith('.tsx')) results.push(full);
+      }
+      return results;
+    };
 
     const violations: string[] = [];
-    for (const file of files) {
-      const content = fs.readFileSync(path.join(componentsDir, file), 'utf-8');
-      if (twPattern.test(content)) {
-        violations.push(file);
+    for (const filePath of walkTsx(appDir)) {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const localClasses = new Set(
+        [...content.matchAll(/\.([a-zA-Z0-9_\\:-]+)\s*[{:,]/g)].map((m) => m[1].replace(/\\/g, ''))
+      );
+      for (const match of content.matchAll(/className\s*=\s*["']([^"']+)["']/g)) {
+        for (const cls of match[1].trim().split(/\s+/)) {
+          if (cls && !globalClasses.has(cls) && !localClasses.has(cls)) {
+            violations.push(`${path.relative(appDir, filePath)}: ${cls}`);
+          }
+        }
       }
     }
 

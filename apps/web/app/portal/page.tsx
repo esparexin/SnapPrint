@@ -3,23 +3,23 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthApiError, signOutToHome } from '../../src/auth-client';
-import { getAgentDownloadUrl } from '../../src/printer-client';
 import { OperatorPortal } from '../components/operator-portal';
 import { portalStyles } from '../components/operator-portal-styles';
+import { PortalTopbarActions } from '../components/portal-topbar-actions';
 
 export default function PortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [canPair, setCanPair] = useState(false);
+  const [isBound, setIsBound] = useState(false);
+  const [pairSignal, setPairSignal] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [initialMode, setInitialMode] = useState<'email_otp' | 'register'>('email_otp');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const action = new URLSearchParams(window.location.search).get('action');
-      if (action === 'register') {
-        setInitialMode('register');
-      }
-    }
+    const params =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    if (params?.get('action') === 'register') setInitialMode('register');
   }, []);
 
   const handleSignOut = async () => {
@@ -50,25 +50,15 @@ export default function PortalPage() {
             <span className="portal-badge">Shop Portal</span>
           </Link>
           {isAuthenticated && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <a
-                href={getAgentDownloadUrl()}
-                download="SnapPrint-Print-Agent.msi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="portal-download-btn"
-              >
-                <span aria-hidden="true">📥</span>
-                <span>Download</span>
-              </a>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="portal-signout-btn"
-              >
-                {signingOut ? 'Signing out...' : 'Sign Out'}
-              </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {/* Topbar actions: PC Agent pairing and Sign Out */}
+              <PortalTopbarActions
+                canPair={canPair}
+                isBound={isBound}
+                onPairClick={() => setPairSignal((n) => n + 1)}
+                onSignOut={handleSignOut}
+                signingOut={signingOut}
+              />
             </div>
           )}
         </div>
@@ -82,7 +72,18 @@ export default function PortalPage() {
         <OperatorPortal
           initialMode={initialMode}
           hideHeaderSignOut
-          onAuthChange={(u) => setIsAuthenticated(Boolean(u))}
+          openPairingSignal={pairSignal}
+          onStudioReadyChange={(ready, bound) => {
+            setCanPair(ready);
+            setIsBound(Boolean(bound));
+          }}
+          onAuthChange={(u) => {
+            setIsAuthenticated(Boolean(u));
+            if (!u) {
+              setCanPair(false);
+              setIsBound(false);
+            }
+          }}
         />
       </main>
     </div>

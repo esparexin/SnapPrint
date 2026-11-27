@@ -5,19 +5,18 @@ import { AgentDevice, StudioPrinter } from '../../src/printer-client';
 import { useDialog } from '../hooks/use-dialog';
 import { usePrinterFleetData } from '../hooks/use-printer-fleet-data';
 import { portalStyles } from './operator-portal-styles';
-import { AgentPairingModal } from './agent-pairing-modal';
-import { DuplexConfirmModal } from './duplex-confirm-modal';
 import { PrinterFleetFooter } from './printer-fleet-footer';
 import { PrinterFleetHeader } from './printer-fleet-header';
 import { PrinterFleetTabContent } from './printer-fleet-tab-content';
 import { PrinterPageSetupSection } from './printer-page-setup-section';
-import { UnbindDeviceModal } from './unbind-device-modal';
+import { PrinterPageSubModals } from './printer-page-sub-modals';
 
 interface PrinterPageSetupModalProps {
   studioId: string;
   studioName?: string;
   onClose: () => void;
   inShell?: boolean;
+  initialTab?: 'printers' | 'workstations' | 'sizes';
 }
 
 export function PrinterPageSetupModal({
@@ -25,6 +24,7 @@ export function PrinterPageSetupModal({
   studioName,
   onClose,
   inShell = false,
+  initialTab,
 }: PrinterPageSetupModalProps) {
   const {
     printers,
@@ -41,8 +41,15 @@ export function PrinterPageSetupModal({
   } = usePrinterFleetData(studioId);
 
   const [showPairingModal, setShowPairingModal] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(initialTab);
   const [printerForDuplex, setPrinterForDuplex] = useState<StudioPrinter | null>(null);
   const [deviceToUnbind, setDeviceToUnbind] = useState<AgentDevice | null>(null);
+
+  const hasActivePc = devices.some((d) => d.status === 'active');
+  const handlePairOrWorkstation = () => {
+    if (hasActivePc) setSelectedTab('workstations');
+    else setShowPairingModal(true);
+  };
 
   const { handleBackdropClick, swipeHandlers } = useDialog({
     isOpen: !inShell,
@@ -73,8 +80,9 @@ export function PrinterPageSetupModal({
           customSizes={customSizes}
           loading={loading}
           updatingId={updatingId}
+          initialTab={selectedTab || initialTab}
           onRoleChange={handleRoleChange}
-          onPairAgent={() => setShowPairingModal(true)}
+          onPairAgent={handlePairOrWorkstation}
           onConfirmDuplex={setPrinterForDuplex}
           onUnbindDevice={setDeviceToUnbind}
           onRefreshSizes={loadAll}
@@ -88,29 +96,17 @@ export function PrinterPageSetupModal({
         onRefresh={loadAll}
         onClose={inShell ? undefined : onClose}
       />
-      {showPairingModal && (
-        <AgentPairingModal
-          studioId={studioId}
-          studioName={studioName}
-          onClose={() => setShowPairingModal(false)}
-        />
-      )}
-      {printerForDuplex && (
-        <DuplexConfirmModal
-          studioId={studioId}
-          printer={printerForDuplex}
-          onClose={() => setPrinterForDuplex(null)}
-          onConfirmed={loadAll}
-        />
-      )}
-      {deviceToUnbind && (
-        <UnbindDeviceModal
-          studioId={studioId}
-          device={deviceToUnbind}
-          onClose={() => setDeviceToUnbind(null)}
-          onUnbound={loadAll}
-        />
-      )}
+      <PrinterPageSubModals
+        studioId={studioId}
+        studioName={studioName}
+        showPairingModal={showPairingModal}
+        onClosePairing={() => setShowPairingModal(false)}
+        printerForDuplex={printerForDuplex}
+        onCloseDuplex={() => setPrinterForDuplex(null)}
+        deviceToUnbind={deviceToUnbind}
+        onCloseUnbind={() => setDeviceToUnbind(null)}
+        onRefresh={loadAll}
+      />
     </>
   );
 

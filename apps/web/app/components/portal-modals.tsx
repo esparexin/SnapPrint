@@ -37,6 +37,7 @@ export interface PortalModalsProps {
   activeView?: OperatorView;
   inShell?: boolean;
   showPairingModal?: boolean;
+  initialPrinterTab?: 'printers' | 'workstations' | 'sizes';
   onClosePairing?: () => void;
   onBackToHub?: () => void;
   onSetupComplete: (saved: StudioOnboardingProfile | null) => void;
@@ -49,6 +50,7 @@ export function PortalModals({
   activeView,
   inShell = false,
   showPairingModal = false,
+  initialPrinterTab,
   onClosePairing,
   onBackToHub,
   onSetupComplete,
@@ -101,7 +103,7 @@ export function PortalModals({
     };
     const views: Partial<Record<OperatorView, React.ReactNode>> = {
       orders: <OrderFulfillmentModal {...base} />,
-      printer_setup: <PrinterPageSetupModal {...base} />,
+      printer_setup: <PrinterPageSetupModal {...base} initialTab={initialPrinterTab} />,
       staff: <StaffManagementModal {...base} />,
       qr: <StudioQrModal studio={qrStudio} onClose={handleClose} inShell={inShell} />,
       profile: <ShopProfileModal key={studioKey} {...studioFormProps} />,
