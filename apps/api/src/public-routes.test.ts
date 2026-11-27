@@ -121,6 +121,37 @@ describe('Public Studio & Customer Session Routes', () => {
       const body = JSON.parse(res.payload);
       expect(body.code).toBe('INVALID_STUDIO_SLUG');
     });
+
+    it('filters public supported paper sizes to match operator enabled sizes', async () => {
+      const ctx = await seedPublicStudios();
+      ctx.studios[0].capabilities = {
+        autoPrintMaxPages: 30,
+        isAutoPrintEnabled: true,
+        supportsColor: true,
+        supportsBlackAndWhite: true,
+        supportedPaperSizes: ['A4'],
+      };
+      await ctx.db.collection('printers').insertOne({
+        id: 'prn_multi_size',
+        studioId: 'studio_active_1',
+        name: 'HP Multi Size',
+        driverName: 'HP Universal',
+        role: 'active_bw',
+        isColorSupported: true,
+        supportedPaperSizes: ['A4', 'A3', 'legal'],
+        duplexSupport: 'supported',
+        status: 'online',
+        isDefaultOsPrinter: true,
+        lastSeenAt: new Date(),
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      });
+
+      const res = await ctx.app.inject({ method: 'GET', url: '/public/studios/active-studio' });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.payload);
+      expect(body.capabilities.supportedPaperSizes).toEqual(['A4']);
+    });
   });
 
   describe('POST /public/studios/:slug/sessions', () => {

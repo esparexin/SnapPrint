@@ -76,6 +76,7 @@ describe('Printer Capability Client (apps/web)', () => {
           },
         ],
         custom: [],
+        enabledSizes: ['A4'],
       }),
     });
 
@@ -85,6 +86,7 @@ describe('Printer Capability Client (apps/web)', () => {
       mockFetch as unknown as typeof fetch
     );
     expect(res.standard).toHaveLength(1);
+    expect(res.enabledSizes).toEqual(['A4']);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/studios/std_test_client/paper-sizes'),
       expect.objectContaining({ method: 'GET' })

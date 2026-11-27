@@ -23,6 +23,7 @@ export function usePrinterFleetData(studioId: string) {
   const [devices, setDevices] = useState<AgentDevice[]>([]);
   const [standardSizes, setStandardSizes] = useState<StandardPaperSizeDefinition[]>([]);
   const [customSizes, setCustomSizes] = useState<CustomPaperSize[]>([]);
+  const [enabledSizes, setEnabledSizes] = useState<string[]>(['A4']);
   const [allowance, setAllowance] = useState<StudioFleetAllowance | null>(null);
   const [studio, setStudio] = useState<Studio | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,11 @@ export function usePrinterFleetData(studioId: string) {
       const [pData, dData, sData, studioData] = await Promise.all([
         fetchStudioPrinters(studioId),
         fetchStudioDevices(studioId),
-        fetchStudioPaperSizes(studioId).catch(() => ({ standard: [], custom: [] })),
+        fetchStudioPaperSizes(studioId).catch(() => ({
+          standard: [],
+          custom: [],
+          enabledSizes: [],
+        })),
         fetchStudio(studioId).catch(() => null),
       ]);
       setPrinters(pData.printers);
@@ -44,6 +49,7 @@ export function usePrinterFleetData(studioId: string) {
       setDevices(dData.devices);
       setStandardSizes(sData.standard || []);
       setCustomSizes(sData.custom || []);
+      setEnabledSizes(sData.enabledSizes || ['A4']);
       setStudio(studioData?.studio ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load printers');
@@ -74,6 +80,7 @@ export function usePrinterFleetData(studioId: string) {
     devices,
     standardSizes,
     customSizes,
+    enabledSizes,
     allowance,
     studio,
     loading,

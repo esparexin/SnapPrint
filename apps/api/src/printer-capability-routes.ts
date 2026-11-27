@@ -88,7 +88,6 @@ export async function registerPrinterCapabilityRoutes(
       }
 
       const unbound = await unbindAgentDevice(db, request.params.studioId, request.params.deviceId);
-
       if (!unbound) {
         return reply.status(404).send({
           statusCode: 404,
@@ -97,11 +96,7 @@ export async function registerPrinterCapabilityRoutes(
         });
       }
 
-      return reply.send({
-        success: true,
-        deviceId: request.params.deviceId,
-        status: 'unbound',
-      });
+      return reply.send({ success: true, deviceId: request.params.deviceId, status: 'unbound' });
     }
   );
 
@@ -111,14 +106,19 @@ export async function registerPrinterCapabilityRoutes(
     { preHandler: [requireStudioPermission('manage_printers', getEffectiveDb)] },
     async (request, reply) => {
       const db = getEffectiveDb();
-      const customSizes = await listCustomPaperSizes(
-        db,
-        request.params.studioId,
-        request.query.printerId
-      );
+      const [customSizes, studioDoc] = await Promise.all([
+        listCustomPaperSizes(db, request.params.studioId, request.query.printerId),
+        db
+          .collection('studios')
+          .findOne({ id: request.params.studioId }, { projection: { capabilities: 1 } }),
+      ]);
+      const enabledSizes = (
+        studioDoc as { capabilities?: { supportedPaperSizes?: string[] } } | null
+      )?.capabilities?.supportedPaperSizes ?? ['A4'];
       return reply.send({
         standard: STANDARD_PAPER_CATALOGUE,
         custom: customSizes,
+        enabledSizes,
       });
     }
   );

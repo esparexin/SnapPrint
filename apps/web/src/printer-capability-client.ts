@@ -9,6 +9,7 @@ import { getApiBaseUrl, PrinterApiError } from './printer-client.js';
 export interface StudioPaperSizesResponse {
   standard: StandardPaperSizeDefinition[];
   custom: CustomPaperSize[];
+  enabledSizes?: string[];
 }
 
 export async function confirmPrinterCapability(

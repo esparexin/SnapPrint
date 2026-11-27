@@ -31,6 +31,7 @@ export function PrinterPageSetupModal({
     devices,
     standardSizes,
     customSizes,
+    enabledSizes,
     allowance,
     studio,
     loading,
@@ -78,6 +79,7 @@ export function PrinterPageSetupModal({
           devices={devices}
           standardSizes={standardSizes}
           customSizes={customSizes}
+          enabledSizes={enabledSizes}
           loading={loading}
           updatingId={updatingId}
           initialTab={selectedTab || initialTab}
@@ -93,6 +95,7 @@ export function PrinterPageSetupModal({
             printers={printers}
             studio={studio}
             customSizes={customSizes}
+            enabledSizes={enabledSizes}
           />
         )}
       </div>

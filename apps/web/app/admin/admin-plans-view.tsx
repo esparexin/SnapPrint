@@ -9,12 +9,17 @@ import {
 } from '../../src/platform-plans-client';
 import { AdminPlanModal } from './admin-plan-modal';
 import { AdminPlansTableRow } from './admin-plans-table-row';
+import { AdminPlanRetireModal } from './admin-plan-retire-modal';
+
+const HEADERS = ['PLAN NAME', 'CATEGORY', 'DURATION', 'PRICE', 'STATUS', 'ACTIONS'];
 
 export function AdminPlansView() {
   const [plans, setPlans] = useState<SubscriptionPlanDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlanDefinition | null | 'new'>(null);
+  const [planToDelete, setPlanToDelete] = useState<SubscriptionPlanDefinition | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -33,13 +38,17 @@ export function AdminPlansView() {
     loadPlans();
   }, [loadPlans]);
 
-  const handleDelete = async (plan: SubscriptionPlanDefinition) => {
-    if (!window.confirm(`Are you sure you want to delete or retire plan "${plan.name}"?`)) return;
+  const confirmDelete = async () => {
+    if (!planToDelete) return;
+    setDeleting(true);
     try {
-      await deletePlatformSubscriptionPlan(plan.id);
+      await deletePlatformSubscriptionPlan(planToDelete.id);
+      setPlanToDelete(null);
       await loadPlans();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete plan');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -76,12 +85,11 @@ export function AdminPlansView() {
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>PLAN NAME</th>
-              <th style={styles.th}>CATEGORY</th>
-              <th style={styles.th}>DURATION</th>
-              <th style={styles.th}>PRICE</th>
-              <th style={styles.th}>STATUS</th>
-              <th style={styles.th}>ACTIONS</th>
+              {HEADERS.map((h) => (
+                <th key={h} style={styles.th}>
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -103,7 +111,7 @@ export function AdminPlansView() {
                   key={p.id}
                   plan={p}
                   onEdit={setSelectedPlan}
-                  onDelete={handleDelete}
+                  onDelete={setPlanToDelete}
                 />
               ))
             )}
@@ -119,6 +127,15 @@ export function AdminPlansView() {
             setSelectedPlan(null);
             loadPlans();
           }}
+        />
+      )}
+
+      {planToDelete && (
+        <AdminPlanRetireModal
+          planName={planToDelete.name}
+          deleting={deleting}
+          onConfirm={confirmDelete}
+          onClose={() => !deleting && setPlanToDelete(null)}
         />
       )}
     </div>

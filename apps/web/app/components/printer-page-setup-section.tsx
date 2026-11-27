@@ -14,17 +14,19 @@ interface PrinterPageSetupSectionProps {
   printers: StudioPrinter[];
   studio: Studio;
   customSizes?: CustomPaperSize[];
+  enabledSizes?: string[];
 }
 
-function deriveSupportedSizes(printers: StudioPrinter[]): PaperSize[] {
+function deriveSupportedSizes(printers: StudioPrinter[], enabledSizes?: string[]): PaperSize[] {
   const seen = new Set<PaperSize>();
   for (const p of printers) {
     for (const size of p.supportedPaperSizes) {
-      seen.add(size);
+      if (!enabledSizes || enabledSizes.includes(size)) {
+        seen.add(size);
+      }
     }
   }
-  // No fallback to ['A4'] — operator must configure printer capabilities manually.
-  return Array.from(seen);
+  return seen.size > 0 ? Array.from(seen) : ['A4'];
 }
 
 function deriveCapabilities(printers: StudioPrinter[]) {
@@ -39,8 +41,9 @@ export function PrinterPageSetupSection({
   printers,
   studio,
   customSizes,
+  enabledSizes,
 }: PrinterPageSetupSectionProps) {
-  const supportedSizes = deriveSupportedSizes(printers);
+  const supportedSizes = deriveSupportedSizes(printers, enabledSizes);
   const { supportsColor, supportsBlackAndWhite } = deriveCapabilities(printers);
   const initialRates: StudioPrintRatesContract =
     studio.settings?.printRates || DEFAULT_DOCUMENT_PRINT_RATES;

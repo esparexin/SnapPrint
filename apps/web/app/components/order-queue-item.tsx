@@ -13,6 +13,7 @@ import { OrderQueueDocumentRow } from './order-queue-document-row';
 interface OrderQueueItemProps {
   order: OrderRecord;
   updating: boolean;
+  unavailableAssetIds?: Set<string>;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
   onCollectPayment?: (order: OrderRecord) => void;
   onRecordPayment?: (order: OrderRecord) => void;
@@ -41,6 +42,7 @@ const paymentColors: Record<OrderPaymentStatus, { bg: string; text: string }> = 
 export function OrderQueueItem({
   order,
   updating,
+  unavailableAssetIds,
   onStatusChange,
   onCollectPayment,
   onRecordPayment,
@@ -130,6 +132,7 @@ export function OrderQueueItem({
             key={item.assetId || idx}
             order={order}
             item={item}
+            isUnavailable={unavailableAssetIds?.has(item.assetId)}
             onPreview={onPreviewItem}
             onDeleteDocument={onDeleteDocument}
           />

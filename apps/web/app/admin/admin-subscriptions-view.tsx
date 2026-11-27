@@ -7,6 +7,7 @@ import { AdminSubscriptionTierCards } from './admin-subscription-tier-cards';
 import { AdminSubscriptionsTableRow } from './admin-subscriptions-table-row';
 import { SUBSCRIPTION_COLUMNS, subFilterStyles } from './admin-subscription-helpers';
 import { useAdminSubscriptions } from './use-admin-subscriptions';
+import { AdminSubscriptionNotifyModals } from './admin-subscription-notify-modals';
 
 export interface AdminSubscriptionsViewProps {
   studios: PlatformStudioItem[];
@@ -30,9 +31,15 @@ export function AdminSubscriptionsView({
     sortDir,
     handleSort,
     notifyMsg,
+    pendingNotifyStudio,
+    notifyError,
+    notifying,
     counts,
     sorted,
     handleNotify,
+    confirmNotify,
+    cancelNotify,
+    clearNotifyError,
   } = useAdminSubscriptions(studios);
 
   return (
@@ -119,6 +126,15 @@ export function AdminSubscriptionsView({
           </tbody>
         </table>
       </div>
+
+      <AdminSubscriptionNotifyModals
+        pendingStudio={pendingNotifyStudio}
+        notifying={notifying}
+        notifyError={notifyError}
+        onConfirmNotify={confirmNotify}
+        onCancelNotify={cancelNotify}
+        onClearError={clearNotifyError}
+      />
     </div>
   );
 }

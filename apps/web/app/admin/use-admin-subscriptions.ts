@@ -17,6 +17,9 @@ export function useAdminSubscriptions(studios: PlatformStudioItem[]) {
   const [sortCol, setSortCol] = useState<SubscriptionSortColumn>('studio');
   const [sortDir, setSortDir] = useState<SortDirection>('asc');
   const [notifyMsg, setNotifyMsg] = useState<string | null>(null);
+  const [pendingNotifyStudio, setPendingNotifyStudio] = useState<PlatformStudioItem | null>(null);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const [notifying, setNotifying] = useState(false);
 
   const counts = useMemo(() => computeTierCounts(studios), [studios]);
   const filtered = useMemo(
@@ -37,15 +40,34 @@ export function useAdminSubscriptions(studios: PlatformStudioItem[]) {
     }
   };
 
-  const handleNotify = async (studio: PlatformStudioItem) => {
-    if (!window.confirm(`Trigger subscription notice email for "${studio.name}"?`)) return;
+  const handleNotify = (studio: PlatformStudioItem) => {
+    setPendingNotifyStudio(studio);
+  };
+
+  const confirmNotify = async () => {
+    if (!pendingNotifyStudio) return;
+    setNotifying(true);
+    setNotifyError(null);
     try {
-      await notifyStudioSubscription(studio.id);
-      setNotifyMsg(`Notification email queued successfully for ${studio.name}`);
+      await notifyStudioSubscription(pendingNotifyStudio.id);
+      setNotifyMsg(`Notification email queued successfully for ${pendingNotifyStudio.name}`);
+      setPendingNotifyStudio(null);
       setTimeout(() => setNotifyMsg(null), 4000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to queue notification');
+      setNotifyError(err instanceof Error ? err.message : 'Failed to queue notification');
+    } finally {
+      setNotifying(false);
     }
+  };
+
+  const cancelNotify = () => {
+    if (!notifying) {
+      setPendingNotifyStudio(null);
+    }
+  };
+
+  const clearNotifyError = () => {
+    setNotifyError(null);
   };
 
   return {
@@ -57,8 +79,14 @@ export function useAdminSubscriptions(studios: PlatformStudioItem[]) {
     sortDir,
     handleSort,
     notifyMsg,
+    pendingNotifyStudio,
+    notifyError,
+    notifying,
     counts,
     sorted,
     handleNotify,
+    confirmNotify,
+    cancelNotify,
+    clearNotifyError,
   };
 }

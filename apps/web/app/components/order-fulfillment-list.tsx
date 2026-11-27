@@ -11,6 +11,7 @@ interface OrderFulfillmentListProps {
   error: string | null;
   successMessage?: string | null;
   updatingId: string | null;
+  unavailableAssetIds?: Set<string>;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => void;
   onCollectPayment?: (order: OrderRecord) => void;
   onRecordPayment?: (order: OrderRecord) => void;
@@ -52,6 +53,7 @@ export function OrderFulfillmentList({
   error,
   successMessage,
   updatingId,
+  unavailableAssetIds,
   onStatusChange,
   onCollectPayment,
   onRecordPayment,
@@ -125,6 +127,7 @@ export function OrderFulfillmentList({
               key={order.orderId}
               order={order}
               updating={updatingId === order.orderId}
+              unavailableAssetIds={unavailableAssetIds}
               onStatusChange={onStatusChange}
               onCollectPayment={onCollectPayment}
               onRecordPayment={onRecordPayment}

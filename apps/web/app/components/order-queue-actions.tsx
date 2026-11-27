@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { OrderRecord, OrderStatus } from '@snapprint/contracts';
 import { isOrderEligibleForPayment } from '@snapprint/domain';
+import { OrderCancelModal } from './order-cancel-modal';
 
 interface OrderQueueActionsProps {
   order: OrderRecord;
@@ -36,8 +37,16 @@ export function OrderQueueActions({
   onRequestHandover,
   onRetryPrint,
 }: OrderQueueActionsProps) {
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const handlePayment = onCollectPayment || onRecordPayment;
   const canCollect = isOrderEligibleForPayment(order) && Boolean(handlePayment);
+
+  const btnStyle = (bg: string, disabledBg: string) => ({
+    ...actionBtn,
+    backgroundColor: updating ? disabledBg : bg,
+    cursor: updating ? 'not-allowed' : 'pointer',
+    opacity: updating ? 0.75 : 1,
+  });
 
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -57,12 +66,7 @@ export function OrderQueueActions({
           type="button"
           onClick={() => onStatusChange(order.orderId, 'processing')}
           disabled={updating}
-          style={{
-            ...actionBtn,
-            backgroundColor: updating ? '#0369a1' : '#0284c7',
-            cursor: updating ? 'not-allowed' : 'pointer',
-            opacity: updating ? 0.75 : 1,
-          }}
+          style={btnStyle('#0284c7', '#0369a1')}
         >
           {updating ? '⏳ Dispatching...' : '🖨️ Start Printing'}
         </button>
@@ -73,12 +77,7 @@ export function OrderQueueActions({
           type="button"
           onClick={() => onStatusChange(order.orderId, 'ready')}
           disabled={updating}
-          style={{
-            ...actionBtn,
-            backgroundColor: updating ? '#b45309' : '#d97706',
-            cursor: updating ? 'not-allowed' : 'pointer',
-            opacity: updating ? 0.75 : 1,
-          }}
+          style={btnStyle('#d97706', '#b45309')}
         >
           {updating ? '⏳ Updating...' : '📦 Mark Ready'}
         </button>
@@ -90,12 +89,7 @@ export function OrderQueueActions({
           onClick={() => onRetryPrint(order)}
           disabled={updating}
           title="Retry printing"
-          style={{
-            ...actionBtn,
-            backgroundColor: updating ? '#0369a1' : '#0284c7',
-            cursor: updating ? 'not-allowed' : 'pointer',
-            opacity: updating ? 0.75 : 1,
-          }}
+          style={btnStyle('#0284c7', '#0369a1')}
         >
           🔄 Retry Print
         </button>
@@ -110,12 +104,7 @@ export function OrderQueueActions({
               : onStatusChange(order.orderId, 'completed')
           }
           disabled={updating}
-          style={{
-            ...actionBtn,
-            backgroundColor: updating ? '#166534' : '#15803d',
-            cursor: updating ? 'not-allowed' : 'pointer',
-            opacity: updating ? 0.75 : 1,
-          }}
+          style={btnStyle('#15803d', '#166534')}
         >
           {updating ? '⏳ Completing...' : '✅ Complete Order'}
         </button>
@@ -124,11 +113,7 @@ export function OrderQueueActions({
       {order.status !== 'completed' && order.status !== 'cancelled' && (
         <button
           type="button"
-          onClick={() => {
-            if (window.confirm(`Are you sure you want to cancel order ${order.orderNumber}?`)) {
-              onStatusChange(order.orderId, 'cancelled');
-            }
-          }}
+          onClick={() => setShowCancelModal(true)}
           disabled={updating}
           style={{
             ...actionBtn,
@@ -143,6 +128,17 @@ export function OrderQueueActions({
         >
           ✕ Cancel
         </button>
+      )}
+
+      {showCancelModal && (
+        <OrderCancelModal
+          orderNumber={order.orderNumber}
+          onConfirm={() => {
+            setShowCancelModal(false);
+            onStatusChange(order.orderId, 'cancelled');
+          }}
+          onClose={() => setShowCancelModal(false)}
+        />
       )}
     </div>
   );
