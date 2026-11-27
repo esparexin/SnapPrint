@@ -43,7 +43,7 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
     orderId: string,
     newStatus: OrderStatus,
     confirmedHandover?: boolean
-  ) {
+  ): Promise<boolean> {
     setUpdatingId(orderId);
     setError(null);
     setSuccessMessage(null);
@@ -67,6 +67,7 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
       } else if (newStatus === 'cancelled') {
         setSuccessMessage(`Order #${updated.orderNumber} cancelled.`);
       }
+      return true;
     } catch (err) {
       const isPaymentRequired =
         (err instanceof OrderApiError && err.code === 'PAYMENT_REQUIRED_BEFORE_PRINT') ||
@@ -77,6 +78,7 @@ export function useOperatorQueue(studioId: string, statusFilter: OrderStatus | '
           ? err.message
           : 'Failed to update status';
       setError(msg);
+      return false;
     } finally {
       setUpdatingId(null);
     }

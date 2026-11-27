@@ -65,6 +65,7 @@ describe('Update Trampoline & Rollback Engine', () => {
         parentPid: 1234,
         installerPath: '/tmp/installer.msi',
         targetExePath: '/tmp/agent.exe',
+        logPath: join(tempDir, 'update.log'),
       },
       'win32',
       tempDir
@@ -90,6 +91,7 @@ describe('Update Trampoline & Rollback Engine', () => {
       targetExePath: 'C:\\agent.exe',
       platform: 'win32',
       tempDir,
+      logPath: join(tempDir, 'update.log'),
       spawnImpl: mockSpawn as unknown as typeof import('node:child_process').spawn,
     });
 
@@ -119,6 +121,7 @@ describe('Update Trampoline & Rollback Engine', () => {
       targetExePath: '/tmp/agent',
       platform: 'linux',
       tempDir,
+      logPath: join(tempDir, 'update.log'),
       spawnImpl: mockSpawn as unknown as typeof import('node:child_process').spawn,
     });
 

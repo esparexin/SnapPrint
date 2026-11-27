@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SubscriptionPlanDefinition } from '@snapprint/contracts';
+import { ControlledNumericInput } from '../components/controlled-numeric-input';
 import { adminTableStyles as styles } from './admin-table-styles';
 import { useAdminPlanForm } from './use-admin-plan-form';
 
@@ -68,24 +69,22 @@ export function AdminPlanForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
         <div>
           <label style={styles.formLabel}>Duration (Days)</label>
-          <input
-            type="number"
-            min="1"
-            max="3650"
+          <ControlledNumericInput
+            min={1}
+            max={3650}
             required
             value={durationDays}
-            onChange={(e) => setDurationDays(e.target.value)}
+            onChange={(val) => setDurationDays(String(val))}
             style={styles.formControl}
           />
         </div>
         <div>
           <label style={styles.formLabel}>Price (₹)</label>
-          <input
-            type="number"
-            min="0"
+          <ControlledNumericInput
+            min={0}
             required
             value={priceRupees}
-            onChange={(e) => setPriceRupees(e.target.value)}
+            onChange={(val) => setPriceRupees(String(val))}
             style={styles.formControl}
           />
         </div>

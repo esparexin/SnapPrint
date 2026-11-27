@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { SubscriptionPlanId } from '@snapprint/contracts';
+import { ControlledNumericInput } from '../components/controlled-numeric-input';
 import { overridePlatformStudioSubscription } from '../../src/platform-admin-client';
 import { adminLayoutStyles } from './admin-layout-styles';
 import { adminTableStyles } from './admin-table-styles';
@@ -78,13 +79,12 @@ export function AdminSubscriptionOverrideForm({
           Custom Duration (Days){' '}
           <span style={{ color: '#94a3b8', fontWeight: 400 }}>(Optional)</span>
         </label>
-        <input
-          type="number"
-          min="1"
-          max="3650"
+        <ControlledNumericInput
+          min={1}
+          max={3650}
           placeholder="Leave empty for standard duration"
           value={durationDays}
-          onChange={(e) => setDurationDays(e.target.value)}
+          onChange={(val) => setDurationDays(String(val))}
           style={adminTableStyles.formControl}
         />
       </div>

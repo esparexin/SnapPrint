@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { StudioPrinter } from '../../src/printer-client';
 import { createCustomPaperSize } from '../../src/printer-capability-client';
+import { ControlledNumericInput } from './controlled-numeric-input';
 
 interface CustomPaperSizeFormProps {
   studioId: string;
@@ -94,11 +95,11 @@ export function CustomPaperSizeForm({ studioId, printers, onSuccess }: CustomPap
       ].map((f) => (
         <div key={f.l} style={{ width: '64px' }}>
           <label style={labelStyle}>{f.l}</label>
-          <input
-            type="number"
-            step="0.1"
+          <ControlledNumericInput
+            allowDecimals
+            min={0.1}
             value={f.v}
-            onChange={(e) => f.s(e.target.value)}
+            onChange={(val) => f.s(String(val))}
             placeholder={f.p}
             style={inputStyle}
             required
