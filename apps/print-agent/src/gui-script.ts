@@ -85,31 +85,6 @@ export function getGuiScript(): string {
       }).join('');
     }
 
-    async function loadJobs() {
-      try {
-        const res = await fetch('/api/jobs');
-        const data = await res.json();
-        renderJobs(data.jobs || []);
-      } catch {}
-    }
-
-    function renderJobs(jobs) {
-      const list = document.getElementById('jobsList');
-      document.getElementById('jobsCount').textContent = String(jobs ? jobs.length : 0);
-      if (!jobs || !jobs.length) {
-        list.innerHTML =
-          '<div class="empty"><div class="empty-title">No print jobs yet</div><div>Orders queued from your studio will appear here live.</div></div>';
-        return;
-      }
-      list.innerHTML = jobs.map((j) => {
-        const cls = j.status === 'completed' ? 'tag-success' : j.status === 'failed' ? 'tag-danger' : j.status === 'processing' ? 'tag-warning' : 'tag-bw';
-        const lbl = j.status === 'completed' ? 'Printed' : j.status === 'failed' ? 'Failed' : j.status === 'processing' ? 'Printing' : j.status;
-        const title = j.errorMessage ? ' title="' + escapeHtml(j.errorMessage) + '"' : '';
-        const copies = j.copies && j.copies > 1 ? ' (' + j.copies + 'c)' : '';
-        return '<div class="row"><div class="row-main"><div class="row-icon">' + docIconSvg() + '</div><div style="min-width:0;"><div class="row-title">' + escapeHtml(j.filename) + copies + '</div><div class="row-sub">' + escapeHtml(j.printerName) + ' &middot; ' + escapeHtml(j.jobId) + '</div></div></div><div class="tags"><span class="tag ' + cls + '"' + title + '>' + escapeHtml(lbl) + '</span></div></div>';
-      }).join('');
-    }
-
     async function pasteAndConnect() {
       const input = document.getElementById('pairingInput');
       if (!input.value.trim()) {
@@ -186,10 +161,6 @@ export function getGuiScript(): string {
       return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
     }
 
-    function docIconSvg() {
-      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
-    }
-
     function handleUpdateClick() { if (pendingUpdateVersion) performUpdate(); else checkUpdates(true); }
 
     async function checkUpdates(manual) {
@@ -240,7 +211,7 @@ export function getGuiScript(): string {
       }
     }
 
-    loadState(); loadPrinters(); loadJobs(); checkUpdates(false);
-    setInterval(loadState, 15000); setInterval(loadJobs, 5000); setInterval(() => checkUpdates(false), 60000);
+    loadState(); loadPrinters(); checkUpdates(false);
+    setInterval(loadState, 15000); setInterval(() => checkUpdates(false), 60000);
   `;
 }

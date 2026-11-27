@@ -62,7 +62,8 @@ describe('GUI Local Server & Endpoints', () => {
       const html = await res.text();
       expect(html).toContain('SnapPrint Print Agent');
       expect(html).toContain('Studio Connection');
-      expect(html).toContain('Live Print Queue');
+      expect(html).toContain('Local Printers');
+      expect(html).not.toContain('Live Print Queue');
       expect(html).toContain('id="updateBtn"');
       expect(html).toContain('.btn-update');
       expect(html).toContain('Check Update');
