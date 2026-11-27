@@ -213,6 +213,9 @@ jobs:
             apps/print-agent/dist/SnapPrint-Print-Agent-*.msi
             apps/print-agent/dist/snapprint-agent.exe
             apps/print-agent/dist/checksums.txt
+            scripts/collect-diagnostics.bat
+            scripts/collect-diagnostics.ps1
+            scripts/install-agent.bat
           if-no-files-found: error
 
       - name: Publish GitHub Release Assets
@@ -224,5 +227,8 @@ jobs:
             apps/print-agent/dist/SnapPrint-Print-Agent-*.msi
             apps/print-agent/dist/snapprint-agent.exe
             apps/print-agent/dist/checksums.txt
+            scripts/collect-diagnostics.bat
+            scripts/collect-diagnostics.ps1
+            scripts/install-agent.bat
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

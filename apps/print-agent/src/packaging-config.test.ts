@@ -41,6 +41,8 @@ describe('SnapPrint Print Agent Windows Packaging Config', () => {
     expect(xml).toContain('Scope="perMachine"');
     expect(xml).toContain('Schedule="afterInstallValidate"');
     expect(xml).toContain('AllowSameVersionUpgrades="yes"');
+    expect(xml).toContain('Property Id="MSIFASTINSTALL" Value="7"');
+    expect(xml).toContain('Property Id="MsiLogging" Value="voicewarmup"');
     expect(xml).toContain('Id="StopRunningAgent"');
     expect(xml).toContain('Before="InstallValidate"');
     expect(xml).toContain('Root="HKLM"');
