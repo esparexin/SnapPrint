@@ -3,7 +3,7 @@ import { hashPassword } from '@snapprint/domain';
 import { createTestApp } from './auth-test-helper.js';
 
 describe('Printer Fleet Allowance & Duplex Persistence API', () => {
-  async function seedStudioOwner() {
+  async function seedStudioOwner(maxActivePrinters?: number) {
     const ctx = await createTestApp();
     const hash = await hashPassword('Password123!');
     const userId = 'user_owner_printers_limits';
@@ -19,16 +19,20 @@ describe('Printer Fleet Allowance & Duplex Persistence API', () => {
       updatedAt: new Date(),
     });
 
+    const settings: { currency: string; autoApproveOrders: boolean; maxActivePrinters?: number } = {
+      currency: 'INR',
+      autoApproveOrders: false,
+    };
+    if (typeof maxActivePrinters === 'number') {
+      settings.maxActivePrinters = maxActivePrinters;
+    }
+
     ctx.studios.push({
       id: studioId,
       slug: 'ramesh-prints-limits',
       name: 'Ramesh Prints Limits',
       status: 'active',
-      settings: {
-        currency: 'INR',
-        maxActivePrinters: 2,
-        autoApproveOrders: false,
-      },
+      settings,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -52,7 +56,7 @@ describe('Printer Fleet Allowance & Duplex Persistence API', () => {
   }
 
   it('syncs duplex capabilities with provenance and returns fleet allowance', async () => {
-    const { app, studioId, cookie } = await seedStudioOwner();
+    const { app, studioId, cookie } = await seedStudioOwner(2);
     const now = new Date().toISOString();
 
     // 1. Generate pairing key and enroll device
