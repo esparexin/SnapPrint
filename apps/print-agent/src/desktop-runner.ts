@@ -68,6 +68,9 @@ export async function runDesktopSession(options: DesktopRunnerOptions): Promise<
   if (mode === 'desktop' && !isTestMode) {
     const runningPid = getRunningInstancePid(options.lockPath);
     if (runningPid !== null) {
+      if (!minimized) {
+        launchGuiWindow('http://127.0.0.1:48900');
+      }
       console.log(`SnapPrint Agent is already running (PID: ${runningPid}) in the system tray.`);
       return 0;
     }
@@ -92,6 +95,9 @@ export async function runDesktopSession(options: DesktopRunnerOptions): Promise<
     const lock = acquireInstanceLock(options.lockPath);
     lockAcquired = lock.acquired;
     if (!lockAcquired && !isTestMode) {
+      if (!minimized) {
+        launchGuiWindow('http://127.0.0.1:48900');
+      }
       console.log(
         `SnapPrint Agent is already running (PID: ${lock.pid ?? 'active'}) in the system tray.`
       );
@@ -110,10 +116,9 @@ export async function runDesktopSession(options: DesktopRunnerOptions): Promise<
   });
 
   if (!minimized) {
+    launchGuiWindow(handle.url);
     if (mode === 'desktop') {
       console.log(`SnapPrint Desktop Agent active in background and system tray.`);
-    } else {
-      launchGuiWindow(handle.url);
     }
   }
   console.log(`SnapPrint Agent GUI running at: ${handle.url}`);
