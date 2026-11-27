@@ -10,6 +10,7 @@ import { SpoolerAdapter } from './spooler-adapter.js';
 describe('AgentDaemon', () => {
   const tempConfigPath = join(tmpdir(), `agent-daemon-test-${Date.now()}.json`);
   const tempTrackerPath = join(tmpdir(), `agent-tracker-test-${Date.now()}.json`);
+  const tempRecentPath = join(tmpdir(), `agent-recent-test-${Date.now()}.json`);
   const mockConfig: AgentConfig = {
     apiUrl: 'http://127.0.0.1:3001',
     deviceToken: 'tok_device_test',
@@ -36,7 +37,7 @@ describe('AgentDaemon', () => {
 
     const daemon = new AgentDaemon(mockConfig, mockClient, mockSpooler, {
       configPath: tempConfigPath,
-      inFlightTracker: new InFlightJobTracker(tempTrackerPath),
+      inFlightTracker: new InFlightJobTracker(tempTrackerPath, tempRecentPath),
       logger: () => {},
     });
 
@@ -119,7 +120,7 @@ describe('AgentDaemon', () => {
 
     const daemon = new AgentDaemon(mockConfig, mockClient, mockSpooler, {
       configPath: tempConfigPath,
-      inFlightTracker: new InFlightJobTracker(tempTrackerPath),
+      inFlightTracker: new InFlightJobTracker(tempTrackerPath, tempRecentPath),
       logger: () => {},
     });
 
@@ -176,7 +177,7 @@ describe('AgentDaemon', () => {
 
     const daemon = new AgentDaemon(mockConfig, mockClient, mockSpooler, {
       configPath: tempConfigPath,
-      inFlightTracker: new InFlightJobTracker(tempTrackerPath),
+      inFlightTracker: new InFlightJobTracker(tempTrackerPath, tempRecentPath),
       logger: () => {},
     });
 

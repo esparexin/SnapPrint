@@ -7,31 +7,6 @@ declare module 'fastify' {
   }
 }
 
-export class MissingTenantError extends Error {
-  constructor(
-    message = 'Tenant identification required (x-studio-id header or studioId parameter)'
-  ) {
-    super(message);
-    this.name = 'MissingTenantError';
-  }
-}
-
-export class InvalidTenantError extends Error {
-  constructor(message = 'Invalid studioId format') {
-    super(message);
-    this.name = 'InvalidTenantError';
-  }
-}
-
-export class TenantConflictError extends Error {
-  constructor(headerId: string, paramId: string) {
-    super(
-      `Conflicting tenant identifiers: header x-studio-id '${headerId}' does not match route parameter studioId '${paramId}'`
-    );
-    this.name = 'TenantConflictError';
-  }
-}
-
 export async function requireTenant(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const params = request.params as Record<string, string> | undefined;
   const headerId = request.headers['x-studio-id'] as string | undefined;

@@ -162,7 +162,7 @@ describe('Agent Updater', () => {
         'C:\\temp\\installer.msi',
         'win32',
         mockSpawn as unknown as typeof spawn,
-        { parentPid: 555 }
+        { parentPid: 555, logPath: join(tmpdir(), 'updater-log.log') }
       );
       expect(res.success).toBe(true);
       expect(res.pid).toBe(12345);
@@ -208,6 +208,7 @@ describe('Agent Updater', () => {
         fetchImpl: mockFetch as unknown as typeof fetch,
         platform: 'win32',
         spawnImpl: mockSpawn as unknown as typeof spawn,
+        logPath: join(testDir, 'updater.log'),
       });
 
       expect(res.success).toBe(true);

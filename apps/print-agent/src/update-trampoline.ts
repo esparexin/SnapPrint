@@ -180,7 +180,11 @@ export function createTrampolineScriptFile(
   const logPath = options.logPath || getDefaultUpdateLogPath();
   const logDir = dirname(logPath);
   if (!existsSync(logDir)) {
-    mkdirSync(logDir, { recursive: true });
+    try {
+      mkdirSync(logDir, { recursive: true });
+    } catch {
+      // Safe fallback if directory creation is restricted in sandbox
+    }
   }
 
   const isWin = platform === 'win32';

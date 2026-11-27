@@ -100,17 +100,37 @@ export class InFlightJobTracker {
 
   private saveInFlight(jobs: InFlightJobRecord[]): void {
     const dir = dirname(this.inFlightPath);
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    if (jobs.length === 0) {
-      if (existsSync(this.inFlightPath)) unlinkSync(this.inFlightPath);
-    } else {
-      writeFileSync(this.inFlightPath, JSON.stringify(jobs, null, 2), 'utf-8');
+    if (!existsSync(dir)) {
+      try {
+        mkdirSync(dir, { recursive: true });
+      } catch {
+        return;
+      }
+    }
+    try {
+      if (jobs.length === 0) {
+        if (existsSync(this.inFlightPath)) unlinkSync(this.inFlightPath);
+      } else {
+        writeFileSync(this.inFlightPath, JSON.stringify(jobs, null, 2), 'utf-8');
+      }
+    } catch {
+      // Ignore write errors in restricted sandboxes
     }
   }
 
   private saveRecent(jobs: AgentRecentJobRecord[]): void {
     const dir = dirname(this.recentJobsPath);
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    writeFileSync(this.recentJobsPath, JSON.stringify(jobs, null, 2), 'utf-8');
+    if (!existsSync(dir)) {
+      try {
+        mkdirSync(dir, { recursive: true });
+      } catch {
+        return;
+      }
+    }
+    try {
+      writeFileSync(this.recentJobsPath, JSON.stringify(jobs, null, 2), 'utf-8');
+    } catch {
+      // Ignore write errors in restricted sandboxes
+    }
   }
 }

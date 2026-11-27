@@ -20,17 +20,6 @@ export const getNoticeBoxStyle = (kind: 'error' | 'saved'): CSSProperties => ({
   border: kind === 'saved' ? '1px solid #bbf7d0' : 'none',
 });
 
-export const VIEW_TITLES: Record<OperatorView, string> = {
-  orders: 'Orders',
-  printer_setup: 'Printer & Page Setup',
-  qr: 'QR Stand',
-  profile: 'Shop Settings',
-  payment: 'Payments',
-  staff: 'Staff',
-  setup: 'Setup Guide',
-  subscription: 'Subscription',
-};
-
 export const portalStyles: Record<string, CSSProperties> = {
   wrapper: {
     width: '100%',

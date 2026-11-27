@@ -52,8 +52,10 @@ export function OrderFulfillmentModal({
 
   async function handleConfirmHandover() {
     if (!handoverOrder) return;
-    await handleStatusChange(handoverOrder.orderId, 'completed', true);
-    setHandoverOrder(null);
+    const ok = await handleStatusChange(handoverOrder.orderId, 'completed', true);
+    if (ok) {
+      setHandoverOrder(null);
+    }
   }
 
   async function onDeleteDocument(orderId: string, assetId: string) {

@@ -10,6 +10,7 @@ import { SpoolerAdapter } from './spooler-adapter.js';
 describe('AgentDaemon Runtime Lifecycle & Safety', () => {
   const tempConfigPath = join(tmpdir(), `daemon-lifecycle-${Date.now()}.json`);
   const tempTrackerPath = join(tmpdir(), `daemon-tracker-${Date.now()}.json`);
+  const tempRecentPath = join(tmpdir(), `daemon-recent-${Date.now()}.json`);
   const mockConfig: AgentConfig = {
     apiUrl: 'http://127.0.0.1:3001',
     deviceToken: 'tok_active_device',
@@ -39,7 +40,7 @@ describe('AgentDaemon Runtime Lifecycle & Safety', () => {
   });
 
   it('recovers uncertain in-flight jobs on startup without re-spooling duplicate pages', async () => {
-    const tracker = new InFlightJobTracker(tempTrackerPath);
+    const tracker = new InFlightJobTracker(tempTrackerPath, tempRecentPath);
     tracker.recordInFlight('job_interrupted_99', 'Canon Pixma', 'receipt.pdf');
 
     const mockSpooler: SpoolerAdapter = {
