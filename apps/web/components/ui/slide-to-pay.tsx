@@ -68,9 +68,9 @@ export function SlideToPay({
   const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!dragRef.current) return;
     dragRef.current = false;
-    try {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {}
+    }
     const rawDx = e.clientX - startXRef.current;
     const thresh = maxDist * 0.75;
     if (enableOnline && rawDx <= -thresh) {
