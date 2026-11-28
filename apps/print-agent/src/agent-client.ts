@@ -42,7 +42,7 @@ function mapDiscoveredPrinter(p: DiscoveredPrinter, lastSeenAt: string) {
     printerId,
     name: p.name.slice(0, 120),
     driverName: (p.driverName || p.name).slice(0, 160),
-    connectionType: 'unknown',
+    connectionType: p.connectionType || 'unknown',
     isColorSupported: Boolean(p.isColorSupported),
     supportedPaperSizes:
       p.supportedPaperSizes && p.supportedPaperSizes.length > 0 ? p.supportedPaperSizes : ['A4'],

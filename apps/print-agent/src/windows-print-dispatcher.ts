@@ -71,6 +71,12 @@ export function buildWindowsPrinterValidationScript(printerName: string): string
     if ($p.WorkOffline -eq $true -or ($p.PrinterStatus -match 'Offline|Error')) {
       throw 'PRINTER_OFFLINE: Target printer "${safePrinter}" is offline or in error state (Status: ' + $p.PrinterStatus + ').';
     }
+    if ($p.PortName -match 'usb') {
+      $pnp = @(Get-PnpDevice -Class PrintQueue, USB -PresentOnly -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FriendlyName);
+      if ($pnp.Count -gt 0 -and -not ($pnp -contains $p.Name)) {
+        throw 'PRINTER_OFFLINE: USB printer "${safePrinter}" is disconnected or powered off.';
+      }
+    }
   `
     .trim()
     .replace(/\s+/g, ' ');
