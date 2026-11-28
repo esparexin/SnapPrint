@@ -23,7 +23,8 @@ export function useOrderDocumentPreview(
   studioId: string,
   orderId: string,
   assetId: string,
-  disabled: boolean
+  disabled: boolean,
+  onUnavailable?: (assetId: string) => void
 ) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string | null>(null);
@@ -43,11 +44,14 @@ export function useOrderDocumentPreview(
       setBlobUrl((prev) => (prev && URL.revokeObjectURL(prev), url));
       setMimeType(res.mimeType);
     } catch (err) {
+      if (err instanceof OrderApiError && err.statusCode === 404) {
+        onUnavailable?.(assetId);
+      }
       setError(mapPreviewError(err));
     } finally {
       setLoading(false);
     }
-  }, [studioId, orderId, assetId, disabled]);
+  }, [studioId, orderId, assetId, disabled, onUnavailable]);
 
   useEffect(() => {
     loadPreview();

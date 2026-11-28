@@ -15,7 +15,7 @@ export function cleanBuildArtifacts(rootDir: string = process.cwd()): string[] {
   for (const relDir of ARTIFACT_DIRS) {
     const fullPath = resolve(rootDir, relDir);
     if (existsSync(fullPath)) {
-      rmSync(fullPath, { recursive: true, force: true });
+      rmSync(fullPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 150 });
       cleaned.push(relDir);
     }
   }

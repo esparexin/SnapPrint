@@ -73,6 +73,13 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
       hasOnlineAgent,
       hasActivePrinter: printerData.activePrinters.length > 0,
     });
+    const studioSizes =
+      doc.capabilities?.supportedPaperSizes && doc.capabilities.supportedPaperSizes.length > 0
+        ? doc.capabilities.supportedPaperSizes
+        : null;
+    const activeSizes = studioSizes
+      ? printerData.capabilities.supportedPaperSizes.filter((s) => studioSizes.includes(s))
+      : printerData.capabilities.supportedPaperSizes;
     const capabilities =
       printerData.activePrinters.length > 0
         ? {
@@ -81,16 +88,13 @@ export const publicRoutes: FastifyPluginAsync<PublicRouteOptions> = async (app, 
               doc.capabilities?.supportsColor === false
                 ? false
                 : printerData.capabilities.supportsColor,
+            supportedPaperSizes: activeSizes.length > 0 ? activeSizes : ['A4'],
           }
         : {
             supportsColor: doc.capabilities?.supportsColor ?? false,
             supportsDuplex: false,
             supportedDuplexSizes: [],
-            supportedPaperSizes:
-              doc.capabilities?.supportedPaperSizes &&
-              doc.capabilities.supportedPaperSizes.length > 0
-                ? doc.capabilities.supportedPaperSizes
-                : ['A4'],
+            supportedPaperSizes: studioSizes ?? ['A4'],
             customPaperSizes: printerData.capabilities.customPaperSizes || [],
           };
 

@@ -29,6 +29,7 @@ export function OrderFulfillmentModal({
     order: OrderRecord;
     item: QuoteItemBreakdown;
   } | null>(null);
+  const [unavailableAssetIds, setUnavailableAssetIds] = useState<Set<string>>(new Set());
 
   const {
     orders,
@@ -83,10 +84,11 @@ export function OrderFulfillmentModal({
         error={error}
         successMessage={successMessage}
         updatingId={updatingId}
-        onStatusChange={(id, st) => handleStatusChange(id, st)}
-        onCollectPayment={(ord) => setPaymentOrder(ord)}
-        onRecordPayment={(ord) => setPaymentOrder(ord)}
-        onRequestHandover={(ord) => setHandoverOrder(ord)}
+        unavailableAssetIds={unavailableAssetIds}
+        onStatusChange={handleStatusChange}
+        onCollectPayment={setPaymentOrder}
+        onRecordPayment={setPaymentOrder}
+        onRequestHandover={setHandoverOrder}
         onPreviewItem={(ord, it) => setPreviewTarget({ order: ord, item: it })}
         onDeleteDocument={onDeleteDocument}
         onRetryPrint={handleRetryPrint}
@@ -104,6 +106,9 @@ export function OrderFulfillmentModal({
         onConfirmHandover={handleConfirmHandover}
         onClosePreview={() => setPreviewTarget(null)}
         onDeleteDocument={onDeleteDocument}
+        onUnavailable={(assetId) =>
+          setUnavailableAssetIds((prev) => (prev.has(assetId) ? prev : new Set(prev).add(assetId)))
+        }
       />
     </>
   );

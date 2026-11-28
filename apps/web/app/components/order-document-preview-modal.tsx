@@ -15,6 +15,7 @@ interface OrderDocumentPreviewModalProps {
   item: QuoteItemBreakdown;
   onClose: () => void;
   onDeleteDocument: (orderId: string, assetId: string) => Promise<void>;
+  onUnavailable?: (assetId: string) => void;
 }
 
 export function OrderDocumentPreviewModal({
@@ -23,6 +24,7 @@ export function OrderDocumentPreviewModal({
   item,
   onClose,
   onDeleteDocument,
+  onUnavailable,
 }: OrderDocumentPreviewModalProps) {
   const { handleBackdropClick, swipeHandlers } = useDialog({
     isOpen: true,
@@ -39,7 +41,8 @@ export function OrderDocumentPreviewModal({
     studioId,
     order.orderId,
     item.assetId,
-    isCancelled || isDeleted
+    isCancelled || isDeleted,
+    onUnavailable
   );
 
   return (

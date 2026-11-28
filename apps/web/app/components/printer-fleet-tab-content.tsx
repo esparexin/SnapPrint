@@ -13,6 +13,7 @@ interface PrinterFleetTabContentProps {
   devices: AgentDevice[];
   standardSizes: StandardPaperSizeDefinition[];
   customSizes: CustomPaperSize[];
+  enabledSizes?: string[];
   loading: boolean;
   updatingId: string | null;
   initialTab?: 'printers' | 'workstations' | 'sizes';
@@ -23,12 +24,25 @@ interface PrinterFleetTabContentProps {
   onRefreshSizes: () => void;
 }
 
+const tabBtn = (active: boolean): React.CSSProperties => ({
+  minHeight: '36px',
+  padding: '0 14px',
+  borderRadius: '6px',
+  border: 'none',
+  backgroundColor: active ? '#0284c7' : '#f1f5f9',
+  color: active ? '#ffffff' : '#475569',
+  fontSize: '0.8125rem',
+  fontWeight: 600,
+  cursor: 'pointer',
+});
+
 export function PrinterFleetTabContent({
   studioId,
   printers,
   devices,
   standardSizes,
   customSizes,
+  enabledSizes,
   loading,
   updatingId,
   initialTab = 'printers',
@@ -55,55 +69,17 @@ export function PrinterFleetTabContent({
           marginBottom: '16px',
         }}
       >
-        <button
-          type="button"
-          onClick={() => setTab('printers')}
-          style={{
-            minHeight: '36px',
-            padding: '0 14px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: tab === 'printers' ? '#0284c7' : '#f1f5f9',
-            color: tab === 'printers' ? '#ffffff' : '#475569',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
+        <button type="button" onClick={() => setTab('printers')} style={tabBtn(tab === 'printers')}>
           Printers ({printers.length})
         </button>
         <button
           type="button"
           onClick={() => setTab('workstations')}
-          style={{
-            minHeight: '36px',
-            padding: '0 14px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: tab === 'workstations' ? '#0284c7' : '#f1f5f9',
-            color: tab === 'workstations' ? '#ffffff' : '#475569',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
+          style={tabBtn(tab === 'workstations')}
         >
           Computers ({devices.length})
         </button>
-        <button
-          type="button"
-          onClick={() => setTab('sizes')}
-          style={{
-            minHeight: '36px',
-            padding: '0 14px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: tab === 'sizes' ? '#0284c7' : '#f1f5f9',
-            color: tab === 'sizes' ? '#ffffff' : '#475569',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
+        <button type="button" onClick={() => setTab('sizes')} style={tabBtn(tab === 'sizes')}>
           Paper Sizes ({standardSizes.length + customSizes.length})
         </button>
       </div>
@@ -136,6 +112,7 @@ export function PrinterFleetTabContent({
           printers={printers}
           standardSizes={standardSizes}
           customSizes={customSizes}
+          enabledSizes={enabledSizes}
           onRefreshSizes={onRefreshSizes}
         />
       )}

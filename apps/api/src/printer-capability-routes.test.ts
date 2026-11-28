@@ -163,6 +163,7 @@ describe('Printer Capability & Workstation Routes (apps/api)', () => {
     expect(listRes.statusCode).toBe(200);
     const listBody = listRes.json();
     expect(listBody.standard.length).toBeGreaterThan(0);
+    expect(listBody.enabledSizes).toContain('A4');
     expect(listBody.custom).toHaveLength(1);
     expect(listBody.custom[0].name).toBe('Architectural D 24x36');
 

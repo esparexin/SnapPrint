@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { OrderDocumentPurgeModal } from './order-document-purge-modal';
 
 interface OrderPreviewActionsProps {
   isCompleted: boolean;
@@ -31,8 +32,21 @@ export function OrderPreviewActions({
   onClose,
   onDeleteDocument,
 }: OrderPreviewActionsProps) {
+  const [showPurgeModal, setShowPurgeModal] = useState(false);
+  const [purging, setPurging] = useState(false);
   const isActionDisabled = isDeleted || isCancelled || hasError || isLoading;
   const activeUrl = blobUrl || downloadUrl;
+
+  const handlePurge = async () => {
+    setPurging(true);
+    try {
+      await onDeleteDocument(orderId, assetId);
+      setShowPurgeModal(false);
+    } finally {
+      setPurging(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -48,11 +62,7 @@ export function OrderPreviewActions({
         {isCompleted && !isDeleted && (
           <button
             type="button"
-            onClick={async () => {
-              if (window.confirm(`Permanently delete "${filename}" to protect customer privacy?`)) {
-                await onDeleteDocument(orderId, assetId);
-              }
-            }}
+            onClick={() => setShowPurgeModal(true)}
             style={{
               minHeight: '44px',
               padding: '10px 14px',
@@ -110,6 +120,15 @@ export function OrderPreviewActions({
           Close
         </button>
       </div>
+
+      {showPurgeModal && (
+        <OrderDocumentPurgeModal
+          filename={filename}
+          purging={purging}
+          onConfirm={handlePurge}
+          onClose={() => !purging && setShowPurgeModal(false)}
+        />
+      )}
     </div>
   );
 }

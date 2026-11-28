@@ -17,6 +17,7 @@ interface OrderFulfillmentOverlaysProps {
   onConfirmHandover: () => Promise<void>;
   onClosePreview: () => void;
   onDeleteDocument: (orderId: string, assetId: string) => Promise<void>;
+  onUnavailable?: (assetId: string) => void;
 }
 
 export function OrderFulfillmentOverlays({
@@ -30,6 +31,7 @@ export function OrderFulfillmentOverlays({
   onConfirmHandover,
   onClosePreview,
   onDeleteDocument,
+  onUnavailable,
 }: OrderFulfillmentOverlaysProps) {
   return (
     <>
@@ -55,6 +57,7 @@ export function OrderFulfillmentOverlays({
           item={previewTarget.item}
           onClose={onClosePreview}
           onDeleteDocument={onDeleteDocument}
+          onUnavailable={onUnavailable}
         />
       )}
     </>
