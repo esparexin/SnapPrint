@@ -22,6 +22,7 @@
     "format:write": "prettier --write .",
     "check:file-sizes": "tsx scripts/check-file-sizes.ts",
     "check:architecture": "tsx scripts/check-architecture-boundaries.ts",
+    "check:governance": "tsx scripts/check-architecture-boundaries.ts",
     "security:audit": "pnpm audit --audit-level=high --prod",
     "admin:provision": "tsx apps/api/src/cli/provision-platform-admin.ts",
     "agent:pair": "pnpm --filter @snapprint/print-agent start enroll",

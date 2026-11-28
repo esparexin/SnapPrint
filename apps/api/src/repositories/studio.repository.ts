@@ -181,8 +181,8 @@ export async function updateStudioProfile(
     updateDoc.location = {
       ...current.location,
       addressLine: fields.address,
-      city: current.location?.city || 'Default City',
-      state: current.location?.state || 'Telangana',
+      ...(current.location?.city ? { city: current.location.city } : {}),
+      ...(current.location?.state ? { state: current.location.state } : {}),
     };
   }
   if (fields.isAcceptingOrders !== undefined) {

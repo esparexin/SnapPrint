@@ -103,7 +103,7 @@ export async function registerPrinterAgentRoutes(
       success: true,
       deviceId,
       studioId: key.studioId,
-      studioName: studio?.name || 'My Studio',
+      studioName: studio?.name || key.studioId,
       deviceToken,
     });
   });

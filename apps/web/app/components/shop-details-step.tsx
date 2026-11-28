@@ -13,7 +13,6 @@ import {
 import { ShopDetailsFormFields } from './shop-details-form-fields';
 
 const DEFAULT_SHOP_PAYLOAD = {
-  location: { state: 'Telangana' },
   capabilities: {
     autoPrintMaxPages: 30,
     isAutoPrintEnabled: true,
@@ -109,7 +108,7 @@ export function ShopDetailsStep({
         slug: slug.trim(),
         tagline: tagline.trim() || undefined,
         contactPhone: phone.trim() || undefined,
-        location: { city: city.trim(), ...DEFAULT_SHOP_PAYLOAD.location },
+        location: { city: city.trim() },
       };
 
       if (studioId) {

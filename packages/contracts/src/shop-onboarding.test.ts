@@ -41,6 +41,15 @@ describe('Shop Onboarding Schemas (@snapprint/contracts)', () => {
       expect(() => ShopLocationSchema.parse({ city: 'Hyd', pincode: '12345' })).toThrow();
       expect(() => ShopLocationSchema.parse({ city: 'Hyd', pincode: 'abcdef' })).toThrow();
     });
+
+    it('does not impose hardcoded state default when omitted', () => {
+      const valid = ShopLocationSchema.parse({
+        city: 'Bengaluru',
+        pincode: '560001',
+      });
+      expect(valid.city).toBe('Bengaluru');
+      expect(valid.state).toBeUndefined();
+    });
   });
 
   describe('ShopCapabilitiesConfigSchema', () => {
