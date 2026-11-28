@@ -1,3 +1,56 @@
+export interface SlideToPayProps {
+  amountFormatted: string;
+  enableOnline?: boolean;
+  onSelectCash: () => void;
+  onSelectOnline?: () => void;
+  selectedMethod?: 'cash' | 'online' | null;
+  loading?: boolean;
+  disabled?: boolean;
+  onReset?: () => void;
+}
+
+export function resetTrackHandle(
+  handle: HTMLButtonElement | null,
+  left: HTMLDivElement | null,
+  right: HTMLDivElement | null
+) {
+  if (!handle) return;
+  handle.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1)';
+  handle.style.transform = 'translate3d(0, 0, 0)';
+  if (left) left.style.opacity = '1';
+  if (right) right.style.opacity = '1';
+}
+
+const laneBase = {
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  width: 'calc(50% - 28px)',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  pointerEvents: 'none',
+  zIndex: 1,
+} as const;
+
+const fillBase = {
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  width: '50%',
+  pointerEvents: 'none',
+  zIndex: 0,
+} as const;
+
+const titleBase = {
+  fontSize: '12px',
+  fontWeight: 700,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+  lineHeight: 1.2,
+} as const;
+
 export const slideToPayStyles = {
   track: {
     position: 'relative',
@@ -16,72 +69,24 @@ export const slideToPayStyles = {
     justifyContent: 'center',
     margin: '0 auto',
   } as const,
-  leftLane: {
-    position: 'absolute',
-    left: '12px',
-    top: 0,
-    bottom: 0,
-    width: 'calc(50% - 28px)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-    zIndex: 1,
+  leftLane: { ...laneBase, left: '12px', alignItems: 'flex-start' } as const,
+  rightLane: { ...laneBase, right: '12px', alignItems: 'flex-end' } as const,
+  laneTitleGreen: { ...titleBase, color: '#065f46' } as const,
+  laneTitleBlue: { ...titleBase, color: '#0369a1' } as const,
+  amountTextGreen: {
+    fontSize: '14px',
+    fontWeight: 800,
+    color: '#047857',
+    marginTop: '2px',
   } as const,
-  rightLane: {
-    position: 'absolute',
-    right: '12px',
-    top: 0,
-    bottom: 0,
-    width: 'calc(50% - 28px)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-    zIndex: 1,
+  amountTextBlue: {
+    fontSize: '14px',
+    fontWeight: 800,
+    color: '#0284c7',
+    marginTop: '2px',
   } as const,
-  laneTitleGreen: {
-    fontSize: '12px',
-    fontWeight: 700,
-    color: '#065f46',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    lineHeight: 1.2,
-  } as const,
-  laneTitleBlue: {
-    fontSize: '12px',
-    fontWeight: 700,
-    color: '#0369a1',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    lineHeight: 1.2,
-  } as const,
-  amountTextGreen: { fontSize: '14px', fontWeight: 800, color: '#047857', marginTop: '2px' } as const,
-  amountTextBlue: { fontSize: '14px', fontWeight: 800, color: '#0284c7', marginTop: '2px' } as const,
-  leftFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: '50%',
-    backgroundColor: '#ecfdf5',
-    pointerEvents: 'none',
-    zIndex: 0,
-  } as const,
-  rightFill: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: '50%',
-    backgroundColor: '#f0f9ff',
-    pointerEvents: 'none',
-    zIndex: 0,
-  } as const,
+  leftFill: { ...fillBase, left: 0, backgroundColor: '#ecfdf5' } as const,
+  rightFill: { ...fillBase, right: 0, backgroundColor: '#f0f9ff' } as const,
   handle: {
     position: 'absolute',
     top: '7px',
