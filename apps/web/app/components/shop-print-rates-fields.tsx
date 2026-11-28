@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { CustomPaperSize, PaperSize, StudioPrintRatesContract } from '@snapprint/contracts';
 import { DEFAULT_DOCUMENT_PRINT_RATES, PAPER_DIMENSIONS } from '@snapprint/domain';
+import { resolveFormatLabel } from '../s/[slug]/format-size-label';
 import { getTabBtnStyle } from './operator-portal-styles';
 import { ShopPricingPreviewCard } from './shop-pricing-preview-card';
 import { ShopRateInputsGrid } from './shop-rate-inputs-grid';
@@ -77,7 +78,7 @@ export function ShopPrintRatesFields({
       >
         {activeSizes.map((size) => {
           const cust = customSizes?.find((c) => c.id === size);
-          const label = cust ? cust.name : size.toUpperCase();
+          const label = cust ? cust.name : resolveFormatLabel(size);
           const dText = cust
             ? `${cust.width}×${cust.height}${cust.unit}`
             : PAPER_DIMENSIONS[size]
@@ -109,7 +110,7 @@ export function ShopPrintRatesFields({
         }}
       >
         <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-          {curCustom ? curCustom.name : currentSize.toUpperCase()} Rates
+          {curCustom ? curCustom.name : resolveFormatLabel(currentSize)} Rates
         </span>
         {curDimText && (
           <span style={{ fontSize: '11px', color: '#64748b' }}>Dimensions: {curDimText}</span>

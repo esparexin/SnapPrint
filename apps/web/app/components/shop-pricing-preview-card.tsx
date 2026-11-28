@@ -3,6 +3,7 @@
 import React from 'react';
 import { PaperSize } from '@snapprint/contracts';
 import { calculatePrintCostPerCopyMinor, SheetPricingRate } from '@snapprint/domain';
+import { resolveFormatLabel } from '../s/[slug]/format-size-label';
 
 interface ShopPricingPreviewCardProps {
   paperSize: PaperSize;
@@ -56,7 +57,7 @@ export function ShopPricingPreviewCard({
         }}
       >
         <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
-          👁️ Customer Quote Preview ({sizeLabel || paperSize.toUpperCase()})
+          👁️ Customer Quote Preview ({sizeLabel || resolveFormatLabel(paperSize)})
         </span>
         <span
           style={{

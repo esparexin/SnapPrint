@@ -86,11 +86,51 @@ for (const file of allSourceFiles) {
   }
 }
 
+// 4. Zero Hardcoded Business Limits & Arbitrary Fleet Caps.
+//    Tenant fleet limits and quotas must remain optional/unbounded unless explicitly configured.
+const contractFiles = readSourceFiles(join(ROOT, 'packages/contracts/src'));
+for (const file of contractFiles) {
+  if (/maxActivePrinters.*\.default\(/.test(file.content)) {
+    console.error(
+      `HARDCODING VIOLATION: ${file.relativePath} defines hardcoded .default() on maxActivePrinters. Limits must be optional.`
+    );
+    failed = true;
+  }
+}
+
+// 5. Zero Hardcoded Geographic & Studio Entity Defaults.
+//    Multi-tenant repositories and schemas must not impose arbitrary hardcoded states, cities, or studio names.
+const apiRepoFiles = readSourceFiles(join(ROOT, 'apps/api/src/repositories'));
+for (const file of [...contractFiles, ...apiRepoFiles]) {
+  if (
+    /state:.*\.default\(['"]Telangana['"]\)/.test(file.content) ||
+    /['"]Default City['"]/.test(file.content) ||
+    /studio\?\.name\s*\|\|\s*['"]My Studio['"]/.test(file.content)
+  ) {
+    console.error(
+      `HARDCODING VIOLATION: ${file.relativePath} contains hardcoded geographic or placeholder entity fallbacks.`
+    );
+    failed = true;
+  }
+}
+
+// 6. Paper format resolution governance in UI components.
+//    UI components must not perform raw .toUpperCase() on paperSize/size without resolving format labels.
+const webComponentFiles = readSourceFiles(join(ROOT, 'apps/web/app/components'));
+for (const file of webComponentFiles) {
+  if (/(paperSize|currentSize|size)\.toUpperCase\(\)/.test(file.content)) {
+    console.error(
+      `HARDCODING VIOLATION: ${file.relativePath} calls .toUpperCase() directly on a paper size identifier. Use resolveFormatLabel to prevent raw ID leaks.`
+    );
+    failed = true;
+  }
+}
+
 if (failed) {
-  console.error('\nArchitecture boundary violations found. Fix the files listed above.');
+  console.error('\nNo Hardcoding & Boundary Check failed. Fix the violations listed above.');
   process.exit(1);
 }
 console.log(
-  'Architecture boundaries OK: domain is framework-independent; apps import shared packages by name; no prohibited SDKs.'
+  'No Hardcoding & Boundary Check OK: domain is framework-independent; apps import shared packages by name; no prohibited SDKs; zero hardcoding in schemas, repositories, and UI.'
 );
 process.exit(0);

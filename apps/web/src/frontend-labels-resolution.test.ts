@@ -2,10 +2,17 @@ import React from 'react';
 // @ts-expect-error -- @types/react-dom is not installed in @snapprint/web
 import { renderToStaticMarkup as untypedRenderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { OrderRecord, QuoteItemBreakdown } from '@snapprint/contracts';
+import {
+  OrderRecord,
+  PaperSize,
+  QuoteItemBreakdown,
+  StudioPrintRatesContract,
+} from '@snapprint/contracts';
 import { OrderDocumentPreviewModal } from '../app/components/order-document-preview-modal.js';
 import { OrderHandoverChecklist } from '../app/components/order-handover-checklist.js';
 import { OrderQueueDocumentRow } from '../app/components/order-queue-document-row.js';
+import { ShopPricingPreviewCard } from '../app/components/shop-pricing-preview-card.js';
+import { ShopPrintRatesFields } from '../app/components/shop-print-rates-fields.js';
 import { formatStudioOptionLabel } from '../app/components/studio-selector.js';
 import { CustomerPaymentCard } from '../app/s/[slug]/customer-payment-card.js';
 import { resolveFormatLabel } from '../app/s/[slug]/format-size-label.js';
@@ -122,5 +129,28 @@ describe('Frontend ID and Hardcoded Value Prevention', () => {
     );
     expect(html).toContain('Pay at Counter');
     expect(html).toContain('#ORD-7890');
+  });
+
+  it('renders ShopPricingPreviewCard without leaking raw uppercase CPS_ ID', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ShopPricingPreviewCard, {
+        paperSize: 'cps_poster_12x18' as PaperSize,
+      })
+    );
+    expect(html).toContain('Poster 12x18');
+    expect(html).not.toContain('CPS_POSTER_12X18');
+  });
+
+  it('renders ShopPrintRatesFields tab with resolved label for custom paper sizes', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ShopPrintRatesFields, {
+        printRates: {} as StudioPrintRatesContract,
+        supportedPaperSizes: ['A4', 'cps_photo_4x6' as PaperSize],
+        customSizes: [],
+        onChange: vi.fn(),
+      })
+    );
+    expect(html).toContain('Photo 4x6');
+    expect(html).not.toContain('CPS_PHOTO_4X6');
   });
 });

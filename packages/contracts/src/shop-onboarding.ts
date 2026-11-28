@@ -94,7 +94,7 @@ export type ShopWorkingHours = z.infer<typeof ShopWorkingHoursSchema>;
 
 export const ShopLocationSchema = z.object({
   city: z.string().trim().min(2).max(100),
-  state: z.string().trim().min(2).max(100).default('Telangana'),
+  state: z.string().trim().min(2).max(100).optional(),
   pincode: z
     .string()
     .regex(/^\d{6}$/, { message: 'Pincode must be exactly 6 digits' })

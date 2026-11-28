@@ -25,6 +25,12 @@ SnapPrint is an engineering-first monorepo using `pnpm` workspaces:
 5. **No UI Redesigns**: Preserve visual branding, layouts, and component aesthetics.
 6. **Build Gate**: Every change must cleanly pass `pnpm run build` and `pnpm test`.
 7. **Scope Discipline**: If a task would exceed one PR, stop and ask.
+8. **No Hardcoding & Boundary Governance**:
+   - Tenant fleet limits (e.g. `maxActivePrinters`) and quotas must remain optional/unbounded without hardcoded `.default(...)` in schemas or arbitrary fallbacks in queries.
+   - Never hardcode geographic regions (states/cities) or placeholder entity names in schemas, repositories, or forms.
+   - All dynamic identifiers (e.g. custom paper sizes `cps_*`, studio IDs `std_*`) rendered in customer or operator UIs must resolve to friendly labels via designated resolver helpers (`resolveFormatLabel`, `formatStudioOptionLabel`).
+   - Hardcoded localhost endpoints or developer URLs must never be embedded in production source code.
+   - Enforced automatically via `pnpm check:governance` and `pnpm check:architecture`.
 
 ---
 
@@ -82,6 +88,7 @@ Before committing, run:
 ```bash
 pnpm check:file-sizes       # Enforces file-type budgets & ratchet
 pnpm check:architecture     # Enforces domain isolation & bans prohibited SDKs
+pnpm check:governance       # Enforces zero-hardcoding & architecture boundary rules
 pnpm typecheck              # Strict TypeScript checks across all workspaces
 pnpm test                   # Full Vitest suite
 pnpm build                  # Production builds for all apps and packages
