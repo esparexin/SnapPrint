@@ -3,23 +3,24 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
+import { fetchLatestGitHubAgentRelease } from './github-release-client.js';
 
 export interface AgentDownloadRoutesOptions {
   installerPath?: string;
   allowRemoteRelease?: boolean;
 }
 
-export const DEFAULT_AGENT_VERSION = '0.1.4';
+export const DEFAULT_AGENT_VERSION = '0.1.5';
 export const DEFAULT_INSTALLER_NAME = 'SnapPrint-Print-Agent.msi' as const;
 
 export const DEFAULT_VERIFIED_RELEASE = {
   version: DEFAULT_AGENT_VERSION,
   installerName: DEFAULT_INSTALLER_NAME,
-  sha256: '6b922d1984c626eb9e14da5ff2c7721d990cb28fc14c1e689d6bb5074836ccc2',
-  sizeBytes: 29212672,
+  sha256: '2082a7b4c164b8860207e31994908c81193cdb2d48c56efa9064d5c5d8b403d4',
+  sizeBytes: 29208576,
   releaseUrl:
-    'https://github.com/esparexin/SnapPrint/releases/download/v0.1.4/SnapPrint-Print-Agent-v0.1.4.msi',
-  releaseDate: '2026-11-27T12:27:48.000Z',
+    'https://github.com/esparexin/SnapPrint/releases/download/v0.1.5/SnapPrint-Print-Agent-v0.1.5.msi',
+  releaseDate: '2026-11-28T09:11:42.000Z',
 } as const;
 
 export async function agentDownloadRoutes(
@@ -111,13 +112,15 @@ export async function agentDownloadRoutes(
       }
 
       if (allowRemote) {
+        const liveRelease = await fetchLatestGitHubAgentRelease();
+        const activeRelease = liveRelease ?? DEFAULT_VERIFIED_RELEASE;
         const metadata: AgentDownloadMetadata = AgentDownloadMetadataSchema.parse({
-          version: DEFAULT_VERIFIED_RELEASE.version,
-          installerName: DEFAULT_VERIFIED_RELEASE.installerName,
+          version: activeRelease.version,
+          installerName: DEFAULT_INSTALLER_NAME,
           downloadUrl,
-          sha256: DEFAULT_VERIFIED_RELEASE.sha256,
-          sizeBytes: DEFAULT_VERIFIED_RELEASE.sizeBytes,
-          releaseDate: DEFAULT_VERIFIED_RELEASE.releaseDate,
+          sha256: activeRelease.sha256,
+          sizeBytes: activeRelease.sizeBytes,
+          releaseDate: activeRelease.releaseDate,
         });
         return reply.status(200).send(metadata);
       }
@@ -143,7 +146,9 @@ export async function agentDownloadRoutes(
     }
 
     if (allowRemote) {
-      return reply.redirect(DEFAULT_VERIFIED_RELEASE.releaseUrl, 302);
+      const liveRelease = await fetchLatestGitHubAgentRelease();
+      const targetUrl = liveRelease ? liveRelease.downloadUrl : DEFAULT_VERIFIED_RELEASE.releaseUrl;
+      return reply.redirect(targetUrl, 302);
     }
 
     return reply.status(404).send({
