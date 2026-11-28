@@ -2,7 +2,7 @@
   "name": "@snapprint/print-agent",
   "private": true,
   "description": "SnapPrint Desktop Print Agent & Spooler Discovery Daemon",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "bin": {
     "snapprint-agent": "./dist/cli.js"

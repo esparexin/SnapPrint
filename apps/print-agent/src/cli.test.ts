@@ -200,7 +200,7 @@ describe('CLI Commands', () => {
       ok: true,
       status: 200,
       json: async () => ({
-        version: '0.1.4',
+        version: '0.1.5',
         installerName: 'SnapPrint-Print-Agent.msi',
         downloadUrl: 'https://snapprint.example.com/download.msi',
         sha256: 'a'.repeat(64),

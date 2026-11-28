@@ -6,6 +6,7 @@ import {
   classifyPortConnectionType,
   DiscoveredPrinter,
   extractNetworkHost,
+  isUncPath,
   parseCupsPrinters,
   parseWindowsPrintersJson,
   resolvePrinterStatus,
@@ -27,6 +28,7 @@ export {
   extractNetworkHost,
   inferIsColorSupported,
   inferSupportedPaperSizes,
+  isUncPath,
   isVirtualOrSoftwarePrinter,
   parseCupsPrinters,
   parseWindowsPrintersJson,
@@ -54,7 +56,13 @@ export interface SpoolerAdapterOptions {
     cmd: string,
     opts?: { timeout?: number }
   ) => Promise<{ stdout: string; stderr: string }>;
-  pingNetworkPrinter?: (host: string) => Promise<boolean>;
+  pingNetworkPrinter?: (
+    host: string,
+    port?: number,
+    timeoutMs?: number,
+    isUnc?: boolean
+  ) => Promise<boolean>;
+  checkUsbPrinterPresent?: (printerName: string) => Promise<boolean>;
 }
 
 export function createSystemSpoolerAdapter(options?: SpoolerAdapterOptions): SpoolerAdapter {
@@ -88,7 +96,7 @@ export function createSystemSpoolerAdapter(options?: SpoolerAdapterOptions): Spo
     async getPrinters(): Promise<DiscoveredPrinter[]> {
       if (platform === 'win32') {
         try {
-          const ps = `$ErrorActionPreference='SilentlyContinue'; Get-Printer | Where-Object { $_.Name -notmatch 'OneNote|AnyDesk|Fax' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' } } } | ConvertTo-Json`;
+          const ps = `$ErrorActionPreference='SilentlyContinue'; $pnp = @(Get-PnpDevice -Class PrintQueue, USB -PresentOnly -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FriendlyName); $ports = @{}; Get-PrinterPort -ErrorAction SilentlyContinue | ForEach-Object { if ($_.PrinterHostAddress) { $ports[$_.Name] = $_.PrinterHostAddress } }; Get-Printer | Where-Object { $_.Name -notmatch 'OneNote|AnyDesk|Fax' } | ForEach-Object { $p = $_; $cfg = if (-not $p.WorkOffline) { Get-PrintConfiguration -PrinterName $p.Name -ErrorAction SilentlyContinue } else { $null }; $isPnp = if ($pnp.Count -gt 0) { [bool]($pnp -contains $p.Name) } else { $null }; $hostAddr = if ($ports.ContainsKey($p.PortName)) { [string]$ports[$p.PortName] } else { $null }; [PSCustomObject]@{ Name = $p.Name; DriverName = $p.DriverName; PortName = $p.PortName; Default = [bool]$p.Default; WorkOffline = [bool]$p.WorkOffline; PrinterStatus = [string]$p.PrinterStatus; DuplexMode = if ($cfg) { [string]$cfg.DuplexingMode } else { '' }; IsPnpPresent = $isPnp; HostAddress = $hostAddr } } | ConvertTo-Json`;
           const { stdout } = await runner(
             `powershell -NoProfile -NonInteractive -Command "${ps}"`,
             {
@@ -106,13 +114,19 @@ export function createSystemSpoolerAdapter(options?: SpoolerAdapterOptions): Spo
             physicalPrinters.length > 0 && !allowVirtual ? physicalPrinters : allPrinters;
           await Promise.all(
             printers.map(async (p) => {
-              if (p.connectionType === 'network' && p.portName) {
-                const host = extractNetworkHost(p.portName);
+              if (p.connectionType === 'network' && (p.portName || p.hostAddress)) {
+                const isUnc = isUncPath(p.portName || '');
+                const host = p.hostAddress || extractNetworkHost(p.portName);
                 if (host) {
-                  const reachable = await pingNet(host);
+                  const reachable = await pingNet(host, isUnc ? 445 : 9100, undefined, isUnc);
                   if (!reachable) {
                     p.status = 'offline';
                   }
+                }
+              } else if (p.connectionType === 'usb' && options?.checkUsbPrinterPresent) {
+                const isPresent = await options.checkUsbPrinterPresent(p.name);
+                if (!isPresent) {
+                  p.status = 'offline';
                 }
               }
             })

@@ -1,4 +1,3 @@
-import { createConnection } from 'node:net';
 import {
   CapabilityProvenance,
   DuplexSupport,
@@ -7,10 +6,19 @@ import {
   PrinterStatus,
 } from '@snapprint/contracts';
 import {
+  checkNetworkPrinterReachable,
+  extractNetworkHost,
+  isUncPath,
+  isUuidString,
+  probeTcpPort,
+} from './network-probe.js';
+import {
   inferIsColorSupported,
   inferSupportedPaperSizes,
   isVirtualOrSoftwarePrinter,
 } from './windows-print-dispatcher.js';
+
+export { checkNetworkPrinterReachable, extractNetworkHost, isUncPath, isUuidString, probeTcpPort };
 
 export interface HardwareTelemetryParams {
   workOffline?: boolean;
@@ -18,6 +26,8 @@ export interface HardwareTelemetryParams {
   detectedErrorState?: number;
   extendedPrinterStatus?: number;
   networkReachable?: boolean;
+  isPnpPresent?: boolean;
+  connectionType?: PrinterConnectionType;
 }
 
 export interface DiscoveredPrinter {
@@ -32,6 +42,7 @@ export interface DiscoveredPrinter {
   status?: PrinterStatus;
   connectionType?: PrinterConnectionType;
   portName?: string;
+  hostAddress?: string;
 }
 
 export function classifyPortConnectionType(portName?: string): PrinterConnectionType {
@@ -42,7 +53,9 @@ export function classifyPortConnectionType(portName?: string): PrinterConnection
     /\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(p) ||
     p.startsWith('ip_') ||
     p.startsWith('wsd-') ||
-    p.startsWith('tcp')
+    p.startsWith('tcp') ||
+    p.startsWith('\\\\') ||
+    p.startsWith('//')
   ) {
     return 'network';
   }
@@ -50,40 +63,10 @@ export function classifyPortConnectionType(portName?: string): PrinterConnection
   return 'unknown';
 }
 
-export function extractNetworkHost(portName?: string): string | null {
-  if (!portName) return null;
-  const ipMatch = portName.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
-  if (ipMatch) return ipMatch[0];
-  const cleaned = portName.replace(/^(?:IP_|WSD-|TCP_)/i, '').trim();
-  if (/^[a-zA-Z0-9.-]+$/.test(cleaned) && !cleaned.toLowerCase().startsWith('usb')) {
-    return cleaned;
-  }
-  return null;
-}
-
-export function checkNetworkPrinterReachable(
-  host: string,
-  port = 9100,
-  timeoutMs = 400
-): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = createConnection({ host, port, timeout: timeoutMs });
-
-    const finish = (result: boolean) => {
-      socket.removeAllListeners();
-      socket.destroy();
-      resolve(result);
-    };
-
-    socket.once('connect', () => finish(true));
-    socket.once('timeout', () => finish(false));
-    socket.once('error', () => finish(false));
-  });
-}
-
 export function resolveHardwarePrinterStatus(params: HardwareTelemetryParams): PrinterStatus {
   if (params.workOffline === true) return 'offline';
   if (params.networkReachable === false) return 'offline';
+  if (params.connectionType === 'usb' && params.isPnpPresent === false) return 'offline';
 
   const extStatus = params.extendedPrinterStatus;
   if (extStatus === 7 || extStatus === 11) return 'offline';
@@ -137,7 +120,8 @@ function toDiscovered(
   isDefault: boolean,
   status: PrinterStatus,
   connectionType?: PrinterConnectionType,
-  portName?: string
+  portName?: string,
+  hostAddress?: string
 ): DiscoveredPrinter {
   const { duplexSupport, capabilityProvenance } = resolveDuplexMode(mode, boolDuplex);
   const supportedPaperSizes = inferSupportedPaperSizes(name, driverName);
@@ -153,6 +137,7 @@ function toDiscovered(
     status,
     connectionType: connectionType || 'unknown',
     portName,
+    hostAddress,
   };
 }
 
@@ -174,7 +159,12 @@ export function parseWindowsPrintersJson(
       const mode = String(item.DuplexMode || item.DuplexingMode || item.Duplex || '');
       const boolDuplex = typeof item.Duplex === 'boolean' ? item.Duplex : undefined;
       const portName = typeof item.PortName === 'string' ? item.PortName.trim() : undefined;
+      const hostAddress =
+        typeof item.HostAddress === 'string' && item.HostAddress.trim()
+          ? item.HostAddress.trim()
+          : undefined;
       const connectionType = classifyPortConnectionType(portName);
+      const isPnpPresent = typeof item.IsPnpPresent === 'boolean' ? item.IsPnpPresent : undefined;
       const status = resolvePrinterStatus(
         Boolean(item.WorkOffline),
         typeof item.PrinterStatus === 'string' ? item.PrinterStatus : undefined,
@@ -183,6 +173,8 @@ export function parseWindowsPrintersJson(
             typeof item.DetectedErrorState === 'number' ? item.DetectedErrorState : undefined,
           extendedPrinterStatus:
             typeof item.ExtendedPrinterStatus === 'number' ? item.ExtendedPrinterStatus : undefined,
+          isPnpPresent,
+          connectionType,
         }
       );
       printers.push(
@@ -194,7 +186,8 @@ export function parseWindowsPrintersJson(
           Boolean(item.Default),
           status,
           connectionType,
-          portName
+          portName,
+          hostAddress
         )
       );
     }
