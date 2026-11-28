@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { OrderRecord, PublicPaymentSettings } from '@snapprint/contracts';
 import { resolveCustomerPaymentMethods } from '@snapprint/domain';
+import { SlideToPay } from '../../../components/ui/slide-to-pay';
 import { initiateOnlinePayment, verifyOnlinePayment } from '../../../src/payment-client';
 import { customerPaymentStyles as styles } from './customer-payment-styles';
 
@@ -50,6 +51,7 @@ export function CustomerPaymentCard({
 }: CustomerPaymentCardProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<'cash' | 'online' | null>(null);
 
   const methods = resolveCustomerPaymentMethods(
     payment ?? {
@@ -62,6 +64,7 @@ export function CustomerPaymentCard({
   const paidAmount = order.paidAmountMinor ?? 0;
   const remainingMinor = Math.max(0, order.totalAmountMinor - paidAmount);
   const isPaid = order.paymentStatus === 'PAID';
+  const amountFormatted = `₹${(remainingMinor / 100).toFixed(2)}`;
 
   async function handlePayOnline() {
     setLoading(true);
@@ -148,57 +151,24 @@ export function CustomerPaymentCard({
     );
   }
 
-  // Cash Only Mode (when Razorpay is not configured/confirmed by shop owner)
-  if (!enableOnline) {
-    return (
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
-            Payment Due: ₹{(remainingMinor / 100).toFixed(2)}
-          </div>
-          <span style={styles.badge}>{order.paymentStatus ?? 'UNPAID'}</span>
-        </div>
-
-        <div style={styles.counterAlert}>
-          💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the
-          desk to pay via cash or counter UPI QR stand.
-        </div>
-      </div>
-    );
-  }
-
-  // Dual Options Mode (Razorpay confirmed + Counter pay enabled)
   return (
     <div style={styles.card}>
-      <div style={styles.header}>
-        <div style={{ fontWeight: 800, color: '#92400e', fontSize: '14px' }}>
-          Payment Due: ₹{(remainingMinor / 100).toFixed(2)}
-        </div>
-        <span style={styles.badge}>{order.paymentStatus ?? 'UNPAID'}</span>
-      </div>
-
       {error && <div style={styles.error}>{error}</div>}
-
-      <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div>
-          <button
-            type="button"
-            onClick={handlePayOnline}
-            disabled={loading}
-            style={{ ...styles.payBtn, width: '100%', cursor: loading ? 'not-allowed' : 'pointer' }}
-          >
-            {loading ? 'Processing...' : '⚡ Pay Now on Phone (Instant Auto-Verify)'}
-          </button>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-            Order confirms immediately — no waiting at desk.
-          </div>
-        </div>
-
+      <SlideToPay
+        amountFormatted={amountFormatted}
+        enableOnline={enableOnline}
+        onSelectCash={() => setSelectedMethod('cash')}
+        onSelectOnline={handlePayOnline}
+        selectedMethod={selectedMethod}
+        loading={loading}
+        onReset={() => setSelectedMethod(null)}
+      />
+      {(!enableOnline || selectedMethod === 'cash') && (
         <div style={styles.counterAlert}>
           💵 <strong>Pay at Counter (Cash or UPI)</strong>: Show Order #{order.orderNumber} at the
           desk to pay via cash or counter UPI QR stand.
         </div>
-      </div>
+      )}
     </div>
   );
 }
