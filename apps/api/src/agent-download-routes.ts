@@ -3,23 +3,25 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
+import { fetchLatestGitHubAgentRelease } from './github-release-client.js';
 
 export interface AgentDownloadRoutesOptions {
   installerPath?: string;
   allowRemoteRelease?: boolean;
+  fetchLatestRelease?: () => Promise<AgentDownloadMetadata | null>;
 }
 
-export const DEFAULT_AGENT_VERSION = '0.1.4';
+export const DEFAULT_AGENT_VERSION = '0.1.5';
 export const DEFAULT_INSTALLER_NAME = 'SnapPrint-Print-Agent.msi' as const;
 
 export const DEFAULT_VERIFIED_RELEASE = {
   version: DEFAULT_AGENT_VERSION,
   installerName: DEFAULT_INSTALLER_NAME,
-  sha256: '6b922d1984c626eb9e14da5ff2c7721d990cb28fc14c1e689d6bb5074836ccc2',
-  sizeBytes: 29212672,
+  sha256: '3a637ff65f349d88c0f64c0026b064ab8773086da77ed6fc2e188ccf7d7913b1',
+  sizeBytes: 29208576,
   releaseUrl:
-    'https://github.com/esparexin/SnapPrint/releases/download/v0.1.4/SnapPrint-Print-Agent-v0.1.4.msi',
-  releaseDate: '2026-11-27T12:27:48.000Z',
+    'https://github.com/esparexin/SnapPrint/releases/download/v0.1.5/SnapPrint-Print-Agent-v0.1.5.msi',
+  releaseDate: '2026-11-28T09:11:42.000Z',
 } as const;
 
 export async function agentDownloadRoutes(
@@ -29,6 +31,35 @@ export async function agentDownloadRoutes(
   const allowRemote =
     opts?.allowRemoteRelease ??
     (process.env.ENABLE_REMOTE_AGENT_RELEASE === 'true' || process.env.NODE_ENV === 'production');
+
+  const getRemoteRelease = async () => {
+    if (opts?.fetchLatestRelease) {
+      const res = await opts.fetchLatestRelease();
+      if (res) {
+        return {
+          version: res.version,
+          sha256: res.sha256,
+          sizeBytes: res.sizeBytes,
+          releaseDate: res.releaseDate,
+          releaseUrl: res.downloadUrl,
+        };
+      }
+    }
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+      return DEFAULT_VERIFIED_RELEASE;
+    }
+    const live = await fetchLatestGitHubAgentRelease();
+    if (live) {
+      return {
+        version: live.version,
+        sha256: live.sha256,
+        sizeBytes: live.sizeBytes,
+        releaseDate: live.releaseDate,
+        releaseUrl: live.downloadUrl,
+      };
+    }
+    return DEFAULT_VERIFIED_RELEASE;
+  };
 
   const resolveInstallerPath = (): string => {
     if (opts?.installerPath) {
@@ -111,13 +142,14 @@ export async function agentDownloadRoutes(
       }
 
       if (allowRemote) {
+        const activeRelease = await getRemoteRelease();
         const metadata: AgentDownloadMetadata = AgentDownloadMetadataSchema.parse({
-          version: DEFAULT_VERIFIED_RELEASE.version,
-          installerName: DEFAULT_VERIFIED_RELEASE.installerName,
+          version: activeRelease.version,
+          installerName: DEFAULT_INSTALLER_NAME,
           downloadUrl,
-          sha256: DEFAULT_VERIFIED_RELEASE.sha256,
-          sizeBytes: DEFAULT_VERIFIED_RELEASE.sizeBytes,
-          releaseDate: DEFAULT_VERIFIED_RELEASE.releaseDate,
+          sha256: activeRelease.sha256,
+          sizeBytes: activeRelease.sizeBytes,
+          releaseDate: activeRelease.releaseDate,
         });
         return reply.status(200).send(metadata);
       }
@@ -143,7 +175,8 @@ export async function agentDownloadRoutes(
     }
 
     if (allowRemote) {
-      return reply.redirect(DEFAULT_VERIFIED_RELEASE.releaseUrl, 302);
+      const activeRelease = await getRemoteRelease();
+      return reply.redirect(activeRelease.releaseUrl, 302);
     }
 
     return reply.status(404).send({

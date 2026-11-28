@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { AgentDownloadMetadata, AgentDownloadMetadataSchema } from '@snapprint/contracts';
+import { resolveGitHubFallback } from './github-release-resolver.js';
 import { launchTrampolineUpdater } from './update-trampoline.js';
 
 export const AGENT_VERSION = '0.1.5';
@@ -76,35 +77,49 @@ export async function checkForUpdate(
       15_000
     );
     if (!res.ok) {
-      return {
-        updateAvailable: false,
+      return resolveGitHubFallback(
         currentVersion,
-        error: `Server returned HTTP ${res.status}`,
-      };
+        fetchImpl,
+        compareVersions,
+        `Server returned HTTP ${res.status}`
+      );
     }
     const rawData = await res.json();
     const parsed = AgentDownloadMetadataSchema.safeParse(rawData);
     if (!parsed.success) {
-      return {
-        updateAvailable: false,
+      return resolveGitHubFallback(
         currentVersion,
-        error: 'Invalid metadata received from server',
-      };
+        fetchImpl,
+        compareVersions,
+        'Invalid metadata received from server'
+      );
     }
     const metadata = parsed.data;
-    const updateAvailable = compareVersions(metadata.version, currentVersion) > 0;
-    return {
-      updateAvailable,
-      currentVersion,
-      latestVersion: metadata.version,
-      metadata,
-    };
-  } catch (err) {
+    if (compareVersions(metadata.version, currentVersion) > 0) {
+      return {
+        updateAvailable: true,
+        currentVersion,
+        latestVersion: metadata.version,
+        metadata,
+      };
+    }
+    const ghFallback = await resolveGitHubFallback(currentVersion, fetchImpl, compareVersions);
+    if (ghFallback.updateAvailable) {
+      return ghFallback;
+    }
     return {
       updateAvailable: false,
       currentVersion,
-      error: err instanceof Error ? err.message : String(err),
+      latestVersion: ghFallback.latestVersion || metadata.version,
+      metadata,
     };
+  } catch (err) {
+    return resolveGitHubFallback(
+      currentVersion,
+      fetchImpl,
+      compareVersions,
+      err instanceof Error ? err.message : String(err)
+    );
   }
 }
 
