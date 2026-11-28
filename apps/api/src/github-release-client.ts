@@ -62,7 +62,7 @@ export async function fetchLatestGitHubAgentRelease(
 
     const sha256 = msiAsset.digest?.startsWith('sha256:')
       ? msiAsset.digest.slice(7)
-      : '2082a7b4c164b8860207e31994908c81193cdb2d48c56efa9064d5c5d8b403d4';
+      : '3a637ff65f349d88c0f64c0026b064ab8773086da77ed6fc2e188ccf7d7913b1';
 
     const candidate = {
       version,

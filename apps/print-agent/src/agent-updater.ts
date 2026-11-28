@@ -77,12 +77,22 @@ export async function checkForUpdate(
       15_000
     );
     if (!res.ok) {
-      return resolveGitHubFallback(currentVersion, fetchImpl, compareVersions, `Server returned HTTP ${res.status}`);
+      return resolveGitHubFallback(
+        currentVersion,
+        fetchImpl,
+        compareVersions,
+        `Server returned HTTP ${res.status}`
+      );
     }
     const rawData = await res.json();
     const parsed = AgentDownloadMetadataSchema.safeParse(rawData);
     if (!parsed.success) {
-      return resolveGitHubFallback(currentVersion, fetchImpl, compareVersions, 'Invalid metadata received from server');
+      return resolveGitHubFallback(
+        currentVersion,
+        fetchImpl,
+        compareVersions,
+        'Invalid metadata received from server'
+      );
     }
     const metadata = parsed.data;
     if (compareVersions(metadata.version, currentVersion) > 0) {

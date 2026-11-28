@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  fetchLatestReleaseFromGitHub,
-  resolveGitHubFallback,
-} from './github-release-resolver.js';
+import { fetchLatestReleaseFromGitHub, resolveGitHubFallback } from './github-release-resolver.js';
 
 describe('GitHub Release Resolver', () => {
   const mockReleasePayload = {

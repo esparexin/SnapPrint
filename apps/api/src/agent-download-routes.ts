@@ -8,6 +8,7 @@ import { fetchLatestGitHubAgentRelease } from './github-release-client.js';
 export interface AgentDownloadRoutesOptions {
   installerPath?: string;
   allowRemoteRelease?: boolean;
+  fetchLatestRelease?: () => Promise<AgentDownloadMetadata | null>;
 }
 
 export const DEFAULT_AGENT_VERSION = '0.1.5';
@@ -16,7 +17,7 @@ export const DEFAULT_INSTALLER_NAME = 'SnapPrint-Print-Agent.msi' as const;
 export const DEFAULT_VERIFIED_RELEASE = {
   version: DEFAULT_AGENT_VERSION,
   installerName: DEFAULT_INSTALLER_NAME,
-  sha256: '2082a7b4c164b8860207e31994908c81193cdb2d48c56efa9064d5c5d8b403d4',
+  sha256: '3a637ff65f349d88c0f64c0026b064ab8773086da77ed6fc2e188ccf7d7913b1',
   sizeBytes: 29208576,
   releaseUrl:
     'https://github.com/esparexin/SnapPrint/releases/download/v0.1.5/SnapPrint-Print-Agent-v0.1.5.msi',
@@ -30,6 +31,35 @@ export async function agentDownloadRoutes(
   const allowRemote =
     opts?.allowRemoteRelease ??
     (process.env.ENABLE_REMOTE_AGENT_RELEASE === 'true' || process.env.NODE_ENV === 'production');
+
+  const getRemoteRelease = async () => {
+    if (opts?.fetchLatestRelease) {
+      const res = await opts.fetchLatestRelease();
+      if (res) {
+        return {
+          version: res.version,
+          sha256: res.sha256,
+          sizeBytes: res.sizeBytes,
+          releaseDate: res.releaseDate,
+          releaseUrl: res.downloadUrl,
+        };
+      }
+    }
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+      return DEFAULT_VERIFIED_RELEASE;
+    }
+    const live = await fetchLatestGitHubAgentRelease();
+    if (live) {
+      return {
+        version: live.version,
+        sha256: live.sha256,
+        sizeBytes: live.sizeBytes,
+        releaseDate: live.releaseDate,
+        releaseUrl: live.downloadUrl,
+      };
+    }
+    return DEFAULT_VERIFIED_RELEASE;
+  };
 
   const resolveInstallerPath = (): string => {
     if (opts?.installerPath) {
@@ -112,8 +142,7 @@ export async function agentDownloadRoutes(
       }
 
       if (allowRemote) {
-        const liveRelease = await fetchLatestGitHubAgentRelease();
-        const activeRelease = liveRelease ?? DEFAULT_VERIFIED_RELEASE;
+        const activeRelease = await getRemoteRelease();
         const metadata: AgentDownloadMetadata = AgentDownloadMetadataSchema.parse({
           version: activeRelease.version,
           installerName: DEFAULT_INSTALLER_NAME,
@@ -146,9 +175,8 @@ export async function agentDownloadRoutes(
     }
 
     if (allowRemote) {
-      const liveRelease = await fetchLatestGitHubAgentRelease();
-      const targetUrl = liveRelease ? liveRelease.downloadUrl : DEFAULT_VERIFIED_RELEASE.releaseUrl;
-      return reply.redirect(targetUrl, 302);
+      const activeRelease = await getRemoteRelease();
+      return reply.redirect(activeRelease.releaseUrl, 302);
     }
 
     return reply.status(404).send({
